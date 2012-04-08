@@ -37,7 +37,6 @@ CPImageAlignBottomRight = 7;
 CPImageAlignRight       = 8;
 
 var CPImageViewEmptyPlaceholderImage = nil;
-
 /*!
     @ingroup appkit
     @class CPImageView
@@ -62,6 +61,23 @@ var CPImageViewEmptyPlaceholderImage = nil;
     var bundle = [CPBundle bundleForClass:[CPView class]];
 
     CPImageViewEmptyPlaceholderImage = [[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"empty.png"]];
+}
+
+/*!
+    @ignore
+*/
++ (CPString)defaultThemeClass
+{
+    return @"imageview";
+}
+
+/*!
+    @ignore
+*/
++ (id)themeAttributes
+{
+    return [CPDictionary dictionaryWithObjects:[[CPColor lightGrayColor]]
+                                       forKeys:["background-color"]];
 }
 
 + (Class)_binderClassForBinding:(CPString)theBinding
@@ -284,11 +300,14 @@ var CPImageViewEmptyPlaceholderImage = nil;
 */
 - (void)layoutSubviews
 {
-    if (![self image])
+    var image = [self image];
+
+    [self setBackgroundColor:[self currentValueForThemeAttribute:@"background-color"]];
+
+    if (!image)
         return;
 
     var bounds = [self bounds],
-        image = [self image],
         imageScaling = [self currentValueForThemeAttribute:@"image-scaling"],
         x = 0.0,
         y = 0.0,
@@ -413,8 +432,11 @@ var CPImageViewEmptyPlaceholderImage = nil;
     _isEditable = shouldBeEditable;
 
     if (_isEditable)
+    {
         [self registerForDraggedTypes:[CPImagesPboardType]];
 
+        [self setThemeState:CPThemeStateEditable];
+    }
     else
     {
         var draggedTypes = [self registeredDraggedTypes];
@@ -424,6 +446,8 @@ var CPImageViewEmptyPlaceholderImage = nil;
         [draggedTypes removeObjectIdenticalTo:CPImagesPboardType];
 
         [self registerForDraggedTypes:draggedTypes];
+
+        [self unsetThemeState:CPThemeStateEditable];
     }
 }
 
@@ -442,7 +466,28 @@ var CPImageViewEmptyPlaceholderImage = nil;
         [self sendAction:[self action] to:[self target]];
     }
 
+    [self unsetThemeState:CPThemeStateHighlighted];
+
     return YES;
+}
+
+- (CPDragOperation)draggingEntered:(CPEvent)anEvent
+{
+    if (_isEditable)
+    {
+        [self setThemeState:CPThemeStateHighlighted];
+        return CPDragOperationCopy;
+    }
+
+    return CPDragOperationNone;
+}
+
+- (CPDragOperation)draggingExited:(CPEvent)anEvent
+{
+    if (_isEditable)
+        [self unsetThemeState:CPThemeStateHighlighted];
+
+    return CPDragOperationNone;
 }
 
 @end
