@@ -2359,6 +2359,22 @@ var themedButtonValues = nil,
     return menuView;
 }
 
++ (CPImageView)themedImageView
+{
+    var imageView = [[CPImageView alloc] initWithFrame:CPRectMakeZero()],
+
+        themeValues =
+        [
+            [@"background-color", [CPColor colorWithWhite:0.9 alpha:0.5], CPThemeStateNormal],
+            [@"background-color", [CPColor colorWithWhite:0.85 alpha:0.5], CPThemeStateEditable],
+            [@"background-color", [CPColor colorWithWhite:0.7 alpha:0.5], CPThemeStateEditable | CPThemeStateHighlighted]
+        ];
+
+    [self registerThemeValues:themeValues forView:imageView];
+
+    return imageView;
+}
+
 @end
 
 
