@@ -21,12 +21,12 @@
  */
 
 @import <Foundation/CPBundle.j>
+@import <Foundation/CPGeometry.j>
 @import <Foundation/CPNotificationCenter.j>
 @import <Foundation/CPObject.j>
 @import <Foundation/CPRunLoop.j>
 @import <Foundation/CPString.j>
-
-@import "CPGeometry.j"
+@import <Foundation/CPData.j>
 
 
 CPImageLoadStatusInitialized    = 0;
@@ -118,7 +118,7 @@ function CPAppKitImage(aFilename, aSize)
 
     if (self)
     {
-        _size = CPSizeCreateCopy(aSize);
+        _size = CGSizeCreateCopy(aSize);
         _filename = aFilename;
         _loadStatus = CPImageLoadStatusInitialized;
     }

@@ -40,8 +40,9 @@ extern NSString * const XCCListeningStartNotification;
     NSString                        *XCodeSupportProjectName;
     NSString                        *XCodeTemplatePBXPath;
     NSString                        *profilePath;
+    NSString                        *shellPath;
+    NSString                        *PBXModifierScriptPath;
     NSURL                           *currentProjectURL;
-    NSURL                           *XCodeSupportFolder;
     NSURL                           *XCodeSupportProject;
     NSURL                           *XCodeSupportProjectSources;
     PRHEmptyGrowlDelegate           *growlDelegateRef;
@@ -73,7 +74,9 @@ extern NSString * const XCCListeningStartNotification;
 - (BOOL)isXIBFile:(NSString *)path;
 - (BOOL)isXCCIgnoreFile:(NSString *)path;
 - (BOOL)prepareXCodeSupportProject;
-- (NSURL*)shadowURLForSourceURL:(NSURL*)aSourceURL;
+- (NSURL*)shadowHeaderURLForSourceURL:(NSURL*)aSourceURL;
+- (void)cleanUpShadowsRelatedToSourceURL:(NSURL*)aSourceURL;
+- (NSURL*)shadowImplementationURLForSourceURL:(NSURL*)aSourceURL;
 - (NSURL*)sourceURLForShadowName:(NSString *)aString;
 - (void)handleFileModification:(NSString*)fullPath notify:(BOOL)shouldNotify;
 - (void)handleFileRemoval:(NSString*)fullPath;
@@ -97,4 +100,3 @@ extern NSString * const XCCListeningStartNotification;
 - (NSDate*)lastModificationDateForPath:(NSString *)path;
 
 @end
-

@@ -22,9 +22,9 @@
 
 #import "Ref.h"
 
-@import <Foundation/CPDate.j>
-@import <Foundation/CPString.j>
-@import <Foundation/CPFormatter.j>
+@import "CPDate.j"
+@import "CPString.j"
+@import "CPFormatter.j"
 
 CPDateFormatterNoStyle     = 0;
 CPDateFormatterShortStyle  = 1;
@@ -78,9 +78,9 @@ CPDateFormatterFullStyle   = 4;
     {
         case CPDateFormatterShortStyle:
             var format = "d/m/Y";
-            return Date.parseDate(string, format);
+            return Date.parseDate(aString, format);
         default:
-            return Date.parseDate(string);
+            return Date.parseDate(aString);
     }
 }
 
@@ -99,12 +99,10 @@ CPDateFormatterFullStyle   = 4;
 
 - (BOOL)getObjectValue:(id)anObject forString:(CPString)aString errorDescription:(CPString)anError
 {
-    console.log("getObjectValue: forString:" + aString);
     // TODO Error handling.
     var value = [self dateFromString:aString];
     AT_DEREF(anObject, value);
 
-    console.log("got " + value);
     return YES;
 }
 

@@ -27,6 +27,9 @@
 @import <Foundation/CPString.j>
 
 @import "CPTableHeaderView.j"
+@import "CPKeyValueBinding.j"
+
+@global CPTableViewColumnDidResizeNotification
 
 
 CPTableColumnNoResizing         = 0;
@@ -494,16 +497,23 @@ CPTableColumnUserResizingMask   = 1 << 1;
 */
 - (CPSortDescriptor)sortDescriptorPrototype
 {
-    return _sortDescriptorPrototype;
+    if (_sortDescriptorPrototype)
+        return _sortDescriptorPrototype;
+
+    var binderClass = [[self class] _binderClassForBinding:CPValueBinding],
+        binding = [binderClass getBinding:CPValueBinding forObject:self];
+
+    return [binding _defaultSortDescriptorPrototype];
 }
 
 /*!
-    If NO the tablecolumn will no longer be visible in the tableview
-    If YES the tablecolumn will be visible in the tableview.
+    If YES the tablecolumn will no longer be visible in the tableview.
+    If NO the tablecolumn will be visible in the tableview.
 */
 - (void)setHidden:(BOOL)shouldBeHidden
 {
     shouldBeHidden = !!shouldBeHidden
+
     if (_isHidden === shouldBeHidden)
         return;
 
@@ -567,6 +577,30 @@ CPTableColumnUserResizingMask   = 1 << 1;
         columnIndexes = [CPIndexSet indexSetWithIndex:column];
 
     [tableView reloadDataForRowIndexes:rowIndexes columnIndexes:columnIndexes];
+}
+
+- (CPSortDescriptor)_defaultSortDescriptorPrototype
+{
+    if (![self createsSortDescriptor])
+        return nil;
+
+    var keyPath = [_info objectForKey:CPObservedKeyPathKey],
+        dotIndex = keyPath.indexOf(".");
+
+    if (dotIndex === CPNotFound)
+        return nil;
+
+    var firstPart = keyPath.substring(0, dotIndex),
+        key = keyPath.substring(dotIndex + 1);
+
+    return [CPSortDescriptor sortDescriptorWithKey:key ascending:YES];
+}
+
+- (BOOL)createsSortDescriptor
+{
+    var options = [_info objectForKey:CPOptionsKey],
+        optionValue = [options objectForKey:CPCreatesSortDescriptorBindingOption];
+    return optionValue === nil ? YES : [optionValue boolValue];
 }
 
 @end

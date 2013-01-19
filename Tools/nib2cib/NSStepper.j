@@ -32,12 +32,17 @@
     {
         var cell = [aCoder decodeObjectForKey:@"NSCell"];
 
-        _minValue = [cell minValue];
-        _maxValue = [cell maxValue];
-        _increment  = [cell increment];
-        _valueWraps = [cell valueWraps];
-        _autorepeat = [cell autorepeat];
-        _objectValue = [cell objectValue];
+        self._minValue = [cell minValue];
+        self._maxValue = [cell maxValue];
+        self._increment  = [cell increment];
+        self._valueWraps = [cell valueWraps];
+        self._autorepeat = [cell autorepeat];
+        self._objectValue = [cell objectValue];
+
+        // Convert Cocoa normal size to Cappuccino normal size.
+        self._frame.origin.y += 2;
+        self._frame.size.height -= 2;
+        self._bounds.size.height -= 2;
     }
 
     return self;

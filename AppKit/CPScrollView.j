@@ -125,6 +125,9 @@ var CPScrollerStyleGlobal                       = CPScrollerStyleOverlay,
 
 + (void)initialize
 {
+    if (self !== [CPScrollView class])
+        return;
+
     var globalValue = [[CPBundle mainBundle] objectForInfoDictionaryKey:@"CPScrollersGlobalStyle"];
 
     if (globalValue == nil || globalValue == -1)
@@ -169,10 +172,10 @@ var CPScrollerStyleGlobal                       = CPScrollerStyleOverlay,
         scrollerWidth = [CPScroller scrollerWidth];
 
     if (hFlag)
-        frameSize.height -= scrollerWidth;
+        frameSize.height += scrollerWidth;
 
     if (vFlag)
-        frameSize.width -= scrollerWidth;
+        frameSize.width += scrollerWidth;
 
     return frameSize;
 }
@@ -210,7 +213,7 @@ var CPScrollerStyleGlobal                       = CPScrollerStyleOverlay,
 
     @param aStyle the scroller style to set all scroller views to use (CPScrollerStyleLegacy or CPScrollerStyleOverlay)
 */
-+ (int)setGlobalScrollerStyle:(int)aStyle
++ (void)setGlobalScrollerStyle:(int)aStyle
 {
     CPScrollerStyleGlobal = aStyle;
     [[CPNotificationCenter defaultCenter] postNotificationName:CPScrollerStyleGlobalChangeNotification object:nil];
@@ -1109,8 +1112,8 @@ Notifies the delegate when the scroll view has finished scrolling.
     contentFrame.size.height -= headerClipViewHeight;
 
     var difference = _CGSizeMake(_CGRectGetWidth(documentFrame) - _CGRectGetWidth(contentFrame), _CGRectGetHeight(documentFrame) - _CGRectGetHeight(contentFrame)),
-        verticalScrollerWidth = _CGRectGetWidth([_verticalScroller frame]),
-        horizontalScrollerHeight = _CGRectGetHeight([_horizontalScroller frame]),
+        verticalScrollerWidth = [CPScroller scrollerWidthInStyle:[_verticalScroller style]],
+        horizontalScrollerHeight = [CPScroller scrollerWidthInStyle:[_horizontalScroller style]],
         hasVerticalScroll = difference.height > 0.0,
         hasHorizontalScroll = difference.width > 0.0,
         shouldShowVerticalScroller = _hasVerticalScroller && (!_autohidesScrollers || hasVerticalScroll),
@@ -1253,7 +1256,7 @@ Notifies the delegate when the scroll view has finished scrolling.
 #pragma mark -
 #pragma mark Overrides
 
-- (void)drawRect:(CPRect)aRect
+- (void)drawRect:(CGRect)aRect
 {
     [super drawRect:aRect];
 

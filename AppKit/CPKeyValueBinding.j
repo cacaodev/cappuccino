@@ -27,6 +27,7 @@
 @import <Foundation/CPArray.j>
 @import <Foundation/CPDictionary.j>
 @import <Foundation/CPValueTransformer.j>
+@import <Foundation/CPKeyValueObserving.j>
 
 
 var exposedBindingsMap = [CPDictionary new],
@@ -131,7 +132,7 @@ var CPBindingOperationAnd = 0,
         if (options)
             [_info setObject:options forKey:CPOptionsKey];
 
-        [self _updatePlaceholdersWithOptions:options];
+        [self _updatePlaceholdersWithOptions:options forBinding:aName];
 
         [aDestination addObserver:self forKeyPath:aKeyPath options:CPKeyValueObservingOptionNew context:aBinding];
 
@@ -190,13 +191,18 @@ var CPBindingOperationAnd = 0,
     var destination = [_info objectForKey:CPObservedObjectKey],
         keyPath = [_info objectForKey:CPObservedKeyPathKey],
         options = [_info objectForKey:CPOptionsKey],
-        newValue = [_source valueForKeyPath:aBinding];
+        newValue = [self valueForBinding:aBinding];
 
     newValue = [self reverseTransformValue:newValue withOptions:options];
 
     [self suppressSpecificNotificationFromObject:destination keyPath:keyPath];
     [destination setValue:newValue forKeyPath:keyPath];
     [self unsuppressSpecificNotificationFromObject:destination keyPath:keyPath];
+}
+
+- (id)valueForBinding:(CPString)aBinding
+{
+    return [_source valueForKeyPath:aBinding];
 }
 
 - (void)observeValueForKeyPath:(CPString)aKeyPath ofObject:(id)anObject change:(CPDictionary)changes context:(id)context
@@ -314,6 +320,11 @@ var CPBindingOperationAnd = 0,
             placeholder = isExplicit ? [options objectForKey:optionName] : nil;
         [self _setPlaceholder:placeholder forMarker:marker isDefault:!isExplicit];
     }
+}
+
+- (void)_updatePlaceholdersWithOptions:(CPDictionary)options forBinding:(CPString)aBinding
+{
+    [self _updatePlaceholdersWithOptions:options];
 }
 
 - (void)_placeholderForMarker:aMarker
@@ -546,18 +557,37 @@ CPNotApplicableMarker   = @"CPNotApplicableMarker";
 CPNullMarker            = @"CPNullMarker";
 
 // Binding name constants
-CPAlignmentBinding      = @"alignment";
-CPEditableBinding       = @"editable";
-CPEnabledBinding        = @"enabled";
-CPFontBinding           = @"font";
-CPHiddenBinding         = @"hidden";
-CPSelectedIndexBinding  = @"selectedIndex";
-CPTextColorBinding      = @"textColor";
-CPToolTipBinding        = @"toolTip";
-CPValueBinding          = @"value";
-CPValueURLBinding       = @"valueURL";
-CPValuePathBinding      = @"valuePath";
-CPDataBinding           = @"data";
+CPAlignmentBinding                        = @"alignment";
+CPContentArrayBinding                     = @"contentArray";
+CPContentBinding                          = @"content";
+CPContentObjectBinding                    = @"contentObject";
+CPContentObjectsBinding                   = @"contentObjects";
+CPContentValuesBinding                    = @"contentValues";
+CPEditableBinding                         = @"editable";
+CPEnabledBinding                          = @"enabled";
+CPFontBinding                             = @"font";
+CPFontNameBinding                         = @"fontName";
+CPFontBoldBinding                         = @"fontBold";
+CPHiddenBinding                           = @"hidden";
+CPFilterPredicateBinding                  = @"filterPredicate";
+CPMaxValueBinding                         = @"maxValue";
+CPMinValueBinding                         = @"minValue";
+CPPredicateBinding                        = @"predicate";
+CPSelectedIndexBinding                    = @"selectedIndex";
+CPSelectedLabelBinding                    = @"selectedLabel";
+CPSelectedObjectBinding                   = @"selectedObject";
+CPSelectedObjectsBinding                  = @"selectedObjects";
+CPSelectedTagBinding                      = @"selectedTag";
+CPSelectedValueBinding                    = @"selectedValue";
+CPSelectedValuesBinding                   = @"selectedValues";
+CPSelectionIndexesBinding                 = @"selectionIndexes";
+CPTextColorBinding                        = @"textColor";
+CPTitleBinding                            = @"title";
+CPToolTipBinding                          = @"toolTip";
+CPValueBinding                            = @"value";
+CPValueURLBinding                         = @"valueURL";
+CPValuePathBinding                        = @"valuePath";
+CPDataBinding                             = @"data";
 
 //Binding options constants
 CPAllowsEditingMultipleValuesSelectionBindingOption = @"CPAllowsEditingMultipleValuesSelection";

@@ -67,13 +67,29 @@ CPHTML5DragAndDropSourceYOffBy1         = 1 << 26;
 
 CPSOPDisabledFromFileURLs               = 1 << 27;
 
+// element.style.font can be set for an element not in the DOM.
+CPInputSetFontOutsideOfDOM              = 1 << 28;
+
+// Input elements have 1 px of extra padding on the left regardless of padding setting.
+CPInput1PxLeftPadding                   = 1 << 29;
+CPInputOnInputEventFeature              = 1 << 30;
+
+// When an absolutely positioned div (CPView) with an absolutely positioned canvas in it (CPView with drawRect:) moves things on top of the canvas
+// (subviews) don't redraw correctly. E.g. if you have a bunch of text fields in a CPBox in a sheet which animates in, some of the text fields might
+// not be visible because the CPBox has a canvas at the bottom and the box moved form offscreen to onscreen.
+// This bug is probably very related: https://bugs.webkit.org/show_bug.cgi?id=67203
+CPCanvasParentDrawErrorsOnMovementBug   = 1 << 0;
+
 var USER_AGENT                          = "",
     PLATFORM_ENGINE                     = CPUnknownBrowserEngine,
-    PLATFORM_FEATURES                   = 0;
+    PLATFORM_FEATURES                   = 0,
+    PLATFORM_BUGS                       = 0,
+    PLATFORM_STYLE_JS_PROPERTIES        = {};
 
 // default these features to true
 
 PLATFORM_FEATURES |= CPInputTypeCanBeChangedFeature;
+PLATFORM_FEATURES |= CPInputSetFontOutsideOfDOM;
 
 if (typeof window !== "undefined" && typeof window.navigator !== "undefined")
     USER_AGENT = window.navigator.userAgent;
@@ -99,6 +115,9 @@ else if (typeof window !== "undefined" && window.attachEvent) // Must follow Ope
     PLATFORM_FEATURES |= CPOpacityRequiresFilterFeature;
 
     PLATFORM_FEATURES &= ~CPInputTypeCanBeChangedFeature;
+
+    // Tested in Internet Explore 8 and 9.
+    PLATFORM_FEATURES &= ~CPInputSetFontOutsideOfDOM;
 }
 
 // WebKit
@@ -135,8 +154,16 @@ else if (USER_AGENT.indexOf("AppleWebKit/") != -1)
     if (majorVersion < 532 || (majorVersion === 532 && minorVersion < 6))
         PLATFORM_FEATURES |= CPHTML5DragAndDropSourceYOffBy1;
 
+    // This is supposedly fixed in webkit r123603. Seems to work in Chrome 21 but not Safari 6.0.
+    if (majorVersion < 537)
+        PLATFORM_FEATURES |= CPInput1PxLeftPadding;
+
     if (USER_AGENT.indexOf("Chrome") === CPNotFound)
         PLATFORM_FEATURES |= CPSOPDisabledFromFileURLs;
+
+    // Assume this bug was introduced around Safari 5.1/Chrome 16. This could probably be tighter.
+    if (majorVersion > 533)
+        PLATFORM_BUGS |= CPCanvasParentDrawErrorsOnMovementBug;
 }
 
 // KHTML
@@ -160,6 +187,9 @@ else if (USER_AGENT.indexOf("Gecko") !== -1) // Must follow KHTML check.
 
     if (version < 3.0)
         PLATFORM_FEATURES |= CPJavaScriptMouseWheelValues_8_15;
+
+    // Some day this might be fixed and should be version prefixed. No known fixed version yet.
+    PLATFORM_FEATURES |= CPInput1PxLeftPadding;
 }
 
 // Feature Specific Checks
@@ -185,11 +215,26 @@ if (typeof document != "undefined")
         PLATFORM_FEATURES |= CPJavaScriptInnerTextFeature;
     else if (DOMElement.textContent != undefined)
         PLATFORM_FEATURES |= CPJavaScriptTextContentFeature;
+
+    var DOMInputElement = document.createElement("input");
+    if ("oninput" in DOMInputElement)
+        PLATFORM_FEATURES |= CPInputOnInputEventFeature;
+    else if (typeof DOMInputElement.setAttribute === "function")
+    {
+        DOMInputElement.setAttribute("oninput", "return;");
+        if (typeof DOMInputElement.oninput === "function")
+            PLATFORM_FEATURES |= CPInputOnInputEventFeature;
+    }
 }
 
 function CPFeatureIsCompatible(aFeature)
 {
     return PLATFORM_FEATURES & aFeature;
+}
+
+function CPPlatformHasBug(aBug)
+{
+    return PLATFORM_BUGS & aBug;
 }
 
 function CPBrowserIsEngine(anEngine)
@@ -228,4 +273,107 @@ else
 
     CPUndoKeyEquivalentModifierMask = CPControlKeyMask;
     CPRedoKeyEquivalentModifierMask = CPControlKeyMask;
+}
+
+/*!
+    Return the properly prefixed JS property for the given name. E.g. in a webkit browser,
+    CPBrowserStyleProperty('transition') -> WebkitTransition
+
+    While technically not a style property, style related event handler names are also supported.
+    CPBrowserStyleProperty('transitionend') -> 'webkitTransitionEnd'
+
+    CSS is only available in platform(dom), so don't rely too heavily on it.
+*/
+function CPBrowserStyleProperty(aProperty)
+{
+    var lowerProperty = aProperty.toLowerCase();
+
+    if (PLATFORM_STYLE_JS_PROPERTIES[lowerProperty] === undefined)
+    {
+        var r = nil;
+
+#if PLATFORM(DOM)
+        var testElement = document.createElement('div');
+
+        switch (lowerProperty)
+        {
+            case 'transitionend':
+                var candidates = {
+                        'WebkitTransition' : 'webkitTransitionEnd',
+                        'MozTransition'    : 'transitionend',
+                        'OTransition'      : 'oTransitionEnd',
+                        'msTransition'     : 'MSTransitionEnd',
+                        'transition'       : 'transitionend'
+                    };
+
+                r = candidates[PLATFORM_STYLE_JS_PROPERTIES['transition']] || nil;
+                break;
+            default:
+                var prefixes = ["Webkit", "Moz", "O", "ms"],
+                    strippedProperty = aProperty.split('-').join(' '),
+                    capProperty = [strippedProperty capitalizedString].split(' ').join('');
+
+                for (var i = 0; i < prefixes.length; i++)
+                {
+                    // First check if the property is already valid without being formatted, otherwise try the capitalized property
+                    if (prefixes[i] + aProperty in testElement.style)
+                    {
+                        r = prefixes[i] + aProperty;
+                        break;
+                    }
+                    else if (prefixes[i] + capProperty in testElement.style)
+                    {
+                        r = prefixes[i] + capProperty;
+                        break;
+                    }
+                }
+
+                if (!r && lowerProperty in testElement.style)
+                    r = lowerProperty;
+
+                break;
+        }
+#endif
+
+        PLATFORM_STYLE_JS_PROPERTIES[lowerProperty] = r;
+    }
+
+    return PLATFORM_STYLE_JS_PROPERTIES[lowerProperty];
+}
+
+function CPBrowserCSSProperty(aProperty)
+{
+    var browserProperty = CPBrowserStyleProperty(aProperty);
+
+    if (!browserProperty)
+        return nil;
+
+    var prefixes = {
+            'Webkit': '-webkit-',
+            'Moz': '-moz-',
+            'O': '-o-',
+            'ms': '-ms-'
+        };
+
+    for (var prefix in prefixes)
+    {
+        if (browserProperty.substring(0, prefix.length) == prefix)
+        {
+            var browserPropertyWithoutPrefix = browserProperty.substring(prefix.length),
+                parts = browserPropertyWithoutPrefix.match(/[A-Z][a-z]+/g);
+
+            // If there were any capitalized words in the browserProperty, insert a "-" between each one
+            if (parts && parts.length > 0)
+                browserPropertyWithoutPrefix = parts.join("-");
+
+            return prefixes[prefix] + browserPropertyWithoutPrefix.toLowerCase();
+        }
+    }
+
+    var parts = browserProperty.match(/[A-Z][a-z]+/g);
+
+    if (parts && parts.length > 0)
+        browserProperty = parts.join("-");
+
+    return browserProperty.toLowerCase();
 }

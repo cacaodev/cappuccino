@@ -26,6 +26,10 @@
 @import "CPCib.j"
 @import "CPResponder.j"
 
+@class CPDocument
+
+@global CPApp
+
 
 var CPViewControllerCachedCibs;
 
@@ -67,6 +71,7 @@ var CPViewControllerCachedCibs;
     CPView          _view @accessors(property=view);
     BOOL            _isLoading;
     BOOL            _isLazy;
+    BOOL            _isViewLoaded @accessors(getter=isViewLoaded);
 
     id              _representedObject @accessors(property=representedObject);
     CPString        _title @accessors(property=title);
@@ -78,8 +83,10 @@ var CPViewControllerCachedCibs;
 
 + (void)initialize
 {
-    if (self === CPViewController)
-        CPViewControllerCachedCibs = [CPDictionary dictionary];
+    if (self !== [CPViewController class])
+        return;
+
+    CPViewControllerCachedCibs = [CPDictionary dictionary];
 }
 
 /*!
@@ -204,17 +211,24 @@ var CPViewControllerCachedCibs;
             [cibOwner viewControllerDidLoadCib:self];
 
         _isLoading = NO;
-        [self viewDidLoad];
+        [self _viewDidLoad];
     }
     else if (_isLazy)
     {
         _isLazy = NO;
-        [self viewDidLoad];
+        [self _viewDidLoad];
     }
 
     return _view;
 }
 
+- (void)_viewDidLoad
+{
+    [self willChangeValueForKey:"isViewLoaded"];
+    [self viewDidLoad];
+    _isViewLoaded = YES;
+    [self didChangeValueForKey:"isViewLoaded"];
+}
 
 /*!
     This method is called after the view controller has loaded its associated views into memory.
@@ -240,7 +254,21 @@ var CPViewControllerCachedCibs;
 */
 - (void)setView:(CPView)aView
 {
+    var willChangeIsViewLoaded = (_isViewLoaded == NO && aView != nil) || (_isViewLoaded == YES && aView == nil);
+
+    if (willChangeIsViewLoaded)
+        [self willChangeValueForKey:"isViewLoaded"];
+
     _view = aView;
+    _isViewLoaded = aView !== nil;
+
+    if (willChangeIsViewLoaded)
+        [self didChangeValueForKey:"isViewLoaded"];
+}
+
+- (BOOL)automaticallyNotifiesObserversOfIsViewLoaded
+{
+    return NO;
 }
 
 @end

@@ -3,15 +3,18 @@
  *     Copyright (c) 2011 Pear, Inc. All rights reserved.
  */
 
+@import "CPView.j"
+
 @implementation _CPRuleEditorViewSlice : CPView
 {
     CPRuleEditor _ruleEditor;
     int          _indentation           @accessors(property=indentation);
     int          _rowIndex              @accessors(property=rowIndex);
-    CPRect       _animationTargetRect   @accessors(property=_animationTargetRect);
+    CGRect       _animationTargetRect   @accessors(property=_animationTargetRect);
     BOOL         _selected              @accessors(getter=_isSelected, setter=_setSelected:);
     BOOL         _lastSelected          @accessors(getter=_isLastSelected, setter=_setLastSelected:);
     CPColor      _backgroundColor       @accessors(property=backgroundColor);
+    BOOL         _editable              @accessors(getter=isEditable, setter=setEditable:);
 }
 
 - (void)removeFromSuperview
@@ -41,11 +44,11 @@
     _selected = select;
 }
 
-- (void)drawRect:(CPRect)rect
+- (void)drawRect:(CGRect)rect
 {
     var context = [[CPGraphicsContext currentContext] graphicsPort],
         bounds = [self bounds],
-        maxX = CGRectGetWidth(bounds) - 2,
+        maxX = CGRectGetWidth(bounds),
         maxY = CGRectGetHeight(bounds);
 
 // Draw background
@@ -63,7 +66,7 @@
 
 // Draw Top Border
     CGContextBeginPath(context);
-    CGContextMoveToPoint(context, 1, 0);
+    CGContextMoveToPoint(context, 0, 0);
     CGContextAddLineToPoint(context, maxX, 0);
     CGContextClosePath(context);
     CGContextSetStrokeColor(context, [_ruleEditor _sliceTopBorderColor]);
@@ -71,8 +74,8 @@
 
 // Draw Bottom Border
     CGContextBeginPath(context);
-    CGContextMoveToPoint(context, 1, maxY - 0.5);
-    CGContextAddLineToPoint(context, maxX, maxY - 0.5);
+    CGContextMoveToPoint(context, 0, maxY);
+    CGContextAddLineToPoint(context, maxX, maxY);
     CGContextClosePath(context);
     var bottomColor = (_rowIndex == [_ruleEditor _lastRow]) ? [_ruleEditor _sliceLastBottomBorderColor] : [_ruleEditor _sliceBottomBorderColor];
     CGContextSetStrokeColor(context, bottomColor);
@@ -81,13 +84,13 @@
 
 - (void)mouseDown:(CPEvent)theEvent
 {
-    if (editable)
+    if (_editable)
         [_ruleEditor _mouseDownOnSlice:self withEvent:theEvent];
 }
 
 - (void)mouseUp:(CPEvent)theEvent
 {
-    if (editable)
+    if (_editable)
         [_ruleEditor _mouseUpOnSlice:self withEvent:theEvent];
 }
 

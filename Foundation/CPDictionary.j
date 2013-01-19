@@ -25,6 +25,7 @@
 @import "CPException.j"
 @import "CPNull.j"
 @import "CPObject.j"
+#import "Ref.h"
 
 /* @ignore */
 @implementation _CPDictionaryValueEnumerator : CPEnumerator
@@ -321,7 +322,7 @@
 */
 - (int)count
 {
-    return _count;
+    return self._count;
 }
 
 /*!
@@ -329,7 +330,7 @@
 */
 - (CPArray)allKeys
 {
-    return [_keys copy];
+    return [self._keys copy];
 }
 
 /*!
@@ -337,11 +338,12 @@
 */
 - (CPArray)allValues
 {
-    var index = _keys.length,
+    var keys = self._keys,
+        index = keys.length,
         values = [];
 
     while (index--)
-        values.push(self.valueForKey(_keys[index]));
+        values.push(self.valueForKey(keys[index]));
 
     return values;
 }
@@ -356,33 +358,92 @@
 */
 - (CPArray)allKeysForObject:(id)anObject
 {
-    var count = _keys.length,
+    var keys = self._keys,
+        count = keys.length,
         index = 0,
         matchingKeys = [],
-        thisKey = nil,
-        thisValue = nil;
+        key = nil,
+        value = nil;
 
     for (; index < count; ++index)
     {
-        thisKey = _keys[index];
-        thisValue = _buckets[thisKey];
-        if (thisValue.isa && anObject && anObject.isa && [thisValue respondsToSelector:@selector(isEqual:)] && [thisValue isEqual:anObject])
-            matchingKeys.push(thisKey);
-        else if (thisValue === anObject)
-            matchingKeys.push(thisKey);
+        key = keys[index];
+        value = self._buckets[key];
+
+        if (value.isa && anObject && anObject.isa && [value respondsToSelector:@selector(isEqual:)] && [value isEqual:anObject])
+            matchingKeys.push(key);
+        else if (value === anObject)
+            matchingKeys.push(key);
     }
 
     return matchingKeys;
 }
 
+- (CPArray)keysOfEntriesPassingTest:(Function /*(id key, id obj, @ref BOOL stop)*/)predicate
+{
+    return [self keysOfEntriesWithOptions:CPEnumerationNormal passingTest:predicate];
+}
+
+- (CPArray)keysOfEntriesWithOptions:(CPEnumerationOptions)options passingTest:(Function /*(id key, id obj, @ref BOOL stop)*/)predicate
+{
+    var keys = self._keys;
+
+    if (options & CPEnumerationReverse)
+    {
+        var index = [keys count] - 1,
+            stop = -1,
+            increment = -1;
+    }
+    else
+    {
+        var index = 0,
+            stop = [keys count],
+            increment = 1;
+    }
+
+    var matchingKeys = [],
+        key = nil,
+        value = nil,
+        shouldStop = NO,
+        stopRef = AT_REF(shouldStop);
+
+    for (; index !== stop; index += increment)
+    {
+        key = keys[index];
+        value = self._buckets[key];
+
+        if (predicate(key, value, stopRef))
+            matchingKeys.push(key);
+
+        if (shouldStop)
+            break;
+    }
+
+    return matchingKeys;
+}
+
+- (CPArray)keysSortedByValueUsingComparator:(Function /*(id obj1, id obj2)*/)comparator
+{
+    return [[self allKeys] sortedArrayUsingFunction:function(a, b)
+        {
+            a = [self objectForKey:a];
+            b = [self objectForKey:b];
+
+            return comparator(a, b);
+        }
+    ];
+}
+
 - (CPArray)keysSortedByValueUsingSelector:(SEL)theSelector
 {
-    return [[self allKeys] sortedArrayUsingFunction:function(a, b) {
-        a = [self objectForKey:a];
-        b = [self objectForKey:b];
+    return [[self allKeys] sortedArrayUsingFunction:function(a, b)
+        {
+            a = [self objectForKey:a];
+            b = [self objectForKey:b];
 
-        return [a performSelector:theSelector withObject:b];
-    }];
+            return [a performSelector:theSelector withObject:b];
+        }
+    ];
 }
 
 /*!
@@ -390,7 +451,7 @@
 */
 - (CPEnumerator)keyEnumerator
 {
-    return [_keys objectEnumerator];
+    return [self._keys objectEnumerator];
 }
 
 /*!
@@ -414,12 +475,13 @@
     if (count !== [aDictionary count])
         return NO;
 
-    var index = count;
+    var index = count,
+        keys = self._keys;
 
     while (index--)
     {
-        var currentKey = _keys[index],
-            lhsObject = _buckets[currentKey],
+        var currentKey = keys[index],
+            lhsObject = self._buckets[currentKey],
             rhsObject = aDictionary._buckets[currentKey];
 
         if (lhsObject === rhsObject)
@@ -475,7 +537,7 @@
 */
 - (id)objectForKey:(id)aKey
 {
-    var object = _buckets[aKey];
+    var object = self._buckets[aKey];
 
     return (object === undefined) ? nil : object;
 }
@@ -576,17 +638,17 @@
 */
 - (CPString)description
 {
-    var string = "{\n\t",
-        keys = _keys,
+    var string = "@{\n",
+        keys = self._keys,
         index = 0,
-        count = _count;
+        count = self._count;
 
     for (; index < count; ++index)
     {
         var key = keys[index],
-            value = valueForKey(key);
+            value = self.valueForKey(key);
 
-        string += key + " = \"" + CPDescriptionOfObject(value).split('\n').join("\n\t") + "\"\n\t";
+        string += "\t" + key + ": " + CPDescriptionOfObject(value).split('\n').join("\n\t") + ",\n";
     }
 
     return string + "}";
@@ -597,6 +659,34 @@
     var value = [self objectForKey:aKey];
     return ((value !== nil) && (value !== undefined));
 }
+
+- (void)enumerateKeysAndObjectsUsingBlock:(Function /*(id aKey, id anObject, @ref BOOL stop)*/)aFunction
+{
+    var shouldStop = NO,
+        shouldStopRef = AT_REF(shouldStop),
+        keys = self._keys,
+        count = self._count;
+
+    for (var index = 0; index < count; index++)
+    {
+        var key = keys[index],
+            value = self.valueForKey(key);
+
+        aFunction(key, value, shouldStopRef);
+
+        if (shouldStop)
+            return;
+    }
+}
+
+- (void)enumerateKeysAndObjectsWithOptions:(CPEnumerationOptions)opts usingBlock:(Function /*(id aKey, id anObject, @ref BOOL stop)*/)aFunction
+{
+    // Ignore the options because neither option has an effect.
+    // CPEnumerationReverse has no effect on enumerating a CPDictionary because dictionary enumeration is not ordered.
+    // CPEnumerationConcurrent is not possible in a single threaded environment.
+    [self enumerateKeysAndObjectsUsingBlock:aFunction];
+}
+
 @end
 
 @implementation CPDictionary (CPCoding)

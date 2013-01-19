@@ -21,19 +21,31 @@
  */
 
 @import <Foundation/CPArray.j>
+@import <Foundation/CPGeometry.j>
 @import <Foundation/CPObjJRuntime.j>
 @import <Foundation/CPSet.j>
 
 @import "CGAffineTransform.j"
-@import "CGGeometry.j"
+
 
 @import "CPColor.j"
-@import "CPGeometry.j"
 @import "CPGraphicsContext.j"
 @import "CPResponder.j"
 @import "CPTheme.j"
 @import "_CPDisplayServer.j"
 
+@class _CPToolTip
+@class CPWindow
+@class _CPMenuItemView
+@class CPPlatformWindow
+@class CPMenu
+@class CPClipView
+@class CPScrollView
+
+@global appkit_tag_dom_elements
+@global CPWindowAbove
+@global CPBorderlessWindowMask
+@global CPScreenSaverWindowLevel
 
 /*
     @global
@@ -98,9 +110,6 @@ var CPViewFlags                     = { },
     CPViewHasCustomDrawRect         = 1 << 0,
     CPViewHasCustomLayoutSubviews   = 1 << 1;
 
-var CPCurrentToolTip,
-    CPCurrentToolTipTimer,
-    CPToolTipDelay = 1.0;
 
 /*!
     @ingroup appkit
@@ -246,8 +255,8 @@ var CPCurrentToolTip,
 - (void)_setupToolTipHandlers
 {
     _toolTipInstalled = NO;
-    _toolTipFunctionIn = function(e){[self _fireToolTip];}
-    _toolTipFunctionOut = function(e){[self _invalidateToolTip];};
+    _toolTipFunctionIn = function(e) { [_CPToolTip scheduleToolTipForView:self]; }
+    _toolTipFunctionOut = function(e) { [_CPToolTip invalidateCurrentToolTipIfNeeded]; };
 }
 
 + (CPSet)keyPathsForValuesAffectingFrame
@@ -336,6 +345,9 @@ var CPCurrentToolTip,
     if (_toolTip == aToolTip)
         return;
 
+    if (aToolTip && ![aToolTip isKindOfClass:CPString])
+        aToolTip = [aToolTip description];
+
     _toolTip = aToolTip;
 
     if (_toolTip)
@@ -353,6 +365,7 @@ var CPCurrentToolTip,
     if (_toolTipInstalled)
         return;
 
+#if PLATFORM(DOM)
     if (_DOMElement.addEventListener)
     {
         _DOMElement.addEventListener("mouseover", _toolTipFunctionIn, NO);
@@ -365,6 +378,8 @@ var CPCurrentToolTip,
         _DOMElement.attachEvent("onkeypress", _toolTipFunctionOut);
         _DOMElement.attachEvent("onmouseout", _toolTipFunctionOut);
     }
+#endif
+
     _toolTipInstalled = YES;
 }
 
@@ -377,6 +392,7 @@ var CPCurrentToolTip,
     if (!_toolTipInstalled)
         return;
 
+#if PLATFORM(DOM)
     if (_DOMElement.removeEventListener)
     {
         _DOMElement.removeEventListener("mouseover", _toolTipFunctionIn, NO);
@@ -389,52 +405,9 @@ var CPCurrentToolTip,
         _DOMElement.detachEvent("onkeypress", _toolTipFunctionOut);
         _DOMElement.detachEvent("onmouseout", _toolTipFunctionOut);
     }
+#endif
+
     _toolTipInstalled = NO;
-}
-
-/*! @ignore
-    Starts the tooltip timer.
-*/
-- (void)_fireToolTip
-{
-    if (CPCurrentToolTipTimer)
-    {
-        [CPCurrentToolTipTimer invalidate];
-        if (CPCurrentToolTip)
-            [CPCurrentToolTip close];
-        CPCurrentToolTip = nil;
-    }
-
-    if (_toolTip)
-        CPCurrentToolTipTimer = [CPTimer scheduledTimerWithTimeInterval:CPToolTipDelay target:self selector:@selector(_showToolTip:) userInfo:nil repeats:NO];
-}
-
-/*! @ignore
-    Stop the tooltip timer if any
-*/
-- (void)_invalidateToolTip
-{
-    if (CPCurrentToolTipTimer)
-    {
-        [CPCurrentToolTipTimer invalidate];
-        CPCurrentToolTipTimer = nil;
-    }
-
-    if (CPCurrentToolTip)
-    {
-        [CPCurrentToolTip close];
-        CPCurrentToolTip = nil;
-    }
-}
-
-/*! @ignore
-    Actually shows the tooltip if any
-*/
-- (void)_showToolTip:(CPTimer)aTimer
-{
-    if (CPCurrentToolTip)
-        [CPCurrentToolTip close];
-    CPCurrentToolTip = [_CPToolTip toolTipWithString:_toolTip];
 }
 
 /*!
@@ -502,7 +475,7 @@ var CPCurrentToolTip,
     // We will have to adjust the z-index of all views starting at this index.
     var count = _subviews.length;
 
-    // dirty the key view loop, in case the window wants to auto recalculate it
+    // Dirty the key view loop, in case the window wants to auto recalculate it
     [[self window] _dirtyKeyViewLoop];
 
     // If this is already one of our subviews, remove it.
@@ -583,7 +556,7 @@ var CPCurrentToolTip,
     if (!_superview)
         return;
 
-    // dirty the key view loop, in case the window wants to auto recalculate it
+    // Dirty the key view loop, in case the window wants to auto recalculate it
     [[self window] _dirtyKeyViewLoop];
 
     [_superview willRemoveSubview:self];
@@ -605,7 +578,7 @@ var CPCurrentToolTip,
 */
 - (void)replaceSubview:(CPView)aSubview with:(CPView)aView
 {
-    if (aSubview._superview != self)
+    if (aSubview._superview !== self)
         return;
 
     var index = [_subviews indexOfObjectIdenticalTo:aSubview];
@@ -769,7 +742,7 @@ var CPCurrentToolTip,
 }
 
 /*!
-    Called when the receiver is about to be remove one of its subviews.
+    Called when the receiver is about to remove one of its subviews.
     @param aView the view that will be removed
 */
 - (void)willRemoveSubview:(CPView)aView
@@ -840,7 +813,7 @@ var CPCurrentToolTip,
 
 /*!
     Sets the frame size of the receiver to the dimensions and origin of the provided rectangle in the coordinate system
-    of the superview. The method also posts an CPViewFrameDidChangeNotification to the notification
+    of the superview. The method also posts a CPViewFrameDidChangeNotification to the notification
     center if the receiver is configured to do so. If the frame is the same as the current frame, the method simply
     returns (and no notification is posted).
     @param aFrame the rectangle specifying the new origin and size  of the receiver
@@ -893,7 +866,7 @@ var CPCurrentToolTip,
 }
 
 /*!
-    Returns the center of the receiver's frame to the provided point. The point is defined in the superview's coordinate system.
+    Returns the center of the receiver's frame in the superview's coordinate system.
     @return CGPoint the center point of the receiver's frame
 */
 - (CGPoint)center
@@ -978,32 +951,90 @@ var CPCurrentToolTip,
         }
         else
         {
-            var images = [[_backgroundColor patternImage] imageSlices];
+            var images = [[_backgroundColor patternImage] imageSlices],
+                partIndex = 0;
 
             if (_backgroundType === BackgroundVerticalThreePartImage)
             {
+                var top = _DOMImageSizes[0] ? _DOMImageSizes[0].height : 0,
+                    bottom = _DOMImageSizes[2] ? _DOMImageSizes[2].height : 0;
+
                 // Make sure to repeat the top and bottom pieces horizontally if they're not the exact width needed.
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[0], size.width, _DOMImageSizes[0].height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[1], size.width, size.height - _DOMImageSizes[0].height - _DOMImageSizes[2].height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[2], size.width, _DOMImageSizes[2].height);
+                if (top)
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], size.width, top);
+                    partIndex++;
+                }
+                if (_DOMImageSizes[1])
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], size.width, size.height - top - bottom);
+                    partIndex++;
+                }
+                if (bottom)
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], size.width, bottom);
+                }
             }
             else if (_backgroundType === BackgroundHorizontalThreePartImage)
             {
+                var left = _DOMImageSizes[0] ? _DOMImageSizes[0].width : 0,
+                    right = _DOMImageSizes[2] ? _DOMImageSizes[2].width : 0;
+
                 // Make sure to repeat the left and right pieces vertically if they're not the exact height needed.
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[0], _DOMImageSizes[0].width, size.height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[1], size.width - _DOMImageSizes[0].width - _DOMImageSizes[2].width, size.height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[2], _DOMImageSizes[2].width, size.height);
+                if (left)
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], left, size.height);
+                    partIndex++;
+                }
+                if (_DOMImageSizes[1])
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], size.width - left - right, size.height);
+                    partIndex++;
+                }
+                if (right)
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], right, size.height);
+                }
             }
             else if (_backgroundType === BackgroundNinePartImage)
             {
-                var width = size.width - _DOMImageSizes[0].width - _DOMImageSizes[2].width,
-                    height = size.height - _DOMImageSizes[0].height - _DOMImageSizes[6].height;
+                var left = _DOMImageSizes[0] ? _DOMImageSizes[0].width : 0,
+                    right = _DOMImageSizes[2] ? _DOMImageSizes[2].width : 0,
+                    top = _DOMImageSizes[0] ? _DOMImageSizes[0].height : 0,
+                    bottom = _DOMImageSizes[6] ? _DOMImageSizes[6].height : 0,
+                    width = size.width - left - right,
+                    height = size.height - top - bottom;
 
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[1], width, _DOMImageSizes[0].height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[3], _DOMImageSizes[3].width, height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[4], width, height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[5], _DOMImageSizes[5].width, height);
-                CPDOMDisplayServerSetStyleSize(_DOMImageParts[7], width, _DOMImageSizes[7].height);
+                if (_DOMImageSizes[0])
+                    partIndex++;
+                if (_DOMImageSizes[1])
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], width, top);
+                    partIndex++;
+                }
+                if (_DOMImageSizes[2])
+                    partIndex++;
+                if (_DOMImageSizes[3])
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], _DOMImageSizes[3].width, height);
+                    partIndex++;
+                }
+                if (_DOMImageSizes[4])
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], width, height);
+                    partIndex++;
+                }
+                if (_DOMImageSizes[5])
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], _DOMImageSizes[5].width, height);
+                    partIndex++;
+                }
+                if (_DOMImageSizes[6])
+                    partIndex++;
+                if (_DOMImageSizes[7])
+                {
+                    CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], width, _DOMImageSizes[7].height);
+                }
             }
         }
     }
@@ -1497,9 +1528,9 @@ var CPCurrentToolTip,
     @param aPoint the point to test
     @return returns the containing view, or nil if the point is not contained
 */
-- (CPView)hitTest:(CPPoint)aPoint
+- (CPView)hitTest:(CGPoint)aPoint
 {
-    if (_isHidden || !_hitTests || !CPRectContainsPoint(_frame, aPoint))
+    if (_isHidden || !_hitTests || !_CGRectContainsPoint(_frame, aPoint))
         return nil;
 
     var view = nil,
@@ -1575,17 +1606,18 @@ var CPCurrentToolTip,
         colorHasAlpha = colorExists && [_backgroundColor alphaComponent] < 1.0,
         supportsRGBA = CPFeatureIsCompatible(CPCSSRGBAFeature),
         colorNeedsDOMElement = colorHasAlpha && !supportsRGBA,
-        amount = 0;
+        amount = 0,
+        slices;
 
     if ([patternImage isThreePartImage])
     {
         _backgroundType = [patternImage isVertical] ? BackgroundVerticalThreePartImage : BackgroundHorizontalThreePartImage;
-        amount = 3 - _DOMImageParts.length;
+        amount = 3;
     }
     else if ([patternImage isNinePartImage])
     {
         _backgroundType = BackgroundNinePartImage;
-        amount = 9 - _DOMImageParts.length;
+        amount = 9;
     }
     else
     {
@@ -1593,6 +1625,34 @@ var CPCurrentToolTip,
         amount = (colorNeedsDOMElement ? 1 : 0) - _DOMImageParts.length;
     }
 
+    // Prepare multipart image data and reduce number of required DOM parts by number of empty slices in the multipart image to save needless DOM elements.
+    if (_backgroundType === BackgroundVerticalThreePartImage || _backgroundType === BackgroundHorizontalThreePartImage || _backgroundType === BackgroundNinePartImage)
+    {
+        slices = [patternImage imageSlices];
+
+        // We won't need more divs than there are slices.
+        amount = MIN(amount, slices.length);
+
+        for (var i = 0, count = slices.length; i < count; i++)
+        {
+            var image = slices[i],
+                size = [image size];
+
+            if (!size || (size.width == 0 && size.height == 0))
+                size = nil;
+
+            _DOMImageSizes[i] = size;
+
+            // If there's a nil slice or a slice with no size, it won't need a div.
+            if (!size)
+                amount--;
+        }
+
+        // Now that we know how many divs we really need, compare that to number we actually have.
+        amount -= _DOMImageParts.length;
+    }
+
+    // Make sure the number of divs we have match our needs.
     if (amount > 0)
     {
         while (amount--)
@@ -1634,70 +1694,148 @@ var CPCurrentToolTip,
     }
     else
     {
-        var slices = [patternImage imageSlices],
-            count = MIN(_DOMImageParts.length, slices.length),
-            frameSize = _frame.size;
+        var frameSize = _frame.size,
+            partIndex = 0;
 
-        while (count--)
+        for (var i = 0; i < slices.length; i++)
         {
-            var image = slices[count],
-                size = _DOMImageSizes[count] = image ? [image size] : _CGSizeMakeZero();
+            var size = _DOMImageSizes[i];
 
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[count], size.width, size.height);
+            if (!size)
+                continue;
 
-            _DOMImageParts[count].style.background = image ? "url(\"" + [image filename] + "\")" : "";
+            var image = slices[i];
+
+            // // If image was nil, size should have been nil too.
+            // assert(image != nil);
+
+            CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], size.width, size.height);
+
+            _DOMImageParts[partIndex].style.background = "url(\"" + [image filename] + "\")";
 
             if (!supportsRGBA)
             {
                 if (CPFeatureIsCompatible(CPOpacityRequiresFilterFeature))
-                    try { _DOMImageParts[count].style.removeAttribute("filter") } catch (anException) { }
+                    try { _DOMImageParts[partIndex].style.removeAttribute("filter") } catch (anException) { }
                 else
-                    _DOMImageParts[count].style.opacity = 1.0;
+                    _DOMImageParts[partIndex].style.opacity = 1.0;
             }
+
+            partIndex++;
         }
 
         if (_backgroundType == BackgroundNinePartImage)
         {
-            var width = frameSize.width - _DOMImageSizes[0].width - _DOMImageSizes[2].width,
-                height = frameSize.height - _DOMImageSizes[0].height - _DOMImageSizes[6].height;
+            var left = _DOMImageSizes[0] ? _DOMImageSizes[0].width : 0,
+                right = _DOMImageSizes[2] ? _DOMImageSizes[2].width : 0,
+                top = _DOMImageSizes[0] ? _DOMImageSizes[0].height : 0,
+                bottom = _DOMImageSizes[6] ? _DOMImageSizes[6].height : 0,
+                width = frameSize.width - left - right,
+                height = frameSize.height - top - bottom;
 
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[1], width, _DOMImageSizes[0].height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[3], _DOMImageSizes[3].width, height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[4], width, height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[5], _DOMImageSizes[5].width, height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[7], width, _DOMImageSizes[7].height);
+            partIndex = 0;
 
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[0], NULL, 0.0, 0.0);
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[1], NULL, _DOMImageSizes[0].width, 0.0);
-            CPDOMDisplayServerSetStyleRightTop(_DOMImageParts[2], NULL, 0.0, 0.0);
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[3], NULL, 0.0, _DOMImageSizes[1].height);
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[4], NULL, _DOMImageSizes[0].width, _DOMImageSizes[0].height);
-            CPDOMDisplayServerSetStyleRightTop(_DOMImageParts[5], NULL, 0.0, _DOMImageSizes[1].height);
-            CPDOMDisplayServerSetStyleLeftBottom(_DOMImageParts[6], NULL, 0.0, 0.0);
-            CPDOMDisplayServerSetStyleLeftBottom(_DOMImageParts[7], NULL, _DOMImageSizes[6].width, 0.0);
-            CPDOMDisplayServerSetStyleRightBottom(_DOMImageParts[8], NULL, 0.0, 0.0);
+            if (_DOMImageSizes[0])
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+                partIndex++;
+            }
+            if (_DOMImageSizes[1])
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, left, 0.0);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], width, _DOMImageSizes[1].height);
+                partIndex++;
+            }
+            if (_DOMImageSizes[2])
+            {
+                CPDOMDisplayServerSetStyleRightTop(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+                partIndex++;
+            }
+            if (_DOMImageSizes[3])
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, 0.0, top);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], _DOMImageSizes[3].width, height);
+                partIndex++;
+            }
+            if (_DOMImageSizes[4])
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, left, top);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], width, height);
+                partIndex++;
+            }
+            if (_DOMImageSizes[5])
+            {
+                CPDOMDisplayServerSetStyleRightTop(_DOMImageParts[partIndex], NULL, 0.0, top);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], _DOMImageSizes[5].width, height);
+                partIndex++;
+            }
+            if (_DOMImageSizes[6])
+            {
+                CPDOMDisplayServerSetStyleLeftBottom(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+                partIndex++;
+            }
+            if (_DOMImageSizes[7])
+            {
+                CPDOMDisplayServerSetStyleLeftBottom(_DOMImageParts[partIndex], NULL, left, 0.0);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], width, _DOMImageSizes[7].height);
+                partIndex++;
+            }
+            if (_DOMImageSizes[8])
+            {
+                CPDOMDisplayServerSetStyleRightBottom(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+            }
         }
         else if (_backgroundType == BackgroundVerticalThreePartImage)
         {
-            // Make sure to repeat the top and bottom pieces horizontally if they're not the exact width needed.
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[0], frameSize.width, _DOMImageSizes[0].height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[1], frameSize.width, frameSize.height - _DOMImageSizes[0].height - _DOMImageSizes[2].height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[2], frameSize.width, _DOMImageSizes[2].height);
+            var top = _DOMImageSizes[0] ? _DOMImageSizes[0].height : 0,
+                bottom = _DOMImageSizes[2] ? _DOMImageSizes[2].height : 0;
 
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[0], NULL, 0.0, 0.0);
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[1], NULL, 0.0, _DOMImageSizes[0].height);
-            CPDOMDisplayServerSetStyleLeftBottom(_DOMImageParts[2], NULL, 0.0, 0.0);
+            partIndex = 0;
+
+            // Make sure to repeat the top and bottom pieces horizontally if they're not the exact width needed.
+            if (top)
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], frameSize.width, top);
+                partIndex++;
+            }
+            if (_DOMImageSizes[1])
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, 0.0, top);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], frameSize.width, frameSize.height - top - bottom);
+                partIndex++;
+            }
+            if (bottom)
+            {
+                CPDOMDisplayServerSetStyleLeftBottom(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], frameSize.width, bottom);
+            }
         }
         else if (_backgroundType == BackgroundHorizontalThreePartImage)
         {
-            // Make sure to repeat the left and right pieces vertically if they're not the exact height needed.
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[0], _DOMImageSizes[0].width, frameSize.height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[1], frameSize.width - _DOMImageSizes[0].width - _DOMImageSizes[2].width, frameSize.height);
-            CPDOMDisplayServerSetStyleSize(_DOMImageParts[2], _DOMImageSizes[2].width, frameSize.height);
+            var left = _DOMImageSizes[0] ? _DOMImageSizes[0].width : 0,
+                right = _DOMImageSizes[2] ? _DOMImageSizes[2].width : 0;
 
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[0], NULL, 0.0, 0.0);
-            CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[1], NULL, _DOMImageSizes[0].width, 0.0);
-            CPDOMDisplayServerSetStyleRightTop(_DOMImageParts[2], NULL, 0.0, 0.0);
+            partIndex = 0;
+
+            // Make sure to repeat the left and right pieces vertically if they're not the exact height needed.
+            if (left)
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], left, frameSize.height);
+                partIndex++;
+            }
+            if (_DOMImageSizes[1])
+            {
+                CPDOMDisplayServerSetStyleLeftTop(_DOMImageParts[partIndex], NULL, left, 0.0);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], frameSize.width - left - right, frameSize.height);
+                partIndex++;
+            }
+            if (right)
+            {
+                CPDOMDisplayServerSetStyleRightTop(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
+                CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], right, frameSize.height);
+            }
         }
     }
 #endif
@@ -1911,7 +2049,7 @@ setBoundsOrigin:
     @param aSourceObject the drag operation controller
     @param slideBack Whether the view should 'slide back' if the drag is rejected
 */
-- (void)dragView:(CPView)aView at:(CPPoint)aLocation offset:(CPSize)mouseOffset event:(CPEvent)anEvent pasteboard:(CPPasteboard)aPasteboard source:(id)aSourceObject slideBack:(BOOL)slideBack
+- (void)dragView:(CPView)aView at:(CGPoint)aLocation offset:(CGSize)mouseOffset event:(CPEvent)anEvent pasteboard:(CPPasteboard)aPasteboard source:(id)aSourceObject slideBack:(BOOL)slideBack
 {
     [_window dragView:aView at:[self convertPoint:aLocation toView:nil] offset:mouseOffset event:anEvent pasteboard:aPasteboard source:aSourceObject slideBack:slideBack];
 }
@@ -1961,7 +2099,7 @@ setBoundsOrigin:
     Draws the receiver into \c aRect. This method should be overridden by subclasses.
     @param aRect the area that should be drawn into
 */
-- (void)drawRect:(CPRect)aRect
+- (void)drawRect:(CGRect)aRect
 {
 
 }
@@ -1981,7 +2119,7 @@ setBoundsOrigin:
     Marks the area denoted by \c aRect as dirty, and initiates a redraw on it.
     @param aRect the area that needs to be redrawn
 */
-- (void)setNeedsDisplayInRect:(CPRect)aRect
+- (void)setNeedsDisplayInRect:(CGRect)aRect
 {
     if (!(_viewClassFlags & CPViewHasCustomDrawRect))
         return;
@@ -2029,7 +2167,7 @@ setBoundsOrigin:
     Draws the receiver into the area defined by \c aRect.
     @param aRect the area to be drawn
 */
-- (void)displayRect:(CPRect)aRect
+- (void)displayRect:(CGRect)aRect
 {
     [self viewWillDraw];
 
@@ -2066,6 +2204,7 @@ setBoundsOrigin:
     {
         var graphicsPort = CGBitmapGraphicsContextCreate();
 
+#if PLATFORM(DOM)
         _DOMContentsElement = graphicsPort.DOMElement;
 
         _DOMContentsElement.style.zIndex = -100;
@@ -2082,7 +2221,11 @@ setBoundsOrigin:
         _DOMContentsElement.style.width = ROUND(_CGRectGetWidth(_frame)) + "px";
         _DOMContentsElement.style.height = ROUND(_CGRectGetHeight(_frame)) + "px";
 
-#if PLATFORM(DOM)
+        // The performance implications of this aren't clear, but without this subviews might not be redrawn when this
+        // view moves.
+        if (CPPlatformHasBug(CPCanvasParentDrawErrorsOnMovementBug))
+            _DOMElement.style.webkitTransform = 'translateX(0)';
+
         CPDOMDisplayServerAppendChild(_DOMElement, _DOMContentsElement);
 #endif
         _graphicsContext = [CPGraphicsContext graphicsContextWithGraphicsPort:graphicsPort flipped:YES];
@@ -2893,6 +3036,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         [self _setupToolTipHandlers];
         _toolTip = [aCoder decodeObjectForKey:CPViewToolTipKey];
+
         if (_toolTip)
             [self _installToolTipEventHandlers];
 
@@ -3129,5 +3273,3 @@ var _CPViewGetTransform = function(/*CPView*/ fromView, /*CPView */ toView)
 
     return transform;
 };
-
-

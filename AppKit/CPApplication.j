@@ -20,6 +20,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#import "../Foundation/CPRange.h"
+
 @import <Foundation/CPBundle.j>
 
 @import "CPCompatibility.j"
@@ -31,9 +33,13 @@
 @import "CPCibLoading.j"
 @import "CPPlatform.j"
 
+@class CPCursor
+@class CPColorPanel
+
 
 var CPMainCibFile               = @"CPMainCibFile",
-    CPMainCibFileHumanFriendly  = @"Main cib file base name";
+    CPMainCibFileHumanFriendly  = @"Main cib file base name",
+    CPEventModifierFlags = 0;
 
 CPApp = nil;
 
@@ -83,6 +89,7 @@ CPRunContinuesResponse  = -1002;
     CPArray                 _eventListeners;
 
     CPEvent                 _currentEvent;
+    CPWindow                _lastMouseMoveWindow;
 
     CPArray                 _windows;
     CPWindow                _keyWindow;
@@ -138,9 +145,7 @@ CPRunContinuesResponse  = -1002;
     {
         _eventListeners = [];
 
-        _windows = [];
-
-        [_windows addObject:nil];
+        _windows = [[CPNull null]];
     }
 
     return self;
@@ -249,12 +254,17 @@ CPRunContinuesResponse  = -1002;
         _documentController = [CPDocumentController sharedDocumentController];
 
     var needsUntitled = !!_documentController,
-        URLStrings = window.cpOpeningURLStrings && window.cpOpeningURLStrings(),
-        index = 0,
+        URLStrings = nil;
+
+#if PLATFORM(DOM)
+    URLStrings = window.cpOpeningURLStrings && window.cpOpeningURLStrings();
+#endif
+
+    var index = 0,
         count = [URLStrings count];
 
     for (; index < count; ++index)
-        needsUntitled = ![self _openURL:[CPURL URLWithString:URLStrings[index]]] || needsUntitled;
+        needsUntitled = ![self _openURL:[CPURL URLWithString:URLStrings[index]]] && needsUntitled;
 
     if (needsUntitled && [_delegate respondsToSelector:@selector(applicationShouldOpenUntitledFile:)])
         needsUntitled = [_delegate applicationShouldOpenUntitledFile:self];
@@ -373,7 +383,7 @@ CPRunContinuesResponse  = -1002;
             standardPath = [[CPBundle bundleForClass:[self class]] pathForResource:@"standardApplicationIcon.png"];
 
         // FIXME move this into the CIB eventually
-        [applicationLabel setFont:[CPFont boldSystemFontOfSize:14.0]];
+        [applicationLabel setFont:[CPFont boldSystemFontOfSize:[CPFont systemFontSize] + 2]];
         [applicationLabel setAlignment:CPCenterTextAlignment];
         [versionLabel setAlignment:CPCenterTextAlignment];
         [copyrightLabel setAlignment:CPCenterTextAlignment];
@@ -400,7 +410,7 @@ CPRunContinuesResponse  = -1002;
 }
 
 
-- (void)_documentController:(NSDocumentController *)docController didCloseAll:(BOOL)didCloseAll context:(Object)info
+- (void)_documentController:(CPDocumentController)docController didCloseAll:(BOOL)didCloseAll context:(Object)info
 {
     // callback method for terminate:
     if (didCloseAll)
@@ -575,28 +585,37 @@ CPRunContinuesResponse  = -1002;
 - (void)sendEvent:(CPEvent)anEvent
 {
     _currentEvent = anEvent;
+    CPEventModifierFlags = [anEvent modifierFlags];
 
-    var willPropagate = [[[anEvent window] platformWindow] _willPropagateCurrentDOMEvent];
+    var theWindow = [anEvent window];
+
+#if PLATFORM(DOM)
+    var willPropagate = [[theWindow platformWindow] _willPropagateCurrentDOMEvent];
 
     // temporarily pretend we won't propagate the event. we'll restore the saved value later
     // we do this outside the if so that changes user code might make in _handleKeyEquiv. are preserved
-    [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:NO];
+    [[theWindow platformWindow] _propagateCurrentDOMEvent:NO];
+#endif
 
     // Check if this is a candidate for key equivalent...
     if ([anEvent _couldBeKeyEquivalent] && [self _handleKeyEquivalent:anEvent])
     {
+#if PLATFORM(DOM)
         var characters = [anEvent characters],
             modifierFlags = [anEvent modifierFlags];
 
         // Unconditionally propagate on these keys to solve browser copy paste bugs
         if ((characters == "c" || characters == "x" || characters == "v") && (modifierFlags & CPPlatformActionKeyMask))
-            [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:YES];
+            [[theWindow platformWindow] _propagateCurrentDOMEvent:YES];
+#endif
 
         return;
     }
 
+#if PLATFORM(DOM)
     // if we make it this far, then restore the original willPropagate value
-    [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:willPropagate];
+    [[theWindow platformWindow] _propagateCurrentDOMEvent:willPropagate];
+#endif
 
     if (_eventListeners.length)
     {
@@ -606,7 +625,16 @@ CPRunContinuesResponse  = -1002;
         return;
     }
 
-    [[anEvent window] sendEvent:anEvent];
+    if ([anEvent type] == CPMouseMoved)
+    {
+        if (theWindow !== _lastMouseMoveWindow)
+            [_lastMouseMoveWindow _mouseExitedResizeRect];
+
+        _lastMouseMoveWindow = theWindow;
+    }
+
+    if (theWindow)
+        [theWindow sendEvent:anEvent];
 }
 
 /*!
@@ -642,6 +670,10 @@ CPRunContinuesResponse  = -1002;
 */
 - (CPWindow)windowWithWindowNumber:(int)aWindowNumber
 {
+    // Never allow _windows[0] to be returned - it's an internal CPNull placeholder.
+    if (!aWindowNumber)
+        return nil;
+
     return _windows[aWindowNumber];
 }
 
@@ -650,7 +682,8 @@ CPRunContinuesResponse  = -1002;
 */
 - (CPArray)windows
 {
-    return _windows;
+    // Return all windows, but not the CPNull placeholder in _windows[0].
+    return [_windows subarrayWithRange:_CPMakeRange(1, [_windows count] - 1)];
 }
 
 /*!
@@ -925,15 +958,22 @@ CPRunContinuesResponse  = -1002;
 */
 - (void)beginSheet:(CPWindow)aSheet modalForWindow:(CPWindow)aWindow modalDelegate:(id)aModalDelegate didEndSelector:(SEL)aDidEndSelector contextInfo:(id)aContextInfo
 {
-    var styleMask = [aSheet styleMask];
-    if (!(styleMask & CPDocModalWindowMask))
+    if ([aWindow isSheet])
     {
-        [CPException raise:CPInternalInconsistencyException reason:@"Currently only CPDocModalWindowMask style mask is supported for attached sheets"];
+        [CPException raise:CPInternalInconsistencyException reason:@"The target window of beginSheet: cannot be a sheet"];
         return;
     }
 
-    [aWindow orderFront:self];
-    [aSheet setPlatformWindow:[aWindow platformWindow]];
+    [aSheet._windowView _enableSheet:YES];
+
+    // -dw- if a sheet is already visible, we skip this since it serves no purpose and causes
+    // orderOut: to be called on the sheet, which is not what we want.
+    if (![aWindow isVisible])
+    {
+        [aWindow orderFront:self];
+        [aSheet setPlatformWindow:[aWindow platformWindow]];
+    }
+
     [aWindow _attachSheet:aSheet modalDelegate:aModalDelegate didEndSelector:aDidEndSelector contextInfo:aContextInfo];
 }
 
@@ -962,7 +1002,7 @@ CPRunContinuesResponse  = -1002;
         if (context != nil && context["sheet"] === sheet)
         {
             context["returnCode"] = returnCode;
-            [aWindow _detachSheetWindow];
+            [aWindow _endSheet];
             return;
         }
     }
@@ -995,7 +1035,8 @@ CPRunContinuesResponse  = -1002;
 */
 - (CPArray)arguments
 {
-    if (_fullArgsString !== window.location.hash)
+    // FIXME This should probably not access the window object #if !PLATFORM(DOM), but the unit tests rely on it.
+    if (window && window.location && _fullArgsString !== window.location.hash)
         [self _reloadArguments];
 
     return _args;
@@ -1022,8 +1063,9 @@ CPRunContinuesResponse  = -1002;
     if (!args || args.length == 0)
     {
         _args = [];
-        window.location.hash = @"#";
-
+        // Don't use if PLATFORM(DOM) here - the unit test fakes window.location so we should play along.
+        if (window && window.location)
+            window.location.hash = @"#";
         return;
     }
 
@@ -1038,12 +1080,15 @@ CPRunContinuesResponse  = -1002;
 
     var hash = [toEncode componentsJoinedByString:@"/"];
 
-    window.location.hash = @"#" + hash;
+    // Don't use if PLATFORM(DOM) here - the unit test fakes window.location so we should play along.
+    if (window && window.location)
+        window.location.hash = @"#" + hash;
 }
 
 - (void)_reloadArguments
 {
-    _fullArgsString = window.location.hash;
+    // FIXME This should probably not access the window object #if !PLATFORM(DOM), but the unit tests rely on it.
+    _fullArgsString = (window && window.location) ? window.location.hash : "";
 
     if (_fullArgsString.length)
     {
@@ -1157,7 +1202,7 @@ CPRunContinuesResponse  = -1002;
 
 + (CPString)defaultThemeName
 {
-    return ([[CPBundle mainBundle] objectForInfoDictionaryKey:"CPDefaultTheme"] || @"Aristo");
+    return ([[CPBundle mainBundle] objectForInfoDictionaryKey:"CPDefaultTheme"] || @"Aristo2");
 }
 
 @end
@@ -1180,7 +1225,14 @@ _CPRunModalLoop = function(anEvent)
     var theWindow = [anEvent window],
         modalSession = CPApp._currentSession;
 
-    if (theWindow == modalSession._window || [theWindow worksWhenModal])
+    // The special case for popovers here is not clear. In Cocoa the popover window does not respond YES to worksWhenModal,
+    // yet it works when there is a modal window. Maybe it starts its own modal session, but interaction with the original
+    // modal window seems to continue working as well. Regardless of correctness, this solution beats popovers not working
+    // at all from sheets.
+    if (theWindow == modalSession._window ||
+        [theWindow worksWhenModal] ||
+        [theWindow attachedSheet] == modalSession._window || // -dw- allow modal parent of sheet to be repositioned
+        ([theWindow isKindOfClass:_CPAttachedWindow] && [[theWindow targetView] window] === modalSession._window))
         [theWindow sendEvent:anEvent];
 };
 
@@ -1197,7 +1249,17 @@ function CPApplicationMain(args, namedArgs)
 #if PLATFORM(DOM)
     // hook to allow recorder, etc to manipulate things before starting AppKit
     if (window.parent !== window && typeof window.parent._childAppIsStarting === "function")
-        window.parent._childAppIsStarting(window);
+    {
+        try
+        {
+            window.parent._childAppIsStarting(window);
+        }
+        catch(err)
+        {
+            // This could happen if we're in an iframe without access to the parent frame.
+            CPLog.warn("Failed to call parent frame's _childAppIsStarting().");
+        }
+    }
 #endif
 
     var mainBundle = [CPBundle mainBundle],
@@ -1254,7 +1316,7 @@ var _CPAppBootstrapperActions = nil;
     var defaultThemeName = [CPApplication defaultThemeName],
         themeURL = nil;
 
-    if (defaultThemeName === @"Aristo")
+    if (defaultThemeName === @"Aristo" || defaultThemeName === @"Aristo2")
         themeURL = [[CPBundle bundleForClass:[CPApplication class]] pathForResource:defaultThemeName + @".blend"];
     else
         themeURL = [[CPBundle mainBundle] pathForResource:defaultThemeName + @".blend"];
@@ -1299,26 +1361,25 @@ var _CPAppBootstrapperActions = nil;
     // FIXME: We should implement autoenabling.
     [mainMenu setAutoenablesItems:NO];
 
-    var bundle = [CPBundle bundleForClass:[CPApplication class]],
-        newMenuItem = [[CPMenuItem alloc] initWithTitle:@"New" action:@selector(newDocument:) keyEquivalent:@"n"];
+    var newMenuItem = [[CPMenuItem alloc] initWithTitle:@"New" action:@selector(newDocument:) keyEquivalent:@"n"];
 
-    [newMenuItem setImage:[[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPApplication/New.png"] size:CGSizeMake(16.0, 16.0)]];
-    [newMenuItem setAlternateImage:[[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPApplication/NewHighlighted.png"] size:CGSizeMake(16.0, 16.0)]];
+    [newMenuItem setImage:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-general-icon-new" forClass:_CPMenuView]];
+    [newMenuItem setAlternateImage:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-general-icon-new" inState:CPThemeStateHighlighted forClass:_CPMenuView]];
 
     [mainMenu addItem:newMenuItem];
 
     var openMenuItem = [[CPMenuItem alloc] initWithTitle:@"Open" action:@selector(openDocument:) keyEquivalent:@"o"];
 
-    [openMenuItem setImage:[[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPApplication/Open.png"] size:CGSizeMake(16.0, 16.0)]];
-    [openMenuItem setAlternateImage:[[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPApplication/OpenHighlighted.png"] size:CGSizeMake(16.0, 16.0)]];
+    [openMenuItem setImage:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-general-icon-open" forClass:_CPMenuView]];
+    [openMenuItem setAlternateImage:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-general-icon-open" inState:CPThemeStateHighlighted forClass:_CPMenuView]];
 
     [mainMenu addItem:openMenuItem];
 
     var saveMenu = [[CPMenu alloc] initWithTitle:@"Save"],
         saveMenuItem = [[CPMenuItem alloc] initWithTitle:@"Save" action:@selector(saveDocument:) keyEquivalent:nil];
 
-    [saveMenuItem setImage:[[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPApplication/Save.png"] size:CGSizeMake(16.0, 16.0)]];
-    [saveMenuItem setAlternateImage:[[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPApplication/SaveHighlighted.png"] size:CGSizeMake(16.0, 16.0)]];
+    [saveMenuItem setImage:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-general-icon-save" forClass:_CPMenuView]];
+    [saveMenuItem setAlternateImage:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-general-icon-save" inState:CPThemeStateHighlighted forClass:_CPMenuView]];
 
     [saveMenu addItem:[[CPMenuItem alloc] initWithTitle:@"Save" action:@selector(saveDocument:) keyEquivalent:@"s"]];
     [saveMenu addItem:[[CPMenuItem alloc] initWithTitle:@"Save As" action:@selector(saveDocumentAs:) keyEquivalent:nil]];
@@ -1366,6 +1427,19 @@ var _CPAppBootstrapperActions = nil;
 + (void)reset
 {
     _CPAppBootstrapperActions = nil;
+}
+
+@end
+
+
+@implementation CPEvent (CPApplicationModifierFlags)
+
+/*!
+    Returns the currently pressed modifier flags.
+*/
++ (unsigned)modifierFlags
+{
+    return CPEventModifierFlags;
 }
 
 @end

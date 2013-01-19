@@ -26,23 +26,26 @@
 @import "CPControl.j"
 @import "CPStringDrawing.j"
 
+@global CPWindowAbove
+@global CPWindowBelow
 
 /* @group CPBezelStyle */
 
-CPRoundedBezelStyle             = 1;
-CPRegularSquareBezelStyle       = 2;
+                                       // IB style
+CPRoundedBezelStyle             = 1;   // Push
+CPRegularSquareBezelStyle       = 2;   // Bevel
 CPThickSquareBezelStyle         = 3;
 CPThickerSquareBezelStyle       = 4;
-CPDisclosureBezelStyle          = 5;
-CPShadowlessSquareBezelStyle    = 6;
-CPCircularBezelStyle            = 7;
-CPTexturedSquareBezelStyle      = 8;
-CPHelpButtonBezelStyle          = 9;
-CPSmallSquareBezelStyle         = 10;
-CPTexturedRoundedBezelStyle     = 11;
-CPRoundRectBezelStyle           = 12;
-CPRecessedBezelStyle            = 13;
-CPRoundedDisclosureBezelStyle   = 14;
+CPDisclosureBezelStyle          = 5;   // Disclosure triangle
+CPShadowlessSquareBezelStyle    = 6;   // Square
+CPCircularBezelStyle            = 7;   // Round
+CPTexturedSquareBezelStyle      = 8;   // Textured
+CPHelpButtonBezelStyle          = 9;   // Help
+CPSmallSquareBezelStyle         = 10;  // Gradient
+CPTexturedRoundedBezelStyle     = 11;  // Round Textured
+CPRoundRectBezelStyle           = 12;  // Round Rect
+CPRecessedBezelStyle            = 13;  // Recessed
+CPRoundedDisclosureBezelStyle   = 14;  // Disclosure
 CPHUDBezelStyle                 = -1;
 
 
@@ -78,7 +81,7 @@ var CPButtonBezelStyleStateMap = [CPDictionary dictionaryWithObjects:[CPButtonSt
                                                              forKeys:[CPRoundedBezelStyle, CPRoundRectBezelStyle]];
 
 
-CPButtonDefaultHeight = 24.0;
+CPButtonDefaultHeight = 25.0;
 CPButtonImageOffset   = 3.0;
 
 /*!
@@ -111,6 +114,8 @@ CPButtonImageOffset   = 3.0;
     CPTimer             _continuousTimer;
     float               _periodicDelay;
     float               _periodicInterval;
+
+    BOOL                _isTracking;
 }
 
 + (id)buttonWithTitle:(CPString)aTitle
@@ -177,7 +182,7 @@ CPButtonImageOffset   = 3.0;
     _periodicInterval   = 0.05;
     _periodicDelay      = 0.5;
 
-    _imageDimsWhenDisabled = YES;
+    [self setButtonType:CPMomentaryPushInButton];
 }
 
 // Setting the state
@@ -215,17 +220,13 @@ CPButtonImageOffset   = 3.0;
 {
     if (!anObjectValue || anObjectValue === @"" || ([anObjectValue intValue] === 0))
         anObjectValue = CPOffState;
-
     else if (![anObjectValue isKindOfClass:[CPNumber class]])
         anObjectValue = CPOnState;
-
     else if (anObjectValue >= CPOnState)
         anObjectValue = CPOnState
-
     else if (anObjectValue < CPOffState)
         if ([self allowsMixedState])
             anObjectValue = CPMixedState;
-
         else
             anObjectValue = CPOnState;
 
@@ -233,15 +234,26 @@ CPButtonImageOffset   = 3.0;
 
     switch ([self objectValue])
     {
-        case CPMixedState:  [self unsetThemeState:CPThemeStateSelected];
-                            [self setThemeState:CPButtonStateMixed];
-                            break;
+        case CPMixedState:
+            [self unsetThemeState:CPThemeStateSelected];
+            [self setThemeState:CPButtonStateMixed];
+            if (_showsStateBy & (CPChangeGrayCellMask | CPChangeBackgroundCellMask))
+                [self setThemeState:CPThemeStateHighlighted];
+            else
+                [self unsetThemeState:CPThemeStateHighlighted];
+            break;
 
-        case CPOnState:     [self unsetThemeState:CPButtonStateMixed];
-                            [self setThemeState:CPThemeStateSelected];
-                            break;
+        case CPOnState:
+            [self unsetThemeState:CPButtonStateMixed];
+            [self setThemeState:CPThemeStateSelected];
+            if (_showsStateBy & (CPChangeGrayCellMask | CPChangeBackgroundCellMask))
+                [self setThemeState:CPThemeStateHighlighted];
+            else
+                [self unsetThemeState:CPThemeStateHighlighted];
+            break;
 
-        case CPOffState:    [self unsetThemeState:CPThemeStateSelected | CPButtonStateMixed];
+        case CPOffState:
+            [self unsetThemeState:CPThemeStateSelected | CPButtonStateMixed | CPThemeStateHighlighted];
     }
 }
 
@@ -376,10 +388,18 @@ CPButtonImageOffset   = 3.0;
 
 - (void)setShowsStateBy:(CPInteger)aMask
 {
+    // CPPushInCellMask cannot be set for showsStateBy.
+    aMask &= ~CPPushInCellMask;
+
     if (_showsStateBy === aMask)
         return;
 
     _showsStateBy = aMask;
+
+    if (_showsStateBy & (CPChangeGrayCellMask | CPChangeBackgroundCellMask) && [self state] != CPOffState)
+        [self setThemeState:CPThemeStateHighlighted];
+    else
+        [self unsetThemeState:CPThemeStateHighlighted];
 
     [self setNeedsDisplay:YES];
     [self setNeedsLayout];
@@ -404,15 +424,20 @@ CPButtonImageOffset   = 3.0;
     }
 }
 
+- (CPInteger)highlightsBy
+{
+    return _highlightsBy;
+}
+
 - (void)setButtonType:(CPButtonType)aButtonType
 {
     switch (aButtonType)
     {
-        case CPMomentaryLightButton:    [self setHighlightsBy:CPChangeBackgroundCellMask];
+        case CPMomentaryLightButton:    [self setHighlightsBy:CPChangeGrayCellMask | CPChangeBackgroundCellMask];
                                         [self setShowsStateBy:CPNoCellMask];
                                         break;
 
-        case CPMomentaryPushInButton:   [self setHighlightsBy:CPPushInCellMask | CPChangeGrayCellMask];
+        case CPMomentaryPushInButton:   [self setHighlightsBy:CPPushInCellMask | CPChangeGrayCellMask | CPChangeBackgroundCellMask];
                                         [self setShowsStateBy:CPNoCellMask];
                                         break;
 
@@ -420,12 +445,12 @@ CPButtonImageOffset   = 3.0;
                                         [self setShowsStateBy:CPNoCellMask];
                                         break;
 
-        case CPPushOnPushOffButton:     [self setHighlightsBy:CPPushInCellMask | CPChangeGrayCellMask];
-                                        [self setShowsStateBy:CPChangeBackgroundCellMask];
+        case CPPushOnPushOffButton:     [self setHighlightsBy:CPPushInCellMask | CPChangeGrayCellMask | CPChangeBackgroundCellMask];
+                                        [self setShowsStateBy:CPChangeBackgroundCellMask | CPChangeGrayCellMask];
                                         break;
 
-        case CPOnOffButton:             [self setHighlightsBy:CPChangeBackgroundCellMask];
-                                        [self setShowsStateBy:CPChangeBackgroundCellMask];
+        case CPOnOffButton:             [self setHighlightsBy:CPChangeGrayCellMask | CPChangeBackgroundCellMask];
+                                        [self setShowsStateBy:CPChangeGrayCellMask | CPChangeBackgroundCellMask];
                                         break;
 
         case CPToggleButton:            [self setHighlightsBy:CPPushInCellMask | CPContentsCellMask];
@@ -496,20 +521,43 @@ CPButtonImageOffset   = 3.0;
 
 - (BOOL)startTrackingAt:(CGPoint)aPoint
 {
-    [self highlight:YES];
+    _isTracking = YES;
 
-    return [super startTrackingAt:aPoint];
+    var startedTracking = [super startTrackingAt:aPoint];
+    if (_highlightsBy & (CPPushInCellMask | CPChangeGrayCellMask))
+    {
+        if (_showsStateBy & (CPChangeGrayCellMask | CPChangeBackgroundCellMask))
+            [self highlight:[self state] == CPOffState];
+        else
+            [self highlight:YES];
+    }
+    else
+    {
+        if (_showsStateBy & (CPChangeGrayCellMask | CPChangeBackgroundCellMask))
+            [self highlight:[self state] != CPOffState];
+        else
+            [self highlight:NO];
+    }
+    return startedTracking;
 }
 
 - (void)stopTracking:(CGPoint)lastPoint at:(CGPoint)aPoint mouseIsUp:(BOOL)mouseIsUp
 {
-    [self highlight:NO];
-    [self invalidateTimers];
-
-    [super stopTracking:lastPoint at:aPoint mouseIsUp:mouseIsUp];
+    _isTracking = NO;
 
     if (mouseIsUp && CGRectContainsPoint([self bounds], aPoint))
         [self setNextState];
+    else
+    {
+        if (_showsStateBy & (CPChangeGrayCellMask | CPChangeBackgroundCellMask))
+            [self highlight:[self state] != CPOffState];
+        else
+            [self highlight:NO];
+    }
+
+    [self setNeedsLayout];
+    [self setNeedsDisplay:YES];
+    [self invalidateTimers];
 }
 
 - (void)invalidateTimers
@@ -531,35 +579,18 @@ CPButtonImageOffset   = 3.0;
 {
     var contentInset = [self currentValueForThemeAttribute:@"content-inset"];
 
-    if (_CGInsetIsEmpty(contentInset))
-        return bounds;
-
-    bounds = _CGRectMakeCopy(bounds);
-    bounds.origin.x += contentInset.left;
-    bounds.origin.y += contentInset.top;
-    bounds.size.width -= contentInset.left + contentInset.right;
-    bounds.size.height -= contentInset.top + contentInset.bottom;
-
-    return bounds;
+    return _CGRectInsetByInset(bounds, contentInset);
 }
 
 - (CGRect)bezelRectForBounds:(CGRect)bounds
 {
+    // Is this necessary? The theme itself can just change its inset to a zero inset when !CPThemeStateBordered.
     if (![self isBordered])
-        return _CGRectMakeZero();
+        return bounds;
 
     var bezelInset = [self currentValueForThemeAttribute:@"bezel-inset"];
 
-    if (_CGInsetIsEmpty(bezelInset))
-        return bounds;
-
-    bounds = _CGRectMakeCopy(bounds);
-    bounds.origin.x += bezelInset.left;
-    bounds.origin.y += bezelInset.top;
-    bounds.size.width -= bezelInset.left + bezelInset.right;
-    bounds.size.height -= bezelInset.top + bezelInset.bottom;
-
-    return bounds;
+    return _CGRectInsetByInset(bounds, bezelInset);
 }
 
 - (CGSize)_minimumFrameSize
@@ -643,8 +674,51 @@ CPButtonImageOffset   = 3.0;
 
     if (contentView)
     {
-        [contentView setText:([self hasThemeState:CPThemeStateHighlighted] && _alternateTitle) ? _alternateTitle : _title];
-        [contentView setImage:[self currentValueForThemeAttribute:@"image"]];
+        var title = nil,
+            image = nil;
+
+        if (_isTracking)
+        {
+            if (_highlightsBy & CPContentsCellMask)
+            {
+                if (_showsStateBy & CPContentsCellMask)
+                {
+                    title = ([self state] == CPOffState && _alternateTitle) ? _alternateTitle : _title;
+                    image = ([self state] == CPOffState && [self alternateImage]) ? [self alternateImage] : [self image];
+                }
+                else
+                {
+                    title = [self alternateTitle];
+                    image = [self alternateImage];
+                }
+            }
+            else if (_showsStateBy & CPContentsCellMask)
+            {
+                title = ([self state] != CPOffState && _alternateTitle) ? _alternateTitle : _title;
+                image = ([self state] != CPOffState && [self alternateImage]) ? [self alternateImage] : [self image];
+            }
+            else
+            {
+                title = _title;
+                image = [self image];
+            }
+        }
+        else
+        {
+            if (_showsStateBy & CPContentsCellMask)
+            {
+                title = ([self state] != CPOffState && _alternateTitle) ? _alternateTitle : _title;
+                image = ([self state] != CPOffState && [self alternateImage]) ? [self alternateImage] : [self image];
+            }
+            else
+            {
+                title = _title;
+                image = [self image];
+            }
+        }
+
+        [contentView setText:title];
+        [contentView setImage:image];
         [contentView setImageOffset:[self currentValueForThemeAttribute:@"image-offset"]];
 
         [contentView setFont:[self currentValueForThemeAttribute:@"font"]];
@@ -743,7 +817,49 @@ CPButtonImageOffset   = 3.0;
         return NO;
 
     [self performClick:nil];
+
     return YES;
+}
+
+/*!
+    Perform a click on the receiver.
+
+    @param sender - The sender object
+*/
+- (void)performClick:(id)sender
+{
+    // This is slightly different from [super performClick:] in that the highlight behaviour is dependent on
+    // highlightsBy and showsStateBy.
+    if (![self isEnabled])
+        return;
+
+    [self setState:[self nextState]];
+
+    var shouldHighlight = NO;
+
+    if (_highlightsBy & (CPPushInCellMask | CPChangeGrayCellMask))
+    {
+        if (_showsStateBy & (CPChangeGrayCellMask | CPChangeBackgroundCellMask))
+            shouldHighlight = [self state] == CPOffState;
+        else
+            shouldHighlight = YES;
+    }
+
+    [self highlight:shouldHighlight];
+
+    try
+    {
+        [self sendAction:[self action] to:[self target]];
+    }
+    catch (e)
+    {
+        throw e;
+    }
+    finally
+    {
+        if (shouldHighlight)
+            [CPTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(unhighlightButtonTimerDidFinish:) userInfo:nil repeats:NO];
+    }
 }
 
 @end
@@ -786,7 +902,9 @@ var CPButtonImageKey                    = @"CPButtonImageKey",
     CPButtonKeyEquivalentKey            = @"CPButtonKeyEquivalentKey",
     CPButtonKeyEquivalentMaskKey        = @"CPButtonKeyEquivalentMaskKey",
     CPButtonPeriodicDelayKey            = @"CPButtonPeriodicDelayKey",
-    CPButtonPeriodicIntervalKey         = @"CPButtonPeriodicIntervalKey";
+    CPButtonPeriodicIntervalKey         = @"CPButtonPeriodicIntervalKey",
+    CPButtonHighlightsByKey             = @"CPButtonHighlightsByKey",
+    CPButtonShowsStateByKey             = @"CPButtonShowsStateByKey";
 
 @implementation CPButton (CPCoding)
 
@@ -805,6 +923,19 @@ var CPButtonImageKey                    = @"CPButtonImageKey",
         _title = [aCoder decodeObjectForKey:CPButtonTitleKey];
         _alternateTitle = [aCoder decodeObjectForKey:CPButtonAlternateTitleKey];
         _allowsMixedState = [aCoder decodeBoolForKey:CPButtonAllowsMixedStateKey];
+
+        if ([aCoder containsValueForKey:CPButtonHighlightsByKey])
+        {
+            // If one exists, assume both do.
+            _highlightsBy = [aCoder decodeIntForKey:CPButtonHighlightsByKey];
+            _showsStateBy = [aCoder decodeIntForKey:CPButtonShowsStateByKey];
+        }
+        else
+        {
+            // Backwards compatibility: if this CPButton was encoded before coding of
+            // highlightsBy and showsStateBy were added, we should just use the
+            // default values from _init rather than overwriting with 0, 0.
+        }
 
         [self setImageDimsWhenDisabled:[aCoder decodeObjectForKey:CPButtonImageDimsWhenDisabledKey]];
 
@@ -843,6 +974,9 @@ var CPButtonImageKey                    = @"CPButtonImageKey",
 
     [aCoder encodeBool:_allowsMixedState forKey:CPButtonAllowsMixedStateKey];
 
+    [aCoder encodeInt:_highlightsBy forKey:CPButtonHighlightsByKey];
+    [aCoder encodeInt:_showsStateBy forKey:CPButtonShowsStateByKey];
+
     [aCoder encodeBool:[self imageDimsWhenDisabled] forKey:CPButtonImageDimsWhenDisabledKey];
     [aCoder encodeInt:[self imagePosition] forKey:CPButtonImagePositionKey];
 
@@ -857,5 +991,5 @@ var CPButtonImageKey                    = @"CPButtonImageKey",
 
 @end
 
-@import "CPCheckBox.j"
-@import "CPRadio.j"
+//@import "CPCheckBox.j"
+//@import "CPRadio.j"

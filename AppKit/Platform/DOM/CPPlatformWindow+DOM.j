@@ -113,13 +113,30 @@
 @import "CPEvent.j"
 @import "CPText.j"
 @import "CPCompatibility.j"
-
 @import "CPDOMWindowLayer.j"
 
 @import "CPPlatform.j"
 @import "CPPlatformWindow.j"
 @import "CPPlatformWindow+DOMKeys.j"
 
+@class CPCursor
+@class CPDragServer
+@class CPPasteboard
+@class _CPDOMDataTransferPasteboard
+@class _CPToolTip
+
+@global CPDragOperationNone
+@global CPDragOperationMove
+@global CPDragOperationCopy
+@global CPDragOperationLink
+@global CPDragOperationPrivate
+@global CPDragOperationGeneric
+@global CPApp
+@global CPStringPboardType
+@global CPWindowOut
+@global _CPRunModalLoop
+@global CPDraggingWindowLevel
+@global CPWindowAbove
 
 // List of all open native windows
 var PlatformWindows = [CPSet set];
@@ -194,6 +211,7 @@ var ModifierKeyCodes = [
 
 var resizeTimer = nil;
 
+#if PLATFORM(DOM)
 @implementation CPPlatformWindow (DOM)
 
 - (id)_init
@@ -797,7 +815,7 @@ var resizeTimer = nil;
                             if (!characters)
                                 characters = String.fromCharCode(charCode);
 
-                            charactersIgnoringModifiers = characters.toLowerCase(); // FIXME: This isn't correct. It SHOULD include Shift.
+                            var charactersIgnoringModifiers = characters.toLowerCase(); // FIXME: This isn't correct. It SHOULD include Shift.
 
                             // Safari won't send proper capitalization during cmd-key events
                             if (!overrideCharacters && (modifierFlags & CPCommandKeyMask) && ((modifierFlags & CPShiftKeyMask) || _capsLockActive))
@@ -881,7 +899,7 @@ var resizeTimer = nil;
             windowNumber = [[CPApp keyWindow] windowNumber],
             modifierFlags = CPPlatformActionKeyMask;
 
-        event = [CPEvent keyEventWithType:CPKeyDown location:location modifierFlags:modifierFlags
+        var event = [CPEvent keyEventWithType:CPKeyDown location:location modifierFlags:modifierFlags
                     timestamp:timestamp windowNumber:windowNumber context:nil
                     characters:characters charactersIgnoringModifiers:characters isARepeat:NO keyCode:keyCode];
 
@@ -1179,7 +1197,6 @@ var resizeTimer = nil;
 {
     var type = _overriddenEventType || aDOMEvent.type;
 
-
     // IE's event order is down, up, up, dblclick, so we have create these events artificially.
     if (type === @"dblclick")
     {
@@ -1210,7 +1227,7 @@ var resizeTimer = nil;
         windowNumber = [_mouseDownWindow windowNumber];
     else
     {
-        var theWindow = [self hitTest:location];
+        var theWindow = [self _mouseHitTest:location];
 
         if ((aDOMEvent.type === CPDOMEventMouseDown) && theWindow)
             _mouseDownWindow = theWindow;
@@ -1242,6 +1259,10 @@ var resizeTimer = nil;
 
     else if (type === "mousedown")
     {
+        // If we receive a click event, then we invalidate any scheduled
+        // or visible tooltips
+        [_CPToolTip invalidateCurrentToolTipIfNeeded];
+
         var button = aDOMEvent.button;
         _mouseDownIsRightClick = button == 2 || (CPBrowserIsOperatingSystem(CPMacOperatingSystem) && button == 0 && modifierFlags & CPControlKeyMask);
 
@@ -1306,6 +1327,7 @@ var resizeTimer = nil;
     // if there are any tracking event listeners then show the event guard so we don't lose events to iframes
     // TODO Actually check for tracking event listeners, not just any listener but _CPRunModalLoop.
     var hasTrackingEventListener = NO;
+
     for (var i = 0; i < CPApp._eventListeners.length; i++)
     {
         if (CPApp._eventListeners[i]._callback !== _CPRunModalLoop)
@@ -1314,6 +1336,7 @@ var resizeTimer = nil;
             break;
         }
     }
+
     _lastMouseEventLocation = location;
 
     _DOMEventGuard.style.display = hasTrackingEventListener ? "" : "none";
@@ -1430,7 +1453,7 @@ var resizeTimer = nil;
 }
 
 /* @ignore */
-- (id)_dragHitTest:(CPPoint)aPoint pasteboard:(CPPasteboard)aPasteboard
+- (id)_dragHitTest:(CGPoint)aPoint pasteboard:(CPPasteboard)aPasteboard
 {
     var levels = _windowLevels,
         layers = _windowLayers,
@@ -1484,7 +1507,17 @@ var resizeTimer = nil;
     return StopContextMenuDOMEventPropagation;
 }
 
-- (CPWindow)hitTest:(CPPoint)location
+- (CPWindow)_mouseHitTest:(CGPoint)location
+{
+    return [self _hitTest:location withTest:@selector(_isValidMousePoint:)]
+}
+
+- (CPWindow)hitTest:(CGPoint)location
+{
+    return [self _hitTest:location withTest:@selector(containsPoint:)]
+}
+
+- (CPWindow)_hitTest:(CGPoint)location withTest:(SEL)aTest
 {
     if (self._only)
         return self._only;
@@ -1503,7 +1536,7 @@ var resizeTimer = nil;
         {
             var candidateWindow = windows[windowCount];
 
-            if (!candidateWindow._ignoresMouseEvents && [candidateWindow containsPoint:location])
+            if (!candidateWindow._ignoresMouseEvents && [candidateWindow performSelector:aTest withObject:location])
                 theWindow = candidateWindow;
         }
     }
@@ -1568,6 +1601,7 @@ var resizeTimer = nil;
 }
 
 @end
+#endif
 
 var CPEventClass = [CPEvent class];
 
@@ -1601,7 +1635,7 @@ var _CPEventFromNativeMouseEvent = function(aNativeEvent, anEventType, aPoint, m
 };
 
 var CLICK_SPACE_DELTA   = 5.0,
-    CLICK_TIME_DELTA    = (typeof document != "undefined" && document.addEventListener) ? 350.0 : 1000.0;
+    CLICK_TIME_DELTA    = (typeof document != "undefined" && document.addEventListener) ? 0.55 : 1.0;
 
 var CPDOMEventGetClickCount = function(aComparisonEvent, aTimestamp, aLocation)
 {

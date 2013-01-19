@@ -21,6 +21,9 @@
  */
 
 @import <Foundation/CPObject.j>
+@import <AppKit/CPWindow.j>
+@import <AppKit/_CPStandardWindowView.j>
+@import <AppKit/_CPToolTipWindowView.j>
 
 
 var ItemSizes               = { },
@@ -78,12 +81,12 @@ var ItemSizes               = { },
 
 + (CPColor)windowBackgroundColor
 {
-    return [_CPStandardWindowView bodyBackgroundColor];
+    return [CPColor colorWithCalibratedWhite:0.95 alpha:1.0];
 }
 
 + (CPColor)defaultShowcaseBackgroundColor
 {
-    return [_CPStandardWindowView bodyBackgroundColor];//[self lightCheckersColor];
+    return [CPColor colorWithCalibratedWhite:0.95 alpha:1.0];
 }
 
 + (CPColor)showcaseBackgroundColor
@@ -181,7 +184,7 @@ var ItemSizes               = { },
             if ([object isKindOfClass:[CPView class]])
             {
                 var size = [object frame].size,
-                    labelWidth = [[template valueForKey:@"label"] sizeWithFont:[CPFont boldSystemFontOfSize:12.0]].width + 20.0;
+                    labelWidth = [[template valueForKey:@"label"] sizeWithFont:[CPFont boldSystemFontOfSize:0]].width + 20.0;
 
                 if (size.width > itemSize.width)
                     itemSize.width = size.width;

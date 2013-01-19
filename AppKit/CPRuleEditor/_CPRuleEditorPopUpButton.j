@@ -3,6 +3,8 @@
  *     Copyright (c) 2011 Pear, Inc. All rights reserved.
  */
 
+@import "CPPopUpButton.j"
+
 var GRADIENT_START_COLOR = "#fcfcfc",
     GRADIENT_END_COLOR = "#dfdfdf",
     BORDER_COLOR = "#BDBDBD";
@@ -44,9 +46,11 @@ else if (CPBrowserIsEngine(CPInternetExplorerBrowserEngine))
 {
     [self setBordered:NO];
 
+#if PLATFORM(DOM)
     var style = _DOMElement.style;
     style.border = "1px solid " + BORDER_COLOR;
     style[GRADIENT_PROPERTY] = GRADIENT_NORMAL;
+#endif
 }
 
 - (id)initWithFrame:(CGRect)aFrame
@@ -65,9 +69,9 @@ else if (CPBrowserIsEngine(CPInternetExplorerBrowserEngine))
     return self;
 }
 
-- (id)hitTest:(CPPoint)point
+- (id)hitTest:(CGPoint)point
 {
-    if (!CPRectContainsPoint([self frame], point) || ![self sliceIsEditable])
+    if (!CGRectContainsPoint([self frame], point) || ![self sliceIsEditable])
         return nil;
 
     return self;
@@ -98,11 +102,13 @@ else if (CPBrowserIsEngine(CPInternetExplorerBrowserEngine))
 
 - (void)layoutSubviews
 {
+#if PLATFORM(DOM)
     radius = FLOOR(CGRectGetHeight([self bounds]) / 2);
     var style = _DOMElement.style,
         radiusCSS = radius + "px";
 
     style.borderRadius = radiusCSS;
+#endif
 
     [super layoutSubviews];
 }
@@ -139,9 +145,11 @@ else if (CPBrowserIsEngine(CPInternetExplorerBrowserEngine))
 {
     [self setBordered:NO];
 
+#if PLATFORM(DOM)
     var style = _DOMElement.style;
     style.border = "1px solid " + BORDER_COLOR;
     style[GRADIENT_PROPERTY] = GRADIENT_NORMAL;
+#endif
 }
 
 - (id)initWithFrame:(CGRect)aFrame
@@ -162,6 +170,7 @@ else if (CPBrowserIsEngine(CPInternetExplorerBrowserEngine))
 
 - (void)layoutSubviews
 {
+#if PLATFORM(DOM)
     radius = FLOOR(CGRectGetHeight([self bounds]) / 2);
 
     var style = _DOMElement.style,
@@ -169,6 +178,7 @@ else if (CPBrowserIsEngine(CPInternetExplorerBrowserEngine))
 
     style.borderRadius = radiusCSS;
     style[GRADIENT_PROPERTY] = ([self isHighlighted]) ? GRADIENT_HIGHLIGHTED : GRADIENT_NORMAL;
+#endif
 
     [super layoutSubviews];
 }

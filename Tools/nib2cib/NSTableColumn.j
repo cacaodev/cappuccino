@@ -45,13 +45,13 @@
         }
         else if ([dataViewCell isKindOfClass:[NSTextFieldCell class]])
         {
-            _dataView = [[CPTextField alloc] initWithFrame:CPRectMakeZero()];
+            _dataView = [[CPTextField alloc] initWithFrame:CGRectMakeZero()];
 
             var font = [dataViewCell font],
                 selectedFont = nil;
 
             if (font)
-                font = [NSFont cibFontForNibFont:font];
+                font = [font cibFontForNibFont];
 
             if (!font)
                 font = [CPFont systemFontOfSize:[CPFont systemFontSize]];
@@ -87,10 +87,11 @@
         [_dataView setValue:[dataViewCell alignment] forThemeAttribute:@"alignment"];
 
         var headerCell = [aCoder decodeObjectForKey:@"NSHeaderCell"],
-            headerView = [[_CPTableColumnHeaderView alloc] initWithFrame:CPRectMakeZero()];
+            headerView = [[_CPTableColumnHeaderView alloc] initWithFrame:CGRectMakeZero()];
 
         [headerView setStringValue:[headerCell objectValue]];
-        [headerView setValue:[dataViewCell alignment] forThemeAttribute:@"text-alignment"];
+        [headerView setFont:[headerCell font]];
+        [headerView setAlignment:[headerCell alignment]];
 
         [self setHeaderView:headerView];
 

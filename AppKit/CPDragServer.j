@@ -27,6 +27,8 @@
 @import "CPView.j"
 @import "CPWindow.j"
 
+@class _CPDOMDataTransferPasteboard
+
 
 CPDragOperationNone     = 0;
 CPDragOperationCopy     = 1 << 1;
@@ -72,7 +74,7 @@ var CPDragServerSource             = nil,
 - (unsigned)draggingSourceOperationMask
 */
 
-- (CPPoint)draggingLocation
+- (CGPoint)draggingLocation
 {
     return [[CPDragServer sharedDragServer] draggingLocation];
 }

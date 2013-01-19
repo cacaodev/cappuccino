@@ -26,6 +26,9 @@
 @import "CPImage.j"
 @import "CPShadowView.j"
 
+@global CPImagesPboardType
+@global appkit_tag_dom_elements
+
 CPImageAlignCenter      = 0;
 CPImageAlignTop         = 1;
 CPImageAlignTopLeft     = 2;
@@ -58,6 +61,9 @@ var CPImageViewEmptyPlaceholderImage = nil;
 
 + (void)initialize
 {
+    if (self !== [CPImageView class])
+        return;
+
     var bundle = [CPBundle bundleForClass:[CPView class]];
 
     CPImageViewEmptyPlaceholderImage = [[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"empty.png"]];

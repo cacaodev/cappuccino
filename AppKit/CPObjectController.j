@@ -51,6 +51,9 @@
 
 + (id)initialize
 {
+    if (self !== [CPObjectController class])
+        return;
+
     [self exposeBinding:@"editable"];
     [self exposeBinding:@"contentObject"];
 }
@@ -795,7 +798,7 @@ var CPObjectControllerContentKey                        = @"CPObjectControllerCo
 
     [_observationProxies removeObjectAtIndex:index];
 
-    _observedObjects = nil;
+    _observedObjectsByKeyPath[aKeyPath] = nil;
 }
 
 @end

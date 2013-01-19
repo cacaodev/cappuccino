@@ -31,7 +31,8 @@ CPPopoverAppearanceMinimal  = 0;
 CPPopoverAppearanceHUD      = 1;
 
 var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
-    _CPAttachedWindow_attachedWindowDidClose_       = 1 << 1;
+    _CPAttachedWindow_attachedWindowDidClose_       = 1 << 1,
+    _CPAttachedWindow_attachedWindowDidShow_        = 1 << 2;
 
 
 /*!
@@ -109,8 +110,7 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
 */
 - (id)initWithContentRect:(CGRect)aFrame
 {
-    self = [self initWithContentRect:aFrame styleMask:0];
-    return self;
+    return [self initWithContentRect:aFrame styleMask:0];
 }
 
 /*!
@@ -134,7 +134,7 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
         [self setMovableByWindowBackground:YES];
         [self setHasShadow:NO];
 
-        [self setCSS3Property:@"TransitionProperty" value:@"-webkit-transform, opacity"];
+        [self setCSS3Property:@"TransitionProperty" value:CPBrowserCSSProperty('transform') + @", opacity"];
 
         [_windowView setNeedsDisplay:YES];
     }
@@ -171,6 +171,9 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
 
     if ([_delegate respondsToSelector:@selector(attachedWindowDidClose:)])
         _implementedDelegateMethods |= _CPAttachedWindow_attachedWindowDidClose_;
+
+    if ([_delegate respondsToSelector:@selector(attachedWindowDidShow:)])
+        _implementedDelegateMethods |= _CPAttachedWindow_attachedWindowDidShow_;
 }
 
 #pragma mark -
@@ -196,7 +199,7 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
 
 - (CGPoint)computeOriginFromRect:(CGRect)aRect ofView:(CPView)positioningView preferredEdge:(int)anEdge
 {
-    var mainWindow      = [CPApp mainWindow],
+    var mainWindow      = [positioningView window],
         platformWindow  = [mainWindow platformWindow],
         nativeRect      = [platformWindow nativeContentRect],
         baseOrigin      = [positioningView convertPointToBase:aRect.origin],
@@ -347,25 +350,20 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
 }
 
 /*! @ignore */
-- (void)setCSS3Property:(CPString)property value:(CPString)value
+- (void)setCSS3Property:(CPString)aProperty value:(CPString)value
 {
-    _DOMElement.style['webkit' + property] = value;
+    var browserProperty = CPBrowserStyleProperty(aProperty);
 
-    // Support other browsers here eventually
+#if PLATFORM(DOM)
+    if (browserProperty)
+        _DOMElement.style[browserProperty] = value;
+#endif
 }
 
 /*! @ignore */
 - (BOOL)browserSupportsAnimation
 {
-    return typeof(_DOMElement.style.webkitTransition) !== "undefined";
-
-    /*
-        No others browsers supported yet.
-
-           typeof(_DOMElement.style.MozTransition) !== "undefined" ||
-           typeof(_DOMElement.style.MsTransition) !== "undefined" ||
-           typeof(_DOMElement.style.OTransition) !== "undefined";
-    */
+    return CPBrowserStyleProperty('transition') && CPBrowserStyleProperty('transitionend');
 }
 
 #pragma mark -
@@ -384,6 +382,22 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
 
 #pragma mark -
 #pragma mark Overrides
+
+/*!
+    Attached windows, such as pop overs, can usually become the key window.
+*/
+- (BOOL)canBecomeKeyWindow
+{
+    return YES;
+}
+
+/*!
+    Normally untitled windows cannot become main, but popovers can.
+*/
+- (BOOL)canBecomeMainWindow
+{
+    return [self isVisible];
+}
 
 /*!
     Called when the window is losing focus.
@@ -418,7 +432,7 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
             var transformOrigin = "50% 100%",
                 frame = [self frame],
                 preferredEdge = [_windowView preferredEdge],
-                posX;
+                posX, posY;
 
             switch (preferredEdge)
             {
@@ -443,31 +457,52 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
             window.setTimeout(function()
             {
                 // We are watching opacity, so this triggers the next transition
+#if PLATFORM(DOM)
                 _DOMElement.style.opacity = 1;
                 _DOMElement.style.height = frame.size.height + @"px";
                 _DOMElement.style.width = frame.size.width + @"px";
+#endif
 
                 // Set up the pop-out transition
                 [self setCSS3Property:@"Transform" value:@"scale(1.1)"];
-                [self setCSS3Property:@"Transition" value:@"-webkit-transform 200ms ease-in"];
+                [self setCSS3Property:@"Transition" value:CPBrowserCSSProperty('transform') + @" 200ms ease-in"];
 
                 var transitionEndFunction = function()
                 {
-                    _DOMElement.removeEventListener("webkitTransitionEnd", transitionEndFunction, YES);
+#if PLATFORM(DOM)
+                    _DOMElement.removeEventListener(CPBrowserStyleProperty('transitionend'), transitionEndFunction, YES);
+#endif
 
                     // Now set up the pop-in to normal size transition.
                     // Because we are watching the -webkit-transform, it will occur now.
                     [self setCSS3Property:@"Transform" value:@"scale(1)"];
-                    [self setCSS3Property:@"Transition" value:@"-webkit-transform 50ms linear"];
+                    [self setCSS3Property:@"Transition" value:CPBrowserCSSProperty('transform') + @" 50ms linear"];
+
+                    var transitionCompleteFunction = function()
+                    {
+#if PLATFORM(DOM)
+                        _DOMElement.removeEventListener(CPBrowserStyleProperty('transitionend'), transitionCompleteFunction, YES);
+#endif
+                        if (_implementedDelegateMethods & _CPAttachedWindow_attachedWindowDidShow_)
+                             [_delegate attachedWindowDidShow:self];
+                    }
+
+#if PLATFORM(DOM)
+                    _DOMElement.addEventListener(CPBrowserStyleProperty('transitionend'), transitionCompleteFunction, YES);
+#endif
                 };
 
-                _DOMElement.addEventListener("webkitTransitionEnd", transitionEndFunction, YES);
+#if PLATFORM(DOM)
+                _DOMElement.addEventListener(CPBrowserStyleProperty('transitionend'), transitionEndFunction, YES);
+#endif
             }, 0);
         }
         else
         {
             [self setCSS3Property:@"Transition" value:@""];
+#if PLATFORM(DOM)
             _DOMElement.style.opacity = 1;
+#endif
         }
     }
 
@@ -490,15 +525,21 @@ var _CPAttachedWindow_attachedWindowShouldClose_    = 1 << 0,
     {
         // Tell the element to fade out when the opacity changes
         [self setCSS3Property:@"Transition" value:@"opacity 250ms linear"];
+#if PLATFORM(DOM)
         _DOMElement.style.opacity = 0;
+#endif
 
         var transitionEndFunction = function()
         {
-            _DOMElement.removeEventListener("webkitTransitionEnd", transitionEndFunction, YES);
+#if PLATFORM(DOM)
+            _DOMElement.removeEventListener(CPBrowserStyleProperty("transitionend"), transitionEndFunction, YES);
+#endif
             [self _close];
         };
 
-        _DOMElement.addEventListener("webkitTransitionEnd", transitionEndFunction, YES);
+#if PLATFORM(DOM)
+        _DOMElement.addEventListener(CPBrowserStyleProperty("transitionend"), transitionEndFunction, YES);
+#endif
     }
     else
     {

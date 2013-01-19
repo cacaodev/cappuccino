@@ -60,6 +60,7 @@ CPPressedTab    = 2;
     CPView      _auxiliaryView;
 
     CPTabView   _tabView;
+    unsigned    _tabState;      // Looks like it is not yet implemented
 }
 
 - (id)init
@@ -138,7 +139,7 @@ CPPressedTab    = 2;
     _view = aView;
 
     if ([_tabView selectedTabViewItem] == self)
-        [_tabView _setContentViewForItem:self];
+        [_tabView _setContentViewFromItem:self];
 }
 
 /*!

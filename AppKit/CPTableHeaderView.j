@@ -26,6 +26,10 @@
 @import "CPTableView.j"
 @import "CPView.j"
 
+@class CPCursor
+
+@global CPTableColumnUserResizingMask
+
 
 @implementation _CPTableColumnHeaderView : CPView
 {
@@ -39,8 +43,8 @@
 
 + (id)themeAttributes
 {
-    return [CPDictionary dictionaryWithObjects:[[CPNull null], [CPNull null], CGInsetMakeZero(), [CPNull null], [CPNull null], [CPNull null], CGSizeMakeZero()]
-                                       forKeys:[@"background-color", @"text-alignment", @"text-inset", @"text-color", @"text-font", @"text-shadow-color", @"text-shadow-offset"]];
+    return [CPDictionary dictionaryWithObjects:[[CPNull null], CPLeftTextAlignment, CPLineBreakByTruncatingTail, CGInsetMakeZero(), [CPNull null], [CPNull null], [CPNull null], CGSizeMakeZero()]
+                                       forKeys:[@"background-color", @"text-alignment", @"line-break-mode", @"text-inset", @"text-color", @"font", @"text-shadow-color", @"text-shadow-offset"]];
 }
 
 - (void)initWithFrame:(CGRect)frame
@@ -74,10 +78,11 @@
 
     [_textField setFrame:_CGRectMake(inset.right, inset.top, bounds.size.width - inset.right - inset.left, bounds.size.height - inset.top - inset.bottom)];
     [_textField setTextColor:[self currentValueForThemeAttribute:@"text-color"]];
-    [_textField setFont:[self currentValueForThemeAttribute:@"text-font"]];
+    [_textField setFont:[self currentValueForThemeAttribute:@"font"]];
     [_textField setTextShadowColor:[self currentValueForThemeAttribute:@"text-shadow-color"]];
     [_textField setTextShadowOffset:[self currentValueForThemeAttribute:@"text-shadow-offset"]];
     [_textField setAlignment:[self currentValueForThemeAttribute:@"text-alignment"]];
+    [_textField setLineBreakMode:[self currentValueForThemeAttribute:@"line-break-mode"]];
 }
 
 - (void)setStringValue:(CPString)string
@@ -102,7 +107,52 @@
 
 - (void)setFont:(CPFont)aFont
 {
-    [self setValue:aFont forThemeAttribute:"text-font"];
+    [self setValue:aFont forThemeAttribute:@"font"];
+}
+
+- (CPFont)font
+{
+    return [self currentValueForThemeAttribute:@"font"]
+}
+
+- (void)setAlignment:(CPTextAlignment)alignment
+{
+    [self setValue:alignment forThemeAttribute:@"text-alignment"];
+}
+
+- (CPTextAlignment)alignment
+{
+    return [self currentValueForThemeAttribute:@"text-alignment"]
+}
+
+- (void)setLineBreakMode:(CPLineBreakMode)mode
+{
+    [self setValue:mode forThemeAttribute:@"line-break-mode"];
+}
+
+- (CPLineBreakMode)lineBreakMode
+{
+    return [self currentValueForThemeAttribute:@"line-break-mode"]
+}
+
+- (void)setTextColor:(CPColor)aColor
+{
+    [self setValue:aColor forThemeAttribute:@"text-color"];
+}
+
+- (CPColor)textColor
+{
+    return [self currentValueForThemeAttribute:@"text-color"]
+}
+
+- (void)setTextShadowColor:(CPColor)aColor
+{
+    [self setValue:aColor forThemeAttribute:@"text-shadow-color"];
+}
+
+- (CPColor)textShadowColor
+{
+    return [self currentValueForThemeAttribute:@"text-shadow-color"]
 }
 
 - (void)_setIndicatorImage:(CPImage)anImage
@@ -122,6 +172,10 @@
 
 var _CPTableColumnHeaderViewStringValueKey = @"_CPTableColumnHeaderViewStringValueKey",
     _CPTableColumnHeaderViewFontKey = @"_CPTableColumnHeaderViewFontKey",
+    _CPTableColumnHeaderViewTextColorKey = @"_CPTableColumnHeaderViewTextColorKey",
+    _CPTableColumnHeaderViewTextShadowColorKey = @"_CPTableColumnHeaderViewTextShadowColorKey",
+    _CPTableColumnHeaderViewAlignmentKey = @"_CPTableColumnHeaderViewAlignmentKey",
+    _CPTableColumnHeaderViewLineBreakModeKey = @"_CPTableColumnHeaderViewLineBreakModeKey",
     _CPTableColumnHeaderViewImageKey = @"_CPTableColumnHeaderViewImageKey";
 
 @implementation _CPTableColumnHeaderView (CPCoding)
@@ -134,6 +188,10 @@ var _CPTableColumnHeaderViewStringValueKey = @"_CPTableColumnHeaderViewStringVal
         [self _setIndicatorImage:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewImageKey]];
         [self setStringValue:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewStringValueKey]];
         [self setFont:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewFontKey]];
+        [self setTextColor:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewTextColorKey]];
+        [self setTextShadowColor:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewTextShadowColorKey]];
+        [self setAlignment:[aCoder decodeIntForKey:_CPTableColumnHeaderViewAlignmentKey]];
+        [self setLineBreakMode:[aCoder decodeIntForKey:_CPTableColumnHeaderViewLineBreakModeKey]];
     }
 
     return self;
@@ -145,7 +203,11 @@ var _CPTableColumnHeaderViewStringValueKey = @"_CPTableColumnHeaderViewStringVal
 
     [aCoder encodeObject:[_textField text] forKey:_CPTableColumnHeaderViewStringValueKey];
     [aCoder encodeObject:[_textField image] forKey:_CPTableColumnHeaderViewImageKey];
-    [aCoder encodeObject:[_textField font] forKey:_CPTableColumnHeaderViewFontKey];
+    [aCoder encodeObject:[self font] forKey:_CPTableColumnHeaderViewFontKey];
+    [aCoder encodeObject:[self textColor] forKey:_CPTableColumnHeaderViewTextColorKey];
+    [aCoder encodeObject:[self textShadowColor] forKey:_CPTableColumnHeaderViewTextShadowColorKey];
+    [aCoder encodeInt:[self alignment] forKey:_CPTableColumnHeaderViewAlignmentKey];
+    [aCoder encodeInt:[self lineBreakMode] forKey:_CPTableColumnHeaderViewLineBreakModeKey];
 }
 
 @end

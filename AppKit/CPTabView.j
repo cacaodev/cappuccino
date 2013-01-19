@@ -79,17 +79,14 @@ var CPTabViewDidSelectTabViewItemSelector           = 1,
 {
     _selectedIndex = CPNotFound;
 
-    _tabs = [[CPSegmentedControl alloc] initWithFrame:CGRectMake(0, 0, 0, 0)];
+    _tabs = [[CPSegmentedControl alloc] initWithFrame:_CGRectMake(0, 0, 0, 0)];
     [_tabs setHitTests:NO];
 
     var height = [_tabs valueForThemeAttribute:@"default-height"];
-    [_tabs setFrameSize:CGSizeMake(0, height)];
+    [_tabs setFrameSize:_CGSizeMake(0, height)];
 
     _box = [[CPBox alloc] initWithFrame:[self  bounds]];
     [self setBackgroundColor:[CPColor colorWithCalibratedWhite:0.95 alpha:1.0]];
-
-    [_box setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
-    [_tabs setAutoresizingMask:CPViewMinXMargin | CPViewMaxXMargin];
 
     [self addSubview:_box];
     [self addSubview:_tabs];
@@ -343,21 +340,9 @@ var CPTabViewDidSelectTabViewItemSelector           = 1,
     _type = aTabViewType;
 
     if (_type !== CPTopTabsBezelBorder && _type !== CPBottomTabsBezelBorder)
-    {
-        [_box setFrame:[self bounds]];
         [_tabs removeFromSuperview];
-    }
     else
-    {
-        var aFrame = [self frame],
-            segmentedHeight = CGRectGetHeight([_tabs frame]),
-            origin = _type === CPTopTabsBezelBorder ? segmentedHeight / 2 : 0;
-
-        [_box setFrame:CGRectMake(0, origin, CGRectGetWidth(aFrame),
-                                  CGRectGetHeight(aFrame) - segmentedHeight / 2)];
-
         [self addSubview:_tabs];
-    }
 
     switch (_type)
     {
@@ -372,6 +357,29 @@ var CPTabViewDidSelectTabViewItemSelector           = 1,
         case CPNoTabsNoBorder:
             [_box setBorderType:CPNoBorder];
             break;
+    }
+
+    [self setNeedsLayout];
+}
+
+- (void)layoutSubviews
+{
+    // Even if CPTabView's autoresizesSubviews is NO, _tabs and _box has to be laid out.
+    // This means we can't rely on autoresize masks.
+    if (_type !== CPTopTabsBezelBorder && _type !== CPBottomTabsBezelBorder)
+    {
+        [_box setFrame:[self bounds]];
+    }
+    else
+    {
+        var aFrame = [self frame],
+            segmentedHeight = _CGRectGetHeight([_tabs frame]),
+            origin = _type === CPTopTabsBezelBorder ? segmentedHeight / 2 : 0;
+
+        [_box setFrame:_CGRectMake(0, origin, _CGRectGetWidth(aFrame),
+                                   _CGRectGetHeight(aFrame) - segmentedHeight / 2)];
+
+        [self _repositionTabs];
     }
 }
 
@@ -439,22 +447,22 @@ var CPTabViewDidSelectTabViewItemSelector           = 1,
 
 - (void)_repositionTabs
 {
-    var horizontalCenterOfSelf = CGRectGetWidth([self bounds]) / 2,
-        verticalCenterOfTabs = CGRectGetHeight([_tabs bounds]) / 2;
+    var horizontalCenterOfSelf = _CGRectGetWidth([self bounds]) / 2,
+        verticalCenterOfTabs = _CGRectGetHeight([_tabs bounds]) / 2;
 
     if (_type === CPBottomTabsBezelBorder)
-        [_tabs setCenter:CGPointMake(horizontalCenterOfSelf, CGRectGetHeight([self bounds]) - verticalCenterOfTabs)];
+        [_tabs setCenter:_CGPointMake(horizontalCenterOfSelf, _CGRectGetHeight([self bounds]) - verticalCenterOfTabs)];
     else
-        [_tabs setCenter:CGPointMake(horizontalCenterOfSelf, verticalCenterOfTabs)];
+        [_tabs setCenter:_CGPointMake(horizontalCenterOfSelf, verticalCenterOfTabs)];
 }
 
 - (void)_setSelectedIndex:(CPNumber)index
 {
     _selectedIndex = index;
-    [self _setContentViewForItem:[_items objectAtIndex:_selectedIndex]];
+    [self _setContentViewFromItem:[_items objectAtIndex:_selectedIndex]];
 }
 
-- (void)_setContentViewForItem:(CPTabViewItem)anItem
+- (void)_setContentViewFromItem:(CPTabViewItem)anItem
 {
     [_box setContentView:[anItem view]];
 }
@@ -471,9 +479,7 @@ var CPTabViewDidSelectTabViewItemSelector           = 1,
     }
 
     if (_selectedIndex === CPNotFound)
-    {
         [self selectFirstTabViewItem:self];
-    }
 }
 
 @end
@@ -499,7 +505,6 @@ var CPTabViewItemsKey               = "CPTabViewItemsKey",
         [_items makeObjectsPerformSelector:@selector(_setTabView:) withObject:self];
 
         [self _updateItems];
-        [self _repositionTabs];
 
         [self setDelegate:[aCoder decodeObjectForKey:CPTabViewDelegateKey]];
 
@@ -508,6 +513,8 @@ var CPTabViewItemsKey               = "CPTabViewItemsKey",
             [self selectTabViewItem:selected];
 
         [self setTabViewType:[aCoder decodeIntForKey:CPTabViewTypeKey]];
+
+        [self setNeedsLayout];
     }
 
     return self;

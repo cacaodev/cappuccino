@@ -26,6 +26,9 @@
 @import "CPImage.j"
 @import "CPView.j"
 
+@class CPUserDefaults
+
+
 #define SPLIT_VIEW_MAYBE_POST_WILL_RESIZE() \
     if ((_suppressResizeNotificationsMask & DidPostWillResizeNotification) === 0) \
     { \
@@ -51,10 +54,7 @@
 CPSplitViewDidResizeSubviewsNotification = @"CPSplitViewDidResizeSubviewsNotification";
 CPSplitViewWillResizeSubviewsNotification = @"CPSplitViewWillResizeSubviewsNotification";
 
-var CPSplitViewHorizontalImage = nil,
-    CPSplitViewVerticalImage = nil,
-
-    ShouldSuppressResizeNotifications   = 1,
+var ShouldSuppressResizeNotifications   = 1,
     DidPostWillResizeNotification       = 1 << 1,
     DidSuppressResizeNotification       = 1 << 2;
 
@@ -89,7 +89,7 @@ var CPSplitViewHorizontalImage = nil,
 
     CPString        _autosaveName;
     BOOL            _shouldAutosave;
-    BOOL            _needsRestoreFromAutosave;
+    CGSize          _shouldRestoreFromAutosaveUnlessFrameSize;
 
     BOOL            _needsResizeSubviews;
     int             _suppressResizeNotificationsMask;
@@ -104,22 +104,16 @@ var CPSplitViewHorizontalImage = nil,
 
 + (id)themeAttributes
 {
-    return [CPDictionary dictionaryWithObjects:[1.0, 10.0, [CPColor grayColor]]
-                                       forKeys:[@"divider-thickness", @"pane-divider-thickness", @"pane-divider-color"]];
-}
-
-/*
-    @ignore
-*/
-+ (void)initialize
-{
-    if (self != [CPSplitView class])
-        return;
-
-    var bundle = [CPBundle bundleForClass:self];
-
-    CPSplitViewHorizontalImage = CPImageInBundle("CPSplitView/CPSplitViewHorizontal.png", CGSizeMake(5.0, 10.0), bundle);
-    CPSplitViewVerticalImage = CPImageInBundle("CPSplitView/CPSplitViewVertical.png", CGSizeMake(10.0, 5.0), bundle);
+    return [CPDictionary dictionaryWithObjects:[    1.0,
+                                                    10.0,
+                                                    [CPColor grayColor],
+                                                    [CPNull null],
+                                                    [CPNull null]]
+                                       forKeys:[    @"divider-thickness",
+                                                    @"pane-divider-thickness",
+                                                    @"pane-divider-color",
+                                                    @"horizontal-divider-color",
+                                                    @"vertical-divider-color"]];
 }
 
 - (id)initWithFrame:(CGRect)aFrame
@@ -202,7 +196,7 @@ var CPSplitViewHorizontalImage = nil,
 
     _originComponent = [self isVertical] ? "x" : "y";
     _sizeComponent = [self isVertical] ? "width" : "height";
-    _dividerImagePath = [self isVertical] ? [CPSplitViewVerticalImage filename] : [CPSplitViewHorizontalImage filename];
+    _dividerImagePath = [self isVertical] ? [[self valueForThemeAttribute:@"vertical-divider-color"] filename] : [[self valueForThemeAttribute:@"horizontal-divider-color"] filename];
 
     return changed;
 }
@@ -452,9 +446,13 @@ var CPSplitViewHorizontalImage = nil,
 
     if (type == CPLeftMouseUp)
     {
+        // We disabled autosaving during tracking.
+        _shouldAutosave = YES;
+
         if (_currentDivider != CPNotFound)
         {
             _currentDivider = CPNotFound;
+            [self _autosave];
             [self _updateResizeCursor:anEvent];
         }
 
@@ -481,19 +479,19 @@ var CPSplitViewHorizontalImage = nil,
                 {
                     var minPosition = [self minPossiblePositionOfDividerAtIndex:i],
                         maxPosition = [self maxPossiblePositionOfDividerAtIndex:i],
-                        _preCollapsePosition = [_preCollapsePositions objectForKey:"" + i] || 0;
+                        preCollapsePosition = [_preCollapsePositions objectForKey:"" + i] || 0;
 
                     if ([_delegate splitView:self canCollapseSubview:_subviews[i]] && [_delegate splitView:self shouldCollapseSubview:_subviews[i] forDoubleClickOnDividerAtIndex:i])
                     {
                         if ([self isSubviewCollapsed:_subviews[i]])
-                            [self setPosition:_preCollapsePosition ? _preCollapsePosition : (minPosition + (maxPosition - minPosition) / 2) ofDividerAtIndex:i];
+                            [self setPosition:preCollapsePosition ? preCollapsePosition : (minPosition + (maxPosition - minPosition) / 2) ofDividerAtIndex:i];
                         else
                             [self setPosition:minPosition ofDividerAtIndex:i];
                     }
                     else if ([_delegate splitView:self canCollapseSubview:_subviews[i + 1]] && [_delegate splitView:self shouldCollapseSubview:_subviews[i + 1] forDoubleClickOnDividerAtIndex:i])
                     {
                         if ([self isSubviewCollapsed:_subviews[i + 1]])
-                            [self setPosition:_preCollapsePosition ? _preCollapsePosition : (minPosition + (maxPosition - minPosition) / 2) ofDividerAtIndex:i];
+                            [self setPosition:preCollapsePosition ? preCollapsePosition : (minPosition + (maxPosition - minPosition) / 2) ofDividerAtIndex:i];
                         else
                             [self setPosition:maxPosition ofDividerAtIndex:i];
                     }
@@ -503,6 +501,8 @@ var CPSplitViewHorizontalImage = nil,
                     _currentDivider = i;
                     _initialOffset = startPosition - point[_originComponent];
 
+                    // Don't autosave during a resize. We'll wait until it's done.
+                    _shouldAutosave = NO;
                     [self _postNotificationWillResize];
                 }
             }
@@ -717,6 +717,10 @@ var CPSplitViewHorizontalImage = nil,
 */
 - (void)setPosition:(float)position ofDividerAtIndex:(int)dividerIndex
 {
+    // Any manual changes to the divider position should override anything we are restoring from
+    // autosave.
+    _shouldRestoreFromAutosaveUnlessFrameSize = nil;
+
     SPLIT_VIEW_SUPPRESS_RESIZE_NOTIFICATIONS(YES);
     [self _adjustSubviewsWithCalculatedSize];
 
@@ -725,13 +729,13 @@ var CPSplitViewHorizontalImage = nil,
         frameA = [viewA frame],
         viewB = _subviews[dividerIndex + 1],
         frameB = [viewB frame],
-        _preCollapsePosition = 0,
+        preCollapsePosition = 0,
         preSize = frameA.size[_sizeComponent];
 
     frameA.size[_sizeComponent] = realPosition - frameA.origin[_originComponent];
 
     if (preSize !== 0 && frameA.size[_sizeComponent] === 0)
-        _preCollapsePosition = preSize;
+        preCollapsePosition = preSize;
 
     if (preSize !== frameA.size[_sizeComponent])
     {
@@ -746,7 +750,7 @@ var CPSplitViewHorizontalImage = nil,
     frameB.size[_sizeComponent] = frameB.origin[_originComponent] + frameB.size[_sizeComponent] - realPosition - [self dividerThickness];
 
     if (preSize !== 0 && frameB.size[_sizeComponent] === 0)
-        _preCollapsePosition = frameB.origin[_originComponent];
+        preCollapsePosition = frameB.origin[_originComponent];
 
     frameB.origin[_originComponent] = realPosition + [self dividerThickness];
 
@@ -757,8 +761,8 @@ var CPSplitViewHorizontalImage = nil,
         SPLIT_VIEW_MAYBE_POST_DID_RESIZE();
     }
 
-    if (_preCollapsePosition)
-        [_preCollapsePositions setObject:_preCollapsePosition forKey:"" + dividerIndex];
+    if (preCollapsePosition)
+        [_preCollapsePositions setObject:preCollapsePosition forKey:"" + dividerIndex];
 
     [self setNeedsDisplay:YES];
 
@@ -770,24 +774,20 @@ var CPSplitViewHorizontalImage = nil,
 
 - (void)setFrameSize:(CGSize)aSize
 {
-    if (_needsRestoreFromAutosave)
+    if (_shouldRestoreFromAutosaveUnlessFrameSize)
         _shouldAutosave = NO;
     else
         [self _adjustSubviewsWithCalculatedSize];
 
     [super setFrameSize:aSize];
 
-    if (_needsRestoreFromAutosave)
-    {
-        _needsRestoreFromAutosave = NO;
-        [self _restoreFromAutosave];
+    if (_shouldRestoreFromAutosaveUnlessFrameSize)
         _shouldAutosave = YES;
-    }
 
     [self setNeedsDisplay:YES];
 }
 
-- (void)resizeSubviewsWithOldSize:(CPSize)oldSize
+- (void)resizeSubviewsWithOldSize:(CGSize)oldSize
 {
     if ([_delegate respondsToSelector:@selector(splitView:resizeSubviewsWithOldSize:)])
     {
@@ -1028,13 +1028,31 @@ The sum of the views and the sum of the dividers should be equal to the size of 
 
 - (void)_postNotificationWillResize
 {
-    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewWillResizeSubviewsNotification object:self];
+    var userInfo = nil;
+
+    if (_currentDivider !== CPNotFound)
+        userInfo = [CPDictionary dictionaryWithObject:_currentDivider forKey:@"CPSplitViewDividerIndex"];
+
+    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewWillResizeSubviewsNotification
+                                                        object:self
+                                                      userInfo:userInfo];
 }
 
 - (void)_postNotificationDidResize
 {
+    var userInfo = nil;
+
+    if (_currentDivider !== CPNotFound)
+        userInfo = [CPDictionary dictionaryWithObject:_currentDivider forKey:@"CPSplitViewDividerIndex"];
+
+    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewDidResizeSubviewsNotification
+                                                        object:self
+                                                      userInfo:userInfo];
+
+
+    // TODO Cocoa always autosaves on "viewDidEndLiveResize". If Cappuccino adds support for this we
+    // should do the same.
     [self _autosave];
-    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewDidResizeSubviewsNotification object:self];
 }
 
 /*!
@@ -1053,7 +1071,7 @@ The sum of the views and the sum of the dividers should be equal to the size of 
 /*!
     Get the name under which the split view divider position is automatically saved to CPUserDefaults.
 
-    @return the name to save under or nil if no auto save is active
+    @return the name to save under or nil if no autosave is active
 */
 - (CPString)autosaveName
 {
@@ -1065,7 +1083,7 @@ The sum of the views and the sum of the dividers should be equal to the size of 
 */
 - (void)_autosave
 {
-    if (!_shouldAutosave || !_autosaveName)
+    if (_shouldRestoreFromAutosaveUnlessFrameSize || !_shouldAutosave || !_autosaveName)
         return;
 
     var userDefaults = [CPUserDefaults standardUserDefaults],
@@ -1084,6 +1102,22 @@ The sum of the views and the sum of the dividers should be equal to the size of 
 
     [userDefaults setObject:positions forKey:autosaveName];
     [userDefaults setObject:preCollapseArray forKey:autosavePrecollapseName];
+}
+
+/*!
+    This is called sometime later after a split view has been restored from a Cib.
+    See notes in initWithCoder.
+
+    @ignore
+*/
+- (void)_restoreFromAutosaveIfNeeded
+{
+    if (_shouldRestoreFromAutosaveUnlessFrameSize && !_CGSizeEqualToSize([self frameSize], _shouldRestoreFromAutosaveUnlessFrameSize))
+    {
+        [self _restoreFromAutosave];
+    }
+
+    _shouldRestoreFromAutosaveUnlessFrameSize = nil;
 }
 
 /*!
@@ -1109,7 +1143,7 @@ The sum of the views and the sum of the dividers should be equal to the size of 
 
         for (var i = 0, count = [frames count] - 1; i < count; i++)
         {
-            var frame = CPRectFromString(frames[i]);
+            var frame = CGRectFromString(frames[i]);
             position += frame.size[_sizeComponent];
 
             [self setPosition:position ofDividerAtIndex:i];
@@ -1167,6 +1201,34 @@ var CPSplitViewDelegateKey          = "CPSplitViewDelegateKey",
 */
 - (id)initWithCoder:(CPCoder)aCoder
 {
+    // We need to restore this property before calling super's initWithCoder:.
+    _autosaveName = [aCoder decodeObjectForKey:CPSplitViewAutosaveNameKey];
+
+    /*
+
+    It is common for the main window of a Cappuccino app window to be resized to match the browser
+    window size at the end of the UI being loaded from a cib. But at decoding time (now) whatever
+    window size was originally saved will be in place, so if we try to restore the autosaved divider
+    positions now they might be constrained to the wrong positions due to the difference in frame size,
+    and in addition they might move later when the window is resized.
+
+    The workaround is to restore the position once now (so it's approximately correct during loading),
+    and then once more in the next runloop cycle when any `setFullPlatformWindow` calls are done.
+
+    (However if the frame size doesn't change before the next cycle, we should not restore the position
+    again because that would overwrite any changes the app developer might have made in user code.)
+
+    The other consideration is that any parent split views need to be restored before any child
+    subviews, otherwise the parent restore will also change the positioning of the child.
+
+    */
+    if (_autosaveName)
+    {
+        // Schedule /before/ [super initWithCoder:]. This way this instance's _restoreFromAutosaveIfNeeded
+        // will happen before that of any subviews loaded by [super initWithCoder:].
+        [[CPRunLoop currentRunLoop] performSelector:@selector(_restoreFromAutosaveIfNeeded) target:self argument:nil order:0 modes:[CPDefaultRunLoopMode]];
+    }
+
     self = [super initWithCoder:aCoder];
 
     if (self)
@@ -1186,12 +1248,13 @@ var CPSplitViewDelegateKey          = "CPSplitViewDelegateKey",
         _isPaneSplitter = [aCoder decodeBoolForKey:CPSplitViewIsPaneSplitterKey];
         [self _setVertical:[aCoder decodeBoolForKey:CPSplitViewIsVerticalKey]];
 
-        [self setAutosaveName:[aCoder decodeObjectForKey:CPSplitViewAutosaveNameKey]];
-
-        // We have to wait until we know our frame size before restoring, or the frame resize later will throw
-        // away the restored size.
         if (_autosaveName)
-            _needsRestoreFromAutosave = YES;
+        {
+            [self _restoreFromAutosave];
+            // Remember the frame size we had at this point so that we can restore again if it changes
+            // before the next runloop cycle. See above notes.
+            _shouldRestoreFromAutosaveUnlessFrameSize = [self frameSize];
+        }
     }
 
     return self;

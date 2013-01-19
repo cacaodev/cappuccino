@@ -29,6 +29,7 @@
 
 @import "Nib2CibKeyedUnarchiver.j"
 @import "Converter.j"
+@import "Converter+Mac.j"
 
 var FILE = require("file"),
     OS = require("os"),
@@ -37,7 +38,7 @@ var FILE = require("file"),
     stream = require("narwhal/term").stream,
     StaticResource = require("objective-j").StaticResource,
 
-    DefaultTheme = "Aristo",
+    DefaultTheme = "Aristo2",
     BuildTypes = ["Debug", "Release"],
     DefaultFile = "MainMenu",
     AllowedStoredOptionsRe = new RegExp("^(defaultTheme|auxThemes|verbosity|quiet|frameworks|format)$"),
@@ -80,6 +81,7 @@ var FILE = require("file"),
         var options = [self parseOptionsFromArgs:commandLineArgs];
 
         [self setLogLevel:options.quiet ? -1 : options.verbosity];
+        [self checkPrerequisites];
 
         if (options.watch)
             [self watchWithOptions:options];
@@ -91,6 +93,15 @@ var FILE = require("file"),
         CPLog.fatal([self exceptionReason:anException]);
         OS.exit(1);
     }
+}
+
+- (void)checkPrerequisites
+{
+    var fontinfo = require("cappuccino/fontinfo").fontinfo,
+        info = fontinfo("LucidaGrande", 13);
+
+    if (!info)
+        [self failWithMessage:@"fontinfo does not appear to be installed"];
 }
 
 - (BOOL)convertWithOptions:(JSObject)options inputFile:(CPString)inputFile
@@ -380,6 +391,8 @@ var FILE = require("file"),
 
 - (void)printOptions:options
 {
+    var option;
+
     for (option in options)
     {
         var value = options[option];
@@ -397,6 +410,8 @@ var FILE = require("file"),
 // Merges properties in sourceOptions into targetOptions, overriding properties in targetOptions
 - (void)mergeOptions:(JSObject)sourceOptions with:(JSObject)targetOptions
 {
+    var option;
+
     for (option in sourceOptions)
     {
         // Make sure only a supported option is given

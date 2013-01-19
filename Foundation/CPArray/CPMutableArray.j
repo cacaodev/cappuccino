@@ -1,6 +1,7 @@
 
-@import "CPArray.j"
+@import "_CPArray.j"
 
+@class CPIndexSet
 
 /*!
     @class CPMutableArray
@@ -217,7 +218,7 @@
 */
 - (void)removeObject:(id)anObject
 {
-    [self removeObject:anObject inRange:CPMakeRange(0, length)];
+    [self removeObject:anObject inRange:CPMakeRange(0, self.length)];
 }
 
 /*!
@@ -232,7 +233,7 @@
     while ((index = [self indexOfObject:anObject inRange:aRange]) != CPNotFound)
     {
         [self removeObjectAtIndex:index];
-        aRange = CPIntersectionRange(CPMakeRange(index, length - index), aRange);
+        aRange = CPIntersectionRange(CPMakeRange(index, self.length - index), aRange);
     }
 }
 
@@ -485,7 +486,7 @@ var sortArrayUsingJSDescriptors = function(a, d)
                     do
                     {
                         key = d[cn].k;
-                        C1[key] = [A valueForKey:key];
+                        C1[key] = [A valueForKeyPath:key];
                     } while (cn--)
 
                     c[aUID] = C1;
@@ -506,7 +507,7 @@ var sortArrayUsingJSDescriptors = function(a, d)
                     do
                     {
                         key = d[cn].k;
-                        C2[key] = [B[i] valueForKey:key];
+                        C2[key] = [B[i] valueForKeyPath:key];
                     } while (cn--)
 
                     c[bUID] = C2;

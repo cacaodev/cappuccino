@@ -21,8 +21,14 @@
  */
 
 @import <Foundation/CPObject.j>
+@import <Foundation/CPGeometry.j>
 @import "CPText.j"
 
+@class CPTextField
+
+@global CPApp
+@global CPBrowserIsOperatingSystem
+@global CPMacOperatingSystem
 
 CPLeftMouseDown                         = 1;
 CPLeftMouseUp                           = 2;
@@ -190,7 +196,7 @@ var _CPEventPeriodicEventPeriod         = 0,
 @implementation CPEvent : CPObject
 {
     CPEventType         _type;
-    CPPoint             _location;
+    CGPoint             _location;
     unsigned            _modifierFlags;
     CPTimeInterval      _timestamp;
     CPGraphicsContext   _context;
@@ -204,6 +210,9 @@ var _CPEventPeriodicEventPeriod         = 0,
     BOOL                _isARepeat;
     unsigned            _keyCode;
     DOMEvent            _DOMEvent;
+    int                 _data1;
+    int                 _data2;
+    short               _subtype;
 
     float               _deltaX;
     float               _deltaY;
@@ -306,13 +315,13 @@ var _CPEventPeriodicEventPeriod         = 0,
 }
 
 /* @ignore */
-- (id)_initMouseEventWithType:(CPEventType)anEventType location:(CPPoint)aPoint modifierFlags:(unsigned)modifierFlags
+- (id)_initMouseEventWithType:(CPEventType)anEventType location:(CGPoint)aPoint modifierFlags:(unsigned)modifierFlags
     timestamp:(CPTimeInterval)aTimestamp windowNumber:(int)aWindowNumber context:(CPGraphicsContext)aGraphicsContext
     eventNumber:(int)anEventNumber clickCount:(int)aClickCount pressure:(float)aPressure
 {
     if (self = [self _initWithType:anEventType])
     {
-        _location = CPPointCreateCopy(aPoint);
+        _location = CGPointCreateCopy(aPoint);
         _modifierFlags = modifierFlags;
         _timestamp = aTimestamp;
         _context = aGraphicsContext;
@@ -326,13 +335,13 @@ var _CPEventPeriodicEventPeriod         = 0,
 }
 
 /* @ignore */
-- (id)_initKeyEventWithType:(CPEventType)anEventType location:(CPPoint)aPoint modifierFlags:(unsigned int)modifierFlags
+- (id)_initKeyEventWithType:(CPEventType)anEventType location:(CGPoint)aPoint modifierFlags:(unsigned int)modifierFlags
     timestamp:(CPTimeInterval)aTimestamp windowNumber:(int)aWindowNumber context:(CPGraphicsContext)aGraphicsContext
     characters:(CPString)characters charactersIgnoringModifiers:(CPString)unmodCharacters isARepeat:(BOOL)isARepeat keyCode:(unsigned short)code
 {
     if (self = [self _initWithType:anEventType])
     {
-        _location = CPPointCreateCopy(aPoint);
+        _location = CGPointCreateCopy(aPoint);
         _modifierFlags = modifierFlags;
         _timestamp = aTimestamp;
         _context = aGraphicsContext;
@@ -353,7 +362,7 @@ var _CPEventPeriodicEventPeriod         = 0,
 {
     if (self = [self _initWithType:anEventType])
     {
-        _location = CPPointCreateCopy(aPoint);
+        _location = CGPointCreateCopy(aPoint);
         _modifierFlags = modifierFlags;
         _timestamp = aTimestamp;
         _context = aGraphicsContext;
@@ -517,6 +526,16 @@ var _CPEventPeriodicEventPeriod         = 0,
     return _DOMEvent;
 }
 
+- (int)data1
+{
+    return _data1;
+}
+
+- (int)data2
+{
+    return _data2;
+}
+
 // Getting Scroll Wheel Event Information
 /*!
     Returns the change in the x-axis for a mouse event.
@@ -628,6 +647,29 @@ var _CPEventPeriodicEventPeriod         = 0,
     window.clearTimeout(_CPEventPeriodicEventTimer);
 
     _CPEventPeriodicEventTimer = nil;
+}
+
+- (CPString)description
+{
+    switch (_type)
+    {
+        case CPKeyDown:
+        case CPKeyUp:
+        case CPFlagsChanged:
+            return [CPString stringWithFormat:@"CPEvent: type=%d loc=%@ time=%.1f flags=0x%X win=%@ winNum=%d ctxt=%@ chars=\"%@\" unmodchars=\"%@\" repeat=%d keyCode=%d", _type, CPStringFromPoint(_location), _timestamp, _modifierFlags, _window, _windowNumber, _context, _characters, _charactersIgnoringModifiers, _isARepeat, _keyCode];
+        case CPLeftMouseDown:
+        case CPLeftMouseUp:
+        case CPRightMouseDown:
+        case CPRightMouseUp:
+        case CPMouseMoved:
+        case CPLeftMouseDragged:
+        case CPRightMouseDragged:
+        case CPMouseEntered:
+        case CPMouseExited:
+            return [CPString stringWithFormat:@"CPEvent: type=%d loc=%@ time=%.1f flags=0x%X win=%@ winNum=%d ctxt=%@ evNum=%d click=%d buttonNumber=%d pressure=%f", _type, CPStringFromPoint(_location), _timestamp, _modifierFlags, _window, _windowNumber, _context, _eventNumber, _clickCount, [self buttonNumber], _pressure];
+        default:
+            return [CPString stringWithFormat:@"CPEvent: type=%d loc=%@ time=%.1f flags=0x%X win=%@ winNum=%d ctxt=%@ subtype=%d data1=%d data2=%d", _type, CPStringFromPoint(_location), _timestamp, _modifierFlags, _window, _windowNumber, _context, _subtype, _data1, _data2];
+    }
 }
 
 @end

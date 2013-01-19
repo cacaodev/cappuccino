@@ -22,6 +22,7 @@
 
 @import "CPTableColumn.j"
 @import "CPTableView.j"
+@import "CPButton.j"
 
 
 CPOutlineViewColumnDidMoveNotification          = @"CPOutlineViewColumnDidMoveNotification";
@@ -376,9 +377,8 @@ var CPOutlineViewCoalesceSelectionNotificationStateOff  = 0,
         var previousRowCount = [self numberOfRows];
 
         itemInfo.isExpanded = YES;
-        // XXX Shouldn't the items reload before the notification is sent?
-        [self _noteItemDidExpand:anItem];
         [self reloadItem:anItem reloadChildren:YES];
+        [self _noteItemDidExpand:anItem];
 
         // Shift selection indexes below so that the same items remain selected.
         var rowCountDelta = [self numberOfRows] - previousRowCount;
@@ -469,9 +469,8 @@ var CPOutlineViewCoalesceSelectionNotificationStateOff  = 0,
     }
     itemInfo.isExpanded = NO;
 
-    // XXX Shouldn't the items reload before the notification is sent?
-    [self _noteItemDidCollapse:anItem];
     [self reloadItem:anItem reloadChildren:YES];
+    [self _noteItemDidCollapse:anItem];
 
     // Send selection notifications only after the items have loaded so that
     // the new selection is consistent with the actual rows for any observers.
@@ -711,7 +710,8 @@ var CPOutlineViewCoalesceSelectionNotificationStateOff  = 0,
         return _CGRectMakeZero();
 
     var dataViewFrame = [self _frameOfOutlineDataViewAtRow:aRow],
-        frame = _CGRectMake(_CGRectGetMinX(dataViewFrame) - 10, _CGRectGetMinY(dataViewFrame), 10, _CGRectGetHeight(dataViewFrame));
+        disclosureWidth = _CGRectGetWidth([_disclosureControlPrototype frame]),
+        frame = _CGRectMake(_CGRectGetMinX(dataViewFrame) - disclosureWidth, _CGRectGetMinY(dataViewFrame), disclosureWidth, _CGRectGetHeight(dataViewFrame));
 
     return frame;
 }
@@ -1053,11 +1053,12 @@ var CPOutlineViewCoalesceSelectionNotificationStateOff  = 0,
     @ignore
     We need to offset the dataview and add the disclosure triangle.
 */
-- (CPView)_dragViewForColumn:(int)theColumnIndex event:(CPEvent)theDragEvent offset:(CPPointPointer)theDragViewOffset
+- (CPView)_dragViewForColumn:(int)theColumnIndex event:(CPEvent)theDragEvent offset:(CGPointPointer)theDragViewOffset
 {
     var dragView = [[_CPColumnDragView alloc] initWithLineColor:[self gridColor]],
         tableColumn = [[self tableColumns] objectAtIndex:theColumnIndex],
-        bounds = _CGRectMake(0.0, 0.0, [tableColumn width], _CGRectGetHeight([self exposedRect]) + 23.0),
+        defaultRowHeight = [self valueForThemeAttribute:@"default-row-height"],
+        bounds = _CGRectMake(0.0, 0.0, [tableColumn width], _CGRectGetHeight([self exposedRect]) + defaultRowHeight),
         columnRect = [self rectOfColumn:theColumnIndex],
         headerView = [tableColumn headerView],
         row = [_exposedRows firstIndex];
@@ -1071,7 +1072,7 @@ var CPOutlineViewCoalesceSelectionNotificationStateOff  = 0,
         dataViewFrame.origin.x = 0.0;
 
         // Offset by table header height - scroll position
-        dataViewFrame.origin.y = ( _CGRectGetMinY(dataViewFrame) - _CGRectGetMinY([self exposedRect]) ) + 23.0;
+        dataViewFrame.origin.y = ( _CGRectGetMinY(dataViewFrame) - _CGRectGetMinY([self exposedRect]) ) + defaultRowHeight;
         [dataView setFrame:dataViewFrame];
 
         [dataView setObjectValue:[self _objectValueForTableColumn:tableColumn row:row]];
@@ -1185,7 +1186,7 @@ var CPOutlineViewCoalesceSelectionNotificationStateOff  = 0,
 /*!
     @ignore
 */
-- (id)_parentItemForUpperRow:(int)theUpperRowIndex andLowerRow:(int)theLowerRowIndex atMouseOffset:(CPPoint)theOffset
+- (id)_parentItemForUpperRow:(int)theUpperRowIndex andLowerRow:(int)theLowerRowIndex atMouseOffset:(CGPoint)theOffset
 {
     if (_shouldRetargetItem)
         return _retargetedItem;
@@ -1215,7 +1216,7 @@ var CPOutlineViewCoalesceSelectionNotificationStateOff  = 0,
 /*!
     @ignore
 */
-- (CPRect)_rectForDropHighlightViewBetweenUpperRow:(int)theUpperRowIndex andLowerRow:(int)theLowerRowIndex offset:(CPPoint)theOffset
+- (CGRect)_rectForDropHighlightViewBetweenUpperRow:(int)theUpperRowIndex andLowerRow:(int)theLowerRowIndex offset:(CGPoint)theOffset
 {
     // Call super and the update x to reflect the current indentation level
     var rect = [super _rectForDropHighlightViewBetweenUpperRow:theUpperRowIndex andLowerRow:theLowerRowIndex offset:theOffset],
@@ -1728,7 +1729,7 @@ var _loadItemInfoForItem = function(/*CPOutlineView*/ anOutlineView, /*id*/ anIt
     return [_outlineView._outlineViewDataSource outlineView:_outlineView writeItems:items toPasteboard:thePasteboard];
 }
 
-- (int)_childIndexForDropOperation:(CPTableViewDropOperation)theDropOperation row:(int)theRow offset:(CPPoint)theOffset
+- (int)_childIndexForDropOperation:(CPTableViewDropOperation)theDropOperation row:(int)theRow offset:(CGPoint)theOffset
 {
     if (_outlineView._shouldRetargetChildIndex)
         return _outlineView._retargedChildIndex;
@@ -1752,7 +1753,7 @@ var _loadItemInfoForItem = function(/*CPOutlineView*/ anOutlineView, /*id*/ anIt
     return childIndex;
 }
 
-- (void)_parentItemForDropOperation:(CPTableViewDropOperation)theDropOperation row:(int)theRow offset:(CPPoint)theOffset
+- (void)_parentItemForDropOperation:(CPTableViewDropOperation)theDropOperation row:(int)theRow offset:(CGPoint)theOffset
 {
     if (theDropOperation === CPTableViewDropAbove)
         return [_outlineView _parentItemForUpperRow:theRow - 1 andLowerRow:theRow atMouseOffset:theOffset]

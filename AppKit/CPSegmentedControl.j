@@ -115,13 +115,15 @@ CPSegmentSwitchTrackingMomentary = 2;
     if (_selectedSegment >= _segments.length)
         _selectedSegment = -1;
 
-    // Make space for/remove space used by dividers.
     var thickness = [self currentValueForThemeAttribute:@"divider-thickness"],
-        delta = thickness * (dividersAfter - dividersBefore),
-        frame = [self frame];
+        frame = [self frame],
+        widthOfAllSegments = 0,
+        dividerExtraSpace = ([_segments count] - 1) * thickness;
 
-    if (delta)
-        [self setFrameSize:CGSizeMake(frame.size.width + delta, frame.size.height)];
+    for (var i = 0; i < [_segments count]; i++)
+        widthOfAllSegments += [_segments[i] width];
+
+    [self setFrameSize:CGSizeMake(widthOfAllSegments + dividerExtraSpace, frame.size.height)];
 
     [self tileWithChangedSegment:0];
 }
@@ -366,11 +368,14 @@ CPSegmentSwitchTrackingMomentary = 2;
     @param aSegment the segment to enable/disable
     @throws CPRangeException if \c aSegment is out of bounds
 */
-- (void)setEnabled:(BOOL)isEnabled forSegment:(unsigned)aSegment
+- (void)setEnabled:(BOOL)shouldBeEnabled forSegment:(unsigned)aSegment
 {
-    [_segments[aSegment] setEnabled:isEnabled];
+    if ([_segments[aSegment] enabled] === shouldBeEnabled)
+        return;
 
-    if (isEnabled)
+    [_segments[aSegment] setEnabled:shouldBeEnabled];
+
+    if (shouldBeEnabled)
         _themeStates[aSegment] &= ~CPThemeStateDisabled;
     else
         _themeStates[aSegment] |= CPThemeStateDisabled;
@@ -460,7 +465,7 @@ CPSegmentSwitchTrackingMomentary = 2;
     }
     else if (aName === "right-segment-bezel")
     {
-        return CPRectMake(CGRectGetWidth([self bounds]) - contentInset.right,
+        return CGRectMake(CGRectGetWidth([self bounds]) - contentInset.right,
                             bezelInset.top,
                             contentInset.right,
                             height);

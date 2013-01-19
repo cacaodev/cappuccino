@@ -22,6 +22,7 @@
 
 @import <AppKit/CPSplitView.j>
 
+var NSThinDividerStyle = 2;
 
 @implementation CPSplitView (CPCoding)
 
@@ -29,10 +30,14 @@
 {
     if (self = [super NS_initWithCoder:aCoder])
     {
-        _isVertical = [aCoder decodeBoolForKey:@"NSIsVertical"];
-        _isPaneSplitter = [aCoder decodeIntForKey:@"NSDividerStyle"] == 3;
+        self._isVertical = [aCoder decodeBoolForKey:@"NSIsVertical"];
 
-        _autosaveName = [aCoder decodeObjectForKey:@"NSAutosaveName"];
+        // The possible values appear to be: no value (thick divider), 2 (thin divider) and 3 (pane splitter). For
+        // Cappuccino's purposes we treat thick divider and pane splitter as the same thing since the only difference
+        // seems to be graphical.
+        self._isPaneSplitter = [aCoder decodeIntForKey:@"NSDividerStyle"] != NSThinDividerStyle;
+
+        self._autosaveName = [aCoder decodeObjectForKey:@"NSAutosaveName"];
     }
 
     return self;

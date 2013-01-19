@@ -24,6 +24,7 @@
 @import "CPNull.j"
 @import "_CPCollectionKVCOperators.j"
 
+@class CPIndexSet
 
 @implementation CPObject (CPArrayKVO)
 
@@ -347,7 +348,7 @@
         while ((index = [self indexOfObject:theObject inRange:theRange]) !== CPNotFound)
         {
             [self removeObjectAtIndex:index];
-            theRange = CPIntersectionRange(CPMakeRange(index, length - index), theRange);
+            theRange = CPIntersectionRange(CPMakeRange(index, self.length - index), theRange);
         }
     }
 }
@@ -427,7 +428,7 @@
             [CPException raise:CPInvalidArgumentException reason:"called valueForKey: on an array with a complex key (" + aKey + "). use valueForKeyPath:"];
 
         if (aKey === "@count")
-            return length;
+            return self.length;
 
         return [self valueForUndefinedKey:aKey];
     }
@@ -514,6 +515,31 @@
 
 @implementation CPArray (KeyValueObserving)
 
+/*!
+ Raises an exception.
+
+ CPArray objects are not observable, so this method raises an exception when invoked on an CPArray object.
+ Instead of observing a array, observe the ordered to-many relationship for which the array is the collection of related objects.
+*/
+- (void)addObserver:(id)anObserver forKeyPath:(CPString)aKeyPath options:(CPKeyValueObservingOptions)anOptions context:(id)aContext
+{
+    [CPException raise:CPInvalidArgumentException reason:"[CPArray " + CPStringFromSelector(_cmd) + "] is not supported. Key path: " + aKeyPath];
+}
+
+/*!
+ Raises an exception.
+
+ CPArray objects are not observable, so this method raises an exception when invoked on an CPArray object.
+ Instead of observing a array, observe the ordered to-many relationship for which the array is the collection of related objects.
+*/
+- (void)removeObserver:(id)anObserver forKeyPath:(CPString)aKeyPath
+{
+    [CPException raise:CPInvalidArgumentException reason:"[CPArray " + CPStringFromSelector(_cmd) + "] is not supported. Key path: " + aKeyPath];
+}
+
+/*!
+ Registers an observer to receive key value observer notifications for the specified key-path relative to the objects at the indexes.
+*/
 - (void)addObserver:(id)anObserver toObjectsAtIndexes:(CPIndexSet)indexes forKeyPath:(CPString)aKeyPath options:(unsigned)options context:(id)context
 {
     var index = [indexes firstIndex];
@@ -526,6 +552,9 @@
     }
 }
 
+/*!
+ Removes anObserver from all key value observer notifications associated with the specified keyPath relative to the array’s objects at indexes.
+*/
 - (void)removeObserver:(id)anObserver fromObjectsAtIndexes:(CPIndexSet)indexes forKeyPath:(CPString)aKeyPath
 {
     var index = [indexes firstIndex];

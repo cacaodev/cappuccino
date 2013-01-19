@@ -31,6 +31,8 @@
 @import "CPMenuItem.j"
 @import "CPPanel.j"
 
+@global CPApp
+
 
 CPMenuDidAddItemNotification        = @"CPMenuDidAddItemNotification";
 CPMenuDidChangeItemNotification     = @"CPMenuDidChangeItemNotification";
@@ -38,12 +40,8 @@ CPMenuDidRemoveItemNotification     = @"CPMenuDidRemoveItemNotification";
 
 CPMenuDidEndTrackingNotification    = @"CPMenuDidEndTrackingNotification";
 
-var MENUBAR_HEIGHT = 28.0;
-
 var _CPMenuBarVisible               = NO,
     _CPMenuBarTitle                 = @"",
-    _CPMenuBarIconImage             = nil,
-    _CPMenuBarIconImageAlphaValue   = 1.0,
     _CPMenuBarAttributes            = nil,
     _CPMenuBarSharedWindow          = nil;
 
@@ -80,7 +78,7 @@ var _CPMenuBarVisible               = NO,
 
 + (void)initialize
 {
-    if (self !== CPMenu)
+    if (self !== [CPMenu class])
         return;
 
     [[self class] setMenuBarAttributes:[CPDictionary dictionary]];
@@ -109,8 +107,8 @@ var _CPMenuBarVisible               = NO,
         [_CPMenuBarSharedWindow setMenu:[CPApp mainMenu]];
 
         [_CPMenuBarSharedWindow setTitle:_CPMenuBarTitle];
-        [_CPMenuBarSharedWindow setIconImage:_CPMenuBarIconImage];
-        [_CPMenuBarSharedWindow setIconImageAlphaValue:_CPMenuBarIconImageAlphaValue];
+        [_CPMenuBarSharedWindow setIconImage:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-icon-image" forClass:_CPMenuView]];
+        [_CPMenuBarSharedWindow setIconImageAlphaValue:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-icon-image-alpha-value" forClass:_CPMenuView]];
 
         [_CPMenuBarSharedWindow setColor:[_CPMenuBarAttributes objectForKey:@"CPMenuBarBackgroundColor"]];
         [_CPMenuBarSharedWindow setTextColor:[_CPMenuBarAttributes objectForKey:@"CPMenuBarTextColor"]];
@@ -178,8 +176,8 @@ var _CPMenuBarVisible               = NO,
 
     else if (!textColor && !titleColor)
     {
-        [_CPMenuBarAttributes setObject:[CPColor colorWithRed:0.051 green:0.2 blue:0.275 alpha:1.0] forKey:@"CPMenuBarTextColor"];
-        [_CPMenuBarAttributes setObject:[CPColor colorWithRed:0.051 green:0.2 blue:0.275 alpha:1.0] forKey:@"CPMenuBarTitleColor"];
+        [_CPMenuBarAttributes setObject:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-text-color" forClass:_CPMenuView] forKey:@"CPMenuBarTextColor"];
+        [_CPMenuBarAttributes setObject:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-title-color" forClass:_CPMenuView] forKey:@"CPMenuBarTitleColor"];
     }
 
     if (!textShadowColor && titleShadowColor)
@@ -190,18 +188,18 @@ var _CPMenuBarVisible               = NO,
 
     else if (!textShadowColor && !titleShadowColor)
     {
-        [_CPMenuBarAttributes setObject:[CPColor whiteColor] forKey:@"CPMenuBarTextShadowColor"];
-        [_CPMenuBarAttributes setObject:[CPColor whiteColor] forKey:@"CPMenuBarTitleShadowColor"];
+        [_CPMenuBarAttributes setObject:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-text-shadow-color" forClass:_CPMenuView] forKey:@"CPMenuBarTextShadowColor"];
+        [_CPMenuBarAttributes setObject:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-title-shadow-color" forClass:_CPMenuView] forKey:@"CPMenuBarTitleShadowColor"];
     }
 
     if (!highlightColor)
-        [_CPMenuBarAttributes setObject:[CPColor colorWithCalibratedRed:94.0 / 255.0 green:130.0 / 255.0 blue:186.0 / 255.0 alpha:1.0] forKey:@"CPMenuBarHighlightColor"];
+        [_CPMenuBarAttributes setObject:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-highlight-color" forClass:_CPMenuView] forKey:@"CPMenuBarHighlightColor"];
 
     if (!highlightTextColor)
-        [_CPMenuBarAttributes setObject:[CPColor whiteColor] forKey:@"CPMenuBarHighlightTextColor"];
+        [_CPMenuBarAttributes setObject:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-highlight-text-color" forClass:_CPMenuView] forKey:@"CPMenuBarHighlightTextColor"];
 
     if (!highlightTextShadowColor)
-        [_CPMenuBarAttributes setObject:[CPColor blackColor] forKey:@"CPMenuBarHighlightTextShadowColor"];
+        [_CPMenuBarAttributes setObject:[[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-highlight-text-shadow-color" forClass:_CPMenuView] forKey:@"CPMenuBarHighlightTextShadowColor"];
 
     if (_CPMenuBarSharedWindow)
     {
@@ -230,14 +228,14 @@ var _CPMenuBarVisible               = NO,
 - (float)menuBarHeight
 {
     if (self === [CPApp mainMenu])
-        return MENUBAR_HEIGHT;
+        return [[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-height" forClass:_CPMenuView];
 
     return 0.0;
 }
 
 + (float)menuBarHeight
 {
-    return MENUBAR_HEIGHT;
+    return [[CPTheme defaultTheme] valueForAttributeWithName:@"menu-bar-height" forClass:_CPMenuView];
 }
 
 // Creating a CPMenu Object
@@ -806,7 +804,7 @@ var _CPMenuBarVisible               = NO,
     [aMenu _menuWillOpen];
 
     if (!aFont)
-        aFont = [CPFont systemFontOfSize:12.0];
+        aFont = [CPFont systemFontOfSize:[CPFont systemFontSize]];
 
     var theWindow = [aView window],
         menuWindow = [_CPMenuWindow menuWindowWithMenu:aMenu font:aFont];
@@ -976,8 +974,7 @@ var _CPMenuBarVisible               = NO,
 
     for (; index < count; ++index)
     {
-        var item = _items[index],
-            modifierMask = [item keyEquivalentModifierMask];
+        var item = _items[index];
 
         if ([anEvent _triggersKeyEquivalent:[item keyEquivalent] withModifierMask:[item keyEquivalentModifierMask]])
         {

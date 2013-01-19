@@ -22,11 +22,14 @@
 
 #import "../Foundation/Ref.h"
 
-@import "../Foundation/CPFormatter.j"
+@import <Foundation/CPFormatter.j>
+@import <Foundation/CPTimer.j>
 @import "CPFont.j"
 @import "CPShadow.j"
 @import "CPView.j"
 @import "CPKeyValueBinding.j"
+
+@global CPApp
 
 CPLeftTextAlignment      = 0;
 CPRightTextAlignment     = 1;
@@ -112,7 +115,7 @@ var CPControlBlackColor = [CPColor blackColor];
                                                 CPTopVerticalTextAlignment,
                                                 CPLineBreakByClipping,
                                                 [CPColor blackColor],
-                                                [CPFont systemFontOfSize:12.0],
+                                                [CPFont systemFontOfSize:CPFontCurrentSystemSize],
                                                 [CPNull null],
                                                 _CGSizeMakeZero(),
                                                 CPImageLeft,
@@ -134,18 +137,18 @@ var CPControlBlackColor = [CPColor blackColor];
 
 + (void)initialize
 {
-    if (self === [CPControl class])
-    {
-        [self exposeBinding:@"value"];
-        [self exposeBinding:@"objectValue"];
-        [self exposeBinding:@"stringValue"];
-        [self exposeBinding:@"integerValue"];
-        [self exposeBinding:@"intValue"];
-        [self exposeBinding:@"doubleValue"];
-        [self exposeBinding:@"floatValue"];
+    if (self !== [CPControl class])
+        return;
 
-        [self exposeBinding:@"enabled"];
-    }
+    [self exposeBinding:@"value"];
+    [self exposeBinding:@"objectValue"];
+    [self exposeBinding:@"stringValue"];
+    [self exposeBinding:@"integerValue"];
+    [self exposeBinding:@"intValue"];
+    [self exposeBinding:@"doubleValue"];
+    [self exposeBinding:@"floatValue"];
+
+    [self exposeBinding:@"enabled"];
 }
 
 + (Class)_binderClassForBinding:(CPString)theBinding
@@ -391,7 +394,10 @@ var CPControlBlackColor = [CPColor blackColor];
 
 - (void)stopTracking:(CGPoint)lastPoint at:(CGPoint)aPoint mouseIsUp:(BOOL)mouseIsUp
 {
-    [self highlight:NO];
+    if (mouseIsUp)
+        [self highlight:NO];
+    else
+        [self highlight:YES];
 }
 
 - (void)mouseDown:(CPEvent)anEvent
@@ -513,7 +519,7 @@ var CPControlBlackColor = [CPColor blackColor];
 */
 - (CPString)stringValue
 {
-    if (_formatter && _value !== undefined && _value !== nil)
+    if (_formatter && _value !== undefined)
     {
         var formattedValue = [self hasThemeState:CPThemeStateEditing] ? [_formatter editingStringForObjectValue:_value] : [_formatter stringForObjectValue:_value];
 
@@ -532,7 +538,7 @@ var CPControlBlackColor = [CPColor blackColor];
     // Cocoa raises an invalid parameter assertion and returns if you pass nil.
     if (aString === nil || aString === undefined)
     {
-        CPLog.warn("nil sent to CPControl -setStringValue");
+        CPLog.warn("nil or undefined sent to CPControl -setStringValue");
         return;
     }
 
@@ -864,17 +870,16 @@ var CPControlBlackColor = [CPColor blackColor];
 
 @end
 
-var CPControlValueKey           = "CPControlValueKey",
-    CPControlControlStateKey    = @"CPControlControlStateKey",
-    CPControlIsEnabledKey       = "CPControlIsEnabledKey",
+var CPControlValueKey                   = @"CPControlValueKey",
+    CPControlControlStateKey            = @"CPControlControlStateKey",
+    CPControlIsEnabledKey               = @"CPControlIsEnabledKey",
+    CPControlTargetKey                  = @"CPControlTargetKey",
+    CPControlActionKey                  = @"CPControlActionKey",
+    CPControlSendActionOnKey            = @"CPControlSendActionOnKey",
+    CPControlFormatterKey               = @"CPControlFormatterKey",
+    CPControlSendsActionOnEndEditingKey = @"CPControlSendsActionOnEndEditingKey",
 
-    CPControlTargetKey          = "CPControlTargetKey",
-    CPControlActionKey          = "CPControlActionKey",
-    CPControlSendActionOnKey    = "CPControlSendActionOnKey",
-
-    CPControlSendsActionOnEndEditingKey = "CPControlSendsActionOnEndEditingKey";
-
-var __Deprecated__CPImageViewImageKey   = @"CPImageViewImageKey";
+    __Deprecated__CPImageViewImageKey   = @"CPImageViewImageKey";
 
 @implementation CPControl (CPCoding)
 
@@ -897,6 +902,8 @@ var __Deprecated__CPImageViewImageKey   = @"CPImageViewImageKey";
 
         [self sendActionOn:[aCoder decodeIntForKey:CPControlSendActionOnKey]];
         [self setSendsActionOnEndEditing:[aCoder decodeBoolForKey:CPControlSendsActionOnEndEditingKey]];
+
+        [self setFormatter:[aCoder decodeObjectForKey:CPControlFormatterKey]];
     }
 
     return self;
@@ -926,6 +933,9 @@ var __Deprecated__CPImageViewImageKey   = @"CPImageViewImageKey";
         [aCoder encodeObject:_action forKey:CPControlActionKey];
 
     [aCoder encodeInt:_sendActionOn forKey:CPControlSendActionOnKey];
+
+    if (_formatter !== nil)
+        [aCoder encodeObject:_formatter forKey:CPControlFormatterKey];
 }
 
 @end

@@ -823,10 +823,10 @@ var makeRangeEntry = function makeRangeEntry(/*CPRange*/aRange, /*CPDictionary*/
 
 var copyRangeEntry = function copyRangeEntry(/*RangeEntry*/aRangeEntry)
 {
-    return makeRangeEntry(CPCopyRange(aRangeEntry.range), [aRangeEntry.attributes copy]);
+    return makeRangeEntry(CPMakeRangeCopy(aRangeEntry.range), [aRangeEntry.attributes copy]);
 };
 
-var splitRangeEntry = function splitRangeEntryAtIndex(/*RangeEntry*/aRangeEntry, /*unsigned*/anIndex)
+var splitRangeEntryAtIndex = function splitRangeEntryAtIndex(/*RangeEntry*/aRangeEntry, /*unsigned*/anIndex)
 {
     var newRangeEntry = copyRangeEntry(aRangeEntry),
         cachedIndex = CPMaxRange(aRangeEntry.range);

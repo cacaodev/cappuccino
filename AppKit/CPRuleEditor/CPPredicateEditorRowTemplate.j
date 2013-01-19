@@ -20,6 +20,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+@import <Foundation/CPPredicate.j>
+
+@class CPDatePicker
+
+
 CPUndefinedAttributeType     = 0;
 CPInteger16AttributeType     = 100;
 CPInteger32AttributeType     = 200;
@@ -686,6 +691,7 @@ CPTransformableAttributeType = 1800;
     [textField setBordered:YES];
     [textField setEditable:YES];
     [textField setFont:[CPFont systemFontOfSize:10]];
+    [textField setSendsActionOnEndEditing:YES];
 
     return textField;
 }

@@ -21,6 +21,7 @@
  */
 
 @import <Foundation/CPObject.j>
+@import "CPGraphicsContext.j"
 
 @import "CGColor.j"
 
@@ -609,6 +610,14 @@ function CPColorWithImages()
     components[components.length - 1] = anAlphaComponent;
 
     return [[[self class] alloc] _initWithRGBA:components];
+}
+
+/*!
+    Returns the receiver. This method is a placeholder that does nothing but may be implemented in the future.
+*/
+- (CPColor)colorUsingColorSpaceName:(id)aColorSpaceName
+{
+    return self;
 }
 
 /*!

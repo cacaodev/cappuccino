@@ -20,7 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-@import "MyDocument.j"
+@import "MyDocument2.j"
 @import "StringToURLTransformer.j"
 
 /*!
@@ -39,7 +39,7 @@
 
 - (void)test
 {
-    var theDocument = [MyDocument new],
+    var theDocument = [MyDocument2 new],
         cib = [CPBundle loadCibFile:[[CPBundle bundleForClass:WithBindingsTest] pathForResource:"02_WithBindings.cib"] externalNameTable:[CPDictionary dictionaryWithObject:theDocument forKey:CPCibOwner]];
 
     [theDocument windowControllerDidLoadCib:self];
@@ -75,9 +75,9 @@
     [theDocument.selectedBookmarkTitleField performClick:self];
     [self assert:@"Another Title" equals:[theDocument.collection[1] title]];
 
-    [theDocument.selectedBookmarkURLField setStringValue:@"http://www.cappuccino.org"];
+    [theDocument.selectedBookmarkURLField setStringValue:@"http://www.cappuccino-project.org"];
     [theDocument.selectedBookmarkURLField performClick:self];
-    [self assert:[CPURL URLWithString:@"http://www.cappuccino.org"] equals:[theDocument.collection[1] URL]];
+    [self assert:[CPURL URLWithString:@"http://www.cappuccino-project.org"] equals:[theDocument.collection[1] URL]];
 
     // Verify the first entry remains.
     [theDocument.tableView selectRowIndexes:[CPIndexSet indexSetWithIndex:0] byExtendingSelection:NO]
@@ -87,7 +87,7 @@
     // Remove it.
     [theDocument.removeButton performClick:self];
     [self assert:@"Another Title" equals:[theDocument.selectedBookmarkTitleField stringValue]];
-    [self assert:@"http://www.cappuccino.org" equals:[theDocument.selectedBookmarkURLField stringValue]];
+    [self assert:@"http://www.cappuccino-project.org" equals:[theDocument.selectedBookmarkURLField stringValue]];
 }
 
 @end
