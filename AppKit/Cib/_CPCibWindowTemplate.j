@@ -24,11 +24,11 @@
 @import <Foundation/CPObjJRuntime.j>
 
 @import "CGGeometry.j"
-@import "CPToolbar.j"
 @import "CPView.j"
 @import "CPWindow_Constants.j"
-@import "_CPToolTip.j"
 
+@class CPToolbar
+@class _CPCibCustomView
 
 @implementation _CPCibWindowTemplate : CPObject
 {
@@ -105,6 +105,21 @@
 
     // FIXME: we can't autoresize yet...
     [_windowView setAutoresizesSubviews:NO];
+
+    var constraints = [_windowView constraints];
+    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+        var firstItem = [aConstraint firstItem];
+        if (firstItem && [firstItem isKindOfClass:[_CPCibCustomView class]])
+            [aConstraint setFirstItem:[firstItem replacementView]];
+
+        var secondItem = [aConstraint secondItem];
+        if (secondItem && [secondItem isKindOfClass:[_CPCibCustomView class]])
+            [aConstraint setSecondItem:[secondItem replacementView]];
+    }];
+
+    if ([constraints count] > 0)
+        [_windowView createEngineIfNeeded];
 
     [theWindow setContentView:_windowView];
 

@@ -69,9 +69,15 @@ var NSViewAutoresizingMask = 0x3F,
         _themeAttributes = {};
         _themeState = CPThemeStateNormal;
         [self _loadThemeAttributes];
-        
+
         if ([aCoder containsValueForKey:@"NSReuseIdentifierKey"])
             _identifier = [aCoder decodeObjectForKey:@"NSReuseIdentifierKey"];
+
+        if ([aCoder containsValueForKey:@"NSViewConstraints"])
+            _constraintsArray = [aCoder decodeObjectForKey:@"NSViewConstraints"];
+
+        _huggingPriorities = [aCoder decodeObjectForKey:@"NSHuggingPriority"];
+        _compressionPriorities = [aCoder decodeObjectForKey:@"NSAntiCompressionPriority"];
     }
 
     return self;

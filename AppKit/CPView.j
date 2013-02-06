@@ -32,6 +32,8 @@
 @import "CPTheme.j"
 @import "CPWindow_Constants.j"
 @import "_CPDisplayServer.j"
+@import "CPLayoutConstraint.j"
+@import "CPContentSizeLayoutConstraint.j"
 
 @class _CPToolTip
 @class CPWindow
@@ -203,6 +205,21 @@ var CPViewFlags                     = { },
     Function            _toolTipFunctionIn;
     Function            _toolTipFunctionOut;
     BOOL                _toolTipInstalled;
+
+    CPLayoutConstraintEngine _engine @accessors(property=engine);
+    CPArray                  _constraintsArray @accessors(getter=_constraintsArray);
+    CPArray                  _autoresizingConstraints;
+
+    CGSize   _huggingPriorities;
+    CGSize   _compressionPriorities;
+
+    Object   _variableMinX   ;
+    Object   _variableMinY   ;
+    Object   _variableWidth  ;
+    Object   _variableHeight ;
+
+    BOOL     _needsUpdateConstraint;
+    BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 }
 
 /*
@@ -334,6 +351,9 @@ var CPViewFlags                     = { },
         [self _setupViewFlags];
 
         [self _loadThemeAttributes];
+
+        [self _initConstraintsIvars];
+        _identifier = nil;
     }
 
     return self;
@@ -1220,10 +1240,15 @@ var CPViewFlags                     = { },
 */
 - (void)resizeSubviewsWithOldSize:(CGSize)aSize
 {
-    var count = _subviews.length;
+    if (_engine)
+        [self layoutSubtreeWithOldSize:aSize];
+    else
+    {
+        var count = _subviews.length;
 
-    while (count--)
-        [_subviews[count] resizeWithOldSuperviewSize:aSize];
+        while (count--)
+            [_subviews[count] resizeWithOldSuperviewSize:aSize];
+    }
 }
 
 /*!
@@ -3032,7 +3057,10 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     CPViewWindowKey                 = @"CPViewWindowKey",
     CPViewNextKeyViewKey            = @"CPViewNextKeyViewKey",
     CPViewPreviousKeyViewKey        = @"CPViewPreviousKeyViewKey",
-    CPReuseIdentifierKey            = @"CPReuseIdentifierKey";
+    CPReuseIdentifierKey            = @"CPReuseIdentifierKey",
+    CPViewConstraints               = @"CPViewConstraints",
+    CPHuggingPriority               = @"CPHuggingPriority",
+    CPAntiCompressionPriority       = @"CPAntiCompressionPriority";
 
 @implementation CPView (CPCoding)
 
@@ -3064,6 +3092,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         _identifier = [aCoder decodeObjectForKey:CPReuseIdentifierKey];
 
         _window = [aCoder decodeObjectForKey:CPViewWindowKey];
+        _subviews = [aCoder decodeObjectForKey:CPViewSubviewsKey] || [];
         _superview = [aCoder decodeObjectForKey:CPViewSuperviewKey];
 
         // We have to manually add the subviews so that they will receive
@@ -3141,6 +3170,20 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
             var attributeName = attributes[count--];
 
             _themeAttributes[attributeName] = CPThemeAttributeDecode(aCoder, attributeName, attributes[count], _theme, themeClass);
+        }
+
+        [self _initConstraintsIvars];
+
+        _huggingPriorities = [aCoder decodeSizeForKey:CPHuggingPriority];
+        _compressionPriorities = [aCoder decodeSizeForKey:CPAntiCompressionPriority];
+
+        if ([aCoder containsValueForKey:CPViewConstraints])
+        {
+CPLog.warn(_identifier + " Start Decoding Constraints");
+            var constraints = [aCoder decodeObjectForKey:CPViewConstraints];
+CPLog.warn(_identifier + " End Decoding Constraints");
+            [self _addConstraints:constraints];
+CPLog.debug("\nConstraints for View " + [self identifier] + "\n" + [_constraintsArray description]);
         }
 
         [self setNeedsDisplay:YES];
@@ -3227,9 +3270,415 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     if (_identifier)
         [aCoder encodeObject:_identifier forKey:CPReuseIdentifierKey];
+
+    if ([_constraintsArray count])
+        [aCoder encodeObject:_constraintsArray forKey:CPViewConstraints];
+
+    if (_huggingPriorities)
+        [aCoder encodeSize:_huggingPriorities forKey:CPHuggingPriority];
+
+    if (_compressionPriorities)
+        [aCoder encodeSize:_compressionPriorities forKey:CPAntiCompressionPriority];
 }
 
 @end
+
+@implementation CPView (CPLayoutConstraint)
+
+- (void)_initConstraintsIvars
+{
+    _engine = nil;
+    _needsUpdateConstraint = YES;
+    _translatesAutoresizingMaskIntoConstraints = NO;
+    _autoresizingConstraints = nil;
+    _constraintsArray = [];
+    _huggingPriorities = nil;
+    _compressionPriorities = nil;
+
+    _variableMinX   = nil;
+    _variableMinY   = nil;
+    _variableWidth  = nil;
+    _variableHeight = nil;
+}
+
+- (CGSize)_contentHuggingPriorities
+{
+    if (!_huggingPriorities)
+        _huggingPriorities = [[self class] _defaultHuggingPriorities];
+
+    return _huggingPriorities;
+}
+
+- (CGSize)_contentCompressionResistancePriorities
+{
+    if (!_compressionPriorities)
+        _compressionPriorities = [[self class] _defaultCompressionPriorities];
+
+    return _compressionPriorities;
+}
+
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(250, 250);
+}
+
++ (CGSize)_defaultCompressionPriorities
+{
+    return CGSizeMake(750, 750);
+}
+
+- (CGSize)intrinsicContentSize
+{
+    return CGSizeMake(50, 50);
+}
+
+- (CPArray)_generateContentSizeConstraints
+{
+    var intrinsicContentSize = [self intrinsicContentSize];
+    var constraints = [CPArray array];
+
+    if (!intrinsicContentSize)
+        return constraints;
+
+    var width = intrinsicContentSize.width;
+    var height = intrinsicContentSize.height;
+    var huggingPriorities = [self _contentHuggingPriorities];
+    var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
+
+    var wConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:width huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:0];
+    [constraints addObject:wConstraint];
+
+    var hConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:height huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:1];
+    [constraints addObject:hConstraint];
+CPLog.debug(_cmd + constraints);
+    return constraints;
+}
+
+- (void)setContentHuggingPriority:(CPLayoutPriority)priority forOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    orientation ? _huggingPriorities.height : _huggingPriorities.width = priority;
+}
+
+- (CPLayoutPriority)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return orientation ? _huggingPriorities.height : _huggingPriorities.width;
+}
+
+- (CPArray)constraints
+{
+    var constraints = [_constraintsArray copy];
+    [[self subviews] enumerateObjectsUsingBlock:function(aView, idx, stop)
+    {
+        if ([aView translatesAutoresizingMaskIntoConstraints])
+        {
+            var array = [aView _autoresizingConstraints];
+            [constraints addObjectsFromArray:array];
+        }
+    }];
+
+    return constraints;
+}
+
+-  (void)createEngineIfNeeded
+{
+    if (_engine || [_constraintsArray count] == 0)
+        return;
+
+// CPLog.debug(_identifier + " " + _cmd);
+    _engine = [[CPLayoutConstraintEngine alloc] initWithContainer:self];
+
+    [self _variableMinX];
+    [self _variableMinY];
+    [self _variableWidth];
+    [self _variableHeight];
+
+// stay variables for the view origin to stay put.
+    [_engine addStayVariables:[_variableMinX, _variableMinY] strength:c.Strength.required weight:0];
+
+// stay variables for resizing.
+    [_engine addStayVariables:[_variableWidth, _variableHeight] strength:c.Strength.medium weight:0];
+}
+
+- (Object)_variableMinX
+{
+    if (!_variableMinX)
+        _variableMinX = createVariable(_identifier + "_minX", CGRectGetMinX([self frame]));
+
+    return _variableMinX;
+}
+
+- (Object)_variableMinY
+{
+    if (!_variableMinY)
+        _variableMinY = createVariable(_identifier + "_minY", CGRectGetMinY([self frame]));
+
+    return _variableMinY;
+}
+
+- (Object)_variableWidth
+{
+    if (!_variableWidth)
+        _variableWidth = createVariable(_identifier + "_width", CGRectGetWidth([self frame]));
+
+    return _variableWidth;
+}
+
+- (Object)_variableHeight
+{
+    if (!_variableHeight)
+        _variableHeight = createVariable(_identifier + "_height", CGRectGetHeight([self frame]));
+
+    return _variableHeight;
+}
+
+- (CPArray)_autoresizingConstraints
+{
+    if (!_autoresizingConstraints)
+        _autoresizingConstraints = [self _constraintsEquivalentToAutoresizingMask];
+
+    return _autoresizingConstraints;
+}
+
+- (void)updateConstraintsIfNeeded
+{
+    if (!_engine || !_needsUpdateConstraint)
+        return;
+
+CPLog.debug(_identifier + _cmd);
+    [_engine removeAllConstraints];
+
+    var constraints = [self _internalConstraints];
+    [constraints addObjectsFromArray:_constraintsArray];
+
+    [self addTreeConstraints:constraints toEngine:_engine];
+
+    _needsUpdateConstraint = NO;
+}
+
+- (void)addTreeConstraints:(CPArray)constraints toEngine:(id)anEngine
+{
+    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+        [aConstraint addToEngine:anEngine];
+    }];
+
+    [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
+    {
+        var subConstraints = [aSubview _constraintsArray];
+        [aSubview addTreeConstraints:subConstraints toEngine:anEngine];
+
+        var contentSizeConstraints = [aSubview _generateContentSizeConstraints];
+        if ([contentSizeConstraints count])
+            [aSubview addTreeConstraints:contentSizeConstraints toEngine:anEngine];
+    }];
+}
+
+- (CPArray)_internalConstraints
+{
+    var constraints = [CPArray array];
+
+    if ([[self superview] isKindOfClass:[CPWindow class]])
+    {
+        var frame = [self frame];
+
+        var leftConstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:CGRectGetMinX(frame)];
+
+        [leftConstraint setStrength:3];
+        [constraints addObject:leftConstraint];
+
+        var rightConstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:CGRectGetMinY(frame)];
+
+        [rightConstraint setStrength:3];
+        [constraints addObject:rightConstraint];
+    }
+
+    return constraints;
+}
+
+- (void)addConstraint:(CPLayoutConstraint)aConstraint
+{
+    if ([_constraintsArray containsObject:aConstraint])
+        return;
+
+    [aConstraint setContainer:self];
+    [_constraintsArray addObject:aConstraint];
+// CPLog.debug(_constraintsArray);
+    [self createEngineIfNeeded];
+}
+
+- (void)addConstraints:(CPArray)constraints
+{
+    [self _addConstraints:constraints];
+    [self createEngineIfNeeded];
+}
+
+- (void)_addConstraints:(CPArray)constraints
+{
+    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+        if (![_constraintsArray containsObject:aConstraint])
+        {
+            [aConstraint setContainer:self];
+            [_constraintsArray addObject:aConstraint];
+        }
+    }];
+}
+
+- (void)removeConstraint:(CPLayoutConstraint)aConstraint
+{
+    if (![_constraintsArray containsObject:aConstraint])
+        return;
+
+    [_constraintsArray removeObject:aConstraint];
+    _needsUpdateConstraint = YES;
+}
+
+- (void)layoutSubtreeWithOldSize:(CGSize)oldBoundsSize
+{
+    [self updateConstraintsIfNeeded];
+
+    var newBoundsSize = [self bounds].size,
+        newW = newBoundsSize.width,
+        newH = newBoundsSize.height;
+
+CPLog.debug(_identifier + " layoutSubtreeWithNewSize:" + CGStringFromSize(newBoundsSize));
+
+    if (newW !== oldBoundsSize.width)
+        [_engine suggestValue:newW forVariable:_variableWidth];
+
+    if (newH !== oldBoundsSize.height)
+        [_engine suggestValue:newH forVariable:_variableHeight];
+
+    [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
+    {
+        [aSubview _updateConstraintFrame];
+    }];
+}
+
+- (void)_updateConstraintFrame
+{
+    var resolvedFrame = [self frame];
+
+    if (_variableWidth !== nil)
+        resolvedFrame.size.width = _variableWidth.value;
+
+    if (_variableHeight !== nil)
+        resolvedFrame.size.height = _variableHeight.value;
+
+    if (_variableMinX !== nil)
+        resolvedFrame.origin.x = _variableMinX.value;
+
+    if (_variableMinY !== nil)
+        resolvedFrame.origin.y = _variableMinY.value;
+
+    [self setFrame:resolvedFrame];
+    CPLog.debug(_identifier  + " " + _cmd + " " + _variableWidth + _variableHeight);
+
+    [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
+    {
+        [aSubview _updateConstraintFrame];
+    }];
+
+}
+
+- (CPArray)_constraintsEquivalentToAutoresizingMask
+{
+    var result = [CPArray array],
+        superview = [self superview];
+
+    if (!superview)
+        return result;
+
+    var sRect = [superview bounds],
+        rect = [self frame],
+        mask = [self autoresizingMask],
+        sWidth = CGRectGetWidth(sRect),
+        width = CGRectGetWidth(rect),
+        sHeight = CGRectGetHeight(sRect),
+        height = CGRectGetHeight(rect),
+        multiplier,
+        constant,
+        firstAttribute,
+        secondAttribute;
+
+    if (!(mask & CPViewWidthSizable))
+    {
+        multiplier = 1;
+        constant = width;
+        firstAttribute = CPLayoutAttributeWidth;
+        secondAttribute = CPLayoutAttributeNotAnAttribute;
+    }
+    else if (!(mask & CPViewMinXMargin) && ! (mask & CPViewMaxXMargin))
+    {
+        multiplier = 1;
+        constant = CGRectGetMaxX(rect) - sWidth;
+        firstAttribute = CPLayoutAttributeRight;
+        secondAttribute = CPLayoutAttributeWidth;
+    }
+    else
+    {
+        var widthDivider;
+        if (mask & CPViewMinXMargin && mask & CPViewMaxXMargin)
+            widthDivider = sWidth;
+        else if (mask & CPViewMinXMargin)
+            widthDivider = CGRectGetMaxX(rect);
+        else if (mask & CPViewMaxXMargin)
+            widthDivider = sWidth - CGRectGetMinX(rect);
+
+        multiplier = width / widthDivider;
+        constant = multiplier * sWidth - width;
+        firstAttribute = CPLayoutAttributeWidth;
+        secondAttribute = CPLayoutAttributeWidth;
+    }
+
+    var wConstraint = [CPLayoutConstraint constraintWithItem:self attribute:firstAttribute relatedBy:CPLayoutRelationEqual toItem:superview attribute:secondAttribute multiplier:multiplier constant:constant];
+
+    [result addObject:wConstraint];
+
+    if (!(mask & CPViewHeightSizable))
+    {
+        multiplier = 1;
+        constant = height;
+        firstAttribute = CPLayoutAttributeHeight;
+        secondAttribute = CPLayoutAttributeNotAnAttribute;
+    }
+    else if (!(mask & CPViewMinYMargin) && ! (mask & CPViewMaxYMargin))
+    {
+        multiplier = 1;
+        constant = CGRectGetMaxY(rect) - sHeight;
+        firstAttribute = CPLayoutAttributeTop;
+        secondAttribute = CPLayoutAttributeHeight;
+    }
+    else
+    {
+        var heightDivider;
+        if (mask & CPViewMinYMargin && mask & CPViewMaxYMargin)
+            heightDivider = sHeight;
+        else if (mask & CPViewMinYMargin)
+            heightDivider = CGRectGetMaxY(rect);
+        else if (mask & CPViewMaxYMargin)
+            heightDivider = sHeight - CGRectGetMinY(rect);
+
+        multiplier = height / heightDivider;
+        constant = multiplier * sHeight - height;
+        firstAttribute = CPLayoutAttributeHeight;
+        secondAttribute = CPLayoutAttributeHeight;
+    }
+
+    var hConstraint = [CPLayoutConstraint constraintWithItem:self attribute:firstAttribute relatedBy:CPLayoutRelationEqual toItem:superview attribute:secondAttribute multiplier:multiplier constant:constant];
+
+    [result addObject:hConstraint];
+
+    return result;
+}
+
+@end
+
+var createVariable = function(aName, aValue)
+{
+    // CPLog.debug("create variable for " + aName);
+    return new c.Variable({name:aName, value:aValue});
+};
 
 var _CPViewFullScreenModeStateMake = function(aView)
 {

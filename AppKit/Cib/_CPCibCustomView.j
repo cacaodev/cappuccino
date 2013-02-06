@@ -28,6 +28,7 @@
 @implementation _CPCibCustomView : CPView
 {
     CPString    _className;
+    CPView      _replacementView @accessors(getter=replacementView);
 }
 
 - (CPString)customClassName
@@ -57,7 +58,10 @@ var _CPCibCustomViewClassNameKey    = @"_CPCibCustomViewClassNameKey";
     self = [super initWithCoder:aCoder];
 
     if (self)
+    {
         _className = [aCoder decodeObjectForKey:_CPCibCustomViewClassNameKey];
+        _replacementView = nil;
+    }
 
     return self;
 }
@@ -121,6 +125,22 @@ var _CPCibCustomViewClassNameKey    = @"_CPCibCustomViewClassNameKey";
         [_superview replaceSubview:self with:view];
 
         [view setBackgroundColor:[self backgroundColor]];
+
+        _replacementView = view;
+
+        var constraints = [self constraints];
+        [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+        {
+            var firstItem = [aConstraint firstItem];
+            if (firstItem && [firstItem isKindOfClass:[_CPCibCustomView class]])
+                [aConstraint setFirstItem:[firstItem replacementView]];
+
+            var secondItem = [aConstraint secondItem];
+            if (secondItem && [secondItem isKindOfClass:[_CPCibCustomView class]])
+                [aConstraint setSecondItem:[secondItem replacementView]];
+        }];
+
+        [view _addConstraints:constraints];
     }
 
     return view;

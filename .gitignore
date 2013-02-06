@@ -5,8 +5,7 @@ Demos
 ./Aristo
 WebSite
 .push-package
-*.xcodeproj/*.pbxuser
-*.xcodeproj/*.perspectivev3
+*.xcodeproj
 xcuserdata/
 !*.xcodeproj/project.pbxproj
 *.xCodeSupport/

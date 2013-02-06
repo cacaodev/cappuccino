@@ -1,0 +1,3 @@
+[submodule "cassowary-js-refactor"]
+	path = cassowary-js-refactor
+	url = git://github.com/slightlyoff/cassowary-js-refactor.git

@@ -1,0 +1,45 @@
+/*
+ * AppController.j
+ * CPLayoutConstraintCibTest
+ *
+ * Created by You on January 23, 2013.
+ * Copyright 2013, Your Company All rights reserved.
+ */
+
+@import <Foundation/CPObject.j>
+@import "../CPTrace.j"
+
+CPLogRegister(CPLogConsole);
+
+@implementation ColorView : CPView
+{
+    CPColor color;
+}
+
+- (id)awakeFromCib
+{
+    [self setColor:[CPColor randomColor]];
+}
+
+- (void)setColor:(CPColor)aColor
+{
+    color = aColor;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)drawRect:(CGRect)aRect
+{
+    var ctx = [[CPGraphicsContext currentContext] graphicsPort];
+    [color set];
+
+    CGContextFillRect(ctx, [self bounds]);
+}
+
+@end
+
+@implementation AppController : CPObject
+{
+    @outlet CPWindow theWindow;
+}
+
+@end
