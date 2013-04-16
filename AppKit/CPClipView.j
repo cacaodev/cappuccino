@@ -36,6 +36,10 @@
     CPView  _documentView;
 }
 
+- (CGRect)documentVisibleRect
+{
+    return [self convertRect:[self bounds] fromView:_documentView];
+}
 /*!
     Sets the document view to be \c aView.
     @param aView the new document view. It's frame origin will be changed to \c (0,0) after calling this method.

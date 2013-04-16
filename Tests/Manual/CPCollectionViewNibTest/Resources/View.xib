@@ -3,12 +3,12 @@
 	<data>
 		<int key="IBDocument.SystemTarget">1070</int>
 		<string key="IBDocument.SystemVersion">11G63</string>
-		<string key="IBDocument.InterfaceBuilderVersion">2844</string>
+		<string key="IBDocument.InterfaceBuilderVersion">3084</string>
 		<string key="IBDocument.AppKitVersion">1138.51</string>
 		<string key="IBDocument.HIToolboxVersion">569.00</string>
 		<object class="NSMutableDictionary" key="IBDocument.PluginVersions">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin</string>
-			<string key="NS.object.0">2844</string>
+			<string key="NS.object.0">3084</string>
 		</object>
 		<array key="IBDocument.IntegratedClassDependencies">
 			<string>NSCustomObject</string>
@@ -103,19 +103,19 @@
 					<object class="NSTextField" id="667750628">
 						<reference key="NSNextResponder" ref="1005"/>
 						<int key="NSvFlags">319</int>
-						<string key="NSFrame">{{48, 27}, {69, 39}}</string>
+						<string key="NSFrame">{{7, 33}, {150, 27}}</string>
 						<reference key="NSSuperview" ref="1005"/>
 						<reference key="NSWindow"/>
 						<reference key="NSNextKeyView" ref="167825784"/>
 						<string key="NSReuseIdentifierKey">_NS:1535</string>
 						<bool key="NSEnabled">YES</bool>
 						<object class="NSTextFieldCell" key="NSCell" id="484930569">
-							<int key="NSCellFlags">342884417</int>
-							<int key="NSCellFlags2">138413056</int>
+							<int key="NSCellFlags">341835841</int>
+							<int key="NSCellFlags2">138414592</int>
 							<string key="NSContents">T</string>
 							<object class="NSFont" key="NSSupport">
 								<string key="NSName">LucidaGrande</string>
-								<double key="NSSize">32</double>
+								<double key="NSSize">13</double>
 								<int key="NSfFlags">16</int>
 							</object>
 							<string key="NSCellIdentifier">_NS:1535</string>
@@ -211,9 +211,9 @@
 						<int key="objectID">1</int>
 						<reference key="object" ref="1005"/>
 						<array class="NSMutableArray" key="children">
-							<reference ref="667750628"/>
 							<reference ref="169792613"/>
 							<reference ref="167825784"/>
+							<reference ref="667750628"/>
 						</array>
 						<reference key="parent" ref="0"/>
 					</object>

@@ -100,6 +100,8 @@ var HORIZONTAL_MARGIN = 2;
 {
     CPArray                         _content;
     CPArray                         _items;
+    CPInteger                       _numberOfItems;
+    CPIndexSet                      _displayedIndexes;
 
     CPData                          _itemData;
     CPCollectionViewItem            _itemPrototype;
@@ -139,6 +141,7 @@ var HORIZONTAL_MARGIN = 2;
 
     BOOL                            _uniformSubviewsResizing @accessors(property=uniformSubviewsResizing);
     BOOL                            _lockResizing;
+    BOOL                            _needsFullDisplay;
 
     CPInteger                       _currentDropIndex;
     CPDragOperation                 _currentDragOperation;
@@ -176,6 +179,8 @@ var HORIZONTAL_MARGIN = 2;
 
     _items = [];
     _cachedItems = [];
+    _displayedIndexes = [CPIndexSet indexSet];
+    _numberOfItems = 0;
 
     _numberOfColumns = CPNotFound;
     _numberOfRows = CPNotFound;
@@ -189,6 +194,7 @@ var HORIZONTAL_MARGIN = 2;
     _needsMinMaxItemSizeUpdate = YES;
     _uniformSubviewsResizing = NO;
     _lockResizing = NO;
+    _needsFullDisplay = NO;
 
     _currentDropIndex      = -1;
     _currentDragOperation  = CPDragOperationNone;
@@ -198,7 +204,42 @@ var HORIZONTAL_MARGIN = 2;
     [self setAutoresizingMask:0];
 }
 
+- (void)viewWillMoveToSuperview:(CPView)aView
+{
+    var superview = [self superview],
+        defaultCenter = [CPNotificationCenter defaultCenter];
 
+    if (superview)
+    {
+        [defaultCenter
+            removeObserver:self
+                      name:CPViewFrameDidChangeNotification
+                    object:superview];
+
+        [defaultCenter
+            removeObserver:self
+                      name:CPViewBoundsDidChangeNotification
+                    object:superview];
+    }
+
+    if ([aView isKindOfClass:[CPClipView class]])
+    {
+        [aView setPostsFrameChangedNotifications:YES];
+        [aView setPostsBoundsChangedNotifications:YES];
+
+        [defaultCenter
+            addObserver:self
+               selector:@selector(superviewFrameChanged:)
+                   name:CPViewFrameDidChangeNotification
+                 object:aView];
+
+        [defaultCenter
+            addObserver:self
+               selector:@selector(superviewBoundsChanged:)
+                   name:CPViewBoundsDidChangeNotification
+                 object:aView];
+    }
+}
 
 #pragma mark -
 #pragma mark Delegate
@@ -245,7 +286,6 @@ var HORIZONTAL_MARGIN = 2;
     if ([_delegate respondsToSelector:@selector(collectionView:draggingViewForItemsAtIndexes:withEvent:offset:)])
         _implementedDelegateMethods |= CPCollectionViewDelegate_collectionView_draggingViewForItemsAtIndexes_withEvent_offset;
 }
-
 /*!
     Sets the item prototype to \c anItem
     @param anItem the new item prototype.
@@ -498,39 +538,44 @@ var HORIZONTAL_MARGIN = 2;
 - (void)_reloadContentCachingRemovedItems:(BOOL)shouldCache
 {
     // Remove current views
-    var count = _items.length;
-
-    while (count--)
+    [_displayedIndexes enumerateIndexesUsingBlock:function(idx, stop)
     {
-        [[_items[count] view] removeFromSuperview];
-        [_items[count] setSelected:NO];
+        var item = _items[idx];
+
+        if (!item)
+            return;
+
+        [[item view] removeFromSuperview];
+        [item setSelected:NO];
 
         if (shouldCache)
-            _cachedItems.push(_items[count]);
-    }
+            _cachedItems.push(item);
+    }];
 
     _items = [];
+    _displayedIndexes = [CPIndexSet indexSet];
 
     if (!_itemPrototype)
         return;
 
-    var index = 0;
-
-    count = _content.length;
-
-    for (; index < count; ++index)
-    {
-        _items.push([self newItemForRepresentedObject:_content[index]]);
-
-        [self addSubview:[_items[index] view]];
-    }
-
-    index = CPNotFound;
     // Be wary of invalid selection ranges since setContent: does not clear selection indexes.
-    while ((index = [_selectionIndexes indexGreaterThanIndex:index]) != CPNotFound && index < count)
-        [_items[index] setSelected:YES];
+//    while ((index = [_selectionIndexes indexGreaterThanIndex:index]) != CPNotFound && index < count)
+//        [_items[index] setSelected:YES];
 
     [self tileIfNeeded:NO];
+}
+
+- (CPCollectionViewItem)itemAtIndex:(CPInteger)anIndex
+{
+    var item = _items[anIndex];
+
+    if (!item)
+    {
+        item = [self newItemForRepresentedObject:[_content objectAtIndex:anIndex]];
+        _items[anIndex] = item;
+    }
+
+    return item;
 }
 
 - (void)resizeSubviewsWithOldSize:(CGSize)oldBoundsSize
@@ -558,7 +603,7 @@ var HORIZONTAL_MARGIN = 2;
 - (void)tileIfNeeded:(BOOL)lazyFlag
 {
     var frameSize           = [[self superview] frameSize],
-        count               = _items.length,
+        count               = 0,
         oldNumberOfColumns  = _numberOfColumns,
         oldNumberOfRows     = _numberOfRows,
         oldItemSize         = _itemSize,
@@ -581,8 +626,19 @@ var HORIZONTAL_MARGIN = 2;
         _numberOfColumns !== oldNumberOfColumns ||
         _numberOfRows    !== oldNumberOfRows ||
         !CGSizeEqualToSize(_itemSize, oldItemSize))
+    {
+        var indexes = [self _indexesToDisplay];
+CPLog.debug(_cmd + indexes);
+        if (_needsFullDisplay)
+        {
+            [indexes addIndexes:_displayedIndexes];
+            _needsFullDisplay = NO;
+        }
+        else
+            [indexes removeIndexes:_displayedIndexes];
 
-        [self displayItems:_items frameSize:_storedFrameSize itemSize:_itemSize columns:_numberOfColumns rows:_numberOfRows count:count];
+        [self displayItemsAtIndexes:indexes frameSize:_storedFrameSize itemSize:_itemSize columns:_numberOfColumns rows:_numberOfRows count:count];
+    }
 }
 
 - (void)_computeGridWithSize:(CGSize)aSuperviewSize count:(Function)countRef
@@ -592,7 +648,7 @@ var HORIZONTAL_MARGIN = 2;
         itemSize            = CGSizeMakeCopy(_minItemSize),
         maxItemSizeWidth    = _maxItemSize.width,
         maxItemSizeHeight   = _maxItemSize.height,
-        itemsCount          = [_items count],
+        itemsCount          = [_content count],
         numberOfRows,
         numberOfColumns;
 
@@ -635,18 +691,58 @@ var HORIZONTAL_MARGIN = 2;
     countRef(MIN(itemsCount, numberOfColumns * numberOfRows));
 }
 
-- (void)displayItems:(CPArray)displayItems frameSize:(CGSize)aFrameSize itemSize:(CGSize)anItemSize columns:(CPInteger)numberOfColumns rows:(CPInteger)numberOfRows count:(CPInteger)displayCount
+- (void)superviewFrameChanged:(CPNotification)aNotification
 {
-//    CPLog.debug("DISPLAY ITEMS " + numberOfColumns + " " +  numberOfRows);
+    CPLog.debug(_cmd);
+}
 
+- (void)superviewBoundsChanged:(CPNotification)aNotification
+{
+
+    CPLogConsole(CPStringFromRect([[aNotification object] bounds]));
+    CPLogConsole(CPStringFromSize(_storedFrameSize));
+
+//    CPLog.debug(_cmd);
+var d = new Date();
+    var indexes = [self _indexesToDisplay];
+    [indexes removeIndexes:_displayedIndexes];
+CPLog.debug("_indexesToDisplay in " + (new Date() - d));
+    if (![indexes count])
+        return;
+var dd = new Date();
+    [self displayItemsAtIndexes:indexes frameSize:_storedFrameSize itemSize:_itemSize columns:_numberOfColumns rows:_numberOfRows count:[_content count]];
+CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
+}
+
+- (CPIndexSet)_indexesToDisplay
+{
+    var visibleRect = [[self superview] documentVisibleRect],
+        startIndex = [self _indexAtPoint:visibleRect.origin];
+
+    if (startIndex === CPNotFound)
+        return [CPIndexSet indexSet];
+
+    var endIndex = [self _indexAtPoint:CGPointMake(CGRectGetMaxX(visibleRect), CGRectGetMaxY(visibleRect))];
+
+    if (endIndex === CPNotFound)
+        endIndex = _content.length - 1;
+
+    return [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(startIndex, endIndex - startIndex + 1)];
+}
+
+- (void)displayItemsAtIndexes:(CPIndexSet)itemIndexes frameSize:(CGSize)aFrameSize itemSize:(CGSize)anItemSize columns:(CPInteger)numberOfColumns rows:(CPInteger)numberOfRows count:(CPInteger)displayCount
+{
+    CPLog.debug("DISPLAY ITEMS " + itemIndexes);
     _horizontalMargin = _uniformSubviewsResizing ? FLOOR((aFrameSize.width - numberOfColumns * anItemSize.width) / (numberOfColumns + 1)) : HORIZONTAL_MARGIN;
 
-    var x = _horizontalMargin,
-        y = -anItemSize.height;
+    var xOffset = anItemSize.width + _horizontalMargin,
+        yOffset = anItemSize.height + _verticalMargin;
 
-    [displayItems enumerateObjectsUsingBlock:function(item, idx, stop)
+    [itemIndexes enumerateIndexesUsingBlock:function(idx, stop)
     {
-        var view = [item view];
+        CPLog.debug("Display Item " + idx);
+        var item = [self itemAtIndex:idx],
+            view = [item view];
 
         if (idx >= displayCount)
         {
@@ -654,16 +750,21 @@ var HORIZONTAL_MARGIN = 2;
             return;
         }
 
-        if (idx % numberOfColumns == 0)
+        var pos = idx / numberOfColumns,
+            floor = FLOOR(pos),
+            remaining = (pos - floor) * numberOfColumns;
+
+        var x = _horizontalMargin + xOffset * remaining,
+            y = _verticalMargin + yOffset * floor;
+
+        [view setFrame:CGRectMake(x, y, anItemSize.width, anItemSize.height)];
+
+        if (![view superview])
         {
-            x = _horizontalMargin;
-            y += _verticalMargin + anItemSize.height;
+            CPLog.debug("Add Item view " + idx);
+            [self addSubview:view];
+            [_displayedIndexes addIndex:idx];
         }
-
-        [view setFrameOrigin:CGPointMake(x, y)];
-        [view setFrameSize:anItemSize];
-
-        x += anItemSize.width + _horizontalMargin;
     }];
 }
 
@@ -704,6 +805,8 @@ var HORIZONTAL_MARGIN = 2;
 
     _maxNumberOfRows = aMaxNumberOfRows;
 
+    _needsFullDisplay = YES;
+
     [self tile];
 }
 
@@ -725,6 +828,8 @@ var HORIZONTAL_MARGIN = 2;
         return;
 
     _maxNumberOfColumns = aMaxNumberOfColumns;
+
+    _needsFullDisplay = YES;
 
     [self tile];
 }
@@ -771,6 +876,8 @@ var HORIZONTAL_MARGIN = 2;
     if (CGSizeEqualToSize(_minItemSize, CGSizeMakeZero()))
         _needsMinMaxItemSizeUpdate = YES;
 
+    _needsFullDisplay = YES;
+
     [self tile];
 }
 
@@ -795,6 +902,8 @@ var HORIZONTAL_MARGIN = 2;
 
 //    if (_maxItemSize.width == 0 || _maxItemSize.height == 0)
 //        _needsMinMaxItemSizeUpdate = YES;
+
+    _needsFullDisplay = YES;
 
     [self tile];
 }
@@ -844,7 +953,7 @@ var HORIZONTAL_MARGIN = 2;
     var location = [self convertPoint:[anEvent locationInWindow] fromView:nil],
         index = [self _indexAtPoint:location];
 
-    if (index >= 0 && index < _items.length)
+    if (index >= 0 && index < _content.length)
     {
         if (_allowsMultipleSelection && ([anEvent modifierFlags] & CPPlatformActionKeyMask || [anEvent modifierFlags] & CPShiftKeyMask))
         {
@@ -961,11 +1070,6 @@ var HORIZONTAL_MARGIN = 2;
     return CPNotFound;
 }
 
-- (CPCollectionViewItem)itemAtIndex:(CPUInteger)anIndex
-{
-    return [_items objectAtIndex:anIndex];
-}
-
 - (CGRect)frameForItemAtIndex:(CPUInteger)anIndex
 {
     return [[[self itemAtIndex:anIndex] view] frame];
@@ -1066,7 +1170,7 @@ var HORIZONTAL_MARGIN = 2;
 
 - (CPView)draggingViewForItemsAtIndexes:(CPIndexSet)indexes withEvent:(CPEvent)event offset:(CGPoint)dragImageOffset
 {
-    var idx = _content[[indexes firstIndex]];
+    var idx = [_content objectAtIndex:[indexes firstIndex]];
 
     if (!_itemForDragging)
         _itemForDragging = [self newItemForRepresentedObject:idx];
@@ -1177,7 +1281,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     {
         var offset;
 
-        if ((_currentDropIndex % _numberOfColumns) !== 0 || _currentDropIndex == [_items count])
+        if ((_currentDropIndex % _numberOfColumns) !== 0 || _currentDropIndex == [_content count])
         {
             dropIndex = _currentDropIndex - 1;
             offset = (_horizontalMargin - dropviewFrameWidth) / 2;
@@ -1221,7 +1325,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
             column = _numberOfColumns;
         }
 
-        return MIN((row * _numberOfColumns + column), [_items count]);
+        return MIN((row * _numberOfColumns + column), [_content count]);
     }
 
     return (row * _numberOfColumns + column);

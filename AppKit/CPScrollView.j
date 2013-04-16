@@ -210,6 +210,10 @@ var CPScrollerStyleGlobal                       = CPScrollerStyleOverlay,
     }
 }
 
+- (CGRect)documentVisibleRect
+{
+    return [_contentView documentVisibleRect];
+}
 /*!
     Get the system wide scroller style.
 */
