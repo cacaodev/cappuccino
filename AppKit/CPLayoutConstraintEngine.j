@@ -5,10 +5,9 @@
     SimplexSolver   _solver;
     CPArray         _constraints @accessors(getter=constraints);
     CPArray         _stayVariables;
-    CPView          _container;
 }
 
-- (id)initWithContainer:(CPView)aContainer
+- (id)init
 {
     self = [super init];
 
@@ -16,7 +15,6 @@
 CPLog.debug("created solver");
     _constraints = [];
     _stayVariables = [];
-    _container = aContainer;
 
     return self;
 }
@@ -76,7 +74,7 @@ CPLog.debug("created solver");
         [self addStayVariable:aVariable strength:aStrength weight:aWeight];
     }];
 }
-
+/*
 - (void)layout
 {
     // CPLog.debug(_cmd + [_container subviews]);
@@ -86,5 +84,5 @@ CPLog.debug("created solver");
         [aSubview _updateConstraintFrame];
     }];
 }
-
+*/
 @end

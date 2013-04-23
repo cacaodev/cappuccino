@@ -119,7 +119,7 @@
     }];
 
     if ([constraints count] > 0)
-        [_windowView createEngineIfNeeded];
+        [_windowView _addStayVariablesIfNeeded];
 
     [theWindow setContentView:_windowView];
 

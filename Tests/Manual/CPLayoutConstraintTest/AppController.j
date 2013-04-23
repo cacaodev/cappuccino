@@ -9,7 +9,7 @@
 @import <Foundation/CPObject.j>
 @import <AppKit/CPView.j>
 
-@import "../CPTrace.j"
+// @import "../CPTrace.j"
 
 CPLogRegister(CPLogConsole);
 
@@ -123,7 +123,7 @@ var ID = 1;
     [sender setEnabled:NO];
 }
 
-- (IBAction)addDemoConstraints:(id)sender
+- (IBAction)_addDemoConstraints:(id)sender
 {
     var wrapper1 = [[Constraint alloc] init];
     [wrapper1 setPriority:0];
@@ -186,6 +186,48 @@ var ID = 1;
 
     [self willChangeValueForKey:@"constraints"];
     [constraints addObjectsFromArray:[wrapper4, wrapper5, wrapper3, wrapper6, wrapper1, wrapper2]];
+    [self didChangeValueForKey:@"constraints"];
+
+    //[mainView setNeedsLayout];
+}
+
+- (IBAction)addDemoConstraints:(id)sender
+{
+    var wrapper2 = [[Constraint alloc] init];
+    [wrapper2 setFirstItem:1];
+    [wrapper2 setFirstAttribute:CPLayoutAttributeWidth];
+    [wrapper2 setRelation:CPLayoutRelationEqual];
+    [wrapper2 setSecondItem:0];
+    [wrapper2 setSecondAttribute:CPLayoutAttributeNotAnAttribute];
+    [wrapper2 setMultiplier:1];
+    [wrapper2 setConstant:200];
+    [wrapper2 setPriority:500];
+    [wrapper2 setName:@"H:(View1:width) = 200"];
+
+    var wrapper3 = [[Constraint alloc] init];
+    [wrapper3 setFirstItem:1];
+    [wrapper3 setFirstAttribute:CPLayoutAttributeLeft];
+    [wrapper3 setRelation:CPLayoutRelationEqual];
+    [wrapper3 setSecondItem:0];
+    [wrapper3 setSecondAttribute:CPLayoutAttributeNotAnAttribute];
+    [wrapper3 setMultiplier:1];
+    [wrapper3 setConstant:100];
+    [wrapper3 setPriority:500];
+    [wrapper3 setName:@"H:50 - (view1)"];
+
+    var wrapper4 = [[Constraint alloc] init];
+    [wrapper4 setFirstItem:0];
+    [wrapper4 setFirstAttribute:CPLayoutAttributeRight];
+    [wrapper4 setRelation:CPLayoutRelationGreaterThanOrEqual];
+    [wrapper4 setSecondItem:1];
+    [wrapper4 setSecondAttribute:CPLayoutAttributeRight];
+    [wrapper4 setMultiplier:1];
+    [wrapper4 setConstant:100];
+    [wrapper4 setPriority:500];
+    [wrapper4 setName:@"H:(view1) - 100"];
+
+    [self willChangeValueForKey:@"constraints"];
+    [constraints addObjectsFromArray:[wrapper4, wrapper3, wrapper2]];
     [self didChangeValueForKey:@"constraints"];
 
     //[mainView setNeedsLayout];

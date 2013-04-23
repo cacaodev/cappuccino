@@ -47,6 +47,7 @@
 @import "_CPShadowWindowView.j"
 @import "_CPStandardWindowView.j"
 @import "_CPToolTipWindowView.j"
+@import "CPLayoutConstraintEngine.j"
 
 @class CPMenu
 @class CPProgressIndicator
@@ -218,6 +219,9 @@ var CPWindowActionMessageKeys = [
     CPWindow                            _parentView;
     BOOL                                _isSheet;
     _CPWindowFrameAnimation             _frameAnimation;
+
+    CPLayoutConstraintEngine            _engine;
+    BOOL                                _needsConstraintsUpdate;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -346,6 +350,8 @@ CPTexturedBackgroundWindowMask
         _defaultButtonEnabled = YES;
         _keyViewLoopIsDirty = NO;
         _hasBecomeKeyWindow = NO;
+
+        _needsConstraintsUpdate = YES;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
 
@@ -3555,6 +3561,55 @@ var interpolate = function(fromValue, toValue, progress)
         return self;
 
     return nil;
+}
+
+@end
+
+
+@implementation CPWindow (CPLayoutConstraint)
+
+- (id)_layoutEngine
+{
+    if (!_engine)
+        _engine = [[CPLayoutConstraintEngine alloc] init];
+
+    return _engine;
+}
+
+- (void)_layoutAtWindowLevelIfNeeded
+{
+    [_windowView _updateConstraintFrameRecursively:NO];
+
+    [self setFrameSize:[_windowView frameSize]];
+
+    CPLog.debug(_cmd + CPStringFromSize([_windowView frameSize]));
+}
+
+- (void)_updateConstraintsIfNeeded
+{
+    if (_needsConstraintsUpdate)
+    {
+        var minY = CGRectGetMinY([_contentView frame]);
+
+        var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:0];
+        [left setPriority:500];
+
+        var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:minY];
+
+        [top setPriority:500];
+
+        var width = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_windowView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
+
+        [width setPriority:500];
+
+        var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];
+
+        [height setPriority:500];
+
+        [_windowView addConstraints:[left, top, width, height]];
+
+        _needsConstraintsUpdate = NO;
+    }
 }
 
 @end
