@@ -3571,25 +3571,30 @@ var interpolate = function(fromValue, toValue, progress)
 - (id)_layoutEngine
 {
     if (!_engine)
+    {
         _engine = [[CPLayoutConstraintEngine alloc] init];
+        var vars = [[_contentView _variableWidth], [_contentView _variableHeight]];
+        [_engine addStayVariables:vars strength:c.Strength.medium weight:500];
+    }
 
     return _engine;
 }
 
 - (void)_layoutAtWindowLevelIfNeeded
 {
-    [_windowView _updateConstraintFrameRecursively:NO];
+    [_windowView setAutoresizesSubviews:NO];
+    [self setFrameSize:[_windowView cbl_frameSize]];
+    [_windowView setAutoresizesSubviews:YES];
 
-    [self setFrameSize:[_windowView frameSize]];
-
-    CPLog.debug(_cmd + CPStringFromSize([_windowView frameSize]));
+    CPLog.debug(_cmd + CPStringFromSize([_windowView cbl_frameSize]));
 }
 
 - (void)_updateConstraintsIfNeeded
 {
     if (_needsConstraintsUpdate)
     {
-        var minY = CGRectGetMinY([_contentView frame]);
+        var contentViewFrame = [_contentView frame],
+            minY = CGRectGetMinY(contentViewFrame);
 
         var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:0];
         [left setPriority:500];
@@ -3606,7 +3611,7 @@ var interpolate = function(fromValue, toValue, progress)
 
         [height setPriority:500];
 
-        [_windowView addConstraints:[left, top, width, height]];
+        [_contentView _setInternalConstraints:[left, top, width, height]];
 
         _needsConstraintsUpdate = NO;
     }

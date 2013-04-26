@@ -121,29 +121,25 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     if (!_constraint)
     {
         var first  = [self _expressionFromItem:_firstItem attribute:_firstAttribute],
-            second = [self _expressionFromItem:_secondItem attribute:_secondAttribute],
-            inequality;
+            second = [self _expressionFromItem:_secondItem attribute:_secondAttribute];
 
         var msecond = second ? c.plus(c.times(second, _coefficient), _constant) : _constant;
 
         switch(_relation)
         {
-            case CPLayoutRelationLessThanOrEqual    : inequality = c.LEQ;
+            case CPLayoutRelationLessThanOrEqual    : _constraint = new c.Inequality(first, c.LEQ, msecond, _strength, _priority);
                 break;
-            case CPLayoutRelationGreaterThanOrEqual : inequality = c.GEQ;
+            case CPLayoutRelationGreaterThanOrEqual : _constraint = new c.Inequality(first, c.GEQ, msecond, _strength, _priority);
                 break;
             case CPLayoutRelationEqual              : _constraint = new c.Equation(first, msecond, _strength, _priority);
                 break;
         }
-
-        if (_relation !== CPLayoutRelationEqual)
-            _constraint = new c.Inequality(first, inequality, msecond, _strength, _priority);
     }
 
     return _constraint;
 }
 
-- (id)variableMinXForItem:(id)anItem
+- (id)expressionForAttributeLeft:(id)anItem
 {
     if (anItem !== _container)
         return [anItem _variableMinX];
@@ -151,12 +147,38 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     return 0;
 }
 
-- (id)variableMinYForItem:(id)anItem
+- (id)expressionForAttributeTop:(id)anItem
 {
     if (anItem !== _container)
         return [anItem _variableMinY];
 
     return 0;
+}
+
+- (id)expressionForAttributeRight:(CPView)anItem
+{
+    var variableWidth = [anItem _variableWidth],
+        expression;
+
+    if (anItem === _container)
+        expression = new c.Expression(variableWidth);
+    else
+        expression = new c.Expression([anItem _variableMinX]).plus(variableWidth);
+
+    return expression;
+}
+
+- (id)expressionForAttributeBottom:(CPView)anItem
+{
+    var variableHeight = [anItem _variableHeight],
+        expression;
+
+    if (anItem === _container)
+        expression = new c.Expression(variableHeight);
+    else
+        expression = new c.Expression([anItem _variableMinY]).plus(variableHeight);
+
+    return expression;
 }
 
 - (Object)_expressionFromItem:(id)item attribute:(int)attr
@@ -169,20 +191,16 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     switch(attr)
     {
         case CPLayoutAttributeLeading   :
-        case CPLayoutAttributeLeft      : exp = [self variableMinXForItem:item];
+        case CPLayoutAttributeLeft      : exp = [self expressionForAttributeLeft:item];
             break;
         case CPLayoutAttributeTrailing  :
-        case CPLayoutAttributeRight     : var variableWidth= [item _variableWidth];
-                                          var variableMinX = [item _variableMinX];
-                                          exp = new c.Expression(variableMinX).plus(variableWidth);
-                                          _stayVariables.push(variableMinX);
+        case CPLayoutAttributeRight     : exp = [self expressionForAttributeRight:item];
+                                          _stayVariables.push([item _variableMinX]);
             break;
-        case CPLayoutAttributeTop     : exp = [self variableMinYForItem:item];
+        case CPLayoutAttributeTop     : exp = [self expressionForAttributeTop:item];
             break;
-        case CPLayoutAttributeBottom  : var variableHeight= [item _variableHeight];
-                                        var variableMinY = [item _variableMinY];
-                                        exp = new c.Expression(variableMinY).plus(variableHeight);
-                                        _stayVariables.push(variableMinY);
+        case CPLayoutAttributeBottom  : exp = [self expressionForAttributeBottom:item];
+                                        _stayVariables.push([item _variableMinY]);
             break;
         case CPLayoutAttributeWidth   : exp = [item _variableWidth];
             break;

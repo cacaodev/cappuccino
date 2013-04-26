@@ -11,7 +11,7 @@
 
 // @import "../CPTrace.j"
 
-CPLogRegister(CPLogConsole);
+//CPLogRegister(CPLogConsole);
 
 @implementation ColorView : CPView
 {
@@ -123,7 +123,7 @@ var ID = 1;
     [sender setEnabled:NO];
 }
 
-- (IBAction)_addDemoConstraints:(id)sender
+- (IBAction)addDemoConstraints:(id)sender
 {
     var wrapper1 = [[Constraint alloc] init];
     [wrapper1 setPriority:0];
@@ -191,7 +191,7 @@ var ID = 1;
     //[mainView setNeedsLayout];
 }
 
-- (IBAction)addDemoConstraints:(id)sender
+- (IBAction)_addDemoConstraints:(id)sender
 {
     var wrapper2 = [[Constraint alloc] init];
     [wrapper2 setFirstItem:1];

@@ -43,9 +43,8 @@
         var hasKey = [aCoder containsValueForKey:@"NSMultiplier"];
         _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:@"NSMultiplier"] : 1 ;// TODO: multiplier when not in xib;
 
-        //var symbolicConstant = [aCoder decodeObjectForKey:CPSymbolicConstant];
-        _constant = [aCoder decodeDoubleForKey:@"NSConstant"];
-        //[self _setSymbolicConstant:symbolicConstant constant:constant];
+        var symbolicConstant = [aCoder decodeObjectForKey:"NSSymbolicConstant"];
+        _constant = (symbolicConstant == "NSSpace") ? 20 : [aCoder decodeDoubleForKey:@"NSConstant"];
 
         _shouldBeArchived = [aCoder decodeBoolForKey:@"NSShouldBeArchived"];
         //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
