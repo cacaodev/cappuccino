@@ -3177,7 +3177,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [self _initConstraintsIvars];
 
         _huggingPriorities = [aCoder decodeSizeForKey:CPHuggingPriority];
+        CPLog.warn(_identifier + " _huggingPriorities " + CPStringFromSize(_huggingPriorities));
         _compressionPriorities = [aCoder decodeSizeForKey:CPAntiCompressionPriority];
+        CPLog.warn(_identifier + " _compressionPriorities " + CPStringFromSize(_compressionPriorities));
 
         if ([aCoder containsValueForKey:CPViewConstraints])
         {
@@ -3338,7 +3340,7 @@ CPLog.debug("\nConstraints for View " + [self identifier] + "\n" + [_constraints
 
 - (CGSize)intrinsicContentSize
 {
-    return CGSizeMake(50, 50);
+    return nil;
 }
 
 - (CPArray)_generateContentSizeConstraints

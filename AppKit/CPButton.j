@@ -881,6 +881,15 @@ CPButtonImageOffset   = 3.0;
 
 @end
 
+@implementation CPButton (ConstraintBasedLayout)
+
+- (CGSize)intrinsicContentSize
+{
+    return [self _minimumFrameSize];
+}
+
+@end
+
 @implementation CPButton (NS)
 
 - (void)setBezelStyle:(unsigned)aBezelStyle

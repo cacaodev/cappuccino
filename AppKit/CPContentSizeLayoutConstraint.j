@@ -12,13 +12,12 @@
     self = [super init];
     if (self)
     {
-            //_layoutConstraintFlags = _layoutConstraintFlags | 0x40;
-            _huggingPriority = huggingPriority;
-            _compressionResistancePriority = compressionResistancePriority;
+        _huggingPriority = huggingPriority;
+        _compressionResistancePriority = compressionResistancePriority;
 
-            [self setConstant:value];
-            [self setFirstItem:anItem];
-            _orientation = orientation;
+        [self setConstant:value];
+        [self setFirstItem:anItem];
+        _orientation = orientation;
     }
 
     return self;
@@ -30,18 +29,19 @@
         variableExp = new c.Expression(variable),
         constantExp = new c.Expression([self constant]);
 
-    var hugging = new c.Inequality(variableExp, c.LEQ, constantExp, c.Strength.weak, _huggingPriority);
-    var compression = new c.Inequality(variableExp, c.GEQ, constantExp, c.Strength.weak, _compressionResistancePriority);
+    var hugging = new c.Inequality(variableExp, c.LEQ, constantExp, c.Strength.medium, _huggingPriority);
+    var compression = new c.Inequality(variableExp, c.GEQ, constantExp, c.Strength.medium, _compressionResistancePriority);
 
     //[anEngine addStayVariable:variable strength:c.Strength.medium weight:1000];
 
     [anEngine _addCassowaryConstraint:hugging];
     [anEngine _addCassowaryConstraint:compression];
+    [[anEngine constraints] addObject:self];
 }
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@ huggingPriority=%@ compressionPriority=%@ value=%@", ([_firstItem identifier] || ""), _huggingPriority, _compressionResistancePriority, [self constant];
+    return [CPString stringWithFormat:@"%@ %@ huggingPriority=%@ compressionPriority=%@ value=%@", (_orientation ? "height " : "width"), ([_firstItem identifier] || _firstItem), _huggingPriority, _compressionResistancePriority, [self constant]];
 }
 
 @end

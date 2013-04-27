@@ -76,8 +76,8 @@ var NSViewAutoresizingMask = 0x3F,
         if ([aCoder containsValueForKey:@"NSViewConstraints"])
             _constraintsArray = [aCoder decodeObjectForKey:@"NSViewConstraints"];
 
-        _huggingPriorities = [aCoder decodeObjectForKey:@"NSHuggingPriority"];
-        _compressionPriorities = [aCoder decodeObjectForKey:@"NSAntiCompressionPriority"];
+        _huggingPriorities = [aCoder decodeSizeForKey:@"NSHuggingPriority"];
+        _compressionPriorities = [aCoder decodeSizeForKey:@"NSAntiCompressionPriority"];
     }
 
     return self;
