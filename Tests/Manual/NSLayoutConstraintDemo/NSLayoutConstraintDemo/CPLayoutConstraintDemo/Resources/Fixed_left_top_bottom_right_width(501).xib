@@ -44,7 +44,7 @@
 				<nil key="NSViewClass"/>
 				<nil key="NSUserInterfaceItemIdentifier"/>
 				<object class="NSView" key="NSWindowView" id="943079157">
-					<reference key="NSNextResponder"/>
+					<nil key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
 					<array class="NSMutableArray" key="NSSubviews">
 						<object class="NSCustomView" id="125043367">
@@ -52,8 +52,6 @@
 							<int key="NSvFlags">299</int>
 							<string key="NSFrame">{{47, 63}, {300, 98}}</string>
 							<reference key="NSSuperview" ref="943079157"/>
-							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{750, 750}</string>
 							<string key="NSAntiCompressionPriority">{750, 750}</string>
@@ -61,8 +59,6 @@
 						</object>
 					</array>
 					<string key="NSFrameSize">{657, 198}</string>
-					<reference key="NSSuperview"/>
-					<reference key="NSWindow"/>
 					<reference key="NSNextKeyView" ref="125043367"/>
 					<string key="NSReuseIdentifierKey">_NS:20</string>
 				</object>

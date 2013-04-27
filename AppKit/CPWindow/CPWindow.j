@@ -3573,7 +3573,7 @@ var interpolate = function(fromValue, toValue, progress)
     if (!_engine)
     {
         _engine = [[CPLayoutConstraintEngine alloc] init];
-        var vars = [[_contentView _variableWidth], [_contentView _variableHeight]];
+        var vars = [[_windowView _variableWidth], [_windowView _variableHeight]];
         [_engine addStayVariables:vars strength:c.Strength.medium weight:500];
     }
 

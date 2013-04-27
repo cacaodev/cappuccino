@@ -55,7 +55,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 @implementation CPLayoutConstraint : CPObject
 {
     Object  _constraint;
-    CPArray _stayVariables    @accessors(getter=stayVariables);
+    //CPArray _stayVariables    @accessors(getter=stayVariables);
 
     id       _container        @accessors(property=container);
     id       _firstItem        @accessors(property=firstItem);
@@ -97,7 +97,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 - (void)_init
 {
     _strength = c.Strength.medium;
-    _stayVariables = [];
+    //_stayVariables = [];
     _container = nil;
 }
 
@@ -195,28 +195,24 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
             break;
         case CPLayoutAttributeTrailing  :
         case CPLayoutAttributeRight     : exp = [self expressionForAttributeRight:item];
-                                          if (item === _container)
-                                              _stayVariables.push([item _variableWidth]);
             break;
-        case CPLayoutAttributeTop     : exp = [self expressionForAttributeTop:item];
+        case CPLayoutAttributeTop       : exp = [self expressionForAttributeTop:item];
             break;
-        case CPLayoutAttributeBottom  : exp = [self expressionForAttributeBottom:item];
-                                        if (item === _container)
-                                            _stayVariables.push([item _variableHeight]);
+        case CPLayoutAttributeBottom    : exp = [self expressionForAttributeBottom:item];
             break;
-        case CPLayoutAttributeWidth   : exp = [item _variableWidth];
+        case CPLayoutAttributeWidth     : exp = [item _variableWidth];
             break;
-        case CPLayoutAttributeHeight  : exp = [item _variableHeight];
+        case CPLayoutAttributeHeight    : exp = [item _variableHeight];
             break;
-        case CPLayoutAttributeCenterX : var left = new c.Expression([item _variableMinX]);
-                                        var midWidth = new c.Expression([item _variableWidth]).divide(2);
-                                        exp = c.plus(left, midWidth);
+        case CPLayoutAttributeCenterX   : var left = new c.Expression([item _variableMinX]);
+                                          var midWidth = new c.Expression([item _variableWidth]).divide(2);
+                                          exp = c.plus(left, midWidth);
             break;
-        case CPLayoutAttributeCenterY : var top = new c.Expression([item _variableMinY]);
-                                        var midHeight = new c.Expression([item _variableHeight]).divide(2);
-                                        exp = c.plus(top, midHeight);
+        case CPLayoutAttributeCenterY   : var top = new c.Expression([item _variableMinY]);
+                                          var midHeight = new c.Expression([item _variableHeight]).divide(2);
+                                          exp = c.plus(top, midHeight);
             break;
-        case CPLayoutAttributeBaseline:
+        case CPLayoutAttributeBaseline  :
             break;
     }
 
@@ -231,7 +227,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     {
         [self _generateCassowaryConstraint];
 
-        [anEngine addStayVariables:_stayVariables strength:_strength weight:_priority];
+        //[anEngine addStayVariables:_stayVariables strength:_strength weight:_priority];
 
         [anEngine _addCassowaryConstraint:_constraint];
 
