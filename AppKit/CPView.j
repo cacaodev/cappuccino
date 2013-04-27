@@ -3401,7 +3401,7 @@ CPLog.debug(_cmd + constraints);
         variableHeight = [self _variableHeight];
 
 // stay variables for the view origin to stay put.
-    [engine addStayVariables:[variableMinX, variableMinY] strength:c.Strength.required weight:1000];
+    //[engine addStayVariables:[variableMinX, variableMinY] strength:c.Strength.required weight:1000];
 
 // stay variables for resizing.
     //[engine addStayVariables:[variableWidth, variableHeight] strength:c.Strength.required weight:1000];
@@ -3551,7 +3551,10 @@ CPLog.debug(_cmd + "constraints " + constraints);
 - (void)_updateConstraintFrameRecursively:(BOOL)recursively
 {
     var resolvedFrame = [self cbl_frame];
+    [self setAutoresizesSubviews:NO];
     [self setFrame:resolvedFrame];
+    [self setAutoresizesSubviews:YES];
+
     CPLog.debug(_identifier  + " setFrame: " + CPStringFromRect(resolvedFrame));
 
     if (recursively)

@@ -184,7 +184,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)setWindowLeft:(float)left top:(float)top Width:(float)width height:(float)height
 {
-    [[currentController window] setFrame:CGRectMake(left, top, width, height)];
+    [[currentController window] setFrame:CGRectMake(left, top, width, height + 9)];
 }
 
 @end

@@ -195,12 +195,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
             break;
         case CPLayoutAttributeTrailing  :
         case CPLayoutAttributeRight     : exp = [self expressionForAttributeRight:item];
-                                          _stayVariables.push([item _variableMinX]);
+                                          if (item === _container)
+                                              _stayVariables.push([item _variableWidth]);
             break;
         case CPLayoutAttributeTop     : exp = [self expressionForAttributeTop:item];
             break;
         case CPLayoutAttributeBottom  : exp = [self expressionForAttributeBottom:item];
-                                        _stayVariables.push([item _variableMinY]);
+                                        if (item === _container)
+                                            _stayVariables.push([item _variableHeight]);
             break;
         case CPLayoutAttributeWidth   : exp = [item _variableWidth];
             break;

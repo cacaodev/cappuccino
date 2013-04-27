@@ -124,7 +124,8 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:YES] forKey:@"NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints"];
+        //[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:YES] forKey:@"NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints"];
+    [self.window setFrame:[[NSScreen mainScreen] visibleFrame] display:YES];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mainWindowDidMove:) name:NSWindowDidMoveNotification object:self.window];
     
@@ -136,7 +137,7 @@
     {
         NSString *nibname = path.lastPathComponent.stringByDeletingPathExtension;
         
-        if (![nibname hasPrefix:@"Test"])
+        if ([nibname isEqualToString:@"MainMenu"])
             return;
         
         WindowController *controller = [[WindowController alloc] initWithWindowNibName:nibname];
@@ -156,7 +157,9 @@
 {
     NSTableCellView *view = [aTableView makeViewWithIdentifier:@"Windows" owner:self];
     
-    view.textField.stringValue = [[self.windowControllers objectAtIndex:row] windowNibName];
+    NSString *name = [[self.windowControllers objectAtIndex:row] windowNibName];
+    
+    view.textField.stringValue = [name stringByReplacingOccurrencesOfString:@"_" withString:@" "];
     
     return view;
 }
