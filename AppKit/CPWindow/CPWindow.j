@@ -3586,7 +3586,7 @@ var interpolate = function(fromValue, toValue, progress)
     [self setFrameSize:[_windowView cbl_frameSize]];
     [_windowView setAutoresizesSubviews:YES];
 
-    CPLog.debug(_cmd + CPStringFromSize([_windowView cbl_frameSize]));
+    //CPLog.debug(_cmd + CPStringFromSize([_windowView cbl_frameSize]));
 }
 
 - (void)_updateConstraintsIfNeeded
@@ -3600,15 +3600,12 @@ var interpolate = function(fromValue, toValue, progress)
         [left setPriority:500];
 
         var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:minY];
-
         [top setPriority:500];
 
         var width = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_windowView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
-
         [width setPriority:500];
 
         var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];
-
         [height setPriority:500];
 
         [_contentView _setInternalConstraints:[left, top, width, height]];

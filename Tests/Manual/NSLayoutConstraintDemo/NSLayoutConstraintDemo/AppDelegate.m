@@ -98,11 +98,6 @@
 
 @implementation WindowController
 
-- (void)windowDidLoad
-{
-    NSLog(@"%s", _cmd);
-}
-
 @end
 
 @implementation AppDelegate

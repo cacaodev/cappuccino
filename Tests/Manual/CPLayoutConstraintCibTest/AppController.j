@@ -16,7 +16,7 @@ CPLogRegister(CPLogConsole);
     CPColor color;
 }
 
-- (id)awakeFromCib
+- (void)viewDidMoveToSuperview
 {
     [self setColor:[CPColor randomColor]];
 }
@@ -40,6 +40,11 @@ CPLogRegister(CPLogConsole);
 @implementation AppController : CPObject
 {
     @outlet CPWindow theWindow;
+}
+
+- (void)awakeFromCib
+{
+    CPTrace("CPWindow", "setFrameSize:");
 }
 
 @end

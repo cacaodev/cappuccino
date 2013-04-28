@@ -25,14 +25,12 @@
 
 - (void)addToEngine:(id)anEngine
 {
-    var variable = (_orientation == 0) ? [_firstItem _variableWidth] : [_firstItem _variableHeight],
+    var variable = (_orientation == CPLayoutConstraintOrientationHorizontal) ? [_firstItem _variableWidth] : [_firstItem _variableHeight],
         variableExp = new c.Expression(variable),
         constantExp = new c.Expression([self constant]);
 
     var hugging = new c.Inequality(variableExp, c.LEQ, constantExp, c.Strength.medium, _huggingPriority);
     var compression = new c.Inequality(variableExp, c.GEQ, constantExp, c.Strength.medium, _compressionResistancePriority);
-
-    //[anEngine addStayVariable:variable strength:c.Strength.medium weight:1000];
 
     [anEngine _addCassowaryConstraint:hugging];
     [anEngine _addCassowaryConstraint:compression];
@@ -41,7 +39,7 @@
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@ %@ huggingPriority=%@ compressionPriority=%@ value=%@", (_orientation ? "height " : "width"), ([_firstItem identifier] || _firstItem), _huggingPriority, _compressionResistancePriority, [self constant]];
+    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@", (_orientation ? "H:" : "W:"), ([_firstItem identifier] || _firstItem), [self constant], _huggingPriority, _compressionResistancePriority];
 }
 
 @end

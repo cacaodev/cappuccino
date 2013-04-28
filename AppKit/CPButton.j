@@ -883,7 +883,7 @@ CPButtonImageOffset   = 3.0;
 
 @implementation CPButton (ConstraintBasedLayout)
 
-- (CGSize)intrinsicContentSize
+- (CGSize)fittingSize
 {
     return [self _minimumFrameSize];
 }

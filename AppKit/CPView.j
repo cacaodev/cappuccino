@@ -3177,17 +3177,15 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [self _initConstraintsIvars];
 
         _huggingPriorities = [aCoder decodeSizeForKey:CPHuggingPriority];
-        CPLog.warn(_identifier + " _huggingPriorities " + CPStringFromSize(_huggingPriorities));
         _compressionPriorities = [aCoder decodeSizeForKey:CPAntiCompressionPriority];
-        CPLog.warn(_identifier + " _compressionPriorities " + CPStringFromSize(_compressionPriorities));
 
         if ([aCoder containsValueForKey:CPViewConstraints])
         {
-CPLog.warn(_identifier + " Start Decoding Constraints");
+//CPLog.warn(_identifier + " Start Decoding Constraints");
             var constraints = [aCoder decodeObjectForKey:CPViewConstraints];
-CPLog.warn(_identifier + " End Decoding Constraints");
+//CPLog.warn(_identifier + " End Decoding Constraints");
             [self _addConstraints:constraints];
-CPLog.debug("\nConstraints for View " + [self identifier] + "\n" + [_constraintsArray description]);
+//CPLog.debug("\nConstraints for View " + [self identifier] + "\n" + [_constraintsArray description]);
         }
 
         [self setNeedsDisplay:YES];
@@ -3338,7 +3336,7 @@ CPLog.debug("\nConstraints for View " + [self identifier] + "\n" + [_constraints
     return CGSizeMake(750, 750);
 }
 
-- (CGSize)intrinsicContentSize
+- (CGSize)fittingSize
 {
     return nil;
 }
@@ -3346,22 +3344,22 @@ CPLog.debug("\nConstraints for View " + [self identifier] + "\n" + [_constraints
 - (CPArray)_generateContentSizeConstraints
 {
     var constraints = [CPArray array],
-        intrinsicContentSize = [self intrinsicContentSize];
+        fittingSize = [self fittingSize];
 
-    if (!intrinsicContentSize)
+    if (!fittingSize)
         return constraints;
 
-    var width = intrinsicContentSize.width,
-        height = intrinsicContentSize.height,
+    var width = fittingSize.width,
+        height = fittingSize.height,
         huggingPriorities = [self _contentHuggingPriorities],
         compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
-    var wConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:width huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:0];
+    var wConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:width huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:CPLayoutConstraintOrientationHorizontal];
     [constraints addObject:wConstraint];
 
-    var hConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:height huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:1];
+    var hConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:height huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:CPLayoutConstraintOrientationVertical];
     [constraints addObject:hConstraint];
-CPLog.debug(_cmd + constraints);
+//CPLog.debug(_cmd + constraints);
     return constraints;
 }
 
@@ -3389,7 +3387,7 @@ CPLog.debug(_cmd + constraints);
 
     return constraints;
 }
-
+/*
 -  (void)_addStayVariablesIfNeeded
 {
     if (_didAddStayVariablesToEngine)
@@ -3403,14 +3401,14 @@ CPLog.debug(_cmd + constraints);
         variableHeight = [self _variableHeight];
 
 // stay variables for the view origin to stay put.
-    //[engine addStayVariables:[variableMinX, variableMinY] strength:c.Strength.required weight:1000];
+    [engine addStayVariables:[variableMinX, variableMinY] strength:c.Strength.required weight:1000];
 
 // stay variables for resizing.
-    //[engine addStayVariables:[variableWidth, variableHeight] strength:c.Strength.required weight:1000];
+    [engine addStayVariables:[variableWidth, variableHeight] strength:c.Strength.required weight:1000];
 
     _didAddStayVariablesToEngine = YES;
 }
-
+*/
 - (Object)_variableMinX
 {
     if (!_variableMinX)
@@ -3458,7 +3456,7 @@ CPLog.debug(_cmd + constraints);
     if (!_needsUpdateConstraint)
         return;
 
-CPLog.debug(_identifier + _cmd);
+//CPLog.debug(_identifier + _cmd);
     var engine = [self _layoutEngine];
 
     [engine removeAllConstraints];
@@ -3498,12 +3496,12 @@ CPLog.debug(_identifier + _cmd);
 {
     [self _addConstraints:constraints];
 
-    [self _addStayVariablesIfNeeded];
+    //[self _addStayVariablesIfNeeded];
 }
 
 - (void)_addConstraints:(CPArray)constraints
 {
-CPLog.debug(_cmd + "constraints " + constraints);
+//CPLog.debug(_cmd + "constraints " + constraints);
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
         if (![_constraintsArray containsObject:aConstraint])
@@ -3535,7 +3533,7 @@ CPLog.debug(_cmd + "constraints " + constraints);
         newH = newBoundsSize.height,
         engine = [self _layoutEngine];
 
-    CPLog.debug(_identifier + ": suggest size" + CPStringFromSize(newBoundsSize));
+    //CPLog.debug(_identifier + ": suggest size" + CPStringFromSize(newBoundsSize));
 
     if (newW !== oldBoundsSize.width)
         [engine suggestValue:newW forVariable:[self _variableWidth]];
@@ -3547,7 +3545,7 @@ CPLog.debug(_cmd + "constraints " + constraints);
 
     [[self window] _layoutAtWindowLevelIfNeeded];
 
-    CPLog.debug(_identifier + ": validated rect:" + CPStringFromRect([self frame]));
+    //CPLog.debug(_identifier + ": validated rect:" + CPStringFromRect([self frame]));
 }
 
 - (void)_updateConstraintFrameRecursively:(BOOL)recursively
@@ -3557,7 +3555,7 @@ CPLog.debug(_cmd + "constraints " + constraints);
     [self setFrame:resolvedFrame];
     [self setAutoresizesSubviews:YES];
 
-    CPLog.debug(_identifier  + " setFrame: " + CPStringFromRect(resolvedFrame));
+    //CPLog.debug(_identifier  + " setFrame: " + CPStringFromRect(resolvedFrame));
 
     if (recursively)
     {

@@ -118,9 +118,6 @@
             [aConstraint setSecondItem:[secondItem replacementView]];
     }];
 
-    if ([constraints count] > 0)
-        [_windowView _addStayVariablesIfNeeded];
-
     [theWindow setContentView:_windowView];
 
     [_windowView setAutoresizesSubviews:YES];

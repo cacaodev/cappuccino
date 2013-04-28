@@ -181,6 +181,38 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     return expression;
 }
 
+- (id)expressionForAttributeCenterX:(CPView)anItem
+{
+    var midWidth = new c.Expression([anItem _variableWidth]).divide(2),
+        expression;
+
+    if (anItem === _container)
+        expression = midWidth;
+    else
+    {
+        var left = new c.Expression([anItem _variableMinX]);
+        expression = c.plus(left, midWidth);
+    }
+
+    return expression;
+}
+
+- (id)expressionForAttributeCenterY:(CPView)anItem
+{
+    var midHeight = new c.Expression([anItem _variableHeight]).divide(2),
+        expression;
+
+    if (anItem === _container)
+        expression = midHeight;
+    else
+    {
+        var top = new c.Expression([anItem _variableMinY]);
+        expression = c.plus(top, midHeight);
+    }
+
+    return expression;
+}
+
 - (Object)_expressionFromItem:(id)item attribute:(int)attr
 {
     if (item == nil || attr == CPLayoutAttributeNotAnAttribute)
@@ -204,13 +236,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
             break;
         case CPLayoutAttributeHeight    : exp = [item _variableHeight];
             break;
-        case CPLayoutAttributeCenterX   : var left = new c.Expression([item _variableMinX]);
-                                          var midWidth = new c.Expression([item _variableWidth]).divide(2);
-                                          exp = c.plus(left, midWidth);
+        case CPLayoutAttributeCenterX   : exp = [self expressionForAttributeCenterX:item];
             break;
-        case CPLayoutAttributeCenterY   : var top = new c.Expression([item _variableMinY]);
-                                          var midHeight = new c.Expression([item _variableHeight]).divide(2);
-                                          exp = c.plus(top, midHeight);
+        case CPLayoutAttributeCenterY   : exp = [self expressionForAttributeCenterY:item];
             break;
         case CPLayoutAttributeBaseline  :
             break;
@@ -221,7 +249,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 
 - (void)addToEngine:(id)anEngine
 {
-    CPLog.debug([self class] + " " + _cmd + " " + self);
+    // CPLog.debug([self class] + " " + _cmd + " " + self);
 
     try
     {
@@ -235,7 +263,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     }
     catch (e)
     {
-        console.log(e  + " " + [self description]);
+        CPLog.warn(e  + "\nEngine content:\n" + [self description]);
     }
 }
 
@@ -273,8 +301,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
         _firstItem = aNewItem;
         CPLog.debug("In Constraint replaced " + [_firstItem UID] + " with " + [aNewItem UID]);
     }
-
-    if (anItem === _secondItem)
+    else if (anItem === _secondItem)
     {
         _secondItem = aNewItem;
         CPLog.debug("In Constraint replaced " + [_secondItem UID] + " with " + [aNewItem UID]);
@@ -308,7 +335,7 @@ var CPFirstItem         = @"CPFirstItem",
     [aCoder encodeInt:_firstAttribute forKey:CPFirstAttribute];
     [aCoder encodeInt:_secondAttribute forKey:CPSecondAttribute];
 
-    if (_relation !== 0)
+    if (_relation !== CPLayoutRelationEqual)
         [aCoder encodeInt:_relation forKey:CPRelation];
     //[aCoder encodeObject:_symbolicConstant forKey:CPSymbolicConstant];
     if (_coefficient !== 1)
@@ -331,10 +358,10 @@ var CPFirstItem         = @"CPFirstItem",
     _firstAttribute = [aCoder decodeIntForKey:CPFirstAttribute];
 
     var hasKey = [aCoder containsValueForKey:CPRelation];
-    _relation = hasKey ? [aCoder decodeIntForKey:CPRelation] : 0 ;// TODO: relation when not in xib;
+    _relation = (hasKey) ? [aCoder decodeIntForKey:CPRelation] : CPLayoutRelationEqual ;
 
     var hasKey = [aCoder containsValueForKey:CPMultiplier];
-    _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:CPMultiplier] : 1 ;// TODO: multiplier when not in xib;
+    _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:CPMultiplier] : 1 ;
 
     _secondItem = [aCoder decodeObjectForKey:CPSecondItem];
     _secondAttribute = [aCoder decodeIntForKey:CPSecondAttribute];
@@ -347,8 +374,7 @@ var CPFirstItem         = @"CPFirstItem",
     //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
 
     var hasKey = [aCoder containsValueForKey:CPPriority];
-    _priority = (hasKey) ? [aCoder decodeIntForKey:CPPriority] : CPLayoutPriorityRequired; // TODO: _priority when not in xib;
- CPLog.warn("Constraint decoded firstItem " + [_firstItem class] + [_firstItem identifier] + [_firstItem UID]);
+    _priority = (hasKey) ? [aCoder decodeIntForKey:CPPriority] : CPLayoutPriorityRequired;
 
     [self _init];
 
