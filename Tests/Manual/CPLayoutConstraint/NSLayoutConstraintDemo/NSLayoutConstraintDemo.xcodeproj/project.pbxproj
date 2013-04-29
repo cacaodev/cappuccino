@@ -1,0 +1,409 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5B73CA591729BF0E005E8CBC /* CPLayoutConstraintDemo in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */; };
+		5B73CA73172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA6E172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib */; };
+		5B73CA74172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA6F172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib */; };
+		5B73CA75172BF8C9005E8CBC /* Fixed_left_top_bottom_width.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA70172BF8C9005E8CBC /* Fixed_left_top_bottom_width.xib */; };
+		5B73CA76172BF8C9005E8CBC /* Fixed_left_top_width_height.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA71172BF8C9005E8CBC /* Fixed_left_top_width_height.xib */; };
+		5B73CA78172BFA7B005E8CBC /* Fixed_left_top_bottom_right_width(499).xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA6D172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(499).xib */; };
+		5B8071EB172824470084FC75 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B8071EA172824470084FC75 /* Cocoa.framework */; };
+		5B8071F5172824470084FC75 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5B8071F3172824470084FC75 /* InfoPlist.strings */; };
+		5B8071F7172824470084FC75 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5B8071F6172824470084FC75 /* main.m */; };
+		5B8071FB172824470084FC75 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 5B8071F9172824470084FC75 /* Credits.rtf */; };
+		5B8071FE172824470084FC75 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5B8071FD172824470084FC75 /* AppDelegate.m */; };
+		5B807201172824470084FC75 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B8071FF172824470084FC75 /* MainMenu.xib */; };
+		5B8085A5172843CB0084FC75 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B8085A4172843CA0084FC75 /* WebKit.framework */; };
+		5B8085A817284F390084FC75 /* WebScripObject+Objective-J.m in Sources */ = {isa = PBXBuildFile; fileRef = 5B8085A717284F390084FC75 /* WebScripObject+Objective-J.m */; };
+		5BE26B10172BFF5000B4423B /* Fixed_top_right_width_height.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B0D172BFF2200B4423B /* Fixed_top_right_width_height.xib */; };
+		5BE26B12172C286F00B4423B /* Fixed_bottom_right_width_height.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B11172C286F00B4423B /* Fixed_bottom_right_width_height.xib */; };
+		5BE26B15172C2B3200B4423B /* Subview1.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B13172C2B3200B4423B /* Subview1.xib */; };
+		5BE26B16172C2B3200B4423B /* Subview2.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B14172C2B3200B4423B /* Subview2.xib */; };
+		5BE26B18172C3D4000B4423B /* Subview3.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B17172C3D4000B4423B /* Subview3.xib */; };
+		5BE26B1A172C3F7400B4423B /* 2_views_h_spacing.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B19172C3F7400B4423B /* 2_views_h_spacing.xib */; };
+		5BE26B1C172C3F8B00B4423B /* 2_views_h_spacing.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1B172C3F8A00B4423B /* 2_views_h_spacing.xib */; };
+		5BE26B1E172C465C00B4423B /* center_x_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1D172C465B00B4423B /* center_x_alignment.xib */; };
+		5BE26B20172C470E00B4423B /* 2_views_center_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */; };
+		5BE26B22172C4B8900B4423B /* 3_views_center_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */; };
+		5BE26B24172C51E100B4423B /* hugging_priorities.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B23172C51E000B4423B /* hugging_priorities.xib */; };
+		5BE26B26172C71C200B4423B /* compression_priorities.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B25172C71C200B4423B /* compression_priorities.xib */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CPLayoutConstraintDemo; sourceTree = "<group>"; };
+		5B73CA6D172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(499).xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "Fixed_left_top_bottom_right_width(499).xib"; path = "CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right_width(499).xib"; sourceTree = "<group>"; };
+		5B73CA6E172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "Fixed_left_top_bottom_right_width(501).xib"; path = "CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right_width(501).xib"; sourceTree = "<group>"; };
+		5B73CA6F172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Fixed_left_top_bottom_right.xib; path = CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right.xib; sourceTree = "<group>"; };
+		5B73CA70172BF8C9005E8CBC /* Fixed_left_top_bottom_width.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Fixed_left_top_bottom_width.xib; path = CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_width.xib; sourceTree = "<group>"; };
+		5B73CA71172BF8C9005E8CBC /* Fixed_left_top_width_height.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Fixed_left_top_width_height.xib; path = CPLayoutConstraintDemo/Resources/Fixed_left_top_width_height.xib; sourceTree = "<group>"; };
+		5B8071E7172824470084FC75 /* NSLayoutConstraintDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NSLayoutConstraintDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B8071EA172824470084FC75 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		5B8071ED172824470084FC75 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		5B8071EE172824470084FC75 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		5B8071EF172824470084FC75 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		5B8071F2172824470084FC75 /* NSLayoutConstraintDemo-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "NSLayoutConstraintDemo-Info.plist"; sourceTree = "<group>"; };
+		5B8071F4172824470084FC75 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		5B8071F6172824470084FC75 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		5B8071F8172824470084FC75 /* NSLayoutConstraintDemo-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSLayoutConstraintDemo-Prefix.pch"; sourceTree = "<group>"; };
+		5B8071FA172824470084FC75 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
+		5B8071FC172824470084FC75 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		5B8071FD172824470084FC75 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		5B807200172824470084FC75 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		5B8085A4172843CA0084FC75 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = /System/Library/Frameworks/WebKit.framework; sourceTree = "<absolute>"; };
+		5B8085A617284F390084FC75 /* WebScripObject+Objective-J.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "WebScripObject+Objective-J.h"; sourceTree = "<group>"; };
+		5B8085A717284F390084FC75 /* WebScripObject+Objective-J.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "WebScripObject+Objective-J.m"; sourceTree = "<group>"; };
+		5BE26B0D172BFF2200B4423B /* Fixed_top_right_width_height.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Fixed_top_right_width_height.xib; path = CPLayoutConstraintDemo/Resources/Fixed_top_right_width_height.xib; sourceTree = "<group>"; };
+		5BE26B11172C286F00B4423B /* Fixed_bottom_right_width_height.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Fixed_bottom_right_width_height.xib; path = CPLayoutConstraintDemo/Resources/Fixed_bottom_right_width_height.xib; sourceTree = "<group>"; };
+		5BE26B13172C2B3200B4423B /* Subview1.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Subview1.xib; path = CPLayoutConstraintDemo/Resources/Subview1.xib; sourceTree = "<group>"; };
+		5BE26B14172C2B3200B4423B /* Subview2.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Subview2.xib; path = CPLayoutConstraintDemo/Resources/Subview2.xib; sourceTree = "<group>"; };
+		5BE26B17172C3D4000B4423B /* Subview3.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Subview3.xib; path = CPLayoutConstraintDemo/Resources/Subview3.xib; sourceTree = "<group>"; };
+		5BE26B19172C3F7400B4423B /* 2_views_h_spacing.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 2_views_h_spacing.xib; path = NSLayoutConstraintDemo/CPLayoutConstraintDemo/Resources/2_views_h_spacing.xib; sourceTree = "<group>"; };
+		5BE26B1B172C3F8A00B4423B /* 2_views_h_spacing.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = 2_views_h_spacing.xib; path = CPLayoutConstraintDemo/Resources/2_views_h_spacing.xib; sourceTree = "<group>"; };
+		5BE26B1D172C465B00B4423B /* center_x_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = center_x_alignment.xib; path = CPLayoutConstraintDemo/Resources/center_x_alignment.xib; sourceTree = "<group>"; };
+		5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 2_views_center_alignment.xib; path = CPLayoutConstraintDemo/Resources/2_views_center_alignment.xib; sourceTree = "<group>"; };
+		5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 3_views_center_alignment.xib; path = CPLayoutConstraintDemo/Resources/3_views_center_alignment.xib; sourceTree = "<group>"; };
+		5BE26B23172C51E000B4423B /* hugging_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = hugging_priorities.xib; path = CPLayoutConstraintDemo/Resources/hugging_priorities.xib; sourceTree = "<group>"; };
+		5BE26B25172C71C200B4423B /* compression_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = compression_priorities.xib; path = CPLayoutConstraintDemo/Resources/compression_priorities.xib; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5B8071E4172824470084FC75 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B8085A5172843CB0084FC75 /* WebKit.framework in Frameworks */,
+				5B8071EB172824470084FC75 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5B8071DE172824460084FC75 = {
+			isa = PBXGroup;
+			children = (
+				5BE26B19172C3F7400B4423B /* 2_views_h_spacing.xib */,
+				5B8071F0172824470084FC75 /* NSLayoutConstraintDemo */,
+				5B8071E9172824470084FC75 /* Frameworks */,
+				5B8071E8172824470084FC75 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5B8071E8172824470084FC75 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5B8071E7172824470084FC75 /* NSLayoutConstraintDemo.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5B8071E9172824470084FC75 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5B8085A4172843CA0084FC75 /* WebKit.framework */,
+				5B8071EA172824470084FC75 /* Cocoa.framework */,
+				5B8071EC172824470084FC75 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5B8071EC172824470084FC75 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5B8071ED172824470084FC75 /* AppKit.framework */,
+				5B8071EE172824470084FC75 /* CoreData.framework */,
+				5B8071EF172824470084FC75 /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		5B8071F0172824470084FC75 /* NSLayoutConstraintDemo */ = {
+			isa = PBXGroup;
+			children = (
+				5B8071FC172824470084FC75 /* AppDelegate.h */,
+				5B8071FD172824470084FC75 /* AppDelegate.m */,
+				5B8085A617284F390084FC75 /* WebScripObject+Objective-J.h */,
+				5B8085A717284F390084FC75 /* WebScripObject+Objective-J.m */,
+				5B8071FF172824470084FC75 /* MainMenu.xib */,
+				5B8071F1172824470084FC75 /* Supporting Files */,
+			);
+			path = NSLayoutConstraintDemo;
+			sourceTree = "<group>";
+		};
+		5B8071F1172824470084FC75 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				5B73CA6D172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(499).xib */,
+				5B73CA6E172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib */,
+				5B73CA6F172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib */,
+				5B73CA70172BF8C9005E8CBC /* Fixed_left_top_bottom_width.xib */,
+				5B73CA71172BF8C9005E8CBC /* Fixed_left_top_width_height.xib */,
+				5BE26B0D172BFF2200B4423B /* Fixed_top_right_width_height.xib */,
+				5BE26B11172C286F00B4423B /* Fixed_bottom_right_width_height.xib */,
+				5BE26B13172C2B3200B4423B /* Subview1.xib */,
+				5BE26B14172C2B3200B4423B /* Subview2.xib */,
+				5BE26B17172C3D4000B4423B /* Subview3.xib */,
+				5BE26B1B172C3F8A00B4423B /* 2_views_h_spacing.xib */,
+				5BE26B1D172C465B00B4423B /* center_x_alignment.xib */,
+				5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */,
+				5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */,
+				5BE26B23172C51E000B4423B /* hugging_priorities.xib */,
+				5BE26B25172C71C200B4423B /* compression_priorities.xib */,
+				5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */,
+				5B8071F2172824470084FC75 /* NSLayoutConstraintDemo-Info.plist */,
+				5B8071F3172824470084FC75 /* InfoPlist.strings */,
+				5B8071F6172824470084FC75 /* main.m */,
+				5B8071F8172824470084FC75 /* NSLayoutConstraintDemo-Prefix.pch */,
+				5B8071F9172824470084FC75 /* Credits.rtf */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5B8071E6172824470084FC75 /* NSLayoutConstraintDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5B807204172824470084FC75 /* Build configuration list for PBXNativeTarget "NSLayoutConstraintDemo" */;
+			buildPhases = (
+				5B8071E3172824470084FC75 /* Sources */,
+				5B8071E4172824470084FC75 /* Frameworks */,
+				5B8071E5172824470084FC75 /* Resources */,
+				5B886E66172EAE5400AF6C48 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NSLayoutConstraintDemo;
+			productName = NSLayoutConstraintDemo;
+			productReference = 5B8071E7172824470084FC75 /* NSLayoutConstraintDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5B8071DF172824470084FC75 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = x;
+			};
+			buildConfigurationList = 5B8071E2172824470084FC75 /* Build configuration list for PBXProject "NSLayoutConstraintDemo" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 5B8071DE172824460084FC75;
+			productRefGroup = 5B8071E8172824470084FC75 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5B8071E6172824470084FC75 /* NSLayoutConstraintDemo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5B8071E5172824470084FC75 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B8071F5172824470084FC75 /* InfoPlist.strings in Resources */,
+				5B8071FB172824470084FC75 /* Credits.rtf in Resources */,
+				5B807201172824470084FC75 /* MainMenu.xib in Resources */,
+				5B73CA591729BF0E005E8CBC /* CPLayoutConstraintDemo in Resources */,
+				5B73CA73172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib in Resources */,
+				5B73CA74172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib in Resources */,
+				5B73CA75172BF8C9005E8CBC /* Fixed_left_top_bottom_width.xib in Resources */,
+				5B73CA76172BF8C9005E8CBC /* Fixed_left_top_width_height.xib in Resources */,
+				5BE26B10172BFF5000B4423B /* Fixed_top_right_width_height.xib in Resources */,
+				5B73CA78172BFA7B005E8CBC /* Fixed_left_top_bottom_right_width(499).xib in Resources */,
+				5BE26B12172C286F00B4423B /* Fixed_bottom_right_width_height.xib in Resources */,
+				5BE26B15172C2B3200B4423B /* Subview1.xib in Resources */,
+				5BE26B16172C2B3200B4423B /* Subview2.xib in Resources */,
+				5BE26B18172C3D4000B4423B /* Subview3.xib in Resources */,
+				5BE26B1A172C3F7400B4423B /* 2_views_h_spacing.xib in Resources */,
+				5BE26B1C172C3F8B00B4423B /* 2_views_h_spacing.xib in Resources */,
+				5BE26B1E172C465C00B4423B /* center_x_alignment.xib in Resources */,
+				5BE26B20172C470E00B4423B /* 2_views_center_alignment.xib in Resources */,
+				5BE26B22172C4B8900B4423B /* 3_views_center_alignment.xib in Resources */,
+				5BE26B24172C51E100B4423B /* hugging_priorities.xib in Resources */,
+				5BE26B26172C71C200B4423B /* compression_priorities.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		5B886E66172EAE5400AF6C48 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cd ${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/Contents/Resources/CPLayoutConstraintDemo/;\nif [[ ! -e Frameworks ]]; then\nmkdir Frameworks;\ncd Frameworks;\nBUILD_DIR=`bash -l -c 'echo $CAPP_BUILD'`\nln -s $BUILD_DIR/Release/AppKit\nln -s $BUILD_DIR/Release/Foundation\nln -s $BUILD_DIR/Release/Objective-J\nfi\nexit 0";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5B8071E3172824470084FC75 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B8071F7172824470084FC75 /* main.m in Sources */,
+				5B8071FE172824470084FC75 /* AppDelegate.m in Sources */,
+				5B8085A817284F390084FC75 /* WebScripObject+Objective-J.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		5B8071F3172824470084FC75 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5B8071F4172824470084FC75 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		5B8071F9172824470084FC75 /* Credits.rtf */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5B8071FA172824470084FC75 /* en */,
+			);
+			name = Credits.rtf;
+			sourceTree = "<group>";
+		};
+		5B8071FF172824470084FC75 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5B807200172824470084FC75 /* en */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		5B807202172824470084FC75 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = "";
+			};
+			name = Debug;
+		};
+		5B807203172824470084FC75 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				SDKROOT = "";
+			};
+			name = Release;
+		};
+		5B807205172824470084FC75 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "NSLayoutConstraintDemo/NSLayoutConstraintDemo-Prefix.pch";
+				INFOPLIST_FILE = "NSLayoutConstraintDemo/NSLayoutConstraintDemo-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		5B807206172824470084FC75 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "NSLayoutConstraintDemo/NSLayoutConstraintDemo-Prefix.pch";
+				INFOPLIST_FILE = "NSLayoutConstraintDemo/NSLayoutConstraintDemo-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5B8071E2172824470084FC75 /* Build configuration list for PBXProject "NSLayoutConstraintDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B807202172824470084FC75 /* Debug */,
+				5B807203172824470084FC75 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5B807204172824470084FC75 /* Build configuration list for PBXNativeTarget "NSLayoutConstraintDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B807205172824470084FC75 /* Debug */,
+				5B807206172824470084FC75 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5B8071DF172824470084FC75 /* Project object */;
+}
