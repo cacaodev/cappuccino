@@ -51,6 +51,11 @@ CPLogRegister(CPLogConsole);
     [super resizeWithOldSuperviewSize:aSize];
 }
 
+- (void)mouseDown:(CPEvent)anEvent
+{
+    CPLog.debug([self _layoutEngine]);
+}
+
 @end
 
 @implementation NoConstraintView : ColorView
@@ -99,8 +104,32 @@ CPLogRegister(CPLogConsole);
     [self _showWindowCibName:@"Constraints"];
     [self _showWindowCibName:@"NoConstraints"];
 
-    CPTrace("ConstraintView", "_resizeWithOldSuperviewSize:");
-    CPTrace("NoConstraintView", "_resizeWithOldSuperviewSize:");
+    var TOTAL_COUNT_CBL = 0,
+        TOTAL_COUNT = 0,
+        TOTAL_DURATION_CBL = 0,
+        TOTAL_DURATION = 0;
+
+    CPTrace("ConstraintView", "_resizeWithOldSuperviewSize:", function(receiver, selector, args, duration)
+    {
+        if (duration < 10)
+        {
+            TOTAL_COUNT_CBL++;
+            TOTAL_DURATION_CBL += duration;
+        }
+
+        console.log("Constrained Based Layout: -resizeWithOldSuperviewSize: in " + duration + " avg = " + (TOTAL_DURATION_CBL / TOTAL_COUNT_CBL));
+    });
+
+    CPTrace("NoConstraintView", "_resizeWithOldSuperviewSize:", function(receiver, selector, args, duration)
+    {
+        if (duration < 10)
+        {
+            TOTAL_COUNT++;
+            TOTAL_DURATION += duration;
+        }
+
+        console.log("Auto Layout: -resizeWithOldSuperviewSize: in " + duration + " avg = " + (TOTAL_DURATION / TOTAL_COUNT));
+    });
 }
 
 - (void)_showWindowCibName:(CPString)aWindowCibName
@@ -110,7 +139,6 @@ CPLogRegister(CPLogConsole);
     [currentController showWindow:nil];
 
     var window = [currentController window];
-    [window center];
     [window setTitle:aWindowCibName];
 }
 

@@ -68,6 +68,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     float    _priority         @accessors(property=priority);
     Strength _strength         @accessors(property=_strength);
     BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
+
+    CPInteger _firstItemRestrictedAttribute;
+    CPInteger _secondItemRestrictedAttribute;
 }
 
 + (id)constraintWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
@@ -99,6 +102,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     _strength = c.Strength.medium;
     //_stayVariables = [];
     _container = nil;
+    _firstItemRestrictedAttribute = CPLayoutAttributeNotAnAttribute;
+    _secondItemRestrictedAttribute = CPLayoutAttributeNotAnAttribute;
 }
 
 - (void)setStrength:(CPInteger)aStrength
@@ -247,6 +252,39 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     return exp;
 }
 
+- (void)_addEditingVariablesForAttribute:(CPInteger)anAttribute ofItem:(id)anItem inEngine:(id)anEngine
+{
+    if (anAttribute === CPLayoutAttributeNotAnAttribute)
+        return;
+
+    var variable = nil;
+
+    switch(anAttribute)
+    {
+        case CPLayoutAttributeLeft   : variable = [anItem _variableMinX];
+        break;
+        case CPLayoutAttributeTop    : variable = [anItem _variableMinY];
+        break;
+        case CPLayoutAttributeWidth  : variable = [anItem _variableWidth];
+        break;
+        case CPLayoutAttributeHeight : variable = [anItem _variableHeight];
+        break;
+    }
+
+    if (variable)
+        [anEngine addEditingVariable:variable];
+}
+
+- (void)restrictFirstItemAttribute:(CPInteger)anAttribute
+{
+    _firstItemRestrictedAttribute = anAttribute;
+}
+
+- (void)restrictSecondItemAttribute:(CPInteger)anAttribute
+{
+    _secondItemRestrictedAttribute = anAttribute;
+}
+
 - (void)addToEngine:(id)anEngine
 {
     // CPLog.debug([self class] + " " + _cmd + " " + self);
@@ -259,11 +297,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 
         [anEngine _addCassowaryConstraint:_constraint];
 
+        [self _addEditingVariablesForAttribute:_firstItemRestrictedAttribute ofItem:_firstItem inEngine:anEngine];
+        [self _addEditingVariablesForAttribute:_secondItemRestrictedAttribute ofItem:_secondItem inEngine:anEngine];
+
         [[anEngine constraints] addObject:self];
     }
     catch (e)
     {
-        CPLog.warn(e  + "\nEngine content:\n" + [self description]);
+        CPLog.warn(e  + "\nEngine content:\n" + [anEngine description]);
     }
 }
 

@@ -3387,28 +3387,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     return constraints;
 }
-/*
--  (void)_addStayVariablesIfNeeded
-{
-    if (_didAddStayVariablesToEngine)
-        return;
 
- CPLog.debug(_identifier + " " + _cmd);
-    var engine = [self _layoutEngine],
-        variableMinX = [self _variableMinX],
-        variableMinY = [self _variableMinY],
-        variableWidth = [self _variableWidth],
-        variableHeight = [self _variableHeight];
-
-// stay variables for the view origin to stay put.
-    [engine addStayVariables:[variableMinX, variableMinY] strength:c.Strength.required weight:1000];
-
-// stay variables for resizing.
-    [engine addStayVariables:[variableWidth, variableHeight] strength:c.Strength.required weight:1000];
-
-    _didAddStayVariablesToEngine = YES;
-}
-*/
 - (Object)_variableMinX
 {
     if (!_variableMinX)
@@ -3441,6 +3420,17 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return _variableHeight;
 }
 
+- (void)_createVariables
+{
+    var origin = _frame.origin,
+        size = _frame.size;
+
+    _variableMinX = createVariable(_identifier + "_minX", origin.x);
+    _variableMinY = createVariable(_identifier + "_minY", origin.y);
+    _variableWidth = createVariable(_identifier + "_width", size.width);
+    _variableHeight = createVariable(_identifier + "_height", size.height);
+}
+
 - (CPArray)_autoresizingConstraints
 {
     if (!_autoresizingConstraints)
@@ -3458,6 +3448,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 //CPLog.debug(_identifier + _cmd);
     var engine = [self _layoutEngine];
+
+    [self _createVariables];
 
     [engine removeAllConstraints];
 
@@ -3495,8 +3487,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (void)addConstraints:(CPArray)constraints
 {
     [self _addConstraints:constraints];
-
-    //[self _addStayVariablesIfNeeded];
 }
 
 - (void)_addConstraints:(CPArray)constraints
@@ -3535,29 +3525,37 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     //CPLog.debug(_identifier + ": suggest size" + CPStringFromSize(newBoundsSize));
 
-    if (newW !== oldBoundsSize.width)
-        [engine suggestValue:newW forVariable:[self _variableWidth]];
+//    var d = new Date();
 
+    [engine suggestValue:newW forVariable:_variableWidth value:newH forVariable:_variableHeight];
+/*
     if (newH !== oldBoundsSize.height)
-        [engine suggestValue:newH forVariable:[self _variableHeight]];
-
+        [engine suggestValue:newH forVariable:_variableHeight];
+*/
+//    var dd = new Date();
     [self _updateConstraintFrameRecursively:YES];
+
+//    var ddd = new Date();
 
     [[self window] _layoutAtWindowLevelIfNeeded];
 
-    //CPLog.debug(_identifier + ": validated rect:" + CPStringFromRect([self frame]));
+//  var dddd = new Date();
+//  CPLog.debug(_identifier + ": resolved in " + (dd - d) + " " + C + " frames updates in " + (ddd - dd) + "-  _layoutAtWindowLevelIfNeeded in " + (dddd - ddd) + " total = " + (dddd - d));
+
+    // CPLog.debug(_identifier + ": validated rect:" + CPStringFromRect([self frame]));
 }
 
 - (void)_updateConstraintFrameRecursively:(BOOL)recursively
 {
-    var resolvedFrame = [self cbl_frame];
     [self setAutoresizesSubviews:NO];
-    [self setFrame:resolvedFrame];
+
+    [self setFrame:[self cbl_frame]];
+
     [self setAutoresizesSubviews:YES];
 
     //CPLog.debug(_identifier  + " setFrame: " + CPStringFromRect(resolvedFrame));
 
-    if (recursively)
+    if (recursively && _supportsConstraintLayout)
     {
         [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
         {
@@ -3568,34 +3566,12 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (CGRect)cbl_frame
 {
-    var resolvedFrame = [self frame];
-
-    if (_variableWidth !== nil)
-        resolvedFrame.size.width = _variableWidth.value;
-
-    if (_variableHeight !== nil)
-        resolvedFrame.size.height = _variableHeight.value;
-
-    if (_variableMinX !== nil)
-        resolvedFrame.origin.x = _variableMinX.value;
-
-    if (_variableMinY !== nil)
-        resolvedFrame.origin.y = _variableMinY.value;
-
-    return resolvedFrame;
+    return CGRectMake(_variableMinX.value, _variableMinY.value, _variableWidth.value, _variableHeight.value);
 }
 
 - (CGRect)cbl_frameSize
 {
-    var resolvedFrameSize = [self frameSize];
-
-    if (_variableWidth !== nil)
-        resolvedFrameSize.width = _variableWidth.value;
-
-    if (_variableHeight !== nil)
-        resolvedFrameSize.height = _variableHeight.value;
-
-    return resolvedFrameSize;
+    return CGSizeMake(_variableWidth.value, _variableHeight.value);
 }
 
 

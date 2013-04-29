@@ -3573,6 +3573,7 @@ var interpolate = function(fromValue, toValue, progress)
     if (!_engine)
     {
         _engine = [[CPLayoutConstraintEngine alloc] init];
+        [_windowView setIdentifier:@"WindowView"];
         var vars = [[_windowView _variableWidth], [_windowView _variableHeight]];
         [_engine addStayVariables:vars strength:c.Strength.medium weight:500];
     }
@@ -3602,11 +3603,13 @@ var interpolate = function(fromValue, toValue, progress)
         var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:minY];
         [top setPriority:500];
 
-        var width = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_windowView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
+        var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
         [width setPriority:500];
+        [width restrictSecondItemAttribute:CPLayoutAttributeWidth];
 
         var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];
         [height setPriority:500];
+        [height restrictSecondItemAttribute:CPLayoutAttributeHeight];
 
         [_contentView _setInternalConstraints:[left, top, width, height]];
 

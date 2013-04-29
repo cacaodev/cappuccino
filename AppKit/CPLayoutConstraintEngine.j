@@ -5,6 +5,7 @@
     SimplexSolver   _solver;
     CPArray         _constraints @accessors(getter=constraints);
     CPArray         _stayVariables;
+    CPArray         _editingVariables;
 }
 
 - (id)init
@@ -13,26 +14,40 @@
 
     _solver = new c.SimplexSolver();
 CPLog.debug("created solver");
+    _solver.autoSolve = false;
     _constraints = [];
     _stayVariables = [];
+    _editingVariables = [];
 
     return self;
 }
 
 - (void)suggestValue:(id)aValue forVariable:(id)aVariable
 {
-    _solver.addEditVar(aVariable).beginEdit();
     _solver.suggestValue(aVariable, aValue).resolve();
-    _solver.endEdit();
-    // CPLog.debug(".addEditVar.suggestValue(" + aVariable + ", " + aValue + ") >> " + aVariable);
 }
 
-- (void)_addCassowaryConstraint:(Object)aJSConstraint
+- (void)suggestValue:(id)aValue1 forVariable:(id)aVariable1 value:(id)aValue2 forVariable:(id)aVariable2
+{
+    _solver.suggestValue(aVariable1, aValue1).suggestValue(aVariable2, aValue2);
+    _solver.resolve();
+}
+
+- (void)addEditingVariable:(id)aVariable
+{
+    if (![_editingVariables containsObjectIdenticalTo:aVariable])
+    {
+        _solver.addEditVar(aVariable);
+        [_editingVariables addObject:aVariable];
+    }
+}
+
+- (void)_addCassowaryConstraint:(Object)aCassowaryConstraint
 {
     try
     {
-        _solver.addConstraint(aJSConstraint);
-        CPLog.debug(".addConstraint(" + aJSConstraint.toString() + ")");
+        _solver.addConstraint(aCassowaryConstraint);
+        CPLog.debug(".addConstraint(" + aCassowaryConstraint.toString() + ")");
     }
     catch (e)
     {
@@ -74,15 +89,10 @@ CPLog.debug("created solver");
         [self addStayVariable:aVariable strength:aStrength weight:aWeight];
     }];
 }
-/*
-- (void)layout
-{
-    // CPLog.debug(_cmd + [_container subviews]);
 
-    [[_container subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
-    {
-        [aSubview _updateConstraintFrame];
-    }];
+- (CPString)description
+{
+    return _solver.getInternalInfo();
 }
-*/
+
 @end
