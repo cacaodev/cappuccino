@@ -220,7 +220,7 @@ var CPViewFlags                     = { },
 
     BOOL                _needsUpdateConstraint;
     BOOL                _needsConstraintBasedLayout @accessors(setter=_setNeedsConstraintBasedLayout:);
-    BOOL                _didAddStayVariablesToEngine;
+    BOOL                _hasConstraintBasedSubviews;
     BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 }
 
@@ -3300,7 +3300,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 {
     _needsConstraintBasedLayout = NO;
     _needsUpdateConstraint = YES;
-    _didAddStayVariablesToEngine = NO;
+    _hasConstraintBasedSubviews = NO;
     _translatesAutoresizingMaskIntoConstraints = NO;
     _autoresizingConstraints = nil;
     _internalConstraints = [CPArray array];
@@ -3517,6 +3517,13 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         if (![_constraintsArray containsObject:aConstraint])
         {
             [aConstraint setContainer:self];
+
+            var firstItem = [aConstraint firstItem],
+                secondItem = [aConstraint secondItem];
+
+            if ((firstItem && firstItem !== self) || (secondItem && secondItem !== self))
+                _hasConstraintBasedSubviews = YES;
+
             [_constraintsArray addObject:aConstraint];
         }
     }];
@@ -3567,21 +3574,19 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)_updateConstraintFrameRecursively:(BOOL)recursively
 {
-//    CPLog.debug(_cmd + self + "_needsConstraintBasedLayout " + _needsConstraintBasedLayout + " superview=" +[self superview] );
-    if (_needsConstraintBasedLayout)
-    {
-        var resolvedFrame = [self cbl_frame];
-        [self setAutoresizesSubviews:NO];
-        [self setFrame:resolvedFrame];
-        [self setAutoresizesSubviews:YES];
-    }
-    else
-    {
-        [self layoutIfNeeded];
-        return;
-    }
+    //CPLog.debug(_cmd + (_identifier || self) + " _needsConstraintBasedLayout=" + _needsConstraintBasedLayout + " _hasConstraintBasedSubviews=" + _hasConstraintBasedSubviews);
 
-    if (recursively)
+    var resolvedFrame = [self cbl_frame];
+
+    [self setAutoresizesSubviews:NO];
+    [self setFrame:resolvedFrame];
+    [self setAutoresizesSubviews:YES];
+
+    if (!_hasConstraintBasedSubviews)
+    {
+        [self setNeedsLayout];
+    }
+    else if (recursively)
     {
         [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
         {

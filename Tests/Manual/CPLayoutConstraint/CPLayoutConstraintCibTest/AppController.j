@@ -7,6 +7,8 @@
  */
 
 @import <Foundation/CPObject.j>
+@import <AppKit/CPView.j>
+
 //@import "../CPTrace.j"
 
 CPLogRegister(CPLogConsole);

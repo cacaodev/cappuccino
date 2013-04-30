@@ -308,14 +308,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     }
 }
 
-- (CPView)layoutItem
-{
-    if (_firstItem === _container)
-        return _secondItem;
-
-    return _firstItem;
-}
-
 - (BOOL)isEqual:(id)anObject
 {
     if (anObject === self)
