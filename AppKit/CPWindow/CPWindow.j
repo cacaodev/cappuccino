@@ -3613,6 +3613,8 @@ var interpolate = function(fromValue, toValue, progress)
 
         [_contentView _setInternalConstraints:[left, top, width, height]];
 
+        [_windowView _setNeedsConstraintBasedLayout:NO];
+
         _needsConstraintsUpdate = NO;
     }
 }

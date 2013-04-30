@@ -76,8 +76,13 @@ var NSViewAutoresizingMask = 0x3F,
         if ([aCoder containsValueForKey:@"NSViewConstraints"])
             _constraintsArray = [aCoder decodeObjectForKey:@"NSViewConstraints"];
 
-        _huggingPriorities = [aCoder decodeSizeForKey:@"NSHuggingPriority"];
-        _compressionPriorities = [aCoder decodeSizeForKey:@"NSAntiCompressionPriority"];
+        var huggingPriorities = [aCoder decodeSizeForKey:@"NSHuggingPriority"];
+        if (huggingPriorities && !CGSizeEqualToSize(huggingPriorities, CGSizeMakeZero()))
+            _huggingPriorities = huggingPriorities;
+
+        var compressionPriorities = [aCoder decodeSizeForKey:@"NSAntiCompressionPriority"];
+        if (compressionPriorities && !CGSizeEqualToSize(compressionPriorities, CGSizeMakeZero()))
+            _compressionPriorities = compressionPriorities;
     }
 
     return self;

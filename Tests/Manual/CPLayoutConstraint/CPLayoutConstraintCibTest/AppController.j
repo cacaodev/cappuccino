@@ -7,7 +7,7 @@
  */
 
 @import <Foundation/CPObject.j>
-@import "../CPTrace.j"
+//@import "../CPTrace.j"
 
 CPLogRegister(CPLogConsole);
 
@@ -35,6 +35,12 @@ CPLogRegister(CPLogConsole);
     CGContextFillRect(ctx, [self bounds]);
 }
 
+-(void)mouseDown:(CPEvent)anEvent
+{
+    if ([anEvent type] == CPLeftMouseDown && ([anEvent modifierFlags] & CPCommandKeyMask))
+        CPLog.debug([[self window] _layoutEngine]);
+}
+
 @end
 
 @implementation AppController : CPObject
@@ -44,7 +50,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
-    CPTrace("CPWindow", "setFrameSize:");
+    //CPTrace("CPWindow", "setFrameSize:");
 }
 
 @end

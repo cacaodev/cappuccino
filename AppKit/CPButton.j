@@ -888,6 +888,11 @@ CPButtonImageOffset   = 3.0;
     return [self _minimumFrameSize];
 }
 
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(250, 750);
+}
+
 @end
 
 @implementation CPButton (NS)

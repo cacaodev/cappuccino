@@ -128,7 +128,7 @@ CPLogRegister(CPLogConsole);
             TOTAL_DURATION += duration;
         }
 
-        console.log("Auto Layout: -resizeWithOldSuperviewSize: in " + duration + " avg = " + (TOTAL_DURATION / TOTAL_COUNT));
+        console.log("Autosizing: -resizeWithOldSuperviewSize: in " + duration + " avg = " + (TOTAL_DURATION / TOTAL_COUNT));
     });
 }
 

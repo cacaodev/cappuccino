@@ -26,7 +26,6 @@
 		5BE26B15172C2B3200B4423B /* Subview1.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B13172C2B3200B4423B /* Subview1.xib */; };
 		5BE26B16172C2B3200B4423B /* Subview2.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B14172C2B3200B4423B /* Subview2.xib */; };
 		5BE26B18172C3D4000B4423B /* Subview3.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B17172C3D4000B4423B /* Subview3.xib */; };
-		5BE26B1A172C3F7400B4423B /* 2_views_h_spacing.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B19172C3F7400B4423B /* 2_views_h_spacing.xib */; };
 		5BE26B1C172C3F8B00B4423B /* 2_views_h_spacing.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1B172C3F8A00B4423B /* 2_views_h_spacing.xib */; };
 		5BE26B1E172C465C00B4423B /* center_x_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1D172C465B00B4423B /* center_x_alignment.xib */; };
 		5BE26B20172C470E00B4423B /* 2_views_center_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */; };
@@ -63,7 +62,6 @@
 		5BE26B13172C2B3200B4423B /* Subview1.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Subview1.xib; path = CPLayoutConstraintDemo/Resources/Subview1.xib; sourceTree = "<group>"; };
 		5BE26B14172C2B3200B4423B /* Subview2.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Subview2.xib; path = CPLayoutConstraintDemo/Resources/Subview2.xib; sourceTree = "<group>"; };
 		5BE26B17172C3D4000B4423B /* Subview3.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Subview3.xib; path = CPLayoutConstraintDemo/Resources/Subview3.xib; sourceTree = "<group>"; };
-		5BE26B19172C3F7400B4423B /* 2_views_h_spacing.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 2_views_h_spacing.xib; path = NSLayoutConstraintDemo/CPLayoutConstraintDemo/Resources/2_views_h_spacing.xib; sourceTree = "<group>"; };
 		5BE26B1B172C3F8A00B4423B /* 2_views_h_spacing.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = 2_views_h_spacing.xib; path = CPLayoutConstraintDemo/Resources/2_views_h_spacing.xib; sourceTree = "<group>"; };
 		5BE26B1D172C465B00B4423B /* center_x_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = center_x_alignment.xib; path = CPLayoutConstraintDemo/Resources/center_x_alignment.xib; sourceTree = "<group>"; };
 		5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 2_views_center_alignment.xib; path = CPLayoutConstraintDemo/Resources/2_views_center_alignment.xib; sourceTree = "<group>"; };
@@ -88,7 +86,6 @@
 		5B8071DE172824460084FC75 = {
 			isa = PBXGroup;
 			children = (
-				5BE26B19172C3F7400B4423B /* 2_views_h_spacing.xib */,
 				5B8071F0172824470084FC75 /* NSLayoutConstraintDemo */,
 				5B8071E9172824470084FC75 /* Frameworks */,
 				5B8071E8172824470084FC75 /* Products */,
@@ -231,7 +228,6 @@
 				5BE26B15172C2B3200B4423B /* Subview1.xib in Resources */,
 				5BE26B16172C2B3200B4423B /* Subview2.xib in Resources */,
 				5BE26B18172C3D4000B4423B /* Subview3.xib in Resources */,
-				5BE26B1A172C3F7400B4423B /* 2_views_h_spacing.xib in Resources */,
 				5BE26B1C172C3F8B00B4423B /* 2_views_h_spacing.xib in Resources */,
 				5BE26B1E172C465C00B4423B /* center_x_alignment.xib in Resources */,
 				5BE26B20172C470E00B4423B /* 2_views_center_alignment.xib in Resources */,

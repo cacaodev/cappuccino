@@ -104,6 +104,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     _container = nil;
     _firstItemRestrictedAttribute = CPLayoutAttributeNotAnAttribute;
     _secondItemRestrictedAttribute = CPLayoutAttributeNotAnAttribute;
+
+    [_firstItem _setNeedsConstraintBasedLayout:YES];
+    [_secondItem _setNeedsConstraintBasedLayout:YES];
 }
 
 - (void)setStrength:(CPInteger)aStrength
@@ -243,9 +246,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
             break;
         case CPLayoutAttributeCenterX   : exp = [self expressionForAttributeCenterX:item];
             break;
-        case CPLayoutAttributeCenterY   : exp = [self expressionForAttributeCenterY:item];
-            break;
         case CPLayoutAttributeBaseline  :
+        case CPLayoutAttributeCenterY   : exp = [self expressionForAttributeCenterY:item];
             break;
     }
 
@@ -292,8 +294,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     try
     {
         [self _generateCassowaryConstraint];
-
-        //[anEngine addStayVariables:_stayVariables strength:_strength weight:_priority];
 
         [anEngine _addCassowaryConstraint:_constraint];
 
