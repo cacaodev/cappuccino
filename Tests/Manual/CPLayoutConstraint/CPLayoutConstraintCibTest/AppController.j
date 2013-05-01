@@ -37,7 +37,7 @@ CPLogRegister(CPLogConsole);
     CGContextFillRect(ctx, [self bounds]);
 }
 
--(void)mouseDown:(CPEvent)anEvent
+- (void)mouseDown:(CPEvent)anEvent
 {
     if ([anEvent type] == CPLeftMouseDown && ([anEvent modifierFlags] & CPCommandKeyMask))
         CPLog.debug([[self window] _layoutEngine]);

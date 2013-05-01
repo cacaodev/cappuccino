@@ -11,7 +11,7 @@
 
 // @import "../CPTrace.j"
 
-//CPLogRegister(CPLogConsole);
+CPLogRegister(CPLogConsole);
 
 @implementation ColorView : CPView
 {
@@ -35,6 +35,14 @@
     [color set];
 
     CGContextFillRect(ctx, [self bounds]);
+}
+
+- (void)mouseDown:(CPEvent)anEvent
+{
+    if ([anEvent type] == CPLeftMouseDown && ([anEvent modifierFlags] & CPCommandKeyMask))
+    {
+        CPLog.debug([[self window] _layoutEngine]);
+    }
 }
 
 @end
@@ -63,10 +71,10 @@ var ID = 1;
     firstAttribute = CPLayoutAttributeWidth;
     relation = CPLayoutRelationEqual;
     secondItem = 0;
-    secondAttribute = CPLayoutAttributeWidth;
-    multiplier = 0.5;
-    constant = 0.0;
-    priority = 500;
+    secondAttribute = CPLayoutAttributeNotAnAttribute;
+    multiplier = 1;
+    constant = 100;
+    priority = 1000;
 
     return self;
 }
@@ -126,66 +134,61 @@ var ID = 1;
 - (IBAction)addDemoConstraints:(id)sender
 {
     var wrapper1 = [[Constraint alloc] init];
-    [wrapper1 setPriority:0];
-    [wrapper1 setName:@"H:(View1:width) = 0.5x(superview)"];
+    [wrapper1 setFirstAttribute:CPLayoutAttributeWidth];
+    [wrapper1 setSecondItem:0];
+    [wrapper1 setSecondAttribute:CPLayoutAttributeWidth];
+    [wrapper1 setMultiplier:0.25];
+    [wrapper1 setConstant:0];
+    [wrapper1 setPriority:1000];
+    [wrapper1 setName:@"H:View1(0.25x(mainView))"];
+
+    var wrapper11 = [[Constraint alloc] init];
+    [wrapper11 setFirstAttribute:CPLayoutAttributeWidth];
+    [wrapper11 setRelation:CPLayoutRelationLessThanOrEqual];
+    [wrapper11 setConstant:150];
+    [wrapper11 setPriority:1000];
+    [wrapper11 setName:@"H:View1(<=400)"];
 
     var wrapper2 = [[Constraint alloc] init];
-    [wrapper2 setFirstItem:1];
-    [wrapper2 setFirstAttribute:CPLayoutAttributeWidth];
-    [wrapper2 setRelation:CPLayoutRelationLessThanOrEqual];
-    [wrapper2 setSecondItem:0];
-    [wrapper2 setSecondAttribute:CPLayoutAttributeNotAnAttribute];
-    [wrapper2 setMultiplier:1];
-    [wrapper2 setConstant:500];
-    [wrapper2 setPriority:500];
-    [wrapper2 setName:@"H:(View1:width) < 500"];
+    [wrapper2 setFirstAttribute:CPLayoutAttributeHeight];
+    [wrapper2 setName:@"V:View1(100)"];
 
     var wrapper3 = [[Constraint alloc] init];
-    [wrapper3 setFirstItem:2];
     [wrapper3 setFirstAttribute:CPLayoutAttributeLeft];
-    [wrapper3 setRelation:CPLayoutRelationEqual];
-    [wrapper3 setSecondItem:1];
-    [wrapper3 setSecondAttribute:CPLayoutAttributeRight];
-    [wrapper3 setMultiplier:1];
-    [wrapper3 setConstant:100];
-    [wrapper3 setPriority:500];
-    [wrapper3 setName:@"H:(view1) - 100 - (view2)"];
+    [wrapper3 setConstant:50];
+    [wrapper3 setName:@"H:100-(view1)"];
 
     var wrapper4 = [[Constraint alloc] init];
-    [wrapper4 setFirstItem:0];
-    [wrapper4 setFirstAttribute:CPLayoutAttributeBottom];
-    [wrapper4 setRelation:CPLayoutRelationEqual];
-    [wrapper4 setSecondItem:1];
-    [wrapper4 setSecondAttribute:CPLayoutAttributeBottom];
-    [wrapper4 setMultiplier:1];
-    [wrapper4 setConstant:100];
-    [wrapper4 setPriority:500];
-    [wrapper4 setName:@"V:(view1) - 100"];
+    [wrapper4 setFirstAttribute:CPLayoutAttributeTop];
+    [wrapper4 setConstant:50];
+    [wrapper4 setName:@"V:100-(view1)"];
 
     var wrapper5 = [[Constraint alloc] init];
-    [wrapper5 setFirstItem:0];
-    [wrapper5 setFirstAttribute:CPLayoutAttributeBottom];
-    [wrapper5 setRelation:CPLayoutRelationEqual];
-    [wrapper5 setSecondItem:2];
-    [wrapper5 setSecondAttribute:CPLayoutAttributeBottom];
-    [wrapper5 setMultiplier:1];
-    [wrapper5 setConstant:100];
-    [wrapper5 setPriority:500];
-    [wrapper5 setName:@"V:(view2) - 100"];
+    [wrapper5 setFirstItem:2];
+    [wrapper5 setFirstAttribute:CPLayoutAttributeWidth];
+    [wrapper5 setName:@"H:View2(100)"];
 
     var wrapper6 = [[Constraint alloc] init];
     [wrapper6 setFirstItem:2];
-    [wrapper6 setFirstAttribute:CPLayoutAttributeWidth];
-    [wrapper6 setRelation:CPLayoutRelationEqual];
-    //[wrapper6 setSecondItem:0];
-    [wrapper6 setSecondAttribute:CPLayoutAttributeNotAnAttribute];
-    [wrapper6 setMultiplier:1];
-    [wrapper6 setConstant:200];
-    [wrapper6 setPriority:1000];
-    [wrapper6 setName:@"H:(view2:width) = 200"];
+    [wrapper6 setFirstAttribute:CPLayoutAttributeHeight];
+    [wrapper6 setName:@"V:View2(100)"];
+
+    var wrapper7 = [[Constraint alloc] init];
+    [wrapper7 setFirstItem:2];
+    [wrapper7 setFirstAttribute:CPLayoutAttributeLeft];
+    [wrapper7 setSecondItem:1];
+    [wrapper7 setSecondAttribute:CPLayoutAttributeRight];
+    [wrapper7 setConstant:0];
+    [wrapper7 setName:@"H:(view1)-0-(view2)"];
+
+    var wrapper8 = [[Constraint alloc] init];
+    [wrapper8 setFirstItem:2];
+    [wrapper8 setFirstAttribute:CPLayoutAttributeTop];
+    [wrapper8 setConstant:50];
+    [wrapper8 setName:@"V:100-(view1)"];
 
     [self willChangeValueForKey:@"constraints"];
-    [constraints addObjectsFromArray:[wrapper4, wrapper5, wrapper3, wrapper6, wrapper1, wrapper2]];
+    [constraints addObjectsFromArray:[wrapper1, wrapper11, wrapper2, wrapper3, wrapper4, wrapper5, wrapper6, wrapper7, wrapper8]];
     [self didChangeValueForKey:@"constraints"];
 
     //[mainView setNeedsLayout];
@@ -233,7 +236,7 @@ var ID = 1;
     //[mainView setNeedsLayout];
 }
 
-- (IBAction)logMetrics:(id)sender
+- (void)logMetrics:(id)sender
 {
     CPLog.debug("mainView " + CGStringFromRect([mainView frame]) + "\nleftView " + CGStringFromRect([view1 frame]) + "\nrightView " + CGStringFromRect([view2 frame]));
 }
