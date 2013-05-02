@@ -109,6 +109,8 @@ var CPViewFlags                     = { },
     CPViewHasCustomLayoutSubviews   = 1 << 1;
 
 
+CPViewNoInstrinsicMetric = -1;
+
 /*!
     @ingroup appkit
     @class CPView
@@ -219,7 +221,7 @@ var CPViewFlags                     = { },
     Object              _variableHeight;
 
     BOOL                _needsUpdateConstraint;
-    BOOL                _needsConstraintBasedLayout @accessors(setter=_setNeedsConstraintBasedLayout:);
+    BOOL                _needsConstraintBasedLayout @accessors(property=needsConstraintBasedLayout);
     BOOL                _hasConstraintBasedSubviews;
     BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 }
@@ -1242,19 +1244,10 @@ var CPViewFlags                     = { },
 */
 - (void)resizeSubviewsWithOldSize:(CGSize)aSize
 {
-    if (_needsConstraintBasedLayout)
-    {
-        //CPLog.debug(self + "Start constraint based subtree layout");
-        [self layoutSubtreeIfNeeded];
-    }
-    else
-    {
-        //CPLog.debug(self + "Start autosizing subviews");
-        var count = _subviews.length;
+    var count = _subviews.length;
 
-        while (count--)
-            [_subviews[count] resizeWithOldSuperviewSize:aSize];
-    }
+    while (count--)
+        [_subviews[count] resizeWithOldSuperviewSize:aSize];
 }
 
 /*!
@@ -3296,6 +3289,11 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 @implementation CPView (CPLayoutConstraint)
 
++ (BOOL)requiresConstraintBasedLayout
+{
+    return YES;
+}
+
 - (void)_initConstraintsIvars
 {
     _needsConstraintBasedLayout = NO;
@@ -3303,7 +3301,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     _hasConstraintBasedSubviews = NO;
     _translatesAutoresizingMaskIntoConstraints = NO;
     _autoresizingConstraints = nil;
-    _internalConstraints = [CPArray array];
+    _internalConstraints = nil;
     _constraintsArray = [CPArray array];
     _huggingPriorities = nil;
     _compressionPriorities = nil;
@@ -3347,27 +3345,53 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (CGSize)fittingSize
 {
-    return nil;
+    return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
+}
+
+- (CGSize)intrinsicContentSize
+{
+    return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
+}
+
+- (CPArray)_internalConstraints
+{
+    if (!_internalConstraints)
+        _internalConstraints = [self _generateContentSizeConstraints];
+
+    return _internalConstraints;
 }
 
 - (CPArray)_generateContentSizeConstraints
 {
     var constraints = [CPArray array],
+        intrinsicContentSize = [self intrinsicContentSize],
+        intrinsicContentSizeWidth = intrinsicContentSize.width,
+        intrinsicContentSizeHeight = intrinsicContentSize.height,
         fittingSize = [self fittingSize];
 
-    if (!fittingSize)
+    if (intrinsicContentSizeWidth === CPViewNoInstrinsicMetric)
+        intrinsicContentSizeWidth = fittingSize.width;
+
+    if (intrinsicContentSizeHeight === CPViewNoInstrinsicMetric)
+        intrinsicContentSizeHeight = fittingSize.height;
+
+    if (intrinsicContentSizeWidth === CPViewNoInstrinsicMetric && intrinsicContentSizeHeight === CPViewNoInstrinsicMetric)
         return constraints;
 
-    var width = fittingSize.width,
-        height = fittingSize.height,
-        huggingPriorities = [self _contentHuggingPriorities],
+    var huggingPriorities = [self _contentHuggingPriorities],
         compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
-    var wConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:width huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:CPLayoutConstraintOrientationHorizontal];
-    [constraints addObject:wConstraint];
+    if (intrinsicContentSizeWidth !== CPViewNoInstrinsicMetric)
+    {
+        var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSizeWidth huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:CPLayoutConstraintOrientationHorizontal];
+        [constraints addObject:constraint];
+    }
 
-    var hConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:height huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:CPLayoutConstraintOrientationVertical];
-    [constraints addObject:hConstraint];
+    if (intrinsicContentSizeHeight !== CPViewNoInstrinsicMetric)
+    {
+        var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSizeHeight huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:CPLayoutConstraintOrientationVertical];
+        [constraints addObject:constraint];
+    }
 //CPLog.debug(_cmd + constraints);
     return constraints;
 }
@@ -3459,43 +3483,49 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)updateConstraintsIfNeeded
 {
+//CPLog.debug((_identifier || self) + _cmd);
+
     if (!_needsUpdateConstraint)
         return;
 
-    [[self window] _updateConstraintsIfNeeded];
-
-//CPLog.debug(_identifier + _cmd);
     var engine = [self _layoutEngine];
 
-    [engine removeAllConstraints];
+    [self _createVariablesIfNeeded];
 
-    var constraints = [CPArray arrayWithArray:_internalConstraints];
+    var constraints = [CPArray arrayWithArray:[self _internalConstraints]];
     [constraints addObjectsFromArray:_constraintsArray];
 
-    [self addSubtreeConstraints:constraints toEngine:engine];
+    [self _addConstraints:constraints toEngine:engine];
 
     _needsUpdateConstraint = NO;
 }
 
-- (void)addSubtreeConstraints:(CPArray)constraints toEngine:(id)anEngine
+- (void)_removeConstraints:(CPArray)constraints fromEngine:(id)anEngine
 {
-    if ([constraints count])
-        [self _createVariablesIfNeeded];
+//CPLog.debug((_identifier || self) + _cmd);
+}
 
+- (void)_addConstraints:(CPArray)constraints toEngine:(id)anEngine
+{
+//CPLog.debug((_identifier || self) + _cmd);
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
         [aConstraint addToEngine:anEngine];
     }];
+}
+
+- (void)_updateSubtreeConstraintsIfNeeded
+{
+//CPLog.debug((_identifier || self) + _cmd);
+
+    [self updateConstraintsIfNeeded];
+
+    if (!_hasConstraintBasedSubviews)
+        return;
 
     [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
     {
-        var subconstraints = [CPArray arrayWithArray:[aSubview _constraintsArray]],
-            contentSizeConstraints = [aSubview _generateContentSizeConstraints];
-
-        [subconstraints addObjectsFromArray:contentSizeConstraints];
-
-        if ([subconstraints count])
-            [aSubview addSubtreeConstraints:subconstraints toEngine:anEngine];
+        [aSubview _updateSubtreeConstraintsIfNeeded];
     }];
 }
 
@@ -3512,24 +3542,33 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (void)_addConstraints:(CPArray)constraints
 {
 //CPLog.debug(_cmd + "constraints " + constraints);
+    var requiresConstraintBasedLayout = [[self class] requiresConstraintBasedLayout];
+
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        if (![_constraintsArray containsObject:aConstraint])
-        {
-            [aConstraint setContainer:self];
+        if ([_constraintsArray containsObject:aConstraint])
+            return;
 
-            var firstItem = [aConstraint firstItem],
-                secondItem = [aConstraint secondItem];
+        [aConstraint setContainer:self];
 
-            if ((firstItem && firstItem !== self) || (secondItem && secondItem !== self))
-                _hasConstraintBasedSubviews = YES;
+        var firstItem = [aConstraint firstItem],
+            secondItem = [aConstraint secondItem];
 
-            [_constraintsArray addObject:aConstraint];
-        }
+        if (requiresConstraintBasedLayout && ((firstItem && firstItem !== self) || (secondItem && secondItem !== self)))
+            _hasConstraintBasedSubviews = YES;
+
+        [_constraintsArray addObject:aConstraint];
     }];
 
-    if ([constraints count])
+    if (requiresConstraintBasedLayout && [constraints count])
+    {
+        if (self === [[self window] contentView])
+            [self setAutoresizesSubviews:NO];
+
         _needsConstraintBasedLayout = YES;
+    }
+
+    _needsUpdateConstraint = YES;
 }
 
 - (void)removeConstraint:(CPLayoutConstraint)aConstraint
@@ -3538,59 +3577,39 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         return;
 
     [_constraintsArray removeObject:aConstraint];
+
     _needsUpdateConstraint = YES;
 }
 
 - (void)layoutSubtreeIfNeeded
 {
-    [self updateConstraintsIfNeeded];
-
-    var newBoundsSize = [self bounds].size,
-        newW = newBoundsSize.width,
-        newH = newBoundsSize.height,
-        engine = [self _layoutEngine];
-
-//    CPLog.debug(_identifier + ": suggest size" + CPStringFromSize(newBoundsSize));
-
-//    var d = new Date();
-
-    [engine suggestValue:newW forVariable:_variableWidth value:newH forVariable:_variableHeight];
-/*
-    if (newH !== oldBoundsSize.height)
-        [engine suggestValue:newH forVariable:_variableHeight];
-*/
-//    var dd = new Date();
-    [self _updateConstraintFrameRecursively:YES];
-
-//    var ddd = new Date();
-
-    [[self window] _layoutAtWindowLevelIfNeeded];
-
-//  var dddd = new Date();
-//  CPLog.debug(_identifier + ": resolved in " + (dd - d) + " " + C + " frames updates in " + (ddd - dd) + "-  _layoutAtWindowLevelIfNeeded in " + (dddd - ddd) + " total = " + (dddd - d));
-
-    // CPLog.debug(_identifier + ": validated rect:" + CPStringFromRect([self frame]));
-}
-
-- (void)_updateConstraintFrameRecursively:(BOOL)recursively
-{
-    //CPLog.debug(_cmd + (_identifier || self) + " _needsConstraintBasedLayout=" + _needsConstraintBasedLayout + " _hasConstraintBasedSubviews=" + _hasConstraintBasedSubviews);
-
     var resolvedFrame = [self cbl_frame];
 
-    [self setAutoresizesSubviews:NO];
-    [self setFrame:resolvedFrame];
-    [self setAutoresizesSubviews:YES];
+//    CPLog.debug(_cmd + (_identifier || self) + " _needsConstraintBasedLayout=" + _needsConstraintBasedLayout + " _hasConstraintBasedSubviews=" + _hasConstraintBasedSubviews + " resolved " + CPStringFromRect(resolvedFrame));
+
+    if (CGSizeEqualToSize(_frame.size, resolvedFrame))
+        return;
+
+    var autoresize = _autoresizesSubviews;
+
+    if (autoresize)
+    {
+        [self setAutoresizesSubviews:NO];
+        [self setFrame:resolvedFrame];
+        [self setAutoresizesSubviews:YES];
+    }
+    else
+        [self setFrame:resolvedFrame];
 
     if (!_hasConstraintBasedSubviews)
     {
         [self setNeedsLayout];
     }
-    else if (recursively)
+    else
     {
         [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
         {
-            [aSubview _updateConstraintFrameRecursively:YES];
+            [aSubview layoutSubtreeIfNeeded];
         }];
     }
 }

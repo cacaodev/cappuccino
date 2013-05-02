@@ -109,7 +109,10 @@ CPLogRegister(CPLogConsole);
         TOTAL_DURATION_CBL = 0,
         TOTAL_DURATION = 0;
 
-    CPTrace("ConstraintView", "_resizeWithOldSuperviewSize:", function(receiver, selector, args, duration)
+    var avg = moving_averager(50),
+        avg2 = moving_averager(10);
+
+    CPTrace("CPWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
     {
         if (duration < 10)
         {
@@ -117,9 +120,9 @@ CPLogRegister(CPLogConsole);
             TOTAL_DURATION_CBL += duration;
         }
 
-        console.log("Constrained Based Layout: -resizeWithOldSuperviewSize: in " + duration + " avg = " + (TOTAL_DURATION_CBL / TOTAL_COUNT_CBL));
+        console.log("CPWindow: setFrame: in " + avg(duration));
     });
-
+/*
     CPTrace("NoConstraintView", "_resizeWithOldSuperviewSize:", function(receiver, selector, args, duration)
     {
         if (duration < 10)
@@ -128,8 +131,9 @@ CPLogRegister(CPLogConsole);
             TOTAL_DURATION += duration;
         }
 
-        console.log("Autosizing: -resizeWithOldSuperviewSize: in " + duration + " avg = " + (TOTAL_DURATION / TOTAL_COUNT));
+        console.log("Autosizing: -resizeWithOldSuperviewSize: in " + duration + " avg = " + avg2(TOTAL_DURATION / TOTAL_COUNT));
     });
+*/
 }
 
 - (void)_showWindowCibName:(CPString)aWindowCibName

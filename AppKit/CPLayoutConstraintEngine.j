@@ -5,7 +5,7 @@
     SimplexSolver   _solver;
     CPArray         _constraints @accessors(getter=constraints);
     CPArray         _stayVariables;
-    CPArray         _editingVariables;
+    id              _context;
 }
 
 - (id)init
@@ -17,7 +17,7 @@ CPLog.debug("created solver");
     _solver.autoSolve = false;
     _constraints = [];
     _stayVariables = [];
-    _editingVariables = [];
+    _context = nil;
 
     return self;
 }
@@ -27,42 +27,22 @@ CPLog.debug("created solver");
     _solver.suggestValue(aVariable, aValue).resolve();
 }
 
-- (void)suggestValue:(id)aValue1 forVariable:(id)aVariable1 value:(id)aValue2 forVariable:(id)aVariable2
+- (void)_suggestValue:(id)aValue1 forVariable:(id)aVariable1 value:(id)aValue2 forVariable:(id)aVariable2 context:(id)aContext
 {
+    if (aContext !== _context)
+    {
+        _solver.removeAllEditVars();
+
+        //[self addStayVariable:[aContext _variableMinX] strength:c.Strength.medium weight:500];
+        //[self addStayVariable:[aContext _variableMinY] strength:c.Strength.medium weight:500];
+
+        _solver.addEditVar(aVariable1).addEditVar(aVariable2);
+
+        _context = aContext;
+    }
+
     _solver.suggestValue(aVariable1, aValue1).suggestValue(aVariable2, aValue2);
     _solver.resolve();
-}
-
-- (void)addEditingVariable:(id)aVariable
-{
-    if (![_editingVariables containsObjectIdenticalTo:aVariable])
-    {
-        _solver.addEditVar(aVariable);
-        [_editingVariables addObject:aVariable];
-    }
-}
-
-- (void)_addCassowaryConstraint:(Object)aCassowaryConstraint
-{
-    try
-    {
-        _solver.addConstraint(aCassowaryConstraint);
-        CPLog.debug(".addConstraint(" + aCassowaryConstraint.toString() + ")");
-    }
-    catch (e)
-    {
-        CPLog.debug(_cmd + e);
-    }
-}
-
-- (void)removeAllConstraints
-{
-    // Not implemented
-}
-
-- (void)removeConstraint:(CPLayoutConstraint)aConstraint
-{
-    _solver.removeConstraint([aConstraint _constraint]);
 }
 
 - (void)addStayVariable:(id)aVariable strength:(Object)aStrength weight:(int)aWeight
@@ -88,6 +68,29 @@ CPLog.debug("created solver");
     {
         [self addStayVariable:aVariable strength:aStrength weight:aWeight];
     }];
+}
+
+- (void)_addCassowaryConstraint:(Object)aCassowaryConstraint
+{
+    try
+    {
+        _solver.addConstraint(aCassowaryConstraint);
+        CPLog.debug(".addConstraint(" + aCassowaryConstraint.toString() + ")");
+    }
+    catch (e)
+    {
+        CPLog.debug(_cmd + e);
+    }
+}
+
+- (void)removeAllConstraints
+{
+    // Not implemented
+}
+
+- (void)removeConstraint:(CPLayoutConstraint)aConstraint
+{
+    _solver.removeConstraint([aConstraint _constraint]);
 }
 
 - (CPString)description

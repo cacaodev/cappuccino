@@ -721,10 +721,10 @@ CPTexturedBackgroundWindowMask
 
         if (!CGSizeEqualToSize(size, newSize))
         {
-            size.width = newSize.width;
-            size.height = newSize.height;
-
-            [_windowView setFrameSize:size];
+            if ([_contentView needsConstraintBasedLayout])
+                [self _suggestFrameSize:newSize];
+            else
+                [self _setFrameSize:newSize];
 
             if (_hasShadow)
                 [_shadowView setNeedsLayout];
@@ -739,6 +739,16 @@ CPTexturedBackgroundWindowMask
         if (originMoved)
             [self _moveChildWindows:delta];
     }
+}
+
+- (void)_setFrameSize:(CGSize)newSize
+{
+    var size = _frame.size;
+
+    size.width = newSize.width;
+    size.height = newSize.height;
+
+    [_windowView setFrameSize:size];
 }
 
 - (CGRect)_constrainFrame:(CGRect)aFrame toUsableScreenWidth:(BOOL)constrainWidth andHeight:(BOOL)constrainHeight
@@ -3574,49 +3584,75 @@ var interpolate = function(fromValue, toValue, progress)
     {
         _engine = [[CPLayoutConstraintEngine alloc] init];
         [_windowView setIdentifier:@"WindowView"];
-        var vars = [[_windowView _variableWidth], [_windowView _variableHeight]];
-        [_engine addStayVariables:vars strength:c.Strength.medium weight:500];
+
+        [_engine addStayVariable:[_windowView _variableWidth] strength:c.Strength.medium weight:500];
+        [_engine addStayVariable:[_windowView _variableHeight] strength:c.Strength.medium weight:500];
     }
 
     return _engine;
 }
 
+- (void)_suggestFrameSize:(CGSize)newSize
+{
+    [self _updateConstraintsIfNeeded];
+
+    var variableWidth = [_windowView _variableWidth],
+        variableHeight = [_windowView _variableHeight];
+
+    var contentViewHeight = newSize.height - CGRectGetMinY([_contentView frame]);
+
+    [[self _layoutEngine] _suggestValue:newSize.width forVariable:[_contentView _variableWidth] value:contentViewHeight forVariable:[_contentView _variableHeight] context:_contentView];
+
+    var resolvedSize = CGSizeMake(variableWidth.value, variableHeight.value);
+
+    [self _layoutAtWindowLevelIfNeededWithSize:resolvedSize];
+}
+
 - (void)_layoutAtWindowLevelIfNeeded
 {
-    [_windowView setAutoresizesSubviews:NO];
-    [self setFrameSize:[_windowView cbl_frameSize]];
-    [_windowView setAutoresizesSubviews:YES];
+    [self _layoutAtWindowLevelIfNeededWithSize:[_windowView cbl_frameSize]];
+}
 
-    //CPLog.debug(_cmd + CPStringFromSize([_windowView cbl_frameSize]));
+- (void)_layoutAtWindowLevelIfNeededWithSize:(CGSize)aSize
+{
+    if (CGSizeEqualToSize(_frame.size, aSize))
+        return;
+
+    [self _setFrameSize:aSize];
+
+    [_contentView layoutSubtreeIfNeeded];
 }
 
 - (void)_updateConstraintsIfNeeded
 {
-    if (_needsConstraintsUpdate)
-    {
-        var contentViewFrame = [_contentView frame],
-            minY = CGRectGetMinY(contentViewFrame);
+    if (!_needsConstraintsUpdate)
+        return;
 
-        var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:0];
-        [left setPriority:500];
+    [self _updateWindowResizeConstraints];
+    [_contentView _updateSubtreeConstraintsIfNeeded];
 
-        var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:minY];
-        [top setPriority:500];
+    _needsConstraintsUpdate = NO;
+}
 
-        var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
-        [width setPriority:500];
-        [width restrictSecondItemAttribute:CPLayoutAttributeWidth];
+- (void)_updateWindowResizeConstraints
+{
+    var minY = CGRectGetMinY([_contentView frame]);
 
-        var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];
-        [height setPriority:500];
-        [height restrictSecondItemAttribute:CPLayoutAttributeHeight];
+    var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:0];
+    [left setPriority:500];
 
-        [_contentView _setInternalConstraints:[left, top, width, height]];
+    var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:minY];
+    [top setPriority:500];
 
-        [_windowView _setNeedsConstraintBasedLayout:NO];
+    var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
+    [width setPriority:500];
 
-        _needsConstraintsUpdate = NO;
-    }
+    var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];
+    [height setPriority:500];
+
+    [_contentView _setInternalConstraints:[left, top, width, height]];
+
+    //[_windowView _setNeedsConstraintBasedLayout:NO];
 }
 
 @end

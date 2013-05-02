@@ -39,8 +39,17 @@ CPLogRegister(CPLogConsole);
 
 - (void)mouseDown:(CPEvent)anEvent
 {
-    if ([anEvent type] == CPLeftMouseDown && ([anEvent modifierFlags] & CPCommandKeyMask))
+    if ([anEvent type] !== CPLeftMouseDown)
+        return;
+    var flags = [anEvent modifierFlags];
+
+    if (flags & CPCommandKeyMask)
         CPLog.debug([[self window] _layoutEngine]);
+    else if (flags & CPShiftKeyMask)
+    {
+        [self setNeedsConstraintBasedLayout:YES];
+        [self setFrameSize:CGSizeMake(400, 400)];
+    }
 }
 
 @end
@@ -48,10 +57,12 @@ CPLogRegister(CPLogConsole);
 @implementation AppController : CPObject
 {
     @outlet CPWindow theWindow;
+    @outlet ColorView aView;
 }
 
 - (void)awakeFromCib
 {
+    CPLog.debug(_cmd+ aView);
     //CPTrace("CPWindow", "setFrameSize:");
 }
 
