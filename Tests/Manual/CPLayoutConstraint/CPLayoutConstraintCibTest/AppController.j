@@ -57,13 +57,17 @@ CPLogRegister(CPLogConsole);
 @implementation AppController : CPObject
 {
     @outlet CPWindow theWindow;
-    @outlet ColorView aView;
+    @outlet CPButton middleButton;
 }
 
 - (void)awakeFromCib
 {
-    CPLog.debug(_cmd+ aView);
     //CPTrace("CPWindow", "setFrameSize:");
+}
+
+- (IBAction)changeText:(id)sender
+{
+    [middleButton setTitle:[sender stringValue]];
 }
 
 @end

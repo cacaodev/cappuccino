@@ -2,7 +2,7 @@
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
-    SimplexSolver   _solver;
+    SimplexSolver   _solver @accessors(getter=_solver);
     CPArray         _constraints @accessors(getter=constraints);
     CPArray         _stayVariables;
     id              _context;
@@ -70,27 +70,42 @@ CPLog.debug("created solver");
     }];
 }
 
-- (void)_addCassowaryConstraint:(Object)aCassowaryConstraint
+- (BOOL)_addCassowaryConstraint:(Object)aCassowaryConstraint
 {
+    var result;
+
     try
     {
         _solver.addConstraint(aCassowaryConstraint);
         CPLog.debug(".addConstraint(" + aCassowaryConstraint.toString() + ")");
+        result = YES;
     }
     catch (e)
     {
         CPLog.debug(_cmd + e);
+        result = NO;
     }
+
+    return result;
 }
 
-- (void)removeAllConstraints
+- (BOOL)_removeCassowaryConstraint:(Object)aCassowaryConstraint
 {
-    // Not implemented
-}
+    var result;
 
-- (void)removeConstraint:(CPLayoutConstraint)aConstraint
-{
-    _solver.removeConstraint([aConstraint _constraint]);
+    try
+    {
+        _solver.removeConstraint(aCassowaryConstraint);
+        CPLog.debug(".removeConstraint(" + aCassowaryConstraint.toString() + ")");
+        result = YES;
+    }
+    catch (e)
+    {
+        CPLog.debug(_cmd + e);
+        result = NO;
+    }
+
+    return result;
 }
 
 - (CPString)description

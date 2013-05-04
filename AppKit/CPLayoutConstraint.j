@@ -55,7 +55,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 @implementation CPLayoutConstraint : CPObject
 {
     Object  _constraint;
-    //CPArray _stayVariables    @accessors(getter=stayVariables);
 
     id       _container        @accessors(property=container);
     id       _firstItem        @accessors(property=firstItem);
@@ -96,12 +95,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 
 - (void)_init
 {
+    _constraint = nil;
     _strength = c.Strength.medium;
-    //_stayVariables = [];
     _container = nil;
-
-    //[_firstItem setNeedsConstraintBasedLayout:YES];
-    //[_secondItem setNeedsConstraintBasedLayout:YES];
 }
 
 - (void)setStrength:(CPInteger)aStrength
@@ -119,27 +115,30 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     }
 }
 
+- (Object)_constraint
+{
+    return _constraint;
+}
+
 - (Object)_generateCassowaryConstraint
 {
-    if (!_constraint)
+    var first  = [self _expressionFromItem:_firstItem attribute:_firstAttribute],
+        second = [self _expressionFromItem:_secondItem attribute:_secondAttribute],
+        constraint;
+
+    var msecond = second ? c.plus(c.times(second, _coefficient), _constant) : _constant;
+
+    switch(_relation)
     {
-        var first  = [self _expressionFromItem:_firstItem attribute:_firstAttribute],
-            second = [self _expressionFromItem:_secondItem attribute:_secondAttribute];
-
-        var msecond = second ? c.plus(c.times(second, _coefficient), _constant) : _constant;
-
-        switch(_relation)
-        {
-            case CPLayoutRelationLessThanOrEqual    : _constraint = new c.Inequality(first, c.LEQ, msecond, _strength, _priority);
-                break;
-            case CPLayoutRelationGreaterThanOrEqual : _constraint = new c.Inequality(first, c.GEQ, msecond, _strength, _priority);
-                break;
-            case CPLayoutRelationEqual              : _constraint = new c.Equation(first, msecond, _strength, _priority);
-                break;
-        }
+        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(first, c.LEQ, msecond, _strength, _priority);
+            break;
+        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(first, c.GEQ, msecond, _strength, _priority);
+            break;
+        case CPLayoutRelationEqual              : constraint = new c.Equation(first, msecond, _strength, _priority);
+            break;
     }
 
-    return _constraint;
+    return constraint;
 }
 
 - (id)expressionForAttributeLeft:(id)anItem
@@ -251,11 +250,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 
 - (void)addToEngine:(id)anEngine
 {
-    // CPLog.debug([self class] + " " + _cmd + " " + self);
-
     try
     {
-        [self _generateCassowaryConstraint];
+        _constraint = [self _generateCassowaryConstraint];
 
         [anEngine _addCassowaryConstraint:_constraint];
 
@@ -329,7 +326,7 @@ var CPFirstItem         = @"CPFirstItem",
 
     if (_relation !== CPLayoutRelationEqual)
         [aCoder encodeInt:_relation forKey:CPRelation];
-    //[aCoder encodeObject:_symbolicConstant forKey:CPSymbolicConstant];
+
     if (_coefficient !== 1)
         [aCoder encodeDouble:_coefficient forKey:CPMultiplier];
 
@@ -358,9 +355,7 @@ var CPFirstItem         = @"CPFirstItem",
     _secondItem = [aCoder decodeObjectForKey:CPSecondItem];
     _secondAttribute = [aCoder decodeIntForKey:CPSecondAttribute];
 
-    //var symbolicConstant = [aCoder decodeObjectForKey:CPSymbolicConstant];
     _constant = [aCoder decodeDoubleForKey:CPConstant];
-    //[self _setSymbolicConstant:symbolicConstant constant:constant];
 
     _shouldBeArchived = [aCoder decodeBoolForKey:CPShouldBeArchived];
     //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
@@ -370,7 +365,6 @@ var CPFirstItem         = @"CPFirstItem",
 
     [self _init];
 
-    //_ConstraintDidPerformInitialSetup(self);
     return self;
 }
 

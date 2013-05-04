@@ -336,6 +336,8 @@ CPButtonImageOffset   = 3.0;
 
     [self setNeedsLayout];
     [self setNeedsDisplay:YES];
+
+    [self invalidateIntrinsicContentSize];
 }
 
 /*!
@@ -612,16 +614,7 @@ CPButtonImageOffset   = 3.0;
 
 - (CGSize)_minimumFrameSize
 {
-    var size = CGSizeMakeZero(),
-        contentView = [self ephemeralSubviewNamed:@"content-view"];
-
-    if (contentView)
-    {
-        [contentView sizeToFit];
-        size = [contentView frameSize];
-    }
-    else
-        size = [([self title] || " ") sizeWithFont:[self currentValueForThemeAttribute:@"font"]];
+    var size = [([self title] || " ") sizeWithFont:[self currentValueForThemeAttribute:@"font"]];
 
     var contentInset = [self currentValueForThemeAttribute:@"content-inset"],
         minSize = [self currentValueForThemeAttribute:@"min-size"],

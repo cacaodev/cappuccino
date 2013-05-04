@@ -3596,14 +3596,11 @@ var interpolate = function(fromValue, toValue, progress)
 {
     [self _updateConstraintsIfNeeded];
 
-    var variableWidth = [_windowView _variableWidth],
-        variableHeight = [_windowView _variableHeight];
-
     var contentViewHeight = newSize.height - CGRectGetMinY([_contentView frame]);
 
     [[self _layoutEngine] _suggestValue:newSize.width forVariable:[_contentView _variableWidth] value:contentViewHeight forVariable:[_contentView _variableHeight] context:_contentView];
 
-    var resolvedSize = CGSizeMake(variableWidth.value, variableHeight.value);
+    var resolvedSize = [_windowView cbl_frameSize];
 
     [self _layoutAtWindowLevelIfNeededWithSize:resolvedSize];
 }
@@ -3620,7 +3617,29 @@ var interpolate = function(fromValue, toValue, progress)
 
     [self _setFrameSize:aSize];
 
-    [_contentView layoutSubtreeIfNeeded];
+    [_contentView layoutSubtreeIfNeeded:YES];
+}
+
+- (void)layout
+{
+    var windowFrame = [self frame],
+        contentViewFrame = [_contentView frame];
+
+CPLog.debug(_cmd + "OLD " + CPStringFromSize(windowFrame.size));
+
+    [[self _layoutEngine] _suggestValue:CGRectGetWidth(contentViewFrame) forVariable:[_contentView _variableWidth] value:CGRectGetHeight(contentViewFrame) forVariable:[_contentView _variableHeight] context:_contentView];
+
+    var resolvedFrameSize = [_contentView cbl_frameSize];
+
+    windowFrame.size = CGSizeMake(resolvedFrameSize.width, resolvedFrameSize.height + CGRectGetMinY(contentViewFrame));
+
+    CPLog.debug(_cmd + "OLD " + CPStringFromSize(windowFrame.size));
+
+    [_contentView setNeedsConstraintBasedLayout:NO];
+    [self setFrame:windowFrame];
+    [_contentView setNeedsConstraintBasedLayout:YES];
+
+    [_contentView layoutSubtreeIfNeeded:NO];
 }
 
 - (void)_updateConstraintsIfNeeded
@@ -3651,8 +3670,6 @@ var interpolate = function(fromValue, toValue, progress)
     [height setPriority:500];
 
     [_contentView _setInternalConstraints:[left, top, width, height]];
-
-    //[_windowView _setNeedsConstraintBasedLayout:NO];
 }
 
 @end

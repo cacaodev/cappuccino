@@ -35,6 +35,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0FBD4CE29A35CF973AFE53A1 /* _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h; path = .XcodeSupport/_Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h; sourceTree = SOURCE_ROOT; };
 		5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CPLayoutConstraintDemo; sourceTree = "<group>"; };
 		5B73CA6D172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(499).xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "Fixed_left_top_bottom_right_width(499).xib"; path = "CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right_width(499).xib"; sourceTree = "<group>"; };
 		5B73CA6E172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "Fixed_left_top_bottom_right_width(501).xib"; path = "CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right_width(501).xib"; sourceTree = "<group>"; };
@@ -68,6 +69,9 @@
 		5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 3_views_center_alignment.xib; path = CPLayoutConstraintDemo/Resources/3_views_center_alignment.xib; sourceTree = "<group>"; };
 		5BE26B23172C51E000B4423B /* hugging_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = hugging_priorities.xib; path = CPLayoutConstraintDemo/Resources/hugging_priorities.xib; sourceTree = "<group>"; };
 		5BE26B25172C71C200B4423B /* compression_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = compression_priorities.xib; path = CPLayoutConstraintDemo/Resources/compression_priorities.xib; sourceTree = "<group>"; };
+		BA60452282A9F83B4858FB11 /* AppController.j */ = {isa = PBXFileReference; lastKnownFileType = "?"; name = AppController.j; path = NSLayoutConstraintDemo/CPLayoutConstraintDemo/AppController.j; sourceTree = SOURCE_ROOT; };
+		CE8F4A0993B90CBD8B8EADA9 /* xcc_general_include.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = xcc_general_include.h; path = .XcodeSupport/xcc_general_include.h; sourceTree = SOURCE_ROOT; };
+		D6DB4687BF4A3FDEAF448511 /* _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.m; path = .XcodeSupport/_Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,12 +87,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1D9A439DB477AE915C6EB77C /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				CE8F4A0993B90CBD8B8EADA9 /* xcc_general_include.h */,
+				0FBD4CE29A35CF973AFE53A1 /* _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h */,
+				D6DB4687BF4A3FDEAF448511 /* _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.m */,
+			);
+			name = Classes;
+			sourceTree = "<group>";
+		};
 		5B8071DE172824460084FC75 = {
 			isa = PBXGroup;
 			children = (
 				5B8071F0172824470084FC75 /* NSLayoutConstraintDemo */,
 				5B8071E9172824470084FC75 /* Frameworks */,
 				5B8071E8172824470084FC75 /* Products */,
+				1D9A439DB477AE915C6EB77C /* Classes */,
+				DE674C26A2498EDC10E96910 /* Sources */,
 			);
 			sourceTree = "<group>";
 		};
@@ -160,6 +176,14 @@
 				5B8071F9172824470084FC75 /* Credits.rtf */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		DE674C26A2498EDC10E96910 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				BA60452282A9F83B4858FB11 /* AppController.j */,
+			);
+			name = Sources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
