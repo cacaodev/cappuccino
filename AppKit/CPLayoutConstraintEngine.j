@@ -31,18 +31,27 @@ CPLog.debug("created solver");
 {
     if (aContext !== _context)
     {
-        _solver.removeAllEditVars();
-
-        //[self addStayVariable:[aContext _variableMinX] strength:c.Strength.medium weight:500];
-        //[self addStayVariable:[aContext _variableMinY] strength:c.Strength.medium weight:500];
-
-        _solver.addEditVar(aVariable1).addEditVar(aVariable2);
+        //if (_context)
+        try
+        {
+            _solver.removeAllEditVars();
+            _solver.addEditVar(aVariable1).addEditVar(aVariable2);
+        }
+        catch (e)
+        {
+            CPLog.warn(e);
+        }
 
         _context = aContext;
     }
 
     _solver.suggestValue(aVariable1, aValue1).suggestValue(aVariable2, aValue2);
     _solver.resolve();
+}
+
+- (void)solve
+{
+    _solver.solve();
 }
 
 - (void)addStayVariable:(id)aVariable strength:(Object)aStrength weight:(int)aWeight

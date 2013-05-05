@@ -3627,7 +3627,7 @@ var interpolate = function(fromValue, toValue, progress)
 
 CPLog.debug(_cmd + "OLD " + CPStringFromSize(windowFrame.size));
 
-    [[self _layoutEngine] _suggestValue:CGRectGetWidth(contentViewFrame) forVariable:[_contentView _variableWidth] value:CGRectGetHeight(contentViewFrame) forVariable:[_contentView _variableHeight] context:_contentView];
+    [[self _layoutEngine] solve];
 
     var resolvedFrameSize = [_contentView cbl_frameSize];
 

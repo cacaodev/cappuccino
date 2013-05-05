@@ -53,7 +53,9 @@ CPLogRegister(CPLogConsole);
 {
     @outlet CPWindow theWindow;
     @outlet CPButton compressionButton;
+    @outlet CPButton compressionButton2;
     @outlet CPButton huggingButton;
+    @outlet CPButton huggingButton2;
 }
 
 - (void)awakeFromCib
@@ -61,10 +63,20 @@ CPLogRegister(CPLogConsole);
     //CPTrace("CPWindow", "setFrameSize:");
 }
 
-- (IBAction)changeText:(id)sender
+- (IBAction)changeCompressionText:(id)sender
 {
-    var target = [sender tag] ? compressionButton : huggingButton;
-    [target setTitle:[sender stringValue]];
+    var text = [sender stringValue];
+
+    [compressionButton setTitle:text];
+    [compressionButton2 setTitle:text];
+}
+
+- (IBAction)changeHuggingText:(id)sender
+{
+    var text = [sender stringValue];
+
+    [huggingButton setTitle:text];
+    [huggingButton2 setTitle:text];
 }
 
 @end

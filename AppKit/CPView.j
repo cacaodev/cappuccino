@@ -224,6 +224,8 @@ CPViewNoInstrinsicMetric = -1;
     BOOL                _needsConstraintBasedLayout @accessors(property=needsConstraintBasedLayout);
     BOOL                _hasConstraintBasedSubviews;
     BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
+
+//    unsigned int _contrainedVariablesMask;
 }
 
 /*
@@ -3310,13 +3312,20 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     _variableMinY   = nil;
     _variableWidth  = nil;
     _variableHeight = nil;
+
+//    _contrainedVariablesMask = 30;
 }
 
 - (id)_layoutEngine
 {
     return [[self window] _layoutEngine];
 }
-
+/*
+- (void)notifyConstrainedVariable:(CPInteger)aVariableFlag
+{
+    _contrainedVariablesMask &= (~aVariableFlag);
+}
+*/
 - (CGSize)_contentHuggingPriorities
 {
     if (!_huggingPriorities)
@@ -3405,6 +3414,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if (intrinsicContentSizeWidth !== CPViewNoInstrinsicMetric)
     {
         var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSizeWidth huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:CPLayoutConstraintOrientationHorizontal];
+
         [constraints addObject:constraint];
     }
 

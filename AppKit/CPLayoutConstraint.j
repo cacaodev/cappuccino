@@ -50,7 +50,13 @@ CPLayoutPriorityDragThatCannotResizeWindow = 490; // This is the priority level 
 CPLayoutPriorityDefaultLow = 250; // this is the priority level at which a button hugs its contents horizontally.
 CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingSize], the smallest size that is large enough for the view's contents is computed.  This is the priority level with which the view wants to be as small as possible in that computation.  It's quite low.  It is generally not appropriate to make a constraint at exactly this priority.  You want to be higher or lower.
 
+CPViewVariableMinX   = 1 << 1,
+CPViewVariableMinY   = 1 << 2,
+CPViewVariableWidth  = 1 << 3,
+CPViewVariableHeight = 1 << 4;
+
 var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bottom",  "Left",  "Right",  "Width",  "Height",  "CenterX",  "CenterY",  "Baseline"];
+
 
 @implementation CPLayoutConstraint : CPObject
 {
@@ -144,7 +150,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 - (id)expressionForAttributeLeft:(id)anItem
 {
     if (anItem !== _container)
-        return [anItem _variableMinX];
+        return CPViewLayoutVariable(anItem, CPViewVariableMinX);
 
     return 0;
 }
@@ -152,72 +158,58 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 - (id)expressionForAttributeTop:(id)anItem
 {
     if (anItem !== _container)
-        return [anItem _variableMinY];
+        return CPViewLayoutVariable(anItem, CPViewVariableMinY);
 
     return 0;
 }
 
 - (id)expressionForAttributeRight:(CPView)anItem
 {
-    var variableWidth = [anItem _variableWidth],
-        expression;
+    var variableWidth = CPViewLayoutVariable(anItem, CPViewVariableWidth);
 
     if (anItem === _container)
-        expression = new c.Expression(variableWidth);
-    else
-        expression = new c.Expression([anItem _variableMinX]).plus(variableWidth);
+        return new c.Expression(variableWidth);
 
-    return expression;
+    return new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinX)).plus(variableWidth);
 }
 
 - (id)expressionForAttributeBottom:(CPView)anItem
 {
-    var variableHeight = [anItem _variableHeight],
-        expression;
+    var variableHeight = CPViewLayoutVariable(anItem, CPViewVariableHeight);
 
     if (anItem === _container)
-        expression = new c.Expression(variableHeight);
-    else
-        expression = new c.Expression([anItem _variableMinY]).plus(variableHeight);
+        return new c.Expression(variableHeight);
 
-    return expression;
+    return new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinY)).plus(variableHeight);
 }
 
 - (id)expressionForAttributeCenterX:(CPView)anItem
 {
-    var midWidth = new c.Expression([anItem _variableWidth]).divide(2),
-        expression;
+    var midWidth = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableWidth)).divide(2);
 
     if (anItem === _container)
-        expression = midWidth;
-    else
-    {
-        var left = new c.Expression([anItem _variableMinX]);
-        expression = c.plus(left, midWidth);
-    }
+        return midWidth;
 
-    return expression;
+    var left = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinX));
+
+    return c.plus(left, midWidth);
 }
 
 - (id)expressionForAttributeCenterY:(CPView)anItem
 {
-    var midHeight = new c.Expression([anItem _variableHeight]).divide(2),
-        expression;
+    var midHeight = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableHeight)).divide(2);
 
     if (anItem === _container)
-        expression = midHeight;
-    else
-    {
-        var top = new c.Expression([anItem _variableMinY]);
-        expression = c.plus(top, midHeight);
-    }
+        return midHeight;
 
-    return expression;
+    var top = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinY));
+
+    return c.plus(top, midHeight);
 }
 
-- (Object)_expressionFromItem:(id)item attribute:(int)attr
+- (Object)_expressionFromItem:(id)anItem attribute:(int)attr
 {
-    if (item == nil || attr == CPLayoutAttributeNotAnAttribute)
+    if (anItem == nil || attr == CPLayoutAttributeNotAnAttribute)
         return nil;
 
     var exp;
@@ -225,23 +217,23 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     switch(attr)
     {
         case CPLayoutAttributeLeading   :
-        case CPLayoutAttributeLeft      : exp = [self expressionForAttributeLeft:item];
+        case CPLayoutAttributeLeft      : exp = [self expressionForAttributeLeft:anItem];
             break;
         case CPLayoutAttributeTrailing  :
-        case CPLayoutAttributeRight     : exp = [self expressionForAttributeRight:item];
+        case CPLayoutAttributeRight     : exp = [self expressionForAttributeRight:anItem];
             break;
-        case CPLayoutAttributeTop       : exp = [self expressionForAttributeTop:item];
+        case CPLayoutAttributeTop       : exp = [self expressionForAttributeTop:anItem];
             break;
-        case CPLayoutAttributeBottom    : exp = [self expressionForAttributeBottom:item];
+        case CPLayoutAttributeBottom    : exp = [self expressionForAttributeBottom:anItem];
             break;
-        case CPLayoutAttributeWidth     : exp = [item _variableWidth];
+        case CPLayoutAttributeWidth     : exp = CPViewLayoutVariable(anItem, CPViewVariableWidth);
             break;
-        case CPLayoutAttributeHeight    : exp = [item _variableHeight];
+        case CPLayoutAttributeHeight    : exp = CPViewLayoutVariable(anItem, CPViewVariableHeight);
             break;
-        case CPLayoutAttributeCenterX   : exp = [self expressionForAttributeCenterX:item];
+        case CPLayoutAttributeCenterX   : exp = [self expressionForAttributeCenterX:anItem];
             break;
         case CPLayoutAttributeBaseline  :
-        case CPLayoutAttributeCenterY   : exp = [self expressionForAttributeCenterY:item];
+        case CPLayoutAttributeCenterY   : exp = [self expressionForAttributeCenterY:anItem];
             break;
     }
 
@@ -386,3 +378,22 @@ var CPStringFromRelation = function(relation)
 
     }
 };
+
+function CPViewLayoutVariable(anItem, aVariableFlag)
+{
+    var variable;
+
+    switch (aVariableFlag)
+    {
+        case CPViewVariableMinX   : variable = [anItem _variableMinX];
+        break;
+        case CPViewVariableMinY   : variable = [anItem _variableMinY];
+        break;
+        case CPViewVariableWidth  : variable = [anItem _variableWidth];
+        break;
+        case CPViewVariableHeight : variable = [anItem _variableHeight];
+        break;
+    }
+
+    return variable;
+}
