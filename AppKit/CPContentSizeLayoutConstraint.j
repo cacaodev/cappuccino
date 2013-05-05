@@ -55,8 +55,8 @@ CPLog.debug(self +_cmd);
     if (![constraintsInEngine containsObjectIdenticalTo:self])
         return NO;
 
-    [anEngine _removeCassowaryConstraint:_huggingConstraint];
     [anEngine _removeCassowaryConstraint:_compressionResistanceConstraint];
+    [anEngine _removeCassowaryConstraint:_huggingConstraint];
 
     [constraintsInEngine removeObject:self];
 
@@ -74,10 +74,13 @@ CPLog.debug(self +_cmd);
 
 - (void)setConstant:(double)aConstant inEngine:(id)anEngine
 {
-    var shouldAdd = (anEngine && [self removeFromEngine:anEngine]);
+    if (!anEngine || aConstant === [self constant])
+        return;
+
+    var shouldAdd = [self removeFromEngine:anEngine];
 
     [self setConstant:aConstant];
-CPLog.debug(_cmd + aConstant);
+
     if (shouldAdd)
         [self addToEngine:anEngine];
 }
