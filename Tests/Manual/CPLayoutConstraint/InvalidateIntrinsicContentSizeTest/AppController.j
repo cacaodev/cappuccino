@@ -59,12 +59,21 @@ CPLogRegister(CPLogConsole);
     //CPTrace("CPWindow", "setFrameSize:");
 }
 
-- (IBAction)changeText:(id)sender
+- (IBAction)changeButtonTitle:(id)sender
 {
     var text = [sender stringValue],
         button = [[[sender window] contentView] viewWithTag:1000];
 
     [button setTitle:text];
+}
+
+- (IBAction)changeLabelText:(id)sender
+{
+    var text = [sender stringValue],
+        textField = [[[sender window] contentView] viewWithTag:1000];
+
+    [textField setStringValue:text];
+    [textField invalidateIntrinsicContentSize];
 }
 
 @end

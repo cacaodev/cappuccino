@@ -1602,6 +1602,23 @@ CPTextFieldStatePlaceholder = CPThemeState("placeholder");
 
 @end
 
+@implementation CPTextField (ConstraintBasedLayout)
+
+- (CGSize)fittingSize
+{
+    if ([self isEditable])
+        return CGSizeMake(-1, -1);
+
+    return [self _minimumFrameSize];
+}
+
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(250, 750);
+}
+
+@end
+
 var secureStringForString = function(aString)
 {
     // This is true for when aString === "" and null/undefined.
