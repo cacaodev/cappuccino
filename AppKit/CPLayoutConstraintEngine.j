@@ -24,7 +24,19 @@ CPLog.debug("created solver");
 
 - (void)suggestValue:(id)aValue forVariable:(id)aVariable
 {
-    _solver.suggestValue(aVariable, aValue).resolve();
+    _solver.autoSolve = true;
+    _solver.addEditVar(aVariable).beginEdit();
+    _solver.suggestValue(aVariable, aValue);
+    _solver.endEdit();
+    _solver.resolve();
+    _solver.autoSolve = false;
+
+    // This will force "context" edit vars to be removed and re-added next time;
+    if (_context !== nil)
+    {
+        _context = nil;
+        _solver.removeAllEditVars();
+    }
 }
 
 - (void)_suggestValue:(id)aValue1 forVariable:(id)aVariable1 value:(id)aValue2 forVariable:(id)aVariable2 context:(id)aContext

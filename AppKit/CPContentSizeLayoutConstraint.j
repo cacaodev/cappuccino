@@ -45,8 +45,8 @@ CPLog.debug(self +_cmd);
     // TODO: Fix priority - depends on compression/hugging priorities and if we change the size and hit a size constraint.
     //[anEngine addStayVariable:variable strength:c.Strength.medium weight:1];
 
-    [anEngine _addCassowaryConstraint:_huggingConstraint];
     [anEngine _addCassowaryConstraint:_compressConstraint];
+    [anEngine _addCassowaryConstraint:_huggingConstraint];
     [constraintsInEngine addObject:self];
 
     return YES;

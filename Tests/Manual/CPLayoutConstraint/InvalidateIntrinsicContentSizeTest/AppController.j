@@ -52,10 +52,6 @@ CPLogRegister(CPLogConsole);
 @implementation AppController : CPObject
 {
     @outlet CPWindow theWindow;
-    @outlet CPButton compressionButton;
-    @outlet CPButton compressionButton2;
-    @outlet CPButton huggingButton;
-    @outlet CPButton huggingButton2;
 }
 
 - (void)awakeFromCib
@@ -63,20 +59,12 @@ CPLogRegister(CPLogConsole);
     //CPTrace("CPWindow", "setFrameSize:");
 }
 
-- (IBAction)changeCompressionText:(id)sender
+- (IBAction)changeText:(id)sender
 {
-    var text = [sender stringValue];
+    var text = [sender stringValue],
+        button = [[[sender window] contentView] viewWithTag:1000];
 
-    [compressionButton setTitle:text];
-    [compressionButton2 setTitle:text];
-}
-
-- (IBAction)changeHuggingText:(id)sender
-{
-    var text = [sender stringValue];
-
-    [huggingButton setTitle:text];
-    [huggingButton2 setTitle:text];
+    [button setTitle:text];
 }
 
 @end

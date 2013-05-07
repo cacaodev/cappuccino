@@ -3372,6 +3372,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)invalidateIntrinsicContentSize
 {
+    [[self window] _updateConstraintsIfNeeded];
+
     if (!_internalConstraints)
         return;
 
@@ -3380,6 +3382,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     [[_internalConstraints objectAtIndex:0] setConstant:intrinsicContentSize.width inEngine:engine];
     [[_internalConstraints objectAtIndex:1] setConstant:intrinsicContentSize.height inEngine:engine];
+
+    [engine suggestValue:CGRectGetWidth([self frame]) forVariable:_variableWidth];
 
     [[self window] layout];
 }
