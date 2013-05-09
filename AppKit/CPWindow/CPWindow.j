@@ -1001,6 +1001,7 @@ CPTexturedBackgroundWindowMask
     [_platformWindow moveWindow:self fromLevel:_level toLevel:aLevel];
 
     _level = aLevel;
+    [_childWindows makeObjectsPerformSelector:@selector(setLevel:) withObject:_level];
 
     if ([self _sharesChromeWithPlatformWindow])
         [_platformWindow setLevel:aLevel];
@@ -2546,6 +2547,7 @@ CPTexturedBackgroundWindowMask
 
     [childWindow setParentWindow:self];
     [childWindow _setChildOrdering:orderingMode];
+    [childWindow setLevel:[self level]];
 
     if ([self isVisible] && ![childWindow isVisible])
         [childWindow orderWindow:orderingMode relativeTo:_windowNumber];
@@ -2771,13 +2773,20 @@ CPTexturedBackgroundWindowMask
     }
 
     // The sheet starts hidden just above the top of a clip rect
+    // TODO : Make properly for the -1 in endY
     var sheetFrame = [sheet frame],
         sheetShadowFrame = sheet._hasShadow ? [sheet._shadowView frame] : sheetFrame,
         frame = [self frame],
         originX = frame.origin.x + FLOOR((frame.size.width - sheetFrame.size.width) / 2),
         startFrame = CGRectMake(originX, -sheetShadowFrame.size.height, sheetFrame.size.width, sheetFrame.size.height),
-        endY = [_windowView bodyOffset] - [[self contentView] frame].origin.y,
+        endY = -1 + [_windowView bodyOffset] - [[self contentView] frame].origin.y,
         endFrame = CGRectMake(originX, endY, sheetFrame.size.width, sheetFrame.size.height);
+
+    if (_toolbar && [_windowView showsToolbar] && [self isFullPlatformWindow])
+    {
+        endY    += [[_toolbar _toolbarView] frameSize].height;
+        endFrame = CGRectMake(originX, endY, sheetFrame.size.width, sheetFrame.size.height);
+    }
 
     // Move the sheet offscreen before ordering front so it doesn't appear briefly
     [sheet setFrameOrigin:CGPointMake(0, -13000)];

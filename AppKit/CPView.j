@@ -399,9 +399,9 @@ CPViewNoInstrinsicMetric = -1;
 #if PLATFORM(DOM)
     if (_DOMElement.addEventListener)
     {
-        _DOMElement.addEventListener("mouseover", _toolTipFunctionIn, NO);
-        _DOMElement.addEventListener("keypress", _toolTipFunctionOut, NO);
-        _DOMElement.addEventListener("mouseout", _toolTipFunctionOut, NO);
+        _DOMElement.addEventListener("mouseover", _toolTipFunctionIn, YES);
+        _DOMElement.addEventListener("keypress", _toolTipFunctionOut, YES);
+        _DOMElement.addEventListener("mouseout", _toolTipFunctionOut, YES);
     }
     else if (_DOMElement.attachEvent)
     {
@@ -426,9 +426,9 @@ CPViewNoInstrinsicMetric = -1;
 #if PLATFORM(DOM)
     if (_DOMElement.removeEventListener)
     {
-        _DOMElement.removeEventListener("mouseover", _toolTipFunctionIn, NO);
-        _DOMElement.removeEventListener("keypress", _toolTipFunctionOut, NO);
-        _DOMElement.removeEventListener("mouseout", _toolTipFunctionOut, NO);
+        _DOMElement.removeEventListener("mouseover", _toolTipFunctionIn, YES);
+        _DOMElement.removeEventListener("keypress", _toolTipFunctionOut, YES);
+        _DOMElement.removeEventListener("mouseout", _toolTipFunctionOut, YES);
     }
     else if (_DOMElement.detachEvent)
     {
