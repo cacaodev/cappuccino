@@ -6,6 +6,7 @@
     CPArray         _constraints @accessors(getter=constraints);
     CPArray         _stayVariables;
     id              _context;
+    BOOL            _isSolving;
 }
 
 - (id)init
@@ -15,6 +16,11 @@
     _solver = new c.SimplexSolver();
 CPLog.debug("created solver");
     _solver.autoSolve = false;
+    _solver.onsolved = function(observers)
+    {
+        [observers enumerateObjectsUsingBlock:updateFrameWithObserver];
+    };
+
     _constraints = [];
     _stayVariables = [];
     _context = nil;
@@ -31,7 +37,7 @@ CPLog.debug("created solver");
     _solver.resolve();
     _solver.autoSolve = false;
 
-    // This will force "context" edit vars to be removed and re-added next time;
+    // This will force "context" edit vars to be re-added next time;
     if (_context !== nil)
     {
         _context = nil;
@@ -41,12 +47,17 @@ CPLog.debug("created solver");
 
 - (void)_suggestValue:(id)aValue1 forVariable:(id)aVariable1 value:(id)aValue2 forVariable:(id)aVariable2 context:(id)aContext
 {
+    if (_isSolving)
+        return;
+
+    //var d = new Date();
     if (aContext !== _context)
     {
-        //if (_context)
         try
         {
-            _solver.removeAllEditVars();
+            if (_context)
+                _solver.removeAllEditVars();
+
             _solver.addEditVar(aVariable1).addEditVar(aVariable2);
         }
         catch (e)
@@ -59,6 +70,9 @@ CPLog.debug("created solver");
 
     _solver.suggestValue(aVariable1, aValue1).suggestValue(aVariable2, aValue2);
     _solver.resolve();
+
+    //CPLog.debug("Solved in " + (new Date() - d));
+    _isSolving = NO;
 }
 
 - (void)solve
@@ -135,3 +149,24 @@ CPLog.debug("created solver");
 }
 
 @end
+
+var updateFrameWithObserver = function(observer, idx, stop)
+{
+    var mask = observer.mask,
+        target = observer.target;
+    //CPLog.debug("Updated view " + observer.target + " mask " + observer.mask);
+
+    if (mask & 6)
+        [target setFrameOrigin:CGPointMake(observer[2] || CGRectGetMinX([target frame]), observer[4] || CGRectGetMinY([target frame]))];
+
+    if (mask & 24)
+        [target setFrameSize:CGSizeMake(observer[8] || CGRectGetWidth([target frame]), observer[16] || CGRectGetHeight([target frame]))];
+/*
+    if (mask & 6)
+        CPLog.debug(target + ". Updated frame origin " + CPStringFromPoint([target frameOrigin]));
+
+    if (mask & 24)
+        CPLog.debug(target + ". Updated frame size " + CPStringFromSize([target frameSize]));
+*/
+    observer.mask = 0;
+};

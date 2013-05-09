@@ -51,12 +51,20 @@ CPLogRegister(CPLogConsole);
 
 @implementation AppController : CPObject
 {
-    @outlet CPWindow theWindow;
+    @outlet CPWindow compressionWindow;
+    @outlet CPWindow huggingWindow;
+    @outlet CPWindow sizeToFitButtonWindow;
+    @outlet CPWindow sizeToFitLabelWindow;
 }
 
 - (void)awakeFromCib
 {
     //CPTrace("CPWindow", "setFrameSize:");
+
+    [compressionWindow layout];
+    [huggingWindow layout];
+    [sizeToFitButtonWindow layout];
+    [sizeToFitLabelWindow layout];
 }
 
 - (IBAction)changeButtonTitle:(id)sender

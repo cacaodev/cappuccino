@@ -4,7 +4,7 @@
 {
     double _huggingPriority;
     double _compressPriority;
-    int    _orientation;
+    int    _orientation @accessors(getter=orientation);
 
     Object _huggingConstraint;
     Object _compressConstraint;

@@ -222,6 +222,7 @@ var CPWindowActionMessageKeys = [
 
     CPLayoutConstraintEngine            _engine;
     BOOL                                _needsConstraintsUpdate;
+    BOOL                                _needsConstraintBasedLayout;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -352,6 +353,7 @@ CPTexturedBackgroundWindowMask
         _hasBecomeKeyWindow = NO;
 
         _needsConstraintsUpdate = YES;
+        _needsConstraintBasedLayout = NO;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
 
@@ -721,10 +723,15 @@ CPTexturedBackgroundWindowMask
 
         if (!CGSizeEqualToSize(size, newSize))
         {
-            if ([_contentView needsConstraintBasedLayout])
+            if (_needsConstraintBasedLayout)
                 [self _suggestFrameSize:newSize];
             else
-                [self _setFrameSize:newSize];
+            {
+                size.width = newSize.width;
+                size.height = newSize.height;
+
+                [_windowView setFrameSize:size];
+            }
 
             if (_hasShadow)
                 [_shadowView setNeedsLayout];
@@ -745,10 +752,11 @@ CPTexturedBackgroundWindowMask
 {
     var size = _frame.size;
 
+    if (CGSizeEqualToSize(size, newSize))
+        return;
+
     size.width = newSize.width;
     size.height = newSize.height;
-
-    [_windowView setFrameSize:size];
 }
 
 - (CGRect)_constrainFrame:(CGRect)aFrame toUsableScreenWidth:(BOOL)constrainWidth andHeight:(BOOL)constrainHeight
@@ -1107,6 +1115,8 @@ CPTexturedBackgroundWindowMask
 
     [_contentView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
     [_windowView addSubview:_contentView];
+
+    [self _updateNeedsConstraintBasedLayout];
 
     /*
         If the initial first responder has been set to something other than
@@ -3592,7 +3602,7 @@ var interpolate = function(fromValue, toValue, progress)
     if (!_engine)
     {
         _engine = [[CPLayoutConstraintEngine alloc] init];
-        [_windowView setIdentifier:@"WindowView"];
+        [_windowView setIdentifier:[_windowView className]];
 
         [_engine addStayVariable:[_windowView _variableWidth] strength:c.Strength.medium weight:500];
         [_engine addStayVariable:[_windowView _variableHeight] strength:c.Strength.medium weight:500];
@@ -3601,65 +3611,65 @@ var interpolate = function(fromValue, toValue, progress)
     return _engine;
 }
 
+- (id)_layoutEngineIfExists
+{
+    return _engine;
+}
+
+- (void)_notifyViewNeedsConstraintBasedLayout:(CPView)aView
+{
+    if (_needsConstraintBasedLayout === NO && aView === _contentView)
+        _needsConstraintBasedLayout = YES;
+}
+
+- (void)_updateNeedsConstraintBasedLayout
+{
+    if ([[_contentView class] requiresConstraintBasedLayout] && [[_contentView constraints] count])
+        _needsConstraintBasedLayout = YES;
+}
+
 - (void)_suggestFrameSize:(CGSize)newSize
 {
     [self _updateConstraintsIfNeeded];
 
-    var contentViewHeight = newSize.height - CGRectGetMinY([_contentView frame]);
+    [[self _layoutEngine] _suggestValue:newSize.width forVariable:[_windowView _variableWidth] value:newSize.height forVariable:[_windowView _variableHeight] context:_windowView];
 
-    [[self _layoutEngine] _suggestValue:newSize.width forVariable:[_contentView _variableWidth] value:contentViewHeight forVariable:[_contentView _variableHeight] context:_contentView];
-
-    var resolvedSize = [_windowView cbl_frameSize];
-
-    [self _layoutAtWindowLevelIfNeededWithSize:resolvedSize];
+    [self _setFrameSize:[_windowView frameSize]];
 }
 
 - (void)_layoutAtWindowLevelIfNeeded
 {
-    [self _layoutAtWindowLevelIfNeededWithSize:[_windowView cbl_frameSize]];
-}
-
-- (void)_layoutAtWindowLevelIfNeededWithSize:(CGSize)aSize
-{
-    if (CGSizeEqualToSize(_frame.size, aSize))
-        return;
-
-    [self _setFrameSize:aSize];
-
-    [_contentView layoutSubtreeIfNeeded:YES];
 }
 
 - (void)layout
 {
-    var windowFrame = [self frame],
-        contentViewFrame = [_contentView frame];
-
-CPLog.debug(_cmd + "OLD " + CPStringFromSize(windowFrame.size));
+    [self _updateConstraintsIfNeeded];
+CPLog.debug(_cmd + "OLD _windowView " + CPStringFromSize([_windowView frameSize]));
 
     [[self _layoutEngine] solve];
 
-    var resolvedFrameSize = [_contentView cbl_frameSize];
+    var windowFrame = [self frame];
 
-    windowFrame.size = CGSizeMake(resolvedFrameSize.width, resolvedFrameSize.height + CGRectGetMinY(contentViewFrame));
+    windowFrame.size = CGSizeMakeCopy([_windowView frameSize]);
 
-    CPLog.debug(_cmd + "OLD " + CPStringFromSize(windowFrame.size));
+CPLog.debug(_cmd + "NEW _windowView " + CPStringFromSize([_windowView frameSize]));
 
-    [_contentView setNeedsConstraintBasedLayout:NO];
+    _needsConstraintBasedLayout = NO;
     [self setFrame:windowFrame];
-    [_contentView setNeedsConstraintBasedLayout:YES];
-
-    [_contentView layoutSubtreeIfNeeded:NO];
+    _needsConstraintBasedLayout = YES;
 }
 
-- (void)_updateConstraintsIfNeeded
+- (BOOL)_updateConstraintsIfNeeded
 {
     if (!_needsConstraintsUpdate)
-        return;
+        return NO;
 
     [self _updateWindowResizeConstraints];
     [_contentView _updateSubtreeConstraintsIfNeeded];
 
     _needsConstraintsUpdate = NO;
+
+    return YES;
 }
 
 - (void)_updateWindowResizeConstraints
@@ -3667,18 +3677,19 @@ CPLog.debug(_cmd + "OLD " + CPStringFromSize(windowFrame.size));
     var minY = CGRectGetMinY([_contentView frame]);
 
     var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:0];
-    [left setPriority:500];
+    [left setPriority:1001];
 
     var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:minY];
-    [top setPriority:500];
+    [top setPriority:1001];
 
     var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
-    [width setPriority:500];
+    [width setPriority:1001];
 
     var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];
-    [height setPriority:500];
+    [height setPriority:1001];
 
     [_contentView _setInternalConstraints:[left, top, width, height]];
+    [_windowView setHasConstraintBasedSubviews:NO];
 }
 
 @end

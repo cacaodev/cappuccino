@@ -809,7 +809,7 @@
 				</array>
 				<boolean value="NO" key="1379.IBNSViewMetadataTranslatesAutoresizingMaskIntoConstraints"/>
 				<string key="1379.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
-				<string key="1379.userInterfaceItemIdentifier">upload</string>
+				<string key="1379.userInterfaceItemIdentifier">middle</string>
 				<string key="1380.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1399.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1425.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -834,6 +834,7 @@
 				<string key="1475.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="NO" key="1476.IBNSViewMetadataTranslatesAutoresizingMaskIntoConstraints"/>
 				<string key="1476.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
+				<string key="1476.userInterfaceItemIdentifier">textField</string>
 				<string key="1477.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1478.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1485.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>

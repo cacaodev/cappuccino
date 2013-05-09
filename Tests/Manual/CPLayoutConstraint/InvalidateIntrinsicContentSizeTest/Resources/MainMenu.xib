@@ -56,7 +56,6 @@
 							<string key="NSFrame">{{11, 28}, {145, 32}}</string>
 							<reference key="NSSuperview" ref="943079157"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{1, 750}</string>
 							<int key="NSTag">1000</int>
@@ -170,7 +169,6 @@
 							<string key="NSFrame">{{7, 16}, {338, 32}}</string>
 							<reference key="NSSuperview" ref="77037558"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{750, 750}</string>
 							<string key="NSAntiCompressionPriority">{1, 250}</string>
@@ -248,7 +246,6 @@
 							<string key="NSFrame">{{199, 24}, {306, 28}}</string>
 							<reference key="NSSuperview" ref="920208956"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{750, 750}</string>
 							<string key="NSAntiCompressionPriority">{750, 750}</string>
@@ -317,7 +314,6 @@
 							<string key="NSFrame">{{62, 25}, {366, 28}}</string>
 							<reference key="NSSuperview" ref="548903312"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{1, 750}</string>
 							<string key="NSAntiCompressionPriority">{1, 750}</string>
@@ -422,14 +418,6 @@
 					<int key="connectionID">451</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBOutletConnection" key="connection">
-						<string key="label">theWindow</string>
-						<reference key="source" ref="635946545"/>
-						<reference key="destination" ref="379547971"/>
-					</object>
-					<int key="connectionID">924</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
 						<string key="label">changeButtonTitle:</string>
 						<reference key="source" ref="635946545"/>
@@ -460,6 +448,38 @@
 						<reference key="destination" ref="97530086"/>
 					</object>
 					<int key="connectionID">1707</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">sizeToFitLabelWindow</string>
+						<reference key="source" ref="635946545"/>
+						<reference key="destination" ref="664612222"/>
+					</object>
+					<int key="connectionID">1720</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">sizeToFitButtonWindow</string>
+						<reference key="source" ref="635946545"/>
+						<reference key="destination" ref="95122278"/>
+					</object>
+					<int key="connectionID">1721</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">huggingWindow</string>
+						<reference key="source" ref="635946545"/>
+						<reference key="destination" ref="204977544"/>
+					</object>
+					<int key="connectionID">1722</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">compressionWindow</string>
+						<reference key="source" ref="635946545"/>
+						<reference key="destination" ref="379547971"/>
+					</object>
+					<int key="connectionID">1724</int>
 				</object>
 			</array>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -1549,7 +1569,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">1719</int>
+			<int key="maxID">1724</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1570,17 +1590,30 @@
 							<string key="candidateClassName">id</string>
 						</object>
 					</dictionary>
-					<object class="NSMutableDictionary" key="outlets">
-						<string key="NS.key.0">theWindow</string>
-						<string key="NS.object.0">NSWindow</string>
-					</object>
-					<object class="NSMutableDictionary" key="toOneOutletInfosByName">
-						<string key="NS.key.0">theWindow</string>
-						<object class="IBToOneOutletInfo" key="NS.object.0">
-							<string key="name">theWindow</string>
+					<dictionary class="NSMutableDictionary" key="outlets">
+						<string key="compressionWindow">NSWindow</string>
+						<string key="huggingWindow">NSWindow</string>
+						<string key="sizeToFitButtonWindow">NSWindow</string>
+						<string key="sizeToFitLabelWindow">NSWindow</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<object class="IBToOneOutletInfo" key="compressionWindow">
+							<string key="name">compressionWindow</string>
 							<string key="candidateClassName">NSWindow</string>
 						</object>
-					</object>
+						<object class="IBToOneOutletInfo" key="huggingWindow">
+							<string key="name">huggingWindow</string>
+							<string key="candidateClassName">NSWindow</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="sizeToFitButtonWindow">
+							<string key="name">sizeToFitButtonWindow</string>
+							<string key="candidateClassName">NSWindow</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="sizeToFitLabelWindow">
+							<string key="name">sizeToFitLabelWindow</string>
+							<string key="candidateClassName">NSWindow</string>
+						</object>
+					</dictionary>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">./Classes/AppController.h</string>

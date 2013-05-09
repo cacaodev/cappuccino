@@ -36,8 +36,8 @@
 			<object class="NSWindowTemplate" id="379547971">
 				<int key="NSWindowStyleMask">15</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{918, 635}, {650, 569}}</string>
-				<int key="NSWTFlags">607650816</int>
+				<string key="NSWindowRect">{{906, 256}, {650, 569}}</string>
+				<int key="NSWTFlags">611845120</int>
 				<string key="NSWindowTitle">Window</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
@@ -162,7 +162,6 @@
 							<string key="NSFrame">{{468, 37}, {161, 29}}</string>
 							<reference key="NSSuperview" ref="943079157"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSClassName">ColorView</string>
 						</object>
@@ -549,7 +548,7 @@
 				<string key="1392.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1393.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="NO" key="572.IBNSWindowAutoPositionCentersHorizontal"/>
-				<boolean value="NO" key="572.IBNSWindowAutoPositionCentersVertical"/>
+				<boolean value="YES" key="572.IBNSWindowAutoPositionCentersVertical"/>
 				<string key="572.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<boolean value="YES" key="572.NSWindowTemplate.visibleAtLaunch"/>
 				<string key="573.CustomClassName">NoConstraintView</string>

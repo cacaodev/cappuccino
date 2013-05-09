@@ -104,23 +104,13 @@ CPLogRegister(CPLogConsole);
     [self _showWindowCibName:@"Constraints"];
     [self _showWindowCibName:@"NoConstraints"];
 
-    var TOTAL_COUNT_CBL = 0,
-        TOTAL_COUNT = 0,
-        TOTAL_DURATION_CBL = 0,
-        TOTAL_DURATION = 0;
-
-    var avg = moving_averager(50),
+    var avg = moving_averager(20),
         avg2 = moving_averager(10);
+
 
     CPTrace("CPWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
     {
-        if (duration < 10)
-        {
-            TOTAL_COUNT_CBL++;
-            TOTAL_DURATION_CBL += duration;
-        }
-
-        console.log("CPWindow: setFrame: in " + avg(duration));
+        console.log("CPWindow: setFrame: in " + duration + " average(20) in " + avg(duration));
     });
 /*
     CPTrace("NoConstraintView", "_resizeWithOldSuperviewSize:", function(receiver, selector, args, duration)
