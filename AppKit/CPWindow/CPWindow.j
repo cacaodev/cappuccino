@@ -3676,13 +3676,13 @@ CPLog.debug(_cmd + "NEW _windowView " + CPStringFromSize([_windowView frameSize]
 {
     var minY = CGRectGetMinY([_contentView frame]);
 
-    var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:0];
+    var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:1];
     [left setPriority:1001];
 
     var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:minY];
     [top setPriority:1001];
 
-    var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:0];
+    var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:2];
     [width setPriority:1001];
 
     var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];

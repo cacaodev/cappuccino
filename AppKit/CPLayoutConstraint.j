@@ -209,7 +209,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 
 - (Object)_expressionFromItem:(id)anItem attribute:(int)attr
 {
-    if (anItem == nil || attr == CPLayoutAttributeNotAnAttribute)
+    if (anItem === nil || attr === CPLayoutAttributeNotAnAttribute)
         return nil;
 
     var exp;
@@ -272,7 +272,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     if (_constraint)
         return _constraint.toString();
 
-    return [CPString stringWithFormat:@"%@ %@ %@ %@ %@ x%@ +%@ (%@)", ([_firstItem identifier] || ""), CPStringFromAttribute(_firstAttribute), CPStringFromRelation(_relation), ([_secondItem identifier] || ""), CPStringFromAttribute(_secondAttribute), _coefficient, _constant, _priority];
+    return [CPString stringWithFormat:@"%@ %@ %@ %@ %@ x%@ +%@ (%@)", ([_firstItem identifier] || [_firstItem className] || ""), CPStringFromAttribute(_firstAttribute), CPStringFromRelation(_relation), ([_secondItem identifier] || [_secondItem className] || ""), CPStringFromAttribute(_secondAttribute), _coefficient, _constant, _priority];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem

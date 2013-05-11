@@ -3680,8 +3680,15 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return CGSizeMake(_variableWidth.value, _variableHeight.value);
 }
 
-
 - (CPArray)_constraintsEquivalentToAutoresizingMask
+{
+    var hconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:0];
+    var vconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:1];
+
+    return [hconstraints arrayByAddingObjectsFromArray:vconstraints];
+}
+
+- (CPArray)_constraintsEquivalentToAutoresizingMaskOrientation:(CPInteger)orientation
 {
     var result = [CPArray array],
         superview = [self superview];
@@ -3689,85 +3696,81 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if (!superview)
         return result;
 
-    var sRect = [superview bounds],
-        rect = [self frame],
-        mask = [self autoresizingMask],
-        sWidth = CGRectGetWidth(sRect),
-        width = CGRectGetWidth(rect),
-        sHeight = CGRectGetHeight(sRect),
-        height = CGRectGetHeight(rect),
-        multiplier,
-        constant,
-        firstAttribute,
-        secondAttribute;
+    var mask = [self autoresizingMask],
+        sRect = [superview bounds],
+        rect = [self frame];
 
-    if (!(mask & CPViewWidthSizable))
-    {
-        multiplier = 1;
-        constant = width;
-        firstAttribute = CPLayoutAttributeWidth;
-        secondAttribute = CPLayoutAttributeNotAnAttribute;
-    }
-    else if (!(mask & CPViewMinXMargin) && ! (mask & CPViewMaxXMargin))
-    {
-        multiplier = 1;
-        constant = CGRectGetMaxX(rect) - sWidth;
-        firstAttribute = CPLayoutAttributeRight;
-        secondAttribute = CPLayoutAttributeWidth;
-    }
-    else
-    {
-        var widthDivider;
-        if (mask & CPViewMinXMargin && mask & CPViewMaxXMargin)
-            widthDivider = sWidth;
-        else if (mask & CPViewMinXMargin)
-            widthDivider = CGRectGetMaxX(rect);
-        else if (mask & CPViewMaxXMargin)
-            widthDivider = sWidth - CGRectGetMinX(rect);
+    var min                     = orientation ? CGRectGetMinY(rect) : CGRectGetMinX(rect),
+        max                     = orientation ? CGRectGetMaxY(rect) : CGRectGetMaxX(rect),
+        size                    = orientation ? CGRectGetHeight(rect) : CGRectGetWidth(rect),
+        ssize                   = orientation ? CGRectGetHeight(sRect) : CGRectGetWidth(sRect),
+        CPViewMinMargin         = orientation ? CPViewMinYMargin : CPViewMinXMargin,
+        CPViewMaxMargin         = orientation ? CPViewMaxYMargin : CPViewMaxXMargin,
+        CPViewSizable           = orientation ? CPViewHeightSizable : CPViewWidthSizable,
+        CPLayoutAttributeMin    = orientation ? CPLayoutAttributeTop : CPLayoutAttributeLeft,
+        CPLayoutAttributeMax    = orientation ? CPLayoutAttributeBottom : CPLayoutAttributeRight,
+        CPLayoutAttributeSize   = orientation ? CPLayoutAttributeHeight : CPLayoutAttributeWidth;
 
-        multiplier = width / widthDivider;
-        constant = multiplier * sWidth - width;
-        firstAttribute = CPLayoutAttributeWidth;
-        secondAttribute = CPLayoutAttributeWidth;
-    }
+    var pconstraint, sconstaint;
 
-    var wConstraint = [CPLayoutConstraint constraintWithItem:self attribute:firstAttribute relatedBy:CPLayoutRelationEqual toItem:superview attribute:secondAttribute multiplier:multiplier constant:constant];
-
-    [result addObject:wConstraint];
-
-    if (!(mask & CPViewHeightSizable))
+    if (!(mask & CPViewSizable))
     {
-        multiplier = 1;
-        constant = height;
-        firstAttribute = CPLayoutAttributeHeight;
-        secondAttribute = CPLayoutAttributeNotAnAttribute;
-    }
-    else if (!(mask & CPViewMinYMargin) && ! (mask & CPViewMaxYMargin))
-    {
-        multiplier = 1;
-        constant = CGRectGetMaxY(rect) - sHeight;
-        firstAttribute = CPLayoutAttributeTop;
-        secondAttribute = CPLayoutAttributeHeight;
+        var sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:size];
+
+        if ((mask & CPViewMinMargin) && (mask & CPViewMaxMargin))
+        {
+            var m = min / (ssize - size);
+            var c = - m * size;
+            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:c];
+        }
+        else if (mask & CPViewMinMargin)
+        {
+            pconstraint = [CPLayoutConstraint constraintWithItem:superview attribute:CPLayoutAttributeMax relatedBy:CPLayoutRelationEqual toItem:self attribute:CPLayoutAttributeMax multiplier:1 constant:(ssize - max)];
+        }
+        else // CPViewMaxMargin or no H mask
+        {
+            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:min];
+        }
     }
     else
     {
-        var heightDivider;
-        if (mask & CPViewMinYMargin && mask & CPViewMaxYMargin)
-            heightDivider = sHeight;
-        else if (mask & CPViewMinYMargin)
-            heightDivider = CGRectGetMaxY(rect);
-        else if (mask & CPViewMaxYMargin)
-            heightDivider = sHeight - CGRectGetMinY(rect);
+        var pconstraint, sconstaint;
 
-        multiplier = height / heightDivider;
-        constant = multiplier * sHeight - height;
-        firstAttribute = CPLayoutAttributeHeight;
-        secondAttribute = CPLayoutAttributeHeight;
+        if ((mask & CPViewMinMargin) && (mask & CPViewMaxMargin))
+        {
+            var m = min / ssize;
+            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:0];
+
+            m = size / ssize;
+            sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:0];
+        }
+        else if (mask & CPViewMinMargin)
+        {
+            pconstraint = [CPLayoutConstraint constraintWithItem:superview attribute:CPLayoutAttributeMax relatedBy:CPLayoutRelationEqual toItem:self attribute:CPLayoutAttributeMax multiplier:1 constant:(ssize - max)];
+
+            var m = size / max;
+            var c = size - m * ssize;
+            sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:c];
+
+        }
+        else if (mask & CPViewMaxMargin)
+        {
+            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:min];
+
+            var m = size / (ssize - min);
+            var c = - m * min;
+            sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:c];
+        }
+        else
+        {
+            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:min];
+
+            sconstraint = [CPLayoutConstraint constraintWithItem:superview attribute:CPLayoutAttributeMax relatedBy:CPLayoutRelationEqual toItem:self attribute:CPLayoutAttributeMax multiplier:1 constant:(ssize - max)];
+        }
     }
 
-    var hConstraint = [CPLayoutConstraint constraintWithItem:self attribute:firstAttribute relatedBy:CPLayoutRelationEqual toItem:superview attribute:secondAttribute multiplier:multiplier constant:constant];
-
-    [result addObject:hConstraint];
+    [result addObject:pconstraint];
+    [result addObject:sconstraint];
 
     return result;
 }
