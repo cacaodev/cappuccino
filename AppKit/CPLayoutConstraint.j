@@ -132,7 +132,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
         second = [self _expressionFromItem:_secondItem attribute:_secondAttribute],
         constraint;
 
-    var msecond = second ? c.plus(c.times(second, _coefficient), _constant) : _constant;
+    var msecond = (second && _coefficient) ? c.plus(c.times(second, _coefficient), _constant) : _constant;
 
     switch(_relation)
     {

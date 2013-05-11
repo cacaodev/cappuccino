@@ -3685,7 +3685,7 @@ CPLog.debug(_cmd + "NEW _windowView " + CPStringFromSize([_windowView frameSize]
     var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:2];
     [width setPriority:1001];
 
-    var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:minY];
+    var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:(minY + 1)];
     [height setPriority:1001];
 
     [_contentView _setInternalConstraints:[left, top, width, height]];
