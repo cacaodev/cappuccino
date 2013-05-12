@@ -224,7 +224,7 @@ CPViewNoInstrinsicMetric = -1;
     BOOL                _needsUpdateConstraint;
     BOOL                _needsConstraintBasedLayout @accessors(property=needsConstraintBasedLayout);
     BOOL                _hasConstraintBasedSubviews @accessors(property=hasConstraintBasedSubviews);
-    BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
+    BOOL                _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 
 //    unsigned int _contrainedVariablesMask;
 }
@@ -3525,8 +3525,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     [self _createVariablesIfNeeded];
 
-    var constraints = [CPArray arrayWithArray:[self _internalConstraints]];
-    [constraints addObjectsFromArray:_constraintsArray];
+    var constraints = [self constraints];
+    [constraints addObjectsFromArray:[self _internalConstraints]];
 
     [self _addConstraints:constraints toEngine:engine];
 
@@ -3609,6 +3609,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         if (requiresConstraintBasedLayout && ((firstItem && firstItem !== self) || (secondItem && secondItem !== self)))
             _hasConstraintBasedSubviews = YES;
 
+        [firstItem setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [secondItem setTranslatesAutoresizingMaskIntoConstraints:NO];
+
         [_constraintsArray addObject:aConstraint];
     }];
 
@@ -3631,7 +3634,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     _needsUpdateConstraint = YES;
 }
-
+/*
 - (void)layoutSubtreeIfNeeded:(BOOL)isLazy
 {
     [self layoutSubtreeIfNeeded:isLazy initial:YES];
@@ -3669,7 +3672,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         }];
     }
 }
-
+*/
 - (CGRect)cbl_frame
 {
     return CGRectMake([self _variableMinX].value, [self _variableMinY].value, [self _variableWidth].value, [self _variableHeight].value);

@@ -157,10 +157,20 @@ var updateFrameWithObserver = function(observer, idx, stop)
     //CPLog.debug("Updated view " + observer.target + " mask " + observer.mask);
 
     if (mask & 6)
-        [target setFrameOrigin:CGPointMake(observer[2] || CGRectGetMinX([target frame]), observer[4] || CGRectGetMinY([target frame]))];
+    {
+        var x = (mask & 2) ? observer[2] : CGRectGetMinX([target frame]),
+            y = (mask & 4) ? observer[4] : CGRectGetMinY([target frame]);
 
-    if (mask & 24)
-        [target setFrameSize:CGSizeMake(observer[8] || CGRectGetWidth([target frame]), observer[16] || CGRectGetHeight([target frame]))];
+        [target setFrameOrigin:CGPointMake(x, y)];
+    }
+
+    if (mask & 24)                                // v: wrong wrong wrong ! what if the changed value is 0 ?
+    {
+        var w = (mask & 8)  ? observer[8]  : CGRectGetWidth([target frame]),
+            h = (mask & 16) ? observer[16] : CGRectGetHeight([target frame]);
+
+        [target setFrameSize:CGSizeMake(w, h)];
+    }
 /*
     if (mask & 6)
         CPLog.debug(target + ". Updated frame origin " + CPStringFromPoint([target frameOrigin]));

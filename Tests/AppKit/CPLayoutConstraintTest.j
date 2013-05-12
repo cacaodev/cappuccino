@@ -13,9 +13,11 @@
 
 - (void)testConstraintBasedLayoutPerf
 {
+/*
     for (var m = 0; m < 64; m++)
         [self _testConstraintBasedLayoutPerfWithMask:m];
-/*
+*/
+
     [self _testConstraintBasedLayoutPerfWithMask:CPViewNotSizable];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewMinXMargin];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewMaxXMargin];
@@ -25,7 +27,6 @@
     [self _testConstraintBasedLayoutPerfWithMask:CPViewWidthSizable|CPViewMinXMargin];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewWidthSizable|CPViewMaxXMargin];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewWidthSizable|CPViewMinXMargin|CPViewMaxXMargin];
-*/
 }
 
 - (void)_testConstraintBasedLayoutPerfWithMask:(CPInteger)aMask
@@ -89,7 +90,7 @@
 
     end = new Date();
     var total2 = end - dd;
-    CPLog.warn("Constraints setFrame: " + (end - dd)/ RESIZES_COUNT + " ms. Total " + total2 + " ms (" + ROUND(10* total2/total1)/10 + "x times slower).");
+    CPLog.warn("Auto-layout setFrame: " + (end - dd)/ RESIZES_COUNT + " ms. Total " + total2 + " ms (" + ROUND(10* total2/total1)/10 + "x times slower).");
 
 // Check constraints/autoresizingmask equivalence correctness based on resulting frames.
 
