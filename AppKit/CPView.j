@@ -219,7 +219,6 @@ CPViewNoInstrinsicMetric = -1;
     Object              _variableMinY;
     Object              _variableWidth;
     Object              _variableHeight;
-    Object              _observer;
 
     BOOL                _needsUpdateConstraint;
     BOOL                _needsConstraintBasedLayout @accessors(property=needsConstraintBasedLayout);
@@ -3314,8 +3313,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     _variableWidth  = nil;
     _variableHeight = nil;
 
-    _observer = {mask:0, target:self};
-
 //    _contrainedVariablesMask = 30;
 }
 
@@ -3456,7 +3453,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (Object)_variableMinX
 {
     if (!_variableMinX)
-        _variableMinX = createVariable("x", CGRectGetMinX([self frame]), _identifier || [self className], _observer, 2);
+        _variableMinX = createVariable(_identifier, "x", CGRectGetMinX([self frame]), self, 2);
 
     return _variableMinX;
 }
@@ -3464,7 +3461,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (Object)_variableMinY
 {
     if (!_variableMinY)
-        _variableMinY = createVariable("y", CGRectGetMinY([self frame]), _identifier || [self className], _observer, 4);
+        _variableMinY = createVariable(_identifier, "y", CGRectGetMinX([self frame]), self, 4);
 
     return _variableMinY;
 }
@@ -3472,7 +3469,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (Object)_variableWidth
 {
     if (!_variableWidth)
-        _variableWidth = createVariable("width", CGRectGetWidth([self frame]), _identifier || [self className], _observer, 8);
+        _variableWidth = createVariable(_identifier, "width", CGRectGetMinX([self frame]), self, 8);
 
     return _variableWidth;
 }
@@ -3480,7 +3477,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (Object)_variableHeight
 {
     if (!_variableHeight)
-        _variableHeight = createVariable("height", CGRectGetHeight([self frame]), _identifier || [self className], _observer, 16);
+        _variableHeight = createVariable(_identifier, "height", CGRectGetMinX([self frame]), self, 16);
 
     return _variableHeight;
 }
@@ -3492,16 +3489,16 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         prefix = _identifier || [self className];
 
     if (!_variableMinX)
-        _variableMinX = createVariable("x", origin.x, prefix, _observer, 2);
+        _variableMinX = createVariable(prefix, "x", origin.x, self, 2);
 
     if (!_variableMinY)
-        _variableMinY = createVariable("y", origin.y, prefix, _observer, 4);
+        _variableMinY = createVariable(prefix, "y", origin.y, self, 4);
 
     if (!_variableWidth)
-        _variableWidth = createVariable("width", size.width, prefix, _observer, 8);
+        _variableWidth = createVariable(prefix, "width", size.width, self, 8);
 
     if (!_variableHeight)
-        _variableHeight = createVariable("height", size.height, prefix, _observer, 16);
+        _variableHeight = createVariable(prefix, "height", size.height, self, 16);
 
     CPLog.debug("Created variables for " + prefix);
 }
@@ -3780,9 +3777,13 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 @end
 
-var createVariable = function(aName, aValue, aPrefix, observer, tag)
+var createVariable = function(aPrefix, aName, aValue, owner, aTag)
 {
-    return new c.Variable({name:aName, value:aValue, prefix:aPrefix, observer:observer, tag:tag});
+    var identifier = [owner UID];
+
+    [CPLayoutConstraintEngine registerOwner:owner forIdentifier:identifier];
+
+    return new c.Variable({prefix:aPrefix, name:aName, value:aValue, identifier:identifier, tag:aTag});
 };
 
 var _CPViewFullScreenModeStateMake = function(aView)

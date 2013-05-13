@@ -1,12 +1,19 @@
 @import <Foundation/CPObject.j>
 
+var _registeredVariableOwners = {};
+
 @implementation CPLayoutConstraintEngine : CPObject
 {
     SimplexSolver   _solver @accessors(getter=_solver);
     CPArray         _constraints @accessors(getter=constraints);
     CPArray         _stayVariables;
     id              _context;
-    BOOL            _isSolving;
+}
+
++ (void)registerOwner:(id)aView forIdentifier:(CPString)anIdentifier
+{
+    if (!_registeredVariableOwners[anIdentifier])
+        _registeredVariableOwners[anIdentifier] = aView;
 }
 
 - (id)init
@@ -16,9 +23,10 @@
     _solver = new c.SimplexSolver();
 CPLog.debug("created solver");
     _solver.autoSolve = false;
-    _solver.onsolved = function(observers)
+    _solver.onsolved = function(aRecord)
     {
-        [observers enumerateObjectsUsingBlock:updateFrameWithObserver];
+        var target = _registeredVariableOwners[aRecord.identifier];
+        updateFrameFromSolver(target, aRecord.changeMask, aRecord.changeValues);
     };
 
     _constraints = [];
@@ -47,9 +55,6 @@ CPLog.debug("created solver");
 
 - (void)_suggestValue:(id)aValue1 forVariable:(id)aVariable1 value:(id)aValue2 forVariable:(id)aVariable2 context:(id)aContext
 {
-    if (_isSolving)
-        return;
-
     //var d = new Date();
     if (aContext !== _context)
     {
@@ -72,7 +77,6 @@ CPLog.debug("created solver");
     _solver.resolve();
 
     //CPLog.debug("Solved in " + (new Date() - d));
-    _isSolving = NO;
 }
 
 - (void)solve
@@ -150,24 +154,22 @@ CPLog.debug("created solver");
 
 @end
 
-var updateFrameWithObserver = function(observer, idx, stop)
+var updateFrameFromSolver = function(target, mask, values)
 {
-    var mask = observer.mask,
-        target = observer.target;
-    //CPLog.debug("Updated view " + observer.target + " mask " + observer.mask);
+    //CPLog.debug("Updated view " + target + " mask " + mask + " values " + values);
 
     if (mask & 6)
     {
-        var x = (mask & 2) ? observer[2] : CGRectGetMinX([target frame]),
-            y = (mask & 4) ? observer[4] : CGRectGetMinY([target frame]);
+        var x = (mask & 2) ? values[2] : CGRectGetMinX([target frame]),
+            y = (mask & 4) ? values[4] : CGRectGetMinY([target frame]);
 
         [target setFrameOrigin:CGPointMake(x, y)];
     }
 
     if (mask & 24)                                // v: wrong wrong wrong ! what if the changed value is 0 ?
     {
-        var w = (mask & 8)  ? observer[8]  : CGRectGetWidth([target frame]),
-            h = (mask & 16) ? observer[16] : CGRectGetHeight([target frame]);
+        var w = (mask & 8)  ? values[8]  : CGRectGetWidth([target frame]),
+            h = (mask & 16) ? values[16] : CGRectGetHeight([target frame]);
 
         [target setFrameSize:CGSizeMake(w, h)];
     }
@@ -178,5 +180,4 @@ var updateFrameWithObserver = function(observer, idx, stop)
     if (mask & 24)
         CPLog.debug(target + ". Updated frame size " + CPStringFromSize([target frameSize]));
 */
-    observer.mask = 0;
 };

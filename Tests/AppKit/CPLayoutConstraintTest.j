@@ -90,7 +90,7 @@
 
     end = new Date();
     var total2 = end - dd;
-    CPLog.warn("Auto-layout setFrame: " + (end - dd)/ RESIZES_COUNT + " ms. Total " + total2 + " ms (" + ROUND(10* total2/total1)/10 + "x times slower).");
+    CPLog.warn("Auto-layout setFrame: " + (end - dd)/ RESIZES_COUNT + " ms. Total " + total2 + " ms (" + ROUND(100* total2/total1)/100 + "x times slower).");
 
 // Check constraints/autoresizingmask equivalence correctness based on resulting frames.
 
