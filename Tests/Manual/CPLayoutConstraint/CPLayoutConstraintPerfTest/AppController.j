@@ -53,7 +53,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)mouseDown:(CPEvent)anEvent
 {
-    CPLog.debug([self _layoutEngine]);
+    [[self _layoutEngine] getInfo];
 }
 
 @end

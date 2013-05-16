@@ -2,52 +2,39 @@
 
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
 {
-    double _huggingPriority;
-    double _compressPriority;
+    double _huggingPriority @accessors(getter=huggingPriority);
+    double _compressPriority @accessors(getter=compressPriority);
     int    _orientation @accessors(getter=orientation);
-
-    Object _huggingConstraint;
-    Object _compressConstraint;
 }
 
 - (id)initWithLayoutItem:(id)anItem value:(float)value huggingPriority:(double)huggingPriority compressionResistancePriority:(double)compressionResistancePriority orientation:(int)orientation
 {
     self = [super init];
+
     if (self)
     {
-        _huggingConstraint = nil;
-        _compressConstraint = nil;
-
         _huggingPriority = huggingPriority;
         _compressPriority = compressionResistancePriority;
-
-        [self setConstant:value];
-        [self setFirstItem:anItem];
         _orientation = orientation;
+
+        _constant = value;
+        _firstItem = anItem;
     }
 
     return self;
 }
 
+- (void)registerItemsInEngine:(id)anEngine
+{
+    [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
+}
+
 - (BOOL)addToEngine:(id)anEngine
 {
 CPLog.debug(self +_cmd);
-    var constraintsInEngine = [anEngine constraints];
 
-    if ([constraintsInEngine containsObjectIdenticalTo:self])
-        return NO;
-
-    var variable = (_orientation === CPLayoutConstraintOrientationHorizontal) ? [_firstItem _variableWidth] : [_firstItem _variableHeight];
-
-    _huggingConstraint  = [self _cassowaryConstraintWithVariable:variable operator:c.LEQ priority:_huggingPriority];
-    _compressConstraint = [self _cassowaryConstraintWithVariable:variable operator:c.GEQ priority:_compressPriority];
-
-    // TODO: Fix priority - depends on compression/hugging priorities and if we change the size and hit a size constraint.
-    //[anEngine addStayVariable:variable strength:c.Strength.medium weight:1];
-
-    [anEngine _addCassowaryConstraint:_compressConstraint];
-    [anEngine _addCassowaryConstraint:_huggingConstraint];
-    [constraintsInEngine addObject:self];
+    [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
+    [anEngine addConstraint:self];
 
     return YES;
 }
@@ -55,46 +42,50 @@ CPLog.debug(self +_cmd);
 - (BOOL)removeFromEngine:(id)anEngine
 {
 CPLog.debug(self +_cmd);
-    var constraintsInEngine = [anEngine constraints];
 
-    if (![constraintsInEngine containsObjectIdenticalTo:self])
-        return NO;
-
-    [anEngine _removeCassowaryConstraint:_compressConstraint];
-    [anEngine _removeCassowaryConstraint:_huggingConstraint];
-
-    [constraintsInEngine removeObject:self];
+    [anEngine unregisterItemWithIdentifier:[_firstItem UID]];
+    [anEngine removeConstraint:self];
 
     return YES;
 }
 
-- (Object)_cassowaryConstraintWithVariable:(Object)aVariable operator:(Object)operator priority:(double)aPriority
+- (id)copy
 {
-    var variableExp = new c.Expression(aVariable),
-        constantExp = new c.Expression([self constant]);
-
-    return (new c.Inequality(variableExp, operator, constantExp, c.Strength.medium, aPriority));
+    return [[[self class] alloc] initWithLayoutItem:_firstItem value:_constant huggingPriority:_huggingPriority compressionResistancePriority:_compressPriority orientation:_orientation];
 }
 
-- (void)setConstant:(double)aConstant inEngine:(id)anEngine
+- (BOOL)isEqual:(id)anObject
 {
-    if (!anEngine || aConstant === [self constant])
-        return;
+    if (anObject === self)
+        return YES;
 
-    var shouldAdd = [self removeFromEngine:anEngine];
+    if (!anObject || anObject.isa !== self.isa || [anObject firstItem] !== _firstItem || [anObject orientation] !== _orientation || [anObject constant] !== _constant || [anObject huggingPriority] !== _huggingPriority || [anObject compressPriority] !== _compressPriority)
+        return NO;
 
-    if (aConstant === -1) // CPViewNoInstrinsicMetric
-        return;
+    return YES;
+}
 
-    [self setConstant:aConstant];
+- (Object)toJSON
+{
+    var frame = [_firstItem frame],
+        value = _orientation ? CGRectGetHeight(frame) : CGRectGetWidth(frame);
 
-    if (shouldAdd)
-        [self addToEngine:anEngine];
+    return {
+       type                : "SizeConstraint",
+       uuid                : [self UID],
+       orientation         : _orientation,
+       firstItemUID        : [_firstItem UID],
+       firstItemName       : [_firstItem identifier] || [_firstItem className],
+       value               : value,
+       constant            : _constant,
+       huggingPriority     : _huggingPriority,
+       compressionPriority : _compressPriority
+    };
 }
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@", (_orientation ? "H:" : "W:"), ([_firstItem identifier] || _firstItem), [self constant], _huggingPriority, _compressPriority];
+    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@", (_orientation ? "H:" : "W:"), ([_firstItem identifier] || _firstItem), _constant, _huggingPriority, _compressPriority];
 }
 
 @end

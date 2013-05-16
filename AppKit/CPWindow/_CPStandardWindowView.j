@@ -206,6 +206,13 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
     return self;
 }
 
+- (void)setFrameSize:(CGSize)aSize
+{
+    [[self window] _sizeToFitWindowViewSize:aSize];
+
+    [super setFrameSize:aSize];
+}
+
 - (void)viewDidMoveToWindow
 {
     [_closeButton setTarget:[self window]];

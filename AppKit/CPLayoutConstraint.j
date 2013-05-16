@@ -1,21 +1,6 @@
 @import <Foundation/CPObject.j>
 @import <Foundation/CPString.j>
 
-@import "c.js"
-@import "HashTable.js"
-@import "HashSet.js"
-@import "Error.js"
-@import "SymbolicWeight.js"
-@import "Strength.js"
-@import "Variable.js"
-@import "Point.js"
-@import "Expression.js"
-@import "Constraint.js"
-@import "EditInfo.js"
-@import "Tableau.js"
-@import "SimplexSolver.js"
-@import "Timer.js"
-
 @import "CPLayoutConstraintEngine.j"
 
 CPLayoutRelationLessThanOrEqual = -1;
@@ -50,18 +35,11 @@ CPLayoutPriorityDragThatCannotResizeWindow = 490; // This is the priority level 
 CPLayoutPriorityDefaultLow = 250; // this is the priority level at which a button hugs its contents horizontally.
 CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingSize], the smallest size that is large enough for the view's contents is computed.  This is the priority level with which the view wants to be as small as possible in that computation.  It's quite low.  It is generally not appropriate to make a constraint at exactly this priority.  You want to be higher or lower.
 
-CPViewVariableMinX   = 1 << 1,
-CPViewVariableMinY   = 1 << 2,
-CPViewVariableWidth  = 1 << 3,
-CPViewVariableHeight = 1 << 4;
-
 var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bottom",  "Left",  "Right",  "Width",  "Height",  "CenterX",  "CenterY",  "Baseline"];
 
 
 @implementation CPLayoutConstraint : CPObject
 {
-    Object  _constraint;
-
     id       _container        @accessors(property=container);
     id       _firstItem        @accessors(property=firstItem);
     id       _secondItem       @accessors(property=secondItem);
@@ -71,8 +49,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     double   _constant         @accessors(property=constant);
     float    _coefficient      @accessors(property=multiplier);
     float    _priority         @accessors(property=priority);
-    Strength _strength         @accessors(property=_strength);
-    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
+    int      _strength         @accessors(property=_strength);
+//    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
 }
 
 + (id)constraintWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
@@ -84,176 +62,56 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 {
     self = [super init];
 
-    _firstItem = item1;
-    _secondItem = item2;
+    [self setFirstItem:item1];
+    [self setSecondItem:item2];
     _firstAttribute = att1;
     _secondAttribute = att2;
     _relation = relation;
     _coefficient = multiplier;
     _constant = constant;
     _priority = CPLayoutPriorityRequired;
-    _shouldBeArchived = NO;
+//    _shouldBeArchived = NO;
 
     [self _init];
 
     return self;
 }
 
+- (void)setFirstItem:(id)anItem
+{
+    _firstItem = [anItem isEqual:[CPNull null]] ? nil : anItem;
+}
+
+- (void)setSecondItem:(id)anItem
+{
+    _secondItem = [anItem isEqual:[CPNull null]] ? nil : anItem;
+}
+
 - (void)_init
 {
-    _constraint = nil;
-    _strength = c.Strength.medium;
+    _strength = 0;
     _container = nil;
 }
 
-- (void)setStrength:(CPInteger)aStrength
+- (void)registerItemsInEngine:(id)anEngine
 {
-    switch(aStrength)
-    {
-        case 0 : _strength = c.Strength.weak;
-            break;
-        case 1 : _strength = c.Strength.medium;
-            break;
-        case 2 : _strength = c.Strength.strong;
-            break;
-        case 3 : _strength = c.Strength.required;
-            break;
-    }
-}
-
-- (Object)_constraint
-{
-    return _constraint;
-}
-
-- (Object)_generateCassowaryConstraint
-{
-    var first  = [self _expressionFromItem:_firstItem attribute:_firstAttribute],
-        second = [self _expressionFromItem:_secondItem attribute:_secondAttribute],
-        constraint;
-
-    var msecond = (second && _coefficient) ? c.plus(c.times(second, _coefficient), _constant) : _constant;
-
-    switch(_relation)
-    {
-        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(first, c.LEQ, msecond, _strength, _priority);
-            break;
-        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(first, c.GEQ, msecond, _strength, _priority);
-            break;
-        case CPLayoutRelationEqual              : constraint = new c.Equation(first, msecond, _strength, _priority);
-            break;
-    }
-
-    return constraint;
-}
-
-- (id)expressionForAttributeLeft:(id)anItem
-{
-    if (anItem !== _container)
-        return CPViewLayoutVariable(anItem, CPViewVariableMinX);
-
-    return 0;
-}
-
-- (id)expressionForAttributeTop:(id)anItem
-{
-    if (anItem !== _container)
-        return CPViewLayoutVariable(anItem, CPViewVariableMinY);
-
-    return 0;
-}
-
-- (id)expressionForAttributeRight:(CPView)anItem
-{
-    var variableWidth = CPViewLayoutVariable(anItem, CPViewVariableWidth);
-
-    if (anItem === _container)
-        return new c.Expression(variableWidth);
-
-    return new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinX)).plus(variableWidth);
-}
-
-- (id)expressionForAttributeBottom:(CPView)anItem
-{
-    var variableHeight = CPViewLayoutVariable(anItem, CPViewVariableHeight);
-
-    if (anItem === _container)
-        return new c.Expression(variableHeight);
-
-    return new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinY)).plus(variableHeight);
-}
-
-- (id)expressionForAttributeCenterX:(CPView)anItem
-{
-    var midWidth = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableWidth)).divide(2);
-
-    if (anItem === _container)
-        return midWidth;
-
-    var left = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinX));
-
-    return c.plus(left, midWidth);
-}
-
-- (id)expressionForAttributeCenterY:(CPView)anItem
-{
-    var midHeight = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableHeight)).divide(2);
-
-    if (anItem === _container)
-        return midHeight;
-
-    var top = new c.Expression(CPViewLayoutVariable(anItem, CPViewVariableMinY));
-
-    return c.plus(top, midHeight);
-}
-
-- (Object)_expressionFromItem:(id)anItem attribute:(int)attr
-{
-    if (anItem === nil || attr === CPLayoutAttributeNotAnAttribute)
-        return nil;
-
-    var exp;
-
-    switch(attr)
-    {
-        case CPLayoutAttributeLeading   :
-        case CPLayoutAttributeLeft      : exp = [self expressionForAttributeLeft:anItem];
-            break;
-        case CPLayoutAttributeTrailing  :
-        case CPLayoutAttributeRight     : exp = [self expressionForAttributeRight:anItem];
-            break;
-        case CPLayoutAttributeTop       : exp = [self expressionForAttributeTop:anItem];
-            break;
-        case CPLayoutAttributeBottom    : exp = [self expressionForAttributeBottom:anItem];
-            break;
-        case CPLayoutAttributeWidth     : exp = CPViewLayoutVariable(anItem, CPViewVariableWidth);
-            break;
-        case CPLayoutAttributeHeight    : exp = CPViewLayoutVariable(anItem, CPViewVariableHeight);
-            break;
-        case CPLayoutAttributeCenterX   : exp = [self expressionForAttributeCenterX:anItem];
-            break;
-        case CPLayoutAttributeBaseline  :
-        case CPLayoutAttributeCenterY   : exp = [self expressionForAttributeCenterY:anItem];
-            break;
-    }
-
-    return exp;
+    [anEngine registerItem:_container forIdentifier:[_container UID]];
+    [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
+    [anEngine registerItem:_secondItem forIdentifier:[_secondItem UID]];
 }
 
 - (void)addToEngine:(id)anEngine
 {
-    try
-    {
-        _constraint = [self _generateCassowaryConstraint];
+    [self registerItemsInEngine:anEngine];
+    [anEngine addConstraint:self];
+}
 
-        [anEngine _addCassowaryConstraint:_constraint];
+- (void)removeFromEngine:(id)anEngine
+{
+CPLog.debug(self +_cmd);
 
-        [[anEngine constraints] addObject:self];
-    }
-    catch (e)
-    {
-        CPLog.warn(e  + "\nEngine content:\n" + [anEngine description]);
-    }
+    [anEngine unregisterItemWithIdentifier:[_firstItem UID]];
+    [anEngine removeConstraint:self];
 }
 
 - (BOOL)isEqual:(id)anObject
@@ -267,11 +125,37 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     return YES;
 }
 
+- (Object)toJSON
+{
+    var firstItem = {
+        uuid        : [_firstItem UID],
+        name        : [_firstItem identifier] || [_firstItem className],
+        rect        : [_firstItem frame],
+        attribute   : _firstAttribute
+    };
+
+    var secondItem = {
+        uuid        : [_secondItem UID],
+        name        : [_secondItem identifier] || [_secondItem className],
+        rect        : [_secondItem frame],
+        attribute   : _secondAttribute
+    };
+
+    return {
+       type           : "Constraint",
+       uuid           : [self UID],
+       containerUUID  : [_container UID],
+       firstItem      : firstItem,
+       secondItem     : secondItem,
+       relation       : _relation,
+       multiplier     : _coefficient,
+       constant       : _constant,
+       priority       : _priority
+    };
+}
+
 - (CPString)description
 {
-    if (_constraint)
-        return _constraint.toString();
-
     return [CPString stringWithFormat:@"%@ %@ %@ %@ %@ x%@ +%@ (%@)", ([_firstItem identifier] || [_firstItem className] || ""), CPStringFromAttribute(_firstAttribute), CPStringFromRelation(_relation), ([_secondItem identifier] || [_secondItem className] || ""), CPStringFromAttribute(_secondAttribute), _coefficient, _constant, _priority];
 }
 
@@ -327,7 +211,7 @@ var CPFirstItem         = @"CPFirstItem",
     if (_priority !== CPLayoutPriorityRequired)
         [aCoder encodeInt:_priority forKey:CPPriority];
 
-    [aCoder encodeBool:_shouldBeArchived forKey:CPShouldBeArchived];
+    //[aCoder encodeBool:_shouldBeArchived forKey:CPShouldBeArchived];
     //[aCoder encodeObject:[self _identifier] forKey:CPLayoutIdentifier];
 }
 
@@ -349,7 +233,7 @@ var CPFirstItem         = @"CPFirstItem",
 
     _constant = [aCoder decodeDoubleForKey:CPConstant];
 
-    _shouldBeArchived = [aCoder decodeBoolForKey:CPShouldBeArchived];
+    //_shouldBeArchived = [aCoder decodeBoolForKey:CPShouldBeArchived];
     //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
 
     var hasKey = [aCoder containsValueForKey:CPPriority];
@@ -360,6 +244,32 @@ var CPFirstItem         = @"CPFirstItem",
     return self;
 }
 
+@end
+
+@implementation CPLayoutVariable : CPObject
+{
+    CPView    _item;
+    CPInteger _tag;
+}
+
++ (CPLayoutVariable)variableForItem:(id)anItem tag:(CPInteger)aTag
+{
+    self = [super init];
+
+    _item = anItem;
+    _tag = aTag;
+
+    return self;
+}
+
+-  (Object)toJSON
+{
+    return {
+        identifier: [_item uuid],
+        name: [_item identifier] || [_item className],
+        tag: _tag
+    }
+}
 
 @end
 
@@ -375,25 +285,5 @@ var CPStringFromRelation = function(relation)
         case -1 : return "<=";
         case 0  : return "==";
         case 1  : return ">=";
-
     }
 };
-
-function CPViewLayoutVariable(anItem, aVariableFlag)
-{
-    var variable;
-
-    switch (aVariableFlag)
-    {
-        case CPViewVariableMinX   : variable = [anItem _variableMinX];
-        break;
-        case CPViewVariableMinY   : variable = [anItem _variableMinY];
-        break;
-        case CPViewVariableWidth  : variable = [anItem _variableWidth];
-        break;
-        case CPViewVariableHeight : variable = [anItem _variableHeight];
-        break;
-    }
-
-    return variable;
-}

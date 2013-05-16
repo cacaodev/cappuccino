@@ -44,7 +44,7 @@ CPLogRegister(CPLogConsole);
     var flags = [anEvent modifierFlags];
 
     if (flags & CPCommandKeyMask)
-        CPLog.debug([[self window] _layoutEngine]);
+        CPLog.debug([[[self window] _layoutEngine] getInfo]);
     else if (flags & CPShiftKeyMask)
     {
         [self setNeedsConstraintBasedLayout:YES];
