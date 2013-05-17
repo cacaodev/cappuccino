@@ -1315,8 +1315,12 @@ ClassDeclarationStatement: function(node, st, c) {
     if (node.superclassname)
     {
         classDef = compiler.getClassDef(className);
+
+        #ifndef BROWSER
         if (classDef && classDef.ivars)     // Must have ivars dictionary to be a real declaration. Without it is a "@class" declaration
             throw compiler.error_message("Duplicate class " + className, node.classname);
+        #endif
+
         if (!compiler.getClassDef(node.superclassname.name))
         {
             var errorMessage = "Can't find superclass " + node.superclassname.name;
