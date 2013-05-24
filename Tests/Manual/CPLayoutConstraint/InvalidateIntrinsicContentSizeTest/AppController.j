@@ -65,6 +65,7 @@ CPLogRegister(CPLogConsole);
     [huggingWindow layout];
     [sizeToFitButtonWindow layout];
     [sizeToFitLabelWindow layout];
+
 }
 
 - (IBAction)changeButtonTitle:(id)sender

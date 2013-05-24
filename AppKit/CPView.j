@@ -3544,6 +3544,15 @@ CPLog.debug(_cmd + " " + [constraints description]);
         [firstItem setTranslatesAutoresizingMaskIntoConstraints:NO];
         [secondItem setTranslatesAutoresizingMaskIntoConstraints:NO];
 
+        // We need to mark the views involved as needConstraintUpdate in case they have content size constraints
+        // But don't have constraints set in IB.
+
+        if (![firstItem isKindOfClass:[_CPWindowView class]])
+            [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:firstItem];
+
+        if (![secondItem isKindOfClass:[_CPWindowView class]])
+            [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:secondItem];
+
         [_constraintsArray addObject:aConstraint];
     }];
 

@@ -56,6 +56,7 @@
 							<string key="NSFrame">{{11, 28}, {145, 32}}</string>
 							<reference key="NSSuperview" ref="943079157"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{1, 750}</string>
 							<int key="NSTag">1000</int>
@@ -169,6 +170,7 @@
 							<string key="NSFrame">{{7, 16}, {338, 32}}</string>
 							<reference key="NSSuperview" ref="77037558"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{750, 750}</string>
 							<string key="NSAntiCompressionPriority">{1, 250}</string>
@@ -246,6 +248,7 @@
 							<string key="NSFrame">{{199, 24}, {306, 28}}</string>
 							<reference key="NSSuperview" ref="920208956"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{750, 750}</string>
 							<string key="NSAntiCompressionPriority">{750, 750}</string>
@@ -314,6 +317,7 @@
 							<string key="NSFrame">{{62, 25}, {366, 28}}</string>
 							<reference key="NSSuperview" ref="548903312"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:9</string>
 							<string key="NSHuggingPriority">{1, 750}</string>
 							<string key="NSAntiCompressionPriority">{1, 750}</string>
@@ -535,7 +539,7 @@
 								<object class="IBLayoutConstant" key="constant">
 									<double key="value">326</double>
 								</object>
-								<float key="priority">700</float>
+								<float key="priority">1000</float>
 								<reference key="containingView" ref="943079157"/>
 								<int key="scoringType">9</int>
 								<float key="scoringTypeFloat">40</float>

@@ -34,6 +34,8 @@
     var windowRect = CGRectMake(0, 0, 500, 500);
     var _autoSizeWindow = [[CPWindow alloc] initWithContentRect:windowRect styleMask:CPResizableWindowMask];
     var _constraintsWindow = [[CPWindow alloc] initWithContentRect:windowRect styleMask:CPResizableWindowMask];
+    var autoSizeSubviews = [];
+    var constraintSubviews = [];
 
     var NUMBER_OF_VIEWS = 100,
         RESIZES_COUNT = 500;
@@ -47,6 +49,7 @@
         var autosizeView = [[CPView alloc] initWithFrame:rect];
         [autosizeView setAutoresizingMask:aMask];
         [[_autoSizeWindow contentView] addSubview:autosizeView];
+        autoSizeSubviews.push(autosizeView);
 
         var constraintView = [[CPView alloc] initWithFrame:rect];
         [constraintView setIdentifier:@"View"];
@@ -54,6 +57,7 @@
 
         [[_constraintsWindow contentView] setIdentifier:@"ContentView"];
         [[_constraintsWindow contentView] addSubview:constraintView];
+        constraintSubviews.push(constraintView);
 
         var constraints = [constraintView _constraintsEquivalentToAutoresizingMask];
         [[_constraintsWindow contentView] addConstraints:constraints];
@@ -65,7 +69,9 @@
 
     var dd = new Date();
 
-    for (var k = 1; k <= RESIZES_COUNT; k++)
+    var k = 1;
+
+    for (; k <= RESIZES_COUNT; k++)
     {
         var size = 600 + k;
         [_autoSizeWindow setFrame:CGRectMake(0, 0, size, size)];
@@ -74,15 +80,16 @@
     var end = new Date();
     var total1 = end - dd;
     CPLog.warn("Subviews autoresize mask is " + aMask);
-    CPLog.warn("   Autosize setFrame: " + (end - dd)/ RESIZES_COUNT + " ms. Total " + total1 + " ms.");
+    CPLog.warn("   Autosize setFrame: " + ((end - dd)/ RESIZES_COUNT) + " ms. Total " + total1 + " ms.");
 
     start = new Date();
 
     [_constraintsWindow setFrame:CGRectMake(0,0, 600, 600)];
 
     dd = new Date();
+    k = 1;
 
-    for (var k = 1; k <= RESIZES_COUNT; k++)
+    for (; k <= RESIZES_COUNT; k++)
     {
         var size = 600 + k;
         [_constraintsWindow setFrame:CGRectMake(0, 0, size, size)];
@@ -90,24 +97,21 @@
 
     end = new Date();
     var total2 = end - dd;
-    CPLog.warn("Auto-layout setFrame: " + (end - dd)/ RESIZES_COUNT + " ms. Total " + total2 + " ms (" + ROUND(100* total2/total1)/100 + "x times slower).");
+    CPLog.warn("Auto-layout setFrame: " + ((end - dd)/ RESIZES_COUNT) + " ms. Total " + total2 + " ms (" + ROUND(100* total2/total1)/100 + "x times slower).");
 
-return;
+
 // Check constraints/autoresizingmask equivalence correctness based on resulting frames.
 
-    var autosizeSubviews = [[_autoSizeWindow contentView] subviews],
-        constraintSubviews = [[_constraintsWindow contentView] subviews];
-
-    [autosizeSubviews enumerateObjectsUsingBlock:function(aView, idx, stop)
+    for (var n = 0; n < constraintSubviews.length; n++)
     {
-        var autoViewFrame = [aView frame],
-            constViewFrame = [constraintSubviews[idx] frame];
+        var autoViewFrame = [autoSizeSubviews[n] frame],
+            constViewFrame = [constraintSubviews[n] frame];
 
         // CGRectEqualToRect rounding 2 digits after decimal
         var equalRects = CGRectEqualToRectRounding(autoViewFrame, constViewFrame, 0);
 
-        [self assertTrue:equalRects message:"View " + idx + ": constraint Rect should be " + CPStringFromRect(autoViewFrame) + " but was " + CPStringFromRect(constViewFrame)];
-    }];
+        [self assertTrue:equalRects message:"View " + n + ": constraint Rect should be " + CPStringFromRect(autoViewFrame) + " but was " + CPStringFromRect(constViewFrame)];
+    }
 
     CPLog.warn("\n");
 }
@@ -123,9 +127,39 @@ var CGRectEqualToRectRounding = function(aRect, otherRect, rounding)
            (ROUND(aRect.size.width * k) / k  === ROUND(otherRect.size.width * k) / k ) &&
            (ROUND(aRect.size.height * k) / k === ROUND(otherRect.size.height * k) / k);
 };
+/*
+CPLayoutConstraintWebWorker branch
+
+Tests for synch mode (no Worker):
+
+2013-05-20 10:47:44.616 objj [warn]: Subviews autoresize mask is 0
+2013-05-20 10:47:44.617 objj [warn]:    Autosize setFrame: 0.3 ms. Total 150 ms.
+2013-05-20 10:47:45.065 objj [warn]: Auto-layout setFrame: 0.604 ms. Total 302 ms (2.01x times slower).
+2013-05-20 10:47:45.768 objj [warn]: Subviews autoresize mask is 1
+2013-05-20 10:47:45.769 objj [warn]:    Autosize setFrame: 1.014 ms. Total 507 ms.
+2013-05-20 10:47:46.668 objj [warn]: Auto-layout setFrame: 1.502 ms. Total 751 ms (1.48x times slower).
+2013-05-20 10:47:47.216 objj [warn]: Subviews autoresize mask is 4
+2013-05-20 10:47:47.217 objj [warn]:    Autosize setFrame: 0.722 ms. Total 361 ms.
+2013-05-20 10:47:47.632 objj [warn]: Auto-layout setFrame: 0.588 ms. Total 294 ms (0.81x times slower).
+2013-05-20 10:47:48.315 objj [warn]: Subviews autoresize mask is 5
+2013-05-20 10:47:48.315 objj [warn]:    Autosize setFrame: 0.986 ms. Total 493 ms.
+2013-05-20 10:47:49.165 objj [warn]: Auto-layout setFrame: 1.454 ms. Total 727 ms (1.47x times slower).
+2013-05-20 10:47:50.190 objj [warn]: Subviews autoresize mask is 2
+2013-05-20 10:47:50.191 objj [warn]:    Autosize setFrame: 1.666 ms. Total 833 ms.
+2013-05-20 10:47:51.367 objj [warn]: Auto-layout setFrame: 2.054 ms. Total 1027 ms (1.23x times slower).
+2013-05-20 10:47:52.429 objj [warn]: Subviews autoresize mask is 3
+2013-05-20 10:47:52.430 objj [warn]:    Autosize setFrame: 1.688 ms. Total 844 ms.
+2013-05-20 10:47:54.335 objj [warn]: Auto-layout setFrame: 2.49 ms. Total 1245 ms (1.48x times slower).
+2013-05-20 10:47:55.393 objj [warn]: Subviews autoresize mask is 6
+2013-05-20 10:47:55.394 objj [warn]:    Autosize setFrame: 1.68 ms. Total 840 ms.
+2013-05-20 10:47:56.560 objj [warn]: Auto-layout setFrame: 2.084 ms. Total 1042 ms (1.24x times slower).
+2013-05-20 10:47:57.622 objj [warn]: Subviews autoresize mask is 7
+2013-05-20 10:47:57.623 objj [warn]:    Autosize setFrame: 1.748 ms. Total 874 ms.
+2013-05-20 10:47:59.001 objj [warn]: Auto-layout setFrame: 2.482 ms. Total 1241 ms (1.42x times slower).
+*/
 
 /*
-commit e79bc0d + 1
+CPLayoutConstraint branch (Worker not implemented)
 
 2013-05-11 22:08:30.401 objj [warn]: Subviews autoresize mask is 0
 2013-05-11 22:08:30.403 objj [warn]: Autosize setFrame: 0.31 ms. Total 155 ms.

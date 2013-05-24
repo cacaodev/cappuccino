@@ -35,21 +35,20 @@
 
 @import "Resources/cassowary/CassowaryBridge.js"
 */
-var _registeredVariableOwners = {};
 
 var SUPPORTS_WEB_WORKER;
 
-var _CPEngineViewsNeedUpdateConstraints = [];
-var _CPEngineCallbacks = {};
+var _CPEngineRegisteredItems = {},
+    _CPEngineViewsNeedUpdateConstraints = [],
+    _CPEngineCallbacks = {},
+    _CPEngineLayoutItems;
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
     //SimplexSolver   solver @accessors(getter=solver);
     CPArray         _constraints @accessors(getter=constraints);
-    //CPArray         _stayVariables;
 
     Object          _worker;
-    //Object          _registeredVariableOwners;
     CPInteger       _solverBachingModeLevel;
     CPArray         _workerMessagesQueue;
 }
@@ -73,10 +72,13 @@ var _CPEngineCallbacks = {};
     }
 }
 
-- (id)init
+- (id)initWithWindow:(CPWindow)aWindow
 {
 CPLog.debug(self + _cmd);
     self = [super init];
+
+    var contentViewUUID = [[aWindow contentView] UID];
+    _CPEngineLayoutItems = _CPEngineLayoutItemsFunction(contentViewUUID);
 
     if (SUPPORTS_WEB_WORKER)
     {
@@ -92,7 +94,11 @@ CPLog.debug("CREATED WORKER" + _worker);
         {
             // Register an event handler that will receive messages from our
             // web worker
-            _worker.addEventListener('message', function(e){onWorkerMessage(e.data);});
+            _worker.addEventListener('message', function(e)
+            {
+                onWorkerMessage(e.data);
+            });
+
             [self sendCommand:"createSolver" withArguments:null];
         }
     }
@@ -115,12 +121,12 @@ CPLog.debug("CREATED WORKER" + _worker);
         };
 
         var s = [self sendCommand:"createSolver" withArguments:null];
-        s.onsolved = updateItemsGeometry;
+        s.onsolved = _CPEngineLayoutItems;
     }
 
     _constraints = [];
     //_stayVariables = [];
-    //_registeredVariableOwners = {};
+    //_CPEngineRegisteredItems = {};
     _solverBachingModeLevel = 0;
     _workerMessagesQueue = [];
 
@@ -129,16 +135,16 @@ CPLog.debug("CREATED WORKER" + _worker);
 
 - (void)registerItem:(id)anItem forIdentifier:(CPString)anIdentifier
 {
-    if (anItem && anIdentifier && !_registeredVariableOwners[anIdentifier])
+    if (anItem && anIdentifier && !_CPEngineRegisteredItems[anIdentifier])
     {
         CPLog.debug("register " + anItem + " ID " + anIdentifier);
-        _registeredVariableOwners[anIdentifier] = anItem;
+        _CPEngineRegisteredItems[anIdentifier] = anItem;
     }
 }
 
 - (void)unregisterItemWithIdentifier:(CPString)anIdentifier
 {
-    delete (_registeredVariableOwners[anIdentifier]);
+    delete (_CPEngineRegisteredItems[anIdentifier]);
 }
 
 // ===================================
@@ -170,8 +176,7 @@ CPLog.debug("CREATED WORKER" + _worker);
 
 - (id)sendCommand:(CPString)aCommand withArguments:(Object)args callback:(Function)aCallBack
 {
-    // uuidgen needed !!
-    var callbackUUID = [self UID] + "_" + aCommand + "_" + (new Date()).getTime();
+    var callbackUUID = uuidgen();
 
     _CPEngineCallbacks[callbackUUID] = aCallBack;
 
@@ -314,15 +319,21 @@ CPLog.debug("CREATED WORKER" + _worker);
 
 @end
 
-var updateItemsGeometry = function(records)
+var _CPEngineLayoutItemsFunction = function(excludeUID)
 {
-    for (var identifier in records)
+    return function (records)
     {
-        var record = records[identifier],
-            target = _registeredVariableOwners[identifier];
+        for (var identifier in records)
+        {
+            if (identifier === excludeUID)
+                continue;
 
-        updateFrameFromSolver(target, record.changeMask, record.changeValues);
-    }
+            var record = records[identifier],
+                target = _CPEngineRegisteredItems[identifier];
+
+            updateFrameFromSolver(target, record.changeMask, record.changeValues);
+        }
+    };
 };
 
 var updateFrameFromSolver = function(target, mask, values)
@@ -346,10 +357,9 @@ var updateFrameFromSolver = function(target, mask, values)
             h = (mask & 16) ? values[16] : CGRectGetHeight(frame);
 
         [target setFrameSize:CGSizeMake(w, h)];
-        //CPLog.debug([target identifier] + ". Updated frame size {" + [w, h] + "}");
     }
 
-    [target setNeedsDisplay:YES];
+    //[target setNeedsDisplay:YES];
 };
 
 // No worker version
@@ -367,7 +377,7 @@ var onWorkerMessage = function(message)
 
     if (type === 'solved')
     {
-        updateItemsGeometry(result);
+        _CPEngineLayoutItems(result);
         [[CPRunLoop mainRunLoop] performSelectors];
     }
     else if (type === 'log')
@@ -389,33 +399,7 @@ var onWorkerMessage = function(message)
     }
 };
 
-/*
-commit 5b7460d3a774468c2ab55dbe40a2623e7df673b7 + 1
-
-Tests for synch mode (no Worker):
-
-2013-05-20 10:47:44.616 objj [warn]: Subviews autoresize mask is 0
-2013-05-20 10:47:44.617 objj [warn]:    Autosize setFrame: 0.3 ms. Total 150 ms.
-2013-05-20 10:47:45.065 objj [warn]: Auto-layout setFrame: 0.604 ms. Total 302 ms (2.01x times slower).
-2013-05-20 10:47:45.768 objj [warn]: Subviews autoresize mask is 1
-2013-05-20 10:47:45.769 objj [warn]:    Autosize setFrame: 1.014 ms. Total 507 ms.
-2013-05-20 10:47:46.668 objj [warn]: Auto-layout setFrame: 1.502 ms. Total 751 ms (1.48x times slower).
-2013-05-20 10:47:47.216 objj [warn]: Subviews autoresize mask is 4
-2013-05-20 10:47:47.217 objj [warn]:    Autosize setFrame: 0.722 ms. Total 361 ms.
-2013-05-20 10:47:47.632 objj [warn]: Auto-layout setFrame: 0.588 ms. Total 294 ms (0.81x times slower).
-2013-05-20 10:47:48.315 objj [warn]: Subviews autoresize mask is 5
-2013-05-20 10:47:48.315 objj [warn]:    Autosize setFrame: 0.986 ms. Total 493 ms.
-2013-05-20 10:47:49.165 objj [warn]: Auto-layout setFrame: 1.454 ms. Total 727 ms (1.47x times slower).
-2013-05-20 10:47:50.190 objj [warn]: Subviews autoresize mask is 2
-2013-05-20 10:47:50.191 objj [warn]:    Autosize setFrame: 1.666 ms. Total 833 ms.
-2013-05-20 10:47:51.367 objj [warn]: Auto-layout setFrame: 2.054 ms. Total 1027 ms (1.23x times slower).
-2013-05-20 10:47:52.429 objj [warn]: Subviews autoresize mask is 3
-2013-05-20 10:47:52.430 objj [warn]:    Autosize setFrame: 1.688 ms. Total 844 ms.
-2013-05-20 10:47:54.335 objj [warn]: Auto-layout setFrame: 2.49 ms. Total 1245 ms (1.48x times slower).
-2013-05-20 10:47:55.393 objj [warn]: Subviews autoresize mask is 6
-2013-05-20 10:47:55.394 objj [warn]:    Autosize setFrame: 1.68 ms. Total 840 ms.
-2013-05-20 10:47:56.560 objj [warn]: Auto-layout setFrame: 2.084 ms. Total 1042 ms (1.24x times slower).
-2013-05-20 10:47:57.622 objj [warn]: Subviews autoresize mask is 7
-2013-05-20 10:47:57.623 objj [warn]:    Autosize setFrame: 1.748 ms. Total 874 ms.
-2013-05-20 10:47:59.001 objj [warn]: Auto-layout setFrame: 2.482 ms. Total 1241 ms (1.42x times slower).
-*/
+var uuidgen = function () {
+    return Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
+}

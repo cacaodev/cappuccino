@@ -16,6 +16,8 @@
 
 // @import "../CPTrace.j"
 
+var CONSTRAINT_PROPS = ["firstItem", "firstAttribute", "relation", "secondItem", "secondAttribute", "multiplier", "constant", "priority"];
+
 CPLogRegister(CPLogConsole);
 
 @implementation CPStringToFloatTransformer : CPValueTransformer
@@ -83,6 +85,7 @@ CPLogRegister(CPLogConsole);
     @outlet CPTableView tableView;
     @outlet CPTextField infoField;
     @outlet ConstraintsController constraintsController;
+    @outlet CPPopover popover;
 
     CPWindow  constraintWindow;
     ColorView mainView @accessors;
@@ -124,10 +127,11 @@ CPLogRegister(CPLogConsole);
     [mainView addSubview:view1];
     [mainView addSubview:view2];
 
+CPLog.debug(_cmd);
+    [self setItems:[mainView, view1, view2]];
+
     [constraintWindow center];
     [constraintWindow orderFront:self];
-
-    [self setItems:[mainView, view1, view2]];
 
     [self addDemoConstraints:nil];
     //[constraintWindow layout];
@@ -135,7 +139,47 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
+CPLog.debug(_cmd);
     [theWindow setFullPlatformWindow:YES];
+}
+
+- (IBAction)priorityAction:(id)sender
+{
+    var text = "",
+        priority = [sender intValue];
+
+    if (![popover isShown])
+        [popover showRelativeToRect:nil ofView:sender preferredEdge:CPMaxYEdge];
+
+    if (priority < CPLayoutPriorityDefaultLow)
+        text = "Weaker than default weak priority at witch a control holds to its intrinsic content size.";
+    else if (priority < CPLayoutPriorityDragThatCannotResizeWindow)
+        text = "Weaker than the user resizing the window.";
+    else if (priority < CPLayoutPriorityWindowSizeStayPut)
+        text = "Weaker than the window staying same size.";
+    else if (priority < CPLayoutPriorityDragThatCanResizeWindow)
+        text = "Stronger than the window staying same size.";
+    else if (priority < CPLayoutPriorityDefaultHigh)
+        text = "Stronger than the user resizing the window.";
+    else if (priority < CPLayoutPriorityRequired)
+        text = "Not required but stronger than the priority at witch controls maintain their intrinsic content size.";
+    else if (priority == CPLayoutPriorityRequired)
+        text = "Required";
+
+    var view = [[popover contentViewController] view],
+        valueField = [view viewWithTag:1001],
+        summaryField = [view viewWithTag:1000];
+
+    [valueField setStringValue:priority];
+    [summaryField setStringValue:text];
+}
+
+- (void)popoverShouldClose:(CPPopover)aPopover
+{
+    var flags = [[CPApp currentEvent] modifierFlags];
+    CPLog.debug(_cmd + flags);
+
+    return NO;
 }
 
 - (void)constraintSelectionDidChange:(CPNotification)aNote
@@ -169,36 +213,68 @@ CPLogRegister(CPLogConsole);
 {
 CPLog.debug("change " + [change description]);
 
-    if (context !== "constraints")
-        return;
-
-    var kind = [change objectForKey:CPKeyValueChangeKindKey];
-
-    if (kind === CPKeyValueChangeSetting || kind === CPKeyValueChangeRemoval)
+    if (context == "constraints")
     {
-        [mainView removeConstraints:[change objectForKey:CPKeyValueChangeOldKey]];
+        var kind = [change objectForKey:CPKeyValueChangeKindKey];
+
+        if (kind === CPKeyValueChangeSetting || kind === CPKeyValueChangeRemoval)
+        {
+            var oldConstraints = [change objectForKey:CPKeyValueChangeOldKey];
+            [self stopObservingConstraintsProperties:oldConstraints];
+            [mainView removeConstraints:oldConstraints];
+        }
+
+        if (kind === CPKeyValueChangeSetting || kind === CPKeyValueChangeInsertion)
+        {
+            var newConstraints = [change objectForKey:CPKeyValueChangeNewKey];
+            [self startObservingConstraintsProperties:newConstraints];
+            [mainView addConstraints:newConstraints];
+        }
     }
-
-    if (kind === CPKeyValueChangeSetting || kind === CPKeyValueChangeInsertion)
+    else if (context == "constraint")
     {
-        [mainView addConstraints:[change objectForKey:CPKeyValueChangeNewKey]];
+        [tableView reloadData];
     }
 
     [mainView setNeedsUpdateConstraints:YES];
-    [mainView constraintsDidChange];
+    [mainView layoutConstraints];
+}
+
+- (void)startObservingConstraintsProperties:(CPArray)theConstraints
+{
+    [theConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+        var constraint = aConstraint;
+        [CONSTRAINT_PROPS enumerateObjectsUsingBlock:function(akeyPath, idx, stop)
+        {
+            [constraint addObserver:self forKeyPath:akeyPath options:CPKeyValueObservingOptionOld|CPKeyValueObservingOptionNew context:"constraint"];
+        }];
+    }];
+}
+
+- (void)stopObservingConstraintsProperties:(CPArray)theConstraints
+{
+    [theConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+        var constraint = aConstraint;
+        [CONSTRAINT_PROPS enumerateObjectsUsingBlock:function(akeyPath, idx, stop)
+        {
+            [constraint removeObserver:self forKeyPath:akeyPath];
+        }];
+    }];
 }
 
 - (IBAction)visualizeConstraints:(id)sender
 {
     [mainView setVisualizeConstraints:[sender state]];
 }
-
+/*
 - (IBAction)constraintUpdate:(id)sender
 {
     [tableView reloadData];
-    [mainView constraintsDidChange];
+    [mainView layoutConstraints];
 }
-
+*/
 - (IBAction)getTableauInformation:(id)sender
 {
     var engine = [constraintWindow _layoutEngineIfExists];
@@ -322,7 +398,7 @@ CPLog.debug("change " + [change description]);
     }];
 }
 
-- (void)constraintsDidChange
+- (void)layoutConstraints
 {
     [self removeAccessoryViews];
 

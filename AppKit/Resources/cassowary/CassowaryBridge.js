@@ -38,13 +38,13 @@ EDITVARS_FOR_CONTEXT = {};
 
 self.caller = {
 
-setDisableOnSolvedNotification : function (flag)
-                                {
-                                    self.solver.onvaluechange = flag ? onValueChange : noop;
-                                    self.solver.onSolved = flag ? onSolved : noop;
-                                },
+setDisableOnSolvedNotification : function(flag)
+                                 {
+                                     self.solver.onvaluechange = flag ? onValueChange : noop;
+                                     self.solver.onSolved = flag ? onSolved : noop;
+                                 },
 
-createSolver  : function ()
+createSolver  : function()
                 {
                     self.solver = newSolver();
                     CPLogMain('created solver');
@@ -52,7 +52,7 @@ createSolver  : function ()
                     return self.solver;
                 },
 
-solve         : function ()
+solve         : function()
                 {
                     if (!SolverExists('solve'))
                         return;
@@ -62,7 +62,7 @@ solve         : function ()
                     CPLogMain("solve");
                 },
 
-info          : function ()
+info          : function()
                 {
                     var info = self.solver.toString();
                     CPLogMain(info);
@@ -70,7 +70,7 @@ info          : function ()
                     return info;
                 },
 
-addConstraint : function (args)
+addConstraint : function(args)
                 {
                     if (!SolverExists('addConstraint'))
                         return;
@@ -95,43 +95,43 @@ addConstraint : function (args)
                     CPLogMain('addConstraint uuid: ' + args.uuid  + " type " + type + " " + constraint.toString());
                 },
 
-addConstraints : function (jsonarray)
-                {
-                    var fn = self.caller.addConstraint;
+addConstraints : function(jsonarray)
+                 {
+                     var fn = self.caller.addConstraint;
 
-                    jsonarray.forEach(function(json)
-                    {
-                        fn(json);
-                    });
-                },
+                     jsonarray.forEach(function(json)
+                     {
+                         fn(json);
+                     });
+                 },
 
-removeConstraint :  function(args)
-                    {
-                        var constraint = CONSTRAINTS_MAP[args.uuid],
-                            type = args.type;
+removeConstraint : function(args)
+                   {
+                       var constraint = CONSTRAINTS_MAP[args.uuid],
+                           type = args.type;
 
-                        if (typeof constraint == 'undefined')
-                        {
-                            returnMessage('warn', 'Cannot find constraint with id ' + args.uuid);
-                            return;
-                        }
+                       if (typeof constraint == 'undefined')
+                       {
+                           returnMessage('warn', 'Cannot find constraint with id ' + args.uuid);
+                           return;
+                       }
 
-                        if (type == "Constraint")
-                        {
-                            self.solver.removeConstraint(constraint);
-                        }
-                        else if (type == "SizeConstraint")
-                        {
-                            self.solver.removeConstraint(constraint[0]);
-                            self.solver.removeConstraint(constraint[1]);
-                        }
+                       if (type == "Constraint")
+                       {
+                           self.solver.removeConstraint(constraint);
+                       }
+                       else if (type == "SizeConstraint")
+                       {
+                           self.solver.removeConstraint(constraint[0]);
+                           self.solver.removeConstraint(constraint[1]);
+                       }
 
-                        delete (CONSTRAINTS_MAP[args.uuid]);
+                       delete (CONSTRAINTS_MAP[args.uuid]);
 
-                        CPLogMain('removeConstraint uuid: ' + args.uuid + " type " + type + " " + constraint.toString());
-                    },
+                       CPLogMain('removeConstraint uuid: ' + args.uuid + " type " + type + " " + constraint.toString());
+                   },
 
-removeConstraints :  function(args)
+removeConstraints : function(args)
                     {
                         var fn = self.caller.removeConstraint;
 
@@ -156,106 +156,106 @@ updateConstraints : function(args)
                         CONSTRAINTS_BY_VIEW_MAP[uuid] = constraints;
                     },
 
-setEditVarsForContext : function (args)
-                    {
-                        var tags = args.tags,
-                            identifier = args.identifier,
-                            editVars = [];
-
-                        tags.forEach(function (tag)
+setEditVarsForContext : function(args)
                         {
-                           var variable = GetVariable(identifier, tag);
-                           editVars.push(variable);
-                        });
+                            var tags = args.tags,
+                                identifier = args.identifier,
+                                editVars = [];
 
-                        EDITVARS_FOR_CONTEXT[identifier] = editVars;
-                    },
+                            tags.forEach(function(tag)
+                            {
+                               var variable = GetVariable(identifier, tag);
+                               editVars.push(variable);
+                            });
 
-suggestValue : function (args)
+                            EDITVARS_FOR_CONTEXT[identifier] = editVars;
+                        },
+
+suggestValue : function(args)
                {
-                    if (!SolverExists('suggestValue'))
+                   if (!SolverExists('suggestValue'))
                         return;
 
-                    var solver = self.solver,
-                        variable = GetVariable(args.identifier, args.tag);
+                   var solver = self.solver,
+                       variable = GetVariable(args.identifier, args.tag);
 
-                    if (EDIT_CONTEXT !== null)
-                        solver.removeAllEditVars();
+                   if (EDIT_CONTEXT !== null)
+                       solver.removeAllEditVars();
 
-                    solver.addEditVar(variable).beginEdit();
-                    solver.suggestValue(variable, args.value);
-                    solver.endEdit();
+                   solver.addEditVar(variable).beginEdit();
+                   solver.suggestValue(variable, args.value);
+                   solver.endEdit();
 
-                    EDIT_CONTEXT = args.identifier;
+                   EDIT_CONTEXT = args.identifier;
 
-                    CPLogMain("suggestValue");
+                   CPLogMain("suggestValue");
                },
 
-suggestValuesMultiple : function (args)
-               {
-                  suggestValues(args.values, args.context);
-                  //CPLogMain("suggestValuesMultiple");
-               },
+suggestValuesMultiple : function(args)
+                        {
+                            suggestValues(args.values, args.context);
+                            //CPLogMain("suggestValuesMultiple");
+                        },
 
-addStay      : function (args)
-               {
-                    if (!SolverExists('addStay'))
-                        return;
+addStay : function(args)
+          {
+              if (!SolverExists('addStay'))
+                  return;
 
-                    var variable = CPViewLayoutVariable(args.identifier, args.prefix, args.tag, args.value);
+              var variable = CPViewLayoutVariable(args.identifier, args.prefix, args.tag, args.value);
 
-                    self.solver.addStay(variable, c.Strength.medium, args.priority);
+              self.solver.addStay(variable, c.Strength.medium, args.priority);
 
-                    CPLogMain('add Stay ' + variable.toString());
-               }
-}
+              CPLogMain('add Stay ' + variable.toString());
+          }
+};
 
 var CPLogMain = function(x)
 {
     returnMessage('log', x);
 };
 
-var newSolver = function ()
+var newSolver = function()
 {
-        var s = new c.SimplexSolver();
-        s.autoSolve = false;
-        s.onvaluechange = onValueChange;
-        s.onsolved = onSolved;
+    var s = new c.SimplexSolver();
+    s.autoSolve = false;
+    s.onvaluechange = onValueChange;
+    s.onsolved = onSolved;
 
-        return s;
+    return s;
 };
 
-var suggestValues = function (values, context)
+var suggestValues = function(values, context)
 {
-     var solver = self.solver,
-         editVars = EDITVARS_FOR_CONTEXT[context];
+    var solver = self.solver,
+        editVars = EDITVARS_FOR_CONTEXT[context];
 
-     if (context !== EDIT_CONTEXT)
-     {
-         try
-         {
-              if (EDIT_CONTEXT !== null)
-                  solver.removeAllEditVars();
+    if (context !== EDIT_CONTEXT)
+    {
+        try
+        {
+            if (EDIT_CONTEXT !== null)
+                solver.removeAllEditVars();
 
-              editVars.forEach(function(v)
-              {
-                  solver.addEditVar(v);
-              });
-         }
-         catch (e)
-         {
-             returnMessage('warn', e);
-         }
+            editVars.forEach(function(v)
+            {
+                solver.addEditVar(v);
+            });
+        }
+        catch (e)
+        {
+            returnMessage('warn', e);
+        }
 
-         EDIT_CONTEXT = context;
-     }
+        EDIT_CONTEXT = context;
+    }
 
-      editVars.forEach(function(v, idx)
-      {
-          solver.suggestValue(v, values[idx]);
-      });
+    editVars.forEach(function(v, idx)
+    {
+        solver.suggestValue(v, values[idx]);
+    });
 
-     solver.resolve();
+    solver.resolve();
 };
 
 var onValueChange = function(v, records)
@@ -352,7 +352,7 @@ var CreateConstraint = function(args)
         second = expressionForAttribute(secondItemArgs, (containerUUID === secondItemUUID), (secondItemUUID === null));
 
     var msecond = (second && multiplier) ? c.plus(c.times(second, multiplier), constant) : constant;
-CPLogMain(typeof priority);
+
     switch(relation)
     {
         case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(first, c.LEQ, msecond, strength, priority);

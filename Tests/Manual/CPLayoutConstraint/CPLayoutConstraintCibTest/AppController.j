@@ -44,11 +44,9 @@ CPLogRegister(CPLogConsole);
     var flags = [anEvent modifierFlags];
 
     if (flags & CPCommandKeyMask)
-        CPLog.debug([[[self window] _layoutEngine] getInfo]);
-    else if (flags & CPShiftKeyMask)
     {
-        [self setNeedsConstraintBasedLayout:YES];
-        [self setFrameSize:CGSizeMake(400, 400)];
+        CPLog.debug([self identifier] + " " + CPStringFromRect([self frame]));
+        CPLog.debug([[[self window] _layoutEngine] getInfo]);
     }
 }
 
