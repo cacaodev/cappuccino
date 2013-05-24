@@ -82,7 +82,7 @@ var CPTableViewDelegate_selectionShouldChangeInTableView_                       
     CPTableViewDelegate_tableView_willDisplayView_forTableColumn_row_                                   = 1 << 17,
     CPTableViewDelegate_tableViewSelectionDidChange_                                                    = 1 << 18,
     CPTableViewDelegate_tableViewSelectionIsChanging_                                                   = 1 << 19,
-    CPTableViewDelegate_tableViewMenuForTableColumn_Row_                                                = 1 << 20;
+    CPTableViewDelegate_tableViewMenuForTableColumn_Row_                                                = 1 << 20,
     CPTableViewDelegate_tableView_shouldReorderColumn_toColumn_                                         = 1 << 21;
 
 //CPTableViewDraggingDestinationFeedbackStyles
@@ -1322,7 +1322,7 @@ NOT YET IMPLEMENTED
 
     for (var identifier in _dataViewsForTableColumns)
     {
-        var dataViewsInTableColumn = _dataViewsForTableColumns[identifier]
+        var dataViewsInTableColumn = _dataViewsForTableColumns[identifier];
 
         for (var i = 0; i < selectInfo.length; ++i)
         {
@@ -5258,12 +5258,19 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 
     if (_implementedDelegateMethods & CPTableViewDelegate_tableView_shouldSelectRow_)
     {
+        var shouldSelect = [_delegate tableView:self shouldSelectRow:i];
 
-        while (![_delegate tableView:self shouldSelectRow:i] && (i < [self numberOfRows] && i > 0))
-            shouldGoUpward ? i-- : i++; //check to see if the row can be selected if it can't be then see if the next row can be selected
+        /* If shouldSelect returns NO it means this row cannot be selected.
+            The proper behaviour is to then try to see if the next/previous
+            row(s) can be selected, until we hit the first one that can be.
+        */
+        while (!shouldSelect && (i < [self numberOfRows] && i > 0))
+        {
+            shouldGoUpward ? --i : ++i; //check to see if the row can be selected. If it can't be then see if the next row can be selected.
+            shouldSelect = [_delegate tableView:self shouldSelectRow:i];
+        }
 
-        // If the index still can be selected after the loop then just return.
-        if (![_delegate tableView:self shouldSelectRow:i])
+        if (!shouldSelect)
             return;
     }
 

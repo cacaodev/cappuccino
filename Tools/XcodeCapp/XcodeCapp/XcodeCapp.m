@@ -26,6 +26,7 @@
 #import "Notifications.h"
 #import "ProcessSourceOperation.h"
 #import "UserDefaults.h"
+#import "XcodeProjectCloser.h"
 
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED <= MAC_OS_X_VERSION_10_6
@@ -50,23 +51,6 @@ enum XCCLineSpecifier {
 };
 typedef enum XCCLineSpecifier XCCLineSpecifier;
 
-// Used to close the Xcode project if it is open.
-static const char *XCCCloseProjectScript =
-    "tell application \"Xcode\"\n"
-        "set docs to (document of every window)\n"
-        "repeat with doc in docs\n"
-            "if class of doc is workspace document then\n"
-                "set docURL to file of doc\n"
-                "set docPath to docURL as text\n"
-                "set docPath to POSIX path of docPath\n"
-                "if docPath begins with \"%@\" then\n"
-                    "close doc\n"
-                    "return\n"
-                "end if\n"
-            "end if\n"
-        "end repeat\n"
-    "end tell";
-
 // Where we put the generated Cocoa class files
 static NSString * const XCCSupportFolderName = @".XcodeSupport";
 
@@ -90,6 +74,7 @@ static NSPredicate * XCCDirectoriesToIgnorePredicate = nil;
 // An array of the default predicates used to ignore paths.
 static NSArray *XCCDefaultIgnoredPathPredicates = nil;
 
+
 @interface XcodeCapp ()
 
 // Only used with 10.6 when we don't have file-level FSEvents
@@ -108,10 +93,7 @@ static NSArray *XCCDefaultIgnoredPathPredicates = nil;
 
 @property NSFileManager *fm;
 
-// Full path to the <project>.xcodeproj
-@property NSString *xcodeProjectPath;
-
-// An NSString version of XCCCloseProjectScript
+// An NSString version of XCCCloseXcodeProjectScript
 @property NSString *closeXcodeProjectScriptSource;
 
 // Full path to .xcodecapp-ignore
@@ -175,7 +157,7 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
         @"*/AppKit/",
         @"*/Foundation/",
         @"*/Objective-J/",
-          @"*/*.environment/",
+        @"*/*.environment/",
         @"*/Build/",
         @"*/*.xcodeproj/",
         @"*/.*/",
@@ -198,7 +180,6 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
         self.fm = [NSFileManager defaultManager];
         self.ignoredPathPredicates = [NSMutableArray new];
         self.parserPath = [[NSBundle mainBundle].sharedSupportPath stringByAppendingPathComponent:@"parser.j"];
-        self.closeXcodeProjectScriptSource = [NSString stringWithUTF8String:XCCCloseProjectScript];
         self.appStartedTimestamp = [NSDate date];
         self.projectPathsForSourcePaths = [NSMutableDictionary new];
         self.xcodecappIgnorePath = @"";
@@ -240,11 +221,25 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
     // Add possible executable paths to PATH
     self.environment = [NSProcessInfo processInfo].environment.mutableCopy;
 
-    NSArray *paths = @[@"/usr/local/bin", @"/usr/local/narwhal/bin", @"~/bin".stringByExpandingTildeInPath];
+    self.environmentPaths =
+        @[
+            @"/usr/local/bin",
+            @"/usr/local/narwhal/bin",
+            @"~/narwhal/bin",
+            @"~/bin"
+        ];
+
+    NSMutableArray *paths = [self.environmentPaths mutableCopy];
+
+    for (NSInteger i = 0; i < paths.count; ++i)
+        paths[i] = [paths[i] stringByExpandingTildeInPath];
+
     self.environment[@"PATH"] = [[paths componentsJoinedByString:@":"] stringByAppendingFormat:@":%@", self.environment[@"PATH"]];
 
     // Make sure we are using jsc as the narwhal engine!
     self.environment[@"NARWHAL_ENGINE"] = @"jsc";
+
+    self.executables = @[@"python", @"narwhal-jsc", @"objj", @"nib2cib"];
 }
 
 - (void)initObservers
@@ -270,6 +265,13 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
     }
 
     return _pathModificationDates;
+}
+
+- (BOOL)xcodeProjectCanBeOpened
+{
+    return (self.xcodeProjectPath &&
+            !self.isProcessing &&
+            [self.fm fileExistsAtPath:self.xcodeProjectPath]);
 }
 
 #pragma mark - Project Management
@@ -401,7 +403,7 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
     [self.operationQueue addOperation:op];
 }
 
-- (IBAction)openProjectInXcode:(id)aSender
+- (IBAction)openXcodeProject:(id)aSender
 {
     BOOL isDirectory, opened = YES;
     BOOL exists = [self.fm fileExistsAtPath:self.xcodeProjectPath isDirectory:&isDirectory];
@@ -426,18 +428,25 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
         NSInteger response = NSRunAlertPanel(@"The project could not be opened.", @"%@\n\nWould you like to regenerate the project?", @"Yes", @"No", nil, text);
 
         if (response == NSAlertDefaultReturn)
-            [self resetProject:self];
+            [self synchronizeProject:self];
     }
 }
 
-- (IBAction)resetProject:(id)aSender
+- (void)resetProject
 {
     NSString *projectPath = self.projectPath;
-    
+
     [self stop];
     [self removeSupportFilesAtPath:projectPath];
     [self removeAllCibsAtPath:[projectPath stringByAppendingPathComponent:@"Resources"]];
-    [self loadProjectAtPath:projectPath];
+
+    self.projectPath = projectPath;
+}
+
+- (IBAction)synchronizeProject:(id)aSender
+{
+    [self resetProject];
+    [self loadProjectAtPath:self.projectPath];
 }
 
 - (void)removeAllCibsAtPath:(NSString *)path
@@ -453,19 +462,10 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
 
 - (void)removeSupportFilesAtPath:(NSString *)projectPath
 {
-    [self closeXcodeProjectForProject:projectPath];
+    [XcodeProjectCloser closeXcodeProjectForProject:projectPath];
 
     [self.fm removeItemAtPath:self.xcodeProjectPath error:nil];
     [self.fm removeItemAtPath:self.supportPath error:nil];
-}
-
-- (void)closeXcodeProjectForProject:(NSString *)projectPath
-{
-    NSString *source = [NSString stringWithFormat:self.closeXcodeProjectScriptSource, projectPath];
-    NSAppleScript *script = [[NSAppleScript alloc] initWithSource:source];
-
-    NSAppleEventDescriptor *descriptor;
-    descriptor = [script executeAndReturnError:nil];
 }
 
 - (void)stop
@@ -571,7 +571,7 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
     [self startEventStream];
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:kDefaultAutoOpenXcodeProject])
-        [self openProjectInXcode:self];
+        [self openXcodeProject:self];
 }
 
 #pragma mark - Notification handlers
@@ -1158,7 +1158,7 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
         }
     }
     
-    [self resetProject:self];
+    [self synchronizeProject:self];
 }
 
 /*!
@@ -1225,9 +1225,7 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
 
 - (BOOL)executablesAreAccessible
 {
-    NSArray *executables = [[NSBundle mainBundle] objectForInfoDictionaryKey:XCCMandatoryExecutablesKey];
-
-    for (NSString *executable in executables)
+    for (NSString *executable in self.executables)
     {
         NSDictionary *response = [self runTaskWithLaunchPath:@"/usr/bin/which"
                                                    arguments:@[executable]
@@ -1239,7 +1237,7 @@ void fsevents_callback(ConstFSEventStreamRef streamRef,
             self.executablePaths[executable] = path;
         else
         {
-            DDLogError(@"Could not find executable '%@' in PATH", executable);
+            DDLogError(@"Could not find executable '%@' in PATH: %@", executable, self.environment[@"PATH"]);
             return NO;
         }
     }
