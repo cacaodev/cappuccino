@@ -3371,14 +3371,22 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     [_internalConstraints enumerateObjectsUsingBlock:function(constraint, idx, stop)
     {
-        ([constraint orientation]) ? oldIntrinsicSize.height : oldIntrinsicSize.width = [constraint constant];
+        var constant = [constraint constant];
+        if ([constraint orientation] == CPLayoutConstraintOrientationHorizontal)
+            oldIntrinsicSize.width = constant;
+        else
+            oldIntrinsicSize.height = constant;
     }];
 
     _internalConstraints = [self _generateContentSizeConstraints];
 
     [_internalConstraints enumerateObjectsUsingBlock:function(constraint, idx, stop)
     {
-        ([constraint orientation]) ? newIntrinsicSize.height : newIntrinsicSize.width = [constraint constant];
+        var constant = [constraint constant];
+        if ([constraint orientation] == CPLayoutConstraintOrientationHorizontal)
+            newIntrinsicSize.width = constant;
+        else
+            newIntrinsicSize.height = constant;
     }];
 
     [self setNeedsUpdateConstraints:YES];
@@ -3392,10 +3400,15 @@ CPLog.debug(_cmd + " start suggesting values");
     [engine solver_updateConstraintsIfNeeded];
 
     if (newIntrinsicSize.width !== oldIntrinsicSize.width)
-        [engine suggestValue:CGRectGetWidth(frame) forVariable:8 fromItem:self];
+    {
+        [engine suggestValue:CGRectGetWidth(frame) forVariable:8 priority:1000 fromItem:self];
+    }
 
     if (newIntrinsicSize.height !== oldIntrinsicSize.height)
-        [engine suggestValue:CGRectGetHeight(frame) forVariable:16 fromItem:self];
+    {
+        [engine suggestValue:CGRectGetHeight(frame) forVariable:16 priority:1000 fromItem:self];
+    }
+
 CPLog.debug(_cmd + " start layout");
 
     [[self window] layout];

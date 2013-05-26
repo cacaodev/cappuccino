@@ -160,12 +160,13 @@ setEditVarsForContext : function(args)
                         {
                             var tags = args.tags,
                                 identifier = args.identifier,
+                                priority = args.priority,
                                 editVars = [];
 
                             tags.forEach(function(tag)
                             {
                                var variable = GetVariable(identifier, tag);
-                               editVars.push(variable);
+                               editVars.push({variable:variable, priority:priority});
                             });
 
                             EDITVARS_FOR_CONTEXT[identifier] = editVars;
@@ -182,7 +183,7 @@ suggestValue : function(args)
                    if (EDIT_CONTEXT !== null)
                        solver.removeAllEditVars();
 
-                   solver.addEditVar(variable).beginEdit();
+                   solver.addEditVar(variable, c.Strength.medium, args.priority).beginEdit();
                    solver.suggestValue(variable, args.value);
                    solver.endEdit();
 
@@ -237,9 +238,9 @@ var suggestValues = function(values, context)
             if (EDIT_CONTEXT !== null)
                 solver.removeAllEditVars();
 
-            editVars.forEach(function(v)
+            editVars.forEach(function(editVar)
             {
-                solver.addEditVar(v);
+                solver.addEditVar(editVar.variable, c.Strength.medium, editVar.priority);
             });
         }
         catch (e)
@@ -250,9 +251,9 @@ var suggestValues = function(values, context)
         EDIT_CONTEXT = context;
     }
 
-    editVars.forEach(function(v, idx)
+    editVars.forEach(function(editVar, idx)
     {
-        solver.suggestValue(v, values[idx]);
+        solver.suggestValue(editVar.variable, values[idx]);
     });
 
     solver.resolve();

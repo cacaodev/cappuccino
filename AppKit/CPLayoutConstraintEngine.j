@@ -196,16 +196,16 @@ CPLog.debug("CREATED WORKER" + _worker);
     [self sendCommand:"setDisableOnSolvedNotification" withArguments:shouldDisable];
 }
 
-- (void)suggestValue:(id)aValue forVariable:(int)aTag fromItem:(id)anItem
+- (void)suggestValue:(id)aValue forVariable:(int)aTag priority:(CPInteger)aPriority fromItem:(id)anItem
 {
-    var args = {tag:aTag, value:aValue, identifier:[anItem UID]};
+    var args = {tag:aTag, value:aValue, identifier:[anItem UID], priority:aPriority};
 
     [self sendCommand:"suggestValue" withArguments:args];
 }
 
-- (void)setEditVariables:(CPArray)tags fromItem:(id)anItem
+- (void)setEditVariables:(CPArray)tags priority:(CPInteger)aPriority fromItem:(id)anItem
 {
-    var args = {identifier:[anItem UID], tags:tags};
+    var args = {identifier:[anItem UID], tags:tags, priority:aPriority};
 
     [self sendCommand:"setEditVarsForContext" withArguments:args];
 }

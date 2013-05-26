@@ -3595,7 +3595,7 @@ var interpolate = function(fromValue, toValue, progress)
 
          // Danger: async solver creation in -init!
         [self _addWindowViewStayVariables];
-        [_engine setEditVariables:[8, 16] fromItem:_windowView];
+        [_engine setEditVariables:[8, 16] priority:1000 fromItem:_windowView];
     }
 
     return _engine;

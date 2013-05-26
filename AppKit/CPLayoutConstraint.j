@@ -49,7 +49,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     double   _constant         @accessors(property=constant);
     float    _coefficient      @accessors(property=multiplier);
     float    _priority         @accessors(property=priority);
-    int      _strength         @accessors(property=_strength);
 //    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
 }
 
@@ -89,7 +88,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 
 - (void)_init
 {
-    _strength = 0;
     _container = nil;
 }
 
