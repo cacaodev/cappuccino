@@ -210,6 +210,11 @@ CPLog.debug("CREATED WORKER" + _worker);
     [self sendCommand:"setEditVarsForContext" withArguments:args];
 }
 
+- (void)stopEditing
+{
+    [self sendCommand:"removeAllEditVars" withArguments:null];
+}
+
 - (void)suggestValues:(CPArray)values fromItem:(id)anItem
 {
 // TODO: in no-worker mode, call the target function directly for perf.

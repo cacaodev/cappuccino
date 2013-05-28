@@ -172,6 +172,12 @@ setEditVarsForContext : function(args)
                             EDITVARS_FOR_CONTEXT[identifier] = editVars;
                         },
 
+removeAllEditVars : function()
+                    {
+                        self.solver.removeAllEditVars();
+                        EDIT_CONTEXT = null;
+                    },
+
 suggestValue : function(args)
                {
                    if (!SolverExists('suggestValue'))

@@ -244,33 +244,6 @@ var CPFirstItem         = @"CPFirstItem",
 
 @end
 
-@implementation CPLayoutVariable : CPObject
-{
-    CPView    _item;
-    CPInteger _tag;
-}
-
-+ (CPLayoutVariable)variableForItem:(id)anItem tag:(CPInteger)aTag
-{
-    self = [super init];
-
-    _item = anItem;
-    _tag = aTag;
-
-    return self;
-}
-
--  (Object)toJSON
-{
-    return {
-        identifier: [_item uuid],
-        name: [_item identifier] || [_item className],
-        tag: _tag
-    }
-}
-
-@end
-
 var CPStringFromAttribute = function(attr)
 {
     return CPLayoutAttributeLabels[attr];
