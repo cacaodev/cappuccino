@@ -1581,7 +1581,8 @@ MessageSendExpression: function(node, st, c) {
 
     var selectors = node.selectors,
         arguments = node.arguments,
-        selector = selectors[0].name;    // There is always at least one selector
+        firstSelector = selectors[0],
+        selector = firstSelector ? firstSelector.name : "";    // There is always at least one selector
 
     // Put together the selector. Maybe this should be done in the parser...
     for (var i = 0; i < arguments.length; i++)
