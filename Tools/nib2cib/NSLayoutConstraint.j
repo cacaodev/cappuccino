@@ -46,7 +46,7 @@
         var symbolicConstant = [aCoder decodeObjectForKey:"NSSymbolicConstant"];
         _constant = (symbolicConstant == "NSSpace") ? 20 : [aCoder decodeDoubleForKey:@"NSConstant"];
 
-        _shouldBeArchived = [aCoder decodeBoolForKey:@"NSShouldBeArchived"];
+        //_shouldBeArchived = [aCoder decodeBoolForKey:@"NSShouldBeArchived"];
         //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
 
         var hasKey = [aCoder containsValueForKey:@"NSPriority"];

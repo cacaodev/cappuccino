@@ -64,7 +64,7 @@ var _CPEngineRegisteredItems = {},
 
 + (void)informViewNeedsConstraintUpdate:(CPView)aView
 {
-    if (![_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
+    if (aView && ![_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
     {
         _CPEngineViewsNeedUpdateConstraints.push(aView);
 
@@ -243,6 +243,11 @@ CPLog.debug("CREATED WORKER" + _worker);
 
 - (void)solver_updateConstraintsIfNeeded
 {
+    [self solver_updateConstraintsIfNeededOfTypes:["Constraint", "SizeConstraint"]];
+}
+
+- (CPIndexSet)solver_updateConstraintsIfNeededOfTypes:(CPArray)types
+{
     if ([_CPEngineViewsNeedUpdateConstraints count] === 0)
         return;
 
@@ -252,7 +257,13 @@ CPLog.debug("CREATED WORKER" + _worker);
     {
         if ([[aView window] _layoutEngineIfExists] === self && [aView needsUpdateConstraints])
         {
-            [self solver_updateConstraintsForView:aView];
+            [aView updateConstraints];
+
+            [types enumerateObjectsUsingBlock:function(type, idx, stop)
+            {
+                 [self solver_updateConstraintsOfType:type forView:aView];
+            }];
+
             [aView setNeedsUpdateConstraints:NO];
             [updatedIndexes addIndex:idx];
         }
@@ -261,21 +272,24 @@ CPLog.debug("CREATED WORKER" + _worker);
     [_CPEngineViewsNeedUpdateConstraints removeObjectsAtIndexes:updatedIndexes];
 }
 
-- (void)solver_updateConstraintsForView:(CPView)aView
+- (void)solver_updateConstraintsOfType:(CPString)aType forView:(CPView)aView
 {
-    var uuid = [aView UID],
+CPLog.debug(_cmd + aType + [aView identifier]);
+    var containerUID = [aView UID],
         json_constraints = [];
 
-    var constraints = [CPArray arrayWithArray:[aView constraints]];
-    [constraints addObjectsFromArray:[aView _internalConstraints]];
-
-    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    [[aView constraints] enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        [aConstraint registerItemsInEngine:self];
-        [json_constraints addObject:[aConstraint toJSON]];
+        var json_constraint = [aConstraint toJSON];
+
+        if (json_constraint.type == aType)
+        {
+            [aConstraint registerItemsInEngine:self];
+            [json_constraints addObject:json_constraint];
+        }
     }];
 
-    var args = {uuid:uuid, constraints:json_constraints};
+    var args = {container:containerUID, type:aType, constraints:json_constraints};
 
     [self sendCommand:"updateConstraints" withArguments:args];
 }

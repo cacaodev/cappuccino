@@ -567,6 +567,7 @@ CPLog.debug("change " + [change description]);
     var path = [CPBezierPath bezierPath];
     [path moveToPoint:startPoint];
     [path lineToPoint:endPoint];
+
     [path setLineDash:((priority < 1000) ? [5,5]:[]) phase:0];
 
     _path = path;

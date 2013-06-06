@@ -3354,27 +3354,21 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (CPArray)_internalConstraints
 {
-    if (!_internalConstraints)
-        _internalConstraints = [self _generateContentSizeConstraints];
-
     return _internalConstraints;
 }
 
 - (void)invalidateIntrinsicContentSize
 {
-    var oldInternalConstraints = _internalConstraints;
+    [_constraintsArray removeObjectsInArray:_internalConstraints];
+    _internalConstraints = nil;
+    [self _updateContentSizeConstraints];
 
-    _internalConstraints = [self _generateContentSizeConstraints];
-
-    if (![oldInternalConstraints count] && ![_internalConstraints count])
-        return;
-
-    [self setNeedsUpdateConstraints:YES];
+    var engine = [self _layoutEngine];
 
     [engine beginUpdates];
 
     [engine stopEditing];
-    [engine solver_updateConstraintsIfNeeded];
+    [engine solver_updateConstraintsOfType:@"SizeConstraint" forView:self];
     [[self window] layout];
 
     [engine endUpdates];
@@ -3431,35 +3425,6 @@ CPLog.debug(_cmd + constraints);
 - (CPLayoutPriority)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     return orientation ? _huggingPriorities.height : _huggingPriorities.width;
-}
-
-- (CPArray)_autoresizingConstraints
-{
-    if (!_autoresizingConstraints)
-        _autoresizingConstraints = [self _constraintsEquivalentToAutoresizingMask];
-
-    return _autoresizingConstraints;
-}
-
-- (void)updateConstraintsIfNeeded
-{
-    if (_needsUpdateConstraints)
-        [self updateConstraints];
-
-    _needsUpdateConstraints = NO;
-}
-
-- (void)updateConstraints
-{
-
-}
-
-- (void)setNeedsUpdateConstraints:(BOOL)flag
-{
-    _needsUpdateConstraints = flag;
-
-    if (_needsUpdateConstraints)
-        [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:self];
 }
 
 - (CPArray)constraints
@@ -3556,14 +3521,6 @@ CPLog.debug(_cmd + " " + [constraints description]);
         [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:self];
 }
 
-- (CPArray)_constraintsEquivalentToAutoresizingMask
-{
-    var hconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:0],
-        vconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:1];
-
-    return [hconstraints arrayByAddingObjectsFromArray:vconstraints];
-}
-
 - (id)valueForVariable:(int)aTag
 {
     var frame = [self frame];
@@ -3579,6 +3536,88 @@ CPLog.debug(_cmd + " " + [constraints description]);
         case 16 : return CGRectGetHeight(frame);
         break;
     }
+}
+
+- (CPArray)_autoresizingConstraints
+{
+    return _autoresizingConstraints;
+}
+
+- (void)setNeedsUpdateConstraints:(BOOL)flag
+{
+    _needsUpdateConstraints = flag;
+
+    if (_needsUpdateConstraints)
+        [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:self];
+}
+
+- (void)updateConstraintsIfNeeded
+{
+    if (_needsUpdateConstraints)
+        [self updateConstraints];
+
+    _needsUpdateConstraints = NO;
+}
+
+- (void)updateConstraints
+{
+CPLog.debug([self identifier] + _cmd);
+    var translate = [self translatesAutoresizingMaskIntoConstraints];
+
+    if (translate)
+        [self _updateAutoresizingConstraints];
+
+    [self _updateContentSizeConstraints];
+}
+
+- (void)_updateAutoresizingConstraints
+{
+CPLog.debug([self identifier] + _cmd);
+    var autoresizingConstraints = [self _autoresizingConstraints];
+    if (autoresizingConstraints == nil)
+    {
+        var constraints = [self _constraintsEquivalentToAutoresizingMask];
+        [self _setAutoresizingConstraints:constraints];
+    }
+}
+
+- (void)_updateContentSizeConstraints
+{
+CPLog.debug([self identifier] + _cmd);
+    var translate = [self translatesAutoresizingMaskIntoConstraints];
+    if (!translate)
+    {
+        var contentSizeConstraints = [self _contentSizeConstraints];
+        if (contentSizeConstraints == nil)
+        {
+            var contentSizeConstraints = [self _generateContentSizeConstraints];
+            [_constraintsArray addObjectsFromArray:contentSizeConstraints];
+            [self _setContentSizeConstraints:contentSizeConstraints];
+        }
+    }
+}
+
+- (CPArray)_contentSizeConstraints
+{
+    return _internalConstraints;
+}
+
+- (void)_setContentSizeConstraints:(CPArray)constraints
+{
+CPLog.debug([self identifier] + _cmd);
+    var translate = [self translatesAutoresizingMaskIntoConstraints];
+    if (translate)
+        CPLog.warn(@"Setting contentSize constraints when autoresizing is on");
+
+    [self _setInternalConstraints:constraints];
+}
+
+- (CPArray)_constraintsEquivalentToAutoresizingMask
+{
+    var hconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:0],
+        vconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:1];
+
+    return [hconstraints arrayByAddingObjectsFromArray:vconstraints];
 }
 
 - (CPArray)_constraintsEquivalentToAutoresizingMaskOrientation:(CPInteger)orientation

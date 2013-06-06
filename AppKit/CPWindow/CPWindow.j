@@ -3693,7 +3693,9 @@ var interpolate = function(fromValue, toValue, progress)
     var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:(CGRectGetHeight(wRect) - CGRectGetHeight(cRect))];
     [height setPriority:1001];
 
-    [_contentView _setInternalConstraints:[left, top, width, height]];
+    var internalConstraints = @[left, top, width, height];
+    [[_contentView _constraintsArray] addObjectsFromArray:internalConstraints];
+
     [_windowView setHasConstraintBasedSubviews:NO];
 
     _needsContentSizeConstraintsUpdate = NO;

@@ -28,8 +28,6 @@ DISABLE_ON_SOLVED_NOTIFICATIONS = false;
 
 VARIABLES_MAP = {};
 
-CONSTRAINTS_MAP = {};
-
 CONSTRAINTS_BY_VIEW_MAP = {};
 
 EDIT_CONTEXT = null;
@@ -70,29 +68,32 @@ info          : function()
                     return info;
                 },
 
-addConstraint : function(args)
+addConstraint : function(json)
                 {
                     if (!SolverExists('addConstraint'))
                         return;
 
-                    var type = args.type,
-                        constraint;
+                    var type = json.type,
+                        constraints = [];
 
                     if (type == "Constraint")
                     {
-                        constraint = CreateConstraint(args);
-                        self.solver.addConstraint(constraint);
+                        var newConstraint = CreateConstraint(json);
+                        constraints.push(newConstraint);
                     }
                     else if (type == "SizeConstraint")
                     {
-                        constraint = CreateSizeConstraints(args);
-                        self.solver.addConstraint(constraint[0]);
-                        self.solver.addConstraint(constraint[1]);
+                        var newConstraints = CreateSizeConstraints(json);
+                        constraints.push.apply(constraints, newConstraints);
                     }
 
-                    CONSTRAINTS_MAP[args.uuid] = constraint;
+                    constraints.forEach(function(constraint)
+                    {
+                        self.solver.addConstraint(constraint);
+                        CPLogMain('addConstraint uuid: ' + json.uuid  + " type: " + type + " " + constraint.toString());
+                    });
 
-                    CPLogMain('addConstraint uuid: ' + args.uuid  + " type " + type + " " + constraint.toString());
+                    return constraints;
                 },
 
 addConstraints : function(jsonarray)
@@ -105,55 +106,43 @@ addConstraints : function(jsonarray)
                      });
                  },
 
-removeConstraint : function(args)
+removeConstraint : function(casso_constraint)
                    {
-                       var constraint = CONSTRAINTS_MAP[args.uuid],
-                           type = args.type;
-
-                       if (typeof constraint == 'undefined')
-                       {
-                           returnMessage('warn', 'Cannot find constraint with id ' + args.uuid);
-                           return;
-                       }
-
-                       if (type == "Constraint")
-                       {
-                           self.solver.removeConstraint(constraint);
-                       }
-                       else if (type == "SizeConstraint")
-                       {
-                           self.solver.removeConstraint(constraint[0]);
-                           self.solver.removeConstraint(constraint[1]);
-                       }
-
-                       delete (CONSTRAINTS_MAP[args.uuid]);
-
-                       CPLogMain('removeConstraint uuid: ' + args.uuid + " type " + type + " " + constraint.toString());
+                       self.solver.removeConstraint(casso_constraint);
+                       CPLogMain('removeConstraint :' + casso_constraint.toString());
                    },
-
-removeConstraints : function(args)
-                    {
-                        var fn = self.caller.removeConstraint;
-
-                        args.forEach(function(arg)
-                        {
-                            fn(arg);
-                        });
-                    },
 
 updateConstraints : function(args)
                     {
-                        var uuid = args.uuid,
-                            constraints = args.constraints;
+                        var container = args.container,
+                            type = args.type,
+                            json_constraints = args.constraints;
 
-                        var toremove = CONSTRAINTS_BY_VIEW_MAP[uuid];
+                        var old_constraints_wrapper = CONSTRAINTS_BY_VIEW_MAP[container],
+                            new_constraints_wrapper = [];
 
-                        if (typeof toremove !== 'undefined')
-                            self.caller.removeConstraints(toremove);
+                        if (typeof old_constraints_wrapper !== 'undefined')
+                        {
+                            old_constraints_wrapper.forEach(function(constraint_wrapper)
+                            {
+                                if (constraint_wrapper.type == type)
+                                    self.caller.removeConstraint(constraint_wrapper.constraint);
+                                else
+                                    new_constraints_wrapper.push(constraint_wrapper);
+                            });
+                        }
 
-                        self.caller.addConstraints(constraints);
+                        json_constraints.forEach(function(json)
+                        {
+                            var casso_constraints = self.caller.addConstraint(json);
+                            casso_constraints.forEach(function(constraint)
+                            {
+                                var wrapper = {type:json.type, constraint:constraint};
+                                new_constraints_wrapper.push(wrapper);
+                            });
+                        });
 
-                        CONSTRAINTS_BY_VIEW_MAP[uuid] = constraints;
+                        CONSTRAINTS_BY_VIEW_MAP[container] = new_constraints_wrapper;
                     },
 
 setEditVarsForContext : function(args)
