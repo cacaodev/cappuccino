@@ -784,6 +784,10 @@ var HORIZONTAL_MARGIN = 2;
                 var firstSelectedIndex = [[self selectionIndexes] firstIndex],
                     newSelectedRange = nil;
 
+                // This catches the case where the shift key is held down for the first selection.
+                if (firstSelectedIndex === CPNotFound)
+                    firstSelectedIndex = index;
+
                 if (index < firstSelectedIndex)
                     newSelectedRange = CPMakeRange(index, (firstSelectedIndex - index) + 1);
                 else
@@ -826,7 +830,7 @@ var HORIZONTAL_MARGIN = 2;
     [self tile];
 }
 
-- (void)setUniformSubviewsResizing:(float)flag
+- (void)setUniformSubviewsResizing:(BOOL)flag
 {
     _uniformSubviewsResizing = flag;
     [self tileIfNeeded:NO];
@@ -888,12 +892,12 @@ var HORIZONTAL_MARGIN = 2;
     return CPNotFound;
 }
 
-- (CPCollectionViewItem)itemAtIndex:(unsigned)anIndex
+- (CPCollectionViewItem)itemAtIndex:(CPUInteger)anIndex
 {
     return [_items objectAtIndex:anIndex];
 }
 
-- (CGRect)frameForItemAtIndex:(unsigned)anIndex
+- (CGRect)frameForItemAtIndex:(CPUInteger)anIndex
 {
     return [[[self itemAtIndex:anIndex] view] frame];
 }
@@ -1318,7 +1322,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     [self interpretKeyEvents:[anEvent]];
 }
 
-- (void)setAutoresizingMask:(int)aMask
+- (void)setAutoresizingMask:(unsigned)aMask
 {
     [super setAutoresizingMask:0];
 }
