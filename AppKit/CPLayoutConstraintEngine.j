@@ -246,7 +246,7 @@ CPLog.debug("CREATED WORKER" + _worker);
     [self solver_updateConstraintsIfNeededOfTypes:["Constraint", "SizeConstraint"]];
 }
 
-- (CPIndexSet)solver_updateConstraintsIfNeededOfTypes:(CPArray)types
+- (void)solver_updateConstraintsIfNeededOfTypes:(CPArray)types
 {
     if ([_CPEngineViewsNeedUpdateConstraints count] === 0)
         return;

@@ -1,5 +1,5 @@
 /*
-    A WebWorker wrapping cassowary js https://github.com/slightlyoff/cassowary-js-refactor
+    A WebWorker wrapping cassowary js https://github.com/slightlyoff/cassowary.js
 
 // Copyright (C) 1998-2000 Greg J. Badros
 // Use of this source code is governed by http://www.apache.org/licenses/LICENSE-2.0

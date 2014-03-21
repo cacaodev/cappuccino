@@ -240,7 +240,7 @@ var suggestValues = function(values, context)
         }
         catch (e)
         {
-            returnMessage('warn', e);
+            returnMessage('warn ', e);
         }
 
         EDIT_CONTEXT = context;

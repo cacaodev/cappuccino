@@ -2,9 +2,9 @@
 
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
 {
-    double _huggingPriority @accessors(getter=huggingPriority);
+    double _huggingPriority  @accessors(getter=huggingPriority);
     double _compressPriority @accessors(getter=compressPriority);
-    int    _orientation @accessors(getter=orientation);
+    int    _orientation      @accessors(getter=orientation);
 }
 
 - (id)initWithLayoutItem:(id)anItem value:(float)value huggingPriority:(double)huggingPriority compressionResistancePriority:(double)compressionResistancePriority orientation:(int)orientation
