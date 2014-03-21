@@ -1,3 +1,3 @@
-[submodule "cassowary-js-refactor"]
-	path = cassowary-js-refactor
-	url = https://github.com/cacaodev/cassowary-js-refactor.git
+[submodule "cassowary.js"]
+	path = cassowary.js
+	url = https://github.com/cacaodev/cassowary.js.git
