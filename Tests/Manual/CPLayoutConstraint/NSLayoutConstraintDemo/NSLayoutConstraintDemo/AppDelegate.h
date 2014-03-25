@@ -32,6 +32,7 @@
     IBOutlet WebView *cappView;
     IBOutlet NSView *windowSpace;
     IBOutlet NSTextField *consoleView;
+    IBOutlet NSPopUpButton *popUp;
     NSMutableArray *windowControllers;
     NSWindowController *currentController;
     WebScriptObject *webScriptObject;

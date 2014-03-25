@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5B04B74518DDD50300F5CCFA /* hugging_priorities.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B04B74418DDD50300F5CCFA /* hugging_priorities.xib */; };
 		5B73CA591729BF0E005E8CBC /* CPLayoutConstraintDemo in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */; };
 		5B73CA73172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA6E172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib */; };
 		5B73CA74172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA6F172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib */; };
@@ -30,12 +31,13 @@
 		5BE26B1E172C465C00B4423B /* center_x_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1D172C465B00B4423B /* center_x_alignment.xib */; };
 		5BE26B20172C470E00B4423B /* 2_views_center_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */; };
 		5BE26B22172C4B8900B4423B /* 3_views_center_alignment.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */; };
-		5BE26B24172C51E100B4423B /* hugging_priorities.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B23172C51E000B4423B /* hugging_priorities.xib */; };
 		5BE26B26172C71C200B4423B /* compression_priorities.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5BE26B25172C71C200B4423B /* compression_priorities.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0FBD4CE29A35CF973AFE53A1 /* _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h; path = .XcodeSupport/_Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h; sourceTree = SOURCE_ROOT; };
+		5B04B74418DDD50300F5CCFA /* hugging_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = hugging_priorities.xib; path = CPLayoutConstraintDemo/Resources/hugging_priorities.xib; sourceTree = "<group>"; };
+		5B2B9B3918DCE7BC004B7119 /* Stack.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Stack.xib; path = CPLayoutConstraintDemo/Resources/Stack.xib; sourceTree = "<group>"; };
 		5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CPLayoutConstraintDemo; sourceTree = "<group>"; };
 		5B73CA6D172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(499).xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "Fixed_left_top_bottom_right_width(499).xib"; path = "CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right_width(499).xib"; sourceTree = "<group>"; };
 		5B73CA6E172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "Fixed_left_top_bottom_right_width(501).xib"; path = "CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right_width(501).xib"; sourceTree = "<group>"; };
@@ -67,7 +69,6 @@
 		5BE26B1D172C465B00B4423B /* center_x_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = center_x_alignment.xib; path = CPLayoutConstraintDemo/Resources/center_x_alignment.xib; sourceTree = "<group>"; };
 		5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 2_views_center_alignment.xib; path = CPLayoutConstraintDemo/Resources/2_views_center_alignment.xib; sourceTree = "<group>"; };
 		5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = 3_views_center_alignment.xib; path = CPLayoutConstraintDemo/Resources/3_views_center_alignment.xib; sourceTree = "<group>"; };
-		5BE26B23172C51E000B4423B /* hugging_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = hugging_priorities.xib; path = CPLayoutConstraintDemo/Resources/hugging_priorities.xib; sourceTree = "<group>"; };
 		5BE26B25172C71C200B4423B /* compression_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = compression_priorities.xib; path = CPLayoutConstraintDemo/Resources/compression_priorities.xib; sourceTree = "<group>"; };
 		BA60452282A9F83B4858FB11 /* AppController.j */ = {isa = PBXFileReference; lastKnownFileType = "?"; name = AppController.j; path = NSLayoutConstraintDemo/CPLayoutConstraintDemo/AppController.j; sourceTree = SOURCE_ROOT; };
 		CE8F4A0993B90CBD8B8EADA9 /* xcc_general_include.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = xcc_general_include.h; path = .XcodeSupport/xcc_general_include.h; sourceTree = SOURCE_ROOT; };
@@ -159,6 +160,7 @@
 				5B73CA71172BF8C9005E8CBC /* Fixed_left_top_width_height.xib */,
 				5BE26B0D172BFF2200B4423B /* Fixed_top_right_width_height.xib */,
 				5BE26B11172C286F00B4423B /* Fixed_bottom_right_width_height.xib */,
+				5B2B9B3918DCE7BC004B7119 /* Stack.xib */,
 				5BE26B13172C2B3200B4423B /* Subview1.xib */,
 				5BE26B14172C2B3200B4423B /* Subview2.xib */,
 				5BE26B17172C3D4000B4423B /* Subview3.xib */,
@@ -166,8 +168,8 @@
 				5BE26B1D172C465B00B4423B /* center_x_alignment.xib */,
 				5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */,
 				5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */,
-				5BE26B23172C51E000B4423B /* hugging_priorities.xib */,
 				5BE26B25172C71C200B4423B /* compression_priorities.xib */,
+				5B04B74418DDD50300F5CCFA /* hugging_priorities.xib */,
 				5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */,
 				5B8071F2172824470084FC75 /* NSLayoutConstraintDemo-Info.plist */,
 				5B8071F3172824470084FC75 /* InfoPlist.strings */,
@@ -239,6 +241,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5B8071F5172824470084FC75 /* InfoPlist.strings in Resources */,
+				5B04B74518DDD50300F5CCFA /* hugging_priorities.xib in Resources */,
 				5B8071FB172824470084FC75 /* Credits.rtf in Resources */,
 				5B807201172824470084FC75 /* MainMenu.xib in Resources */,
 				5B73CA591729BF0E005E8CBC /* CPLayoutConstraintDemo in Resources */,
@@ -256,7 +259,6 @@
 				5BE26B1E172C465C00B4423B /* center_x_alignment.xib in Resources */,
 				5BE26B20172C470E00B4423B /* 2_views_center_alignment.xib in Resources */,
 				5BE26B22172C4B8900B4423B /* 3_views_center_alignment.xib in Resources */,
-				5BE26B24172C51E100B4423B /* hugging_priorities.xib in Resources */,
 				5BE26B26172C71C200B4423B /* compression_priorities.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

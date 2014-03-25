@@ -14,14 +14,14 @@
         <customObject id="-3" userLabel="Application"/>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" showsToolbarButton="NO" animationBehavior="default" id="572" customClass="Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <rect key="contentRect" x="576" y="375" width="399" height="162"/>
+            <rect key="contentRect" x="576" y="375" width="371" height="165"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
             <view key="contentView" identifier="mainView" id="573" customClass="GridView">
-                <rect key="frame" x="0.0" y="0.0" width="399" height="162"/>
+                <rect key="frame" x="0.0" y="0.0" width="371" height="165"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <customView identifier="leftView" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="574" customClass="ColorView">
-                        <rect key="frame" x="36" y="45" width="300" height="84"/>
+                        <rect key="frame" x="35.999999666214009" y="48" width="300" height="84"/>
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="300" id="4sZ-Qw-Tm6"/>

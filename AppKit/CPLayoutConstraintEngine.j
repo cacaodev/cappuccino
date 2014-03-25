@@ -350,7 +350,8 @@ var _CPEngineLayoutItemsFunction = function(excludeUID)
             var record = records[identifier],
                 target = _CPEngineRegisteredItems[identifier];
 
-            updateFrameFromSolver(target, record.changeMask, record.changeValues);
+            if (target)
+                updateFrameFromSolver(target, record.changeMask, record.changeValues);
         }
     };
 };

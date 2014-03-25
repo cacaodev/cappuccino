@@ -156,6 +156,48 @@ Tests for synch mode (no Worker):
 2013-05-20 10:47:57.622 objj [warn]: Subviews autoresize mask is 7
 2013-05-20 10:47:57.623 objj [warn]:    Autosize setFrame: 1.748 ms. Total 874 ms.
 2013-05-20 10:47:59.001 objj [warn]: Auto-layout setFrame: 2.482 ms. Total 1241 ms (1.42x times slower).
+
+Commit 2a322f3
+
+2014-03-25 12:31:33.268 objj [warn]: Subviews autoresize mask is 0
+2014-03-25 12:31:33.270 objj [warn]:    Autosize setFrame: 0.294 ms. Total 147 ms.
+2014-03-25 12:31:33.579 objj [warn]: Auto-layout setFrame: 0.292 ms. Total 146 ms (0.99x times slower).
+2014-03-25 12:31:33.583 objj [warn]:
+
+2014-03-25 12:31:34.262 objj [warn]: Subviews autoresize mask is 1
+2014-03-25 12:31:34.264 objj [warn]:    Autosize setFrame: 0.932 ms. Total 466 ms.
+2014-03-25 12:31:35.324 objj [warn]: Auto-layout setFrame: 0.872 ms. Total 436 ms (0.94x times slower).
+2014-03-25 12:31:35.327 objj [warn]:
+
+2014-03-25 12:31:35.852 objj [warn]: Subviews autoresize mask is 4
+2014-03-25 12:31:35.853 objj [warn]:    Autosize setFrame: 0.642 ms. Total 321 ms.
+2014-03-25 12:31:36.146 objj [warn]: Auto-layout setFrame: 0.404 ms. Total 202 ms (0.63x times slower).
+2014-03-25 12:31:36.148 objj [warn]:
+
+2014-03-25 12:31:36.773 objj [warn]: Subviews autoresize mask is 5
+2014-03-25 12:31:36.775 objj [warn]:    Autosize setFrame: 0.852 ms. Total 426 ms.
+2014-03-25 12:31:37.284 objj [warn]: Auto-layout setFrame: 0.812 ms. Total 406 ms (0.95x times slower).
+2014-03-25 12:31:37.286 objj [warn]:
+
+2014-03-25 12:31:38.225 objj [warn]: Subviews autoresize mask is 2
+2014-03-25 12:31:38.225 objj [warn]:    Autosize setFrame: 1.476 ms. Total 738 ms.
+2014-03-25 12:31:39.047 objj [warn]: Auto-layout setFrame: 1.434 ms. Total 717 ms (0.97x times slower).
+2014-03-25 12:31:39.050 objj [warn]:
+
+2014-03-25 12:31:40.017 objj [warn]: Subviews autoresize mask is 3
+2014-03-25 12:31:40.018 objj [warn]:    Autosize setFrame: 1.484 ms. Total 742 ms.
+2014-03-25 12:31:42.311 objj [warn]: Auto-layout setFrame: 1.714 ms. Total 857 ms (1.15x times slower).
+2014-03-25 12:31:42.314 objj [warn]:
+
+2014-03-25 12:31:43.278 objj [warn]: Subviews autoresize mask is 6
+2014-03-25 12:31:43.279 objj [warn]:    Autosize setFrame: 1.518 ms. Total 759 ms.
+2014-03-25 12:31:44.116 objj [warn]: Auto-layout setFrame: 1.482 ms. Total 741 ms (0.98x times slower).
+2014-03-25 12:31:44.118 objj [warn]:
+
+2014-03-25 12:31:45.053 objj [warn]: Subviews autoresize mask is 7
+2014-03-25 12:31:45.054 objj [warn]:    Autosize setFrame: 1.47 ms. Total 735 ms.
+2014-03-25 12:31:46.022 objj [warn]: Auto-layout setFrame: 1.698 ms. Total 849 ms (1.16x times slower).
+2014-03-25 12:31:46.023 objj [warn]:
 */
 
 /*
