@@ -124,6 +124,10 @@ CPLogRegister(CPLogConsole);
         console.log("Autosizing: -resizeWithOldSuperviewSize: in " + duration + " avg = " + avg2(TOTAL_DURATION / TOTAL_COUNT));
     });
 */
+
+    // With the web worker ON, logged speed results are not very relevant !!
+    // But visually they may ...
+    [CPLayoutConstraint setAllowsWebWorker:NO];
 }
 
 - (void)_showWindowCibName:(CPString)aWindowCibName

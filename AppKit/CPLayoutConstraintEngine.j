@@ -62,6 +62,11 @@ var _CPEngineRegisteredItems = {},
 #endif
 }
 
++ (BOOL)shouldEnableWebWorker
+{
+    return (SUPPORTS_WEB_WORKER && [CPLayoutConstraint allowsWebWorker]);
+}
+
 + (void)informViewNeedsConstraintUpdate:(CPView)aView
 {
     if (aView && ![_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
@@ -80,7 +85,7 @@ CPLog.debug(self + _cmd);
     var contentViewUUID = [[aWindow contentView] UID];
     _CPEngineLayoutItems = _CPEngineLayoutItemsFunction(contentViewUUID);
 
-    if (SUPPORTS_WEB_WORKER)
+    if ([[self class] shouldEnableWebWorker])
     {
         // A webworker is created and the JavaScript file CassowaryBridge.js
         // is loaded into its context.
@@ -89,7 +94,7 @@ CPLog.debug(self + _cmd);
             workerPath = [appkitBundle pathForResource:@"cassowary/Worker.js"];
 
         _worker = new Worker(workerPath);
-CPLog.debug("CREATED WORKER" + _worker);
+
         if (_worker)
         {
             // Register an event handler that will receive messages from our
@@ -120,9 +125,11 @@ CPLog.debug("CREATED WORKER" + _worker);
                       }
         };
 
-        var s = [self sendCommand:"createSolver" withArguments:null];
+        var s = caller["createSolver"]();
         s.onsolved = _CPEngineLayoutItems;
     }
+
+CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker=" + _worker);
 
     _constraints = [];
     //_stayVariables = [];
@@ -168,7 +175,7 @@ CPLog.debug("CREATED WORKER" + _worker);
 
 - (id)sendCommand:(CPString)aCommand withArguments:(Object)args
 {
-    if (SUPPORTS_WEB_WORKER)
+    if ([[self class] shouldEnableWebWorker])
         [self sendMessage:{command:aCommand, args:args}];
     else
         return caller[aCommand](args);

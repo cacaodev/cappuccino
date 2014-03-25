@@ -37,6 +37,7 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 
 var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bottom",  "Left",  "Right",  "Width",  "Height",  "CenterX",  "CenterY",  "Baseline"];
 
+var CPLayoutConstraintAllowsWebWorker = YES;
 
 @implementation CPLayoutConstraint : CPObject
 {
@@ -55,6 +56,16 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 + (id)constraintWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
 {
     return [[CPLayoutConstraint alloc] initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
+}
+
++ (BOOL)allowsWebWorker
+{
+    return CPLayoutConstraintAllowsWebWorker;
+}
+
++ (void)setAllowsWebWorker:(BOOL)flag
+{
+    CPLayoutConstraintAllowsWebWorker = flag;
 }
 
 - (id)initWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
