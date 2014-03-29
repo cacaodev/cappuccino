@@ -222,7 +222,7 @@ var CPWindowActionMessageKeys = [
 
     CPLayoutConstraintEngine            _engine;
     BOOL                                _needsContentSizeConstraintsUpdate;
-    BOOL                                _needsConstraintBasedLayout;
+    BOOL                                _needsConstraintBasedLayout @accessors(getter=needsConstraintBasedLayout);
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -3686,6 +3686,11 @@ var interpolate = function(fromValue, toValue, progress)
 
 - (void)layout
 {
+    [self layoutWithCallback:nil];
+}
+
+- (void)layoutWithCallback:(Function)postLayoutCallback
+{
     var engine = [self _layoutEngine];
 
     if (_needsContentSizeConstraintsUpdate)
@@ -3707,6 +3712,9 @@ var interpolate = function(fromValue, toValue, progress)
         _needsConstraintBasedLayout = YES;
 
         [[CPRunLoop mainRunLoop] performSelectors];
+
+        if (postLayoutCallback)
+            postLayoutCallback();
     }];
 
     [engine endUpdates];

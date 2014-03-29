@@ -42,13 +42,13 @@ var CPLayoutConstraintAllowsWebWorker = YES;
 @implementation CPLayoutConstraint : CPObject
 {
     id       _container        @accessors(property=container);
-    id       _firstItem        @accessors(property=firstItem);
-    id       _secondItem       @accessors(property=secondItem);
-    int      _firstAttribute   @accessors(property=firstAttribute);
-    int      _secondAttribute  @accessors(property=secondAttribute);
-    int      _relation         @accessors(property=relation);
-    double   _constant         @accessors(property=constant);
-    float    _coefficient      @accessors(property=multiplier);
+    id       _firstItem        @accessors(getter=firstItem);
+    id       _secondItem       @accessors(getter=secondItem);
+    int      _firstAttribute   @accessors(getter=firstAttribute);
+    int      _secondAttribute  @accessors(getter=secondAttribute);
+    int      _relation         @accessors(getter=relation);
+    double   _constant         @accessors(getter=constant);
+    float    _coefficient      @accessors(getter=multiplier);
     float    _priority         @accessors(property=priority);
 //    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
 }

@@ -62,6 +62,22 @@ CPLogRegister(CPLogConsole);
 
 @end
 
+@implementation CPBoolToColorTransformer : CPValueTransformer
+{
+}
+
++ (BOOL)allowsReverseTransformation
+{
+    return NO;
+}
+
+- (id)transformedValue:(id)aValue
+{
+    return aValue ? [CPColor redColor] : [CPColor greenColor];
+}
+
+@end
+
 @implementation ConstraintsController : CPArrayController
 {
 }
@@ -70,11 +86,18 @@ CPLogRegister(CPLogConsole);
 {
     var delegate = [CPApp delegate];
 
-    var constraint = [CPLayoutConstraint constraintWithItem:[delegate view1] attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:50];
+    return LayoutConstraint([delegate view1], CPLayoutAttributeLeft, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, 50, 1000);
+}
 
-    [constraint setPriority:1000];
+@end
 
-    return constraint;
+@implementation CPNonKeyWindow : CPWindow
+{
+}
+
+- (BOOL)canBecomeKeyWindow
+{
+    return NO;
 }
 
 @end
@@ -88,12 +111,17 @@ CPLogRegister(CPLogConsole);
     @outlet CPPopover popover;
 
     CPWindow  constraintWindow;
-    ColorView mainView @accessors;
-    ColorView view1    @accessors;
-    ColorView view2    @accessors;
+    ColorView mainView  @accessors;
+    ColorView view1     @accessors;
+    ColorView view2     @accessors;
 
     CPArray constraints @accessors;
     CPArray items       @accessors;
+}
+
++ (CPSet)keyPathsForValuesAffectingCanUpdate
+{
+    return [CPSet setWithObjects:@"constraints"];
 }
 
 - (id)init
@@ -101,8 +129,6 @@ CPLogRegister(CPLogConsole);
     self = [super init];
 
     constraints = [];
-
-    [self addObserver:self forKeyPath:@"constraints" options:CPKeyValueObservingOptionOld|CPKeyValueObservingOptionNew context:"constraints"];
 
     [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(constraintSelectionDidChange:) name:@"CONSTRAINT_SELECTION" object:nil];
 
@@ -112,9 +138,10 @@ CPLogRegister(CPLogConsole);
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     constraintWindow = [[CPNonKeyWindow alloc] initWithContentRect:CGRectMake(0,0,520,200) styleMask:CPTitledWindowMask|CPResizableWindowMask];
+    [constraintWindow setTitle:@"Autolayout"];
 
     mainView = [[ConstraintView alloc] initWithFrame:[[constraintWindow contentView] frame]];
-    [mainView setVisualizeConstraints:YES];
+    //[mainView setVisualizeConstraints:YES];
     [constraintWindow setContentView:mainView];
 
     view1 = [[ColorView alloc] initWithFrame:CGRectMake(50,50,300,100)];
@@ -135,12 +162,20 @@ CPLog.debug(_cmd);
 
     [self addDemoConstraints:nil];
     //[constraintWindow layout];
+    [theWindow setFullPlatformWindow:YES];
 }
 
 - (void)awakeFromCib
 {
 CPLog.debug(_cmd);
-    [theWindow setFullPlatformWindow:YES];
+}
+
+- (BOOL)canUpdate
+{
+    return [constraints indexOfObjectPassingTest:function(obj,idx,stop)
+    {
+        return [obj dirty];
+    }] !== CPNotFound;
 }
 
 - (IBAction)priorityAction:(id)sender
@@ -184,12 +219,17 @@ CPLog.debug(_cmd);
 
 - (void)constraintSelectionDidChange:(CPNotification)aNote
 {
-    CPLog.debug(_cmd + [aNote object]);
-    var constraint = [aNote object],
-        segment = [aNote userInfo];
+    var constraint = [aNote object];
 
-    [mainView selectSegment:segment];
-    [constraintsController setSelectedObjects:[constraint]];
+    var idx = [constraints indexOfObjectPassingTest:function(obj,i,stop)
+    {
+       return ([obj inEngineConstraint] == [constraint UID]);
+    }];
+
+    if (idx !== CPNotFound)
+        [constraintsController setSelectionIndexes:[CPIndexSet indexSetWithIndex:idx]];
+    else
+        CPLog.debug(_cmd + [constraint container]);
 }
 
 - (void)tableViewSelectionDidChange:(CPNotification)aNotification
@@ -198,10 +238,10 @@ CPLog.debug(_cmd);
     if (row == CPNotFound)
         return;
 
-    var constraint = [constraints objectAtIndex:row];
+    var constraintObject = [constraints objectAtIndex:row];
     [[mainView segments] enumerateObjectsUsingBlock:function(segment, idx, stop)
     {
-        if ([segment constraint] == constraint)
+        if ([[segment constraint] UID] == [constraintObject inEngineConstraint])
         {
             [mainView selectSegment:segment];
             stop(YES);
@@ -209,58 +249,41 @@ CPLog.debug(_cmd);
     }];
 }
 
-- (void)observeValueForKeyPath:(CPString)keyPath ofObject:(id)object change:(CPDictionary)change context:(void)context
+- (IBAction)updateConstraints:(id)sender
 {
-CPLog.debug("change " + [change description]);
-
-    if (context == "constraints")
+    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        var kind = [change objectForKey:CPKeyValueChangeKindKey];
-
-        if (kind === CPKeyValueChangeSetting || kind === CPKeyValueChangeRemoval)
+        if ([aConstraint dirty] == YES)
         {
-            var oldConstraints = [change objectForKey:CPKeyValueChangeOldKey];
-            [self stopObservingConstraintsProperties:oldConstraints];
-            [mainView removeConstraints:oldConstraints];
-        }
+            var uuid = [aConstraint inEngineConstraint];
+            if (uuid != nil)
+            {
+                var layoutConstraints = [mainView constraints];
+                var idx = [layoutConstraints indexOfObjectPassingTest:function(obj,idx,stop)
+                {
+                    return [obj UID] == uuid;
+                }];
 
-        if (kind === CPKeyValueChangeSetting || kind === CPKeyValueChangeInsertion)
-        {
-            var newConstraints = [change objectForKey:CPKeyValueChangeNewKey];
-            [self startObservingConstraintsProperties:newConstraints];
-            [mainView addConstraints:newConstraints];
+                if (idx != CPNotFound)
+                    [mainView removeConstraint:[layoutConstraints objectAtIndex:idx]];
+            }
+
+            var layoutConstraint = [aConstraint layoutConstraint];
+            [mainView addConstraint:layoutConstraint];
+            [aConstraint setDirty:NO];
+            [aConstraint setInEngineConstraint:[layoutConstraint UID]];
         }
-    }
-    else if (context == "constraint")
-    {
-        [tableView reloadData];
-    }
+    }];
 
     [mainView setNeedsUpdateConstraints:YES];
-    [mainView layoutConstraints];
 }
 
-- (void)startObservingConstraintsProperties:(CPArray)theConstraints
+- (IBAction)layout:(id)sender
 {
-    [theConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    [constraintWindow layoutWithCallback:function()
     {
-        var constraint = aConstraint;
-        [CONSTRAINT_PROPS enumerateObjectsUsingBlock:function(akeyPath, idx, stop)
-        {
-            [constraint addObserver:self forKeyPath:akeyPath options:CPKeyValueObservingOptionOld|CPKeyValueObservingOptionNew context:"constraint"];
-        }];
-    }];
-}
-
-- (void)stopObservingConstraintsProperties:(CPArray)theConstraints
-{
-    [theConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
-    {
-        var constraint = aConstraint;
-        [CONSTRAINT_PROPS enumerateObjectsUsingBlock:function(akeyPath, idx, stop)
-        {
-            [constraint removeObserver:self forKeyPath:akeyPath];
-        }];
+        [mainView layoutConstraints];
+        [self updateTableauInfo];
     }];
 }
 
@@ -268,14 +291,8 @@ CPLog.debug("change " + [change description]);
 {
     [mainView setVisualizeConstraints:[sender state]];
 }
-/*
-- (IBAction)constraintUpdate:(id)sender
-{
-    [tableView reloadData];
-    [mainView layoutConstraints];
-}
-*/
-- (IBAction)getTableauInformation:(id)sender
+
+- (void)updateTableauInfo
 {
     var engine = [constraintWindow _layoutEngineIfExists];
 
@@ -333,37 +350,26 @@ CPLog.debug("change " + [change description]);
     return [constraints count];
 }
 
-- (id)objectInConstraintsAtIndex:(CPInteger)anIndex
+- (CPArray)objectInConstraintsAtIndexes:(CPIndexSet)indexes
 {
-    return [constraints objectAtIndex:anIndex];
+    return [constraints objectsAtIndexes:indexes];
 }
 
-- (void)insertObject:(id)aConstraint inConstraintsAtIndex:(CPInteger)anIndex
+- (void)insertObjects:(CPArray)aConstraints inConstraintsAtIndexes:(CPIndexSet)indexes
 {
-    [constraints insertObject:aConstraint atIndex:anIndex];
+    [constraints insertObjects:aConstraints atIndexes:indexes];
 }
 
-- (void)removeObjectFromConstraintsAtIndex:(CPInteger)anIndex
+- (void)removeObjectsFromConstraintsAtIndexes:(CPIndexSet)indexes
 {
-    [constraints removeObjectAtIndex:anIndex];
-}
-
-@end
-
-@implementation CPNonKeyWindow : CPWindow
-{
-}
-
-- (BOOL)canBecomeKeyWindow
-{
-    return NO;
+    [constraints removeObjectsAtIndexes:indexes];
 }
 
 @end
 
 @implementation ConstraintView : CPView
 {
-    CPArray _constraintSegments @accessors(getter=segments);
+    CPArray _constraintSegments   @accessors(getter=segments);
     BOOL    _visualizeConstraints @accessors(property=visualizeConstraints);
 }
 
@@ -372,7 +378,7 @@ CPLog.debug("change " + [change description]);
     self = [super initWithFrame:aFrame];
 
     _constraintSegments = [];
-    _visualizeConstraints = NO;
+    _visualizeConstraints = YES;
 
     return self;
 }
@@ -462,7 +468,7 @@ CPLog.debug("change " + [change description]);
     BOOL               _selected      @accessors(getter=selected);
 }
 
-- (id)initWithConstraint:(CPLayoutConstraint)aConstraint
+- (id)initWithConstraint:(id)aConstraint
 {
     self = [super init];
 
@@ -471,7 +477,7 @@ CPLog.debug("change " + [change description]);
     _selected = NO;
     _accessoryView = [[OperatorView alloc] initWithFrame:CGRectMake(0, 0, 14, 14)];
     [_accessoryView setSegment:self];
-    [_accessoryView setRelation:[aConstraint relation]];
+    [_accessoryView setRelation:[_constraint relation]];
 
     return self;
 }
@@ -492,9 +498,11 @@ CPLog.debug("change " + [change description]);
         relation        = [_constraint relation],
         multiplier      = [_constraint multiplier],
         constant        = [_constraint constant],
-        priority        = [_constraint priority];
+        priority        = [_constraint priority],
+        angle = 0;
 
-    var angle = 0;
+    if (container == nil)
+        return;
 
     if (secondAttribute === CPLayoutAttributeNotAnAttribute && firstAttribute !== CPLayoutAttributeWidth && firstAttribute !== CPLayoutAttributeHeight)
         secondAttribute = firstAttribute;
@@ -606,6 +614,7 @@ CPLog.debug("change " + [change description]);
         break;
     }
 }
+
 - (void)drawRect:(CGRect)aRect
 {
     var bounds = [self bounds],
@@ -632,7 +641,7 @@ CPLog.debug("change " + [change description]);
 
 - (void)mouseUp:(CPEvent)anEvent
 {
-    [[CPNotificationCenter defaultCenter] postNotificationName:@"CONSTRAINT_SELECTION" object:[_segment constraint] userInfo:_segment];
+    [[CPNotificationCenter defaultCenter] postNotificationName:@"CONSTRAINT_SELECTION" object:[_segment constraint] userInfo:nil];
 }
 
 @end
@@ -651,7 +660,7 @@ CPLog.debug("change " + [change description]);
     return self;
 }
 
-- (id)awakeFromCib
+- (void)awakeFromCib
 {
     [self setColor:[CPColor blackColor]];
 }
@@ -671,11 +680,89 @@ CPLog.debug("change " + [change description]);
 
 @end
 
+@implementation ConstraintObject : CPObject
+{
+    id       _firstItem            @accessors(property=firstItem);
+    id       _secondItem           @accessors(property=secondItem);
+    int      _firstAttribute       @accessors(property=firstAttribute);
+    int      _secondAttribute      @accessors(property=secondAttribute);
+    int      _relation             @accessors(property=relation);
+    double   _constant             @accessors(property=constant);
+    float    _coefficient          @accessors(property=multiplier);
+    float    _priority             @accessors(property=priority);
+
+    BOOL     _dirty                @accessors(property=dirty);
+    CPString _inEngineConstraint   @accessors(property=inEngineConstraint);
+}
+
+
+- (id)initWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant priority:(float)priority
+{
+    self = [super init];
+
+    _firstItem = item1;
+    _secondItem = item2;
+    _firstAttribute = att1;
+    _secondAttribute = att2;
+    _relation = relation;
+    _coefficient = multiplier;
+    _constant = constant;
+    _priority = priority;
+    _dirty    = YES;
+    _inEngineConstraint = nil;
+
+    [self addObserver:self forKeyPath:@"description" options:CPKeyValueObservingOptionOld|CPKeyValueObservingOptionNew context:"description"];
+
+    return self;
+}
+
++ (CPSet)keyPathsForValuesAffectingDescription
+{
+    return [CPSet setWithObjects:@"firstItem",@"secondItem",@"firstAttribute",@"secondAttribute",@"relation",@"constant",@"multiplier",@"priority"];
+}
+
+- (CPLayoutConstraint)layoutConstraint
+{
+    var cst = [CPLayoutConstraint constraintWithItem:_firstItem attribute:_firstAttribute relatedBy:_relation toItem:_secondItem attribute:_secondAttribute multiplier:_coefficient constant:_constant];
+
+    [cst setPriority:_priority];
+
+    return cst;
+}
+
+- (CPString)description
+{
+    return [CPString stringWithFormat:@"%@ %@ %@ %@ %@ x%@ +%@ (%@)", ([_firstItem identifier] || [_firstItem className] || ""), CPStringFromAttribute(_firstAttribute), CPStringFromRelation(_relation), ([_secondItem identifier] || [_secondItem className] || ""), CPStringFromAttribute(_secondAttribute), _coefficient, _constant, _priority];
+}
+
+- (void)observeValueForKeyPath:(CPString)keyPath ofObject:(id)object change:(CPDictionary)change context:(void)context
+{
+CPLog.debug("change " + [change description]);
+
+    if (context == "description")
+    {
+        [self setDirty:YES];
+    }
+}
+
+@end
+
+var CPStringFromAttribute = function(attr)
+{
+    return ["NotAnAttribute", "Left", "Right", "Top", "Bottom", "Left", "Right", "Width",  "Height", "CenterX", "CenterY", "Baseline"][attr];
+};
+
+var CPStringFromRelation = function(relation)
+{
+    switch (relation)
+    {
+        case -1 : return "<=";
+        case 0  : return "==";
+        case 1  : return ">=";
+    }
+};
+
 var LayoutConstraint = function(firstItem, firstAttr, relation, secondItem, secondAttr, multiplier, constant, priority)
 {
-    var constraint = [CPLayoutConstraint constraintWithItem:firstItem attribute:firstAttr relatedBy:relation toItem:secondItem attribute:secondAttr multiplier:multiplier constant:constant];
-
-    [constraint setPriority:priority];
-
-    return constraint;
-}
+    return [[ConstraintObject alloc] initWithItem:firstItem attribute:firstAttr relatedBy:relation toItem:secondItem attribute:secondAttr multiplier:multiplier constant:constant priority:priority];
+};

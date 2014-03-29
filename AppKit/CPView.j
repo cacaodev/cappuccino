@@ -3539,8 +3539,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (void)_initConstraintsIvars
 {
     _needsConstraintBasedLayout = NO;
-    _needsUpdateConstraints = YES;
     _hasConstraintBasedSubviews = NO;
+    _needsUpdateConstraints = YES;
     _translatesAutoresizingMaskIntoConstraints = NO;
     _autoresizingConstraints = nil;
     _internalConstraints = nil;
@@ -3604,6 +3604,10 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)invalidateIntrinsicContentSize
 {
+CPLog.debug(_cmd);
+    if (![[self window] needsConstraintBasedLayout])
+        return;
+
     [_constraintsArray removeObjectsInArray:_internalConstraints];
     _internalConstraints = nil;
     [self _updateContentSizeConstraints];
@@ -3828,8 +3832,9 @@ CPLog.debug([self identifier] + _cmd);
 
 - (void)_updateContentSizeConstraints
 {
-CPLog.debug([self identifier] + _cmd);
+CPLog.debug(([self identifier] || [self class]) + _cmd);
     var translate = [self translatesAutoresizingMaskIntoConstraints];
+
     if (!translate)
     {
         var contentSizeConstraints = [self _contentSizeConstraints];
@@ -3849,7 +3854,7 @@ CPLog.debug([self identifier] + _cmd);
 
 - (void)_setContentSizeConstraints:(CPArray)constraints
 {
-CPLog.debug([self identifier] + _cmd);
+CPLog.debug(([self identifier] || [self class]) + _cmd);
     var translate = [self translatesAutoresizingMaskIntoConstraints];
     if (translate)
         CPLog.warn(@"Setting contentSize constraints when autoresizing is on");

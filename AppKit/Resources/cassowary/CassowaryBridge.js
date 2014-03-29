@@ -90,7 +90,7 @@ addConstraint : function(json)
                     constraints.forEach(function(constraint)
                     {
                         self.solver.addConstraint(constraint);
-                        CPLogMain('addConstraint uuid: ' + json.uuid  + " type: " + type + " " + constraint.toString());
+                        CPLogMain('addConstraint uuid: ' + json.uuid  + " type: " + type + " cst:" + constraint.toString());
                     });
 
                     return constraints;
@@ -173,12 +173,13 @@ suggestValue : function(args)
                         return;
 
                    var solver = self.solver,
-                       variable = GetVariable(args.identifier, args.tag);
+                       variable = GetVariable(args.identifier, args.tag),
+                       sw = StrengthAndWeight(args.priority);
 
                    if (EDIT_CONTEXT !== null)
                        solver.removeAllEditVars();
 
-                   solver.addEditVar(variable, c.Strength.medium, args.priority).beginEdit();
+                   solver.addEditVar(variable, sw.strength, sw.weight).beginEdit();
                    solver.suggestValue(variable, args.value);
                    solver.endEdit();
 
@@ -198,9 +199,10 @@ addStay : function(args)
               if (!SolverExists('addStay'))
                   return;
 
-              var variable = CPViewLayoutVariable(args.identifier, args.prefix, args.tag, args.value);
+              var variable = CPViewLayoutVariable(args.identifier, args.prefix, args.tag, args.value),
+                  sw = StrengthAndWeight(args.priority);
 
-              self.solver.addStay(variable, c.Strength.medium, args.priority);
+              self.solver.addStay(variable, sw.strength, sw.weight);
 
               CPLogMain('add Stay ' + variable.toString());
           }
@@ -235,7 +237,8 @@ var suggestValues = function(values, context)
 
             editVars.forEach(function(editVar)
             {
-                solver.addEditVar(editVar.variable, c.Strength.medium, editVar.priority);
+                var sw = StrengthAndWeight(editVar.priority);
+                solver.addEditVar(editVar.variable, sw.strength, sw.weight);
             });
         }
         catch (e)
@@ -320,6 +323,7 @@ var CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
             break;
             case LayoutVariableHeight : name = "height";
             break;
+            default: name = "[VAR]";
         }
 
         variable = new c.Variable({prefix:aPrefix, name:name, value:aValue, identifier:anIdentifier, tag:aTag});
@@ -328,6 +332,11 @@ var CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
     }
 
     return variable;
+};
+
+var StrengthAndWeight = function(p)
+{
+    return {strength:(new c.Strength("Custom", 1, 0, 0)), weight:p};
 };
 
 var CreateConstraint = function(args)
@@ -341,7 +350,7 @@ var CreateConstraint = function(args)
         multiplier      = args.multiplier,
         constant        = args.constant,
         priority        = args.priority,
-        strength        = c.Strength.medium,
+        sw              = StrengthAndWeight(priority),
         constraint;
 
     var first = expressionForAttribute(firstItemArgs, (containerUUID === firstItemUUID), (firstItemUUID === null)),
@@ -351,11 +360,11 @@ var CreateConstraint = function(args)
 
     switch(relation)
     {
-        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(first, c.LEQ, msecond, strength, priority);
+        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(first, c.LEQ, msecond, sw.strength, sw.weight);
             break;
-        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(first, c.GEQ, msecond, strength, priority);
+        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(first, c.GEQ, msecond, sw.strength, sw.weight);
             break;
-        case CPLayoutRelationEqual              : constraint = new c.Equation(first, msecond, strength, priority);
+        case CPLayoutRelationEqual              : constraint = new c.Equation(first, msecond, sw.strength, sw.weight);
             break;
     }
 
@@ -367,12 +376,13 @@ var CreateSizeConstraints = function(args)
     var tag = args.orientation ? LayoutVariableHeight : LayoutVariableWidth,
         variable = CPViewLayoutVariable(args.firstItemUID, args.firstItemName, tag, args.value);
 
-    var variableExp = new c.Expression(variable),
-        constantExp = new c.Expression(args.constant),
-        strength = c.Strength.medium;
+    var variableExp = new c.Expression.fromVariable(variable),
+        constantExp = new c.Expression.fromConstant(args.constant),
+        huggingSw = StrengthAndWeight(args.huggingPriority),
+        compressionSw = StrengthAndWeight(args.compressionPriority);
 
-    var huggingConstraint = new c.Inequality(variableExp, c.LEQ, constantExp, strength, args.huggingPriority),
-        compressionConstraint = new c.Inequality(variableExp, c.GEQ, constantExp, strength, args.compressionPriority);
+    var huggingConstraint = new c.Inequality(variableExp, c.LEQ, constantExp, huggingSw.strength, huggingSw.weight),
+        compressionConstraint = new c.Inequality(variableExp, c.GEQ, constantExp, compressionSw.strength, compressionSw.weight);
 
     return [huggingConstraint, compressionConstraint];
 };
@@ -439,6 +449,7 @@ var expressionForAttributeRight = function(anIdentifier, aPrefix, aRect, isConta
         return new c.Expression(variableWidth);
 
     var left = CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableLeft, aRect.origin.x);
+
     return new c.Expression(left).plus(variableWidth);
 };
 

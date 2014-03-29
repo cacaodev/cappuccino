@@ -5,6 +5,7 @@
  * Created by You on December 2, 2010.
  * Copyright 2010, Your Company All rights reserved.
  */
+CPLogRegister(CPLogConsole);
 
 @import <Foundation/CPObject.j>
 
@@ -39,7 +40,7 @@
     }];
 
     [mainWindow setFullPlatformWindow:YES];
-
+    [[mainWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:NO];
 }
 
 @end
