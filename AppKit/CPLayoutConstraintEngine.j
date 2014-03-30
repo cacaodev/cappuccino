@@ -369,21 +369,33 @@ var updateFrameFromSolver = function(target, mask, values)
 
     var frame = [target frame];
 
-    if (mask & 6)
-    {
-        var x = (mask & 2) ? values[2] : CGRectGetMinX(frame),
-            y = (mask & 4) ? values[4] : CGRectGetMinY(frame);
+    var pmask = mask & 6,
+        smask = mask & 24;
 
-        [target setFrameOrigin:CGPointMake(x, y)];
-        //CPLog.debug([target identifier] + ". Updated frame origin {" + [x, y] + "}");
+    if (pmask == 6)
+    {
+        [target setFrameOrigin:CGPointMake(values[2], values[4])];
+    }
+    else if (pmask == 4)
+    {
+        [target setFrameOrigin:CGPointMake(CGRectGetMinX(frame), values[4])];
+    }
+    else if (pmask == 2)
+    {
+        [target setFrameOrigin:CGPointMake(values[2], CGRectGetMinY(frame))];
     }
 
-    if (mask & 24)                                // v: wrong wrong wrong ! what if the changed value is 0 ?
+    if (smask == 24)
     {
-        var w = (mask & 8)  ? values[8]  : CGRectGetWidth(frame),
-            h = (mask & 16) ? values[16] : CGRectGetHeight(frame);
-
-        [target setFrameSize:CGSizeMake(w, h)];
+        [target setFrameSize:CGSizeMake(values[8], values[16])];
+    }
+    else if (smask == 16)
+    {
+        [target setFrameSize:CGSizeMake(CGRectGetWidth(frame), values[16])];
+    }
+    else if (smask == 8)
+    {
+        [target setFrameSize:CGSizeMake(values[8], CGRectGetHeight(frame))];
     }
 
     //[target setNeedsDisplay:YES];

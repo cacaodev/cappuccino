@@ -108,8 +108,23 @@ addConstraints : function(jsonarray)
 
 removeConstraint : function(casso_constraint)
                    {
-                       self.solver.removeConstraint(casso_constraint);
-                       CPLogMain('removeConstraint :' + casso_constraint.toString());
+                       var error = null;
+
+                       try
+                       {
+                           self.solver.removeConstraint(casso_constraint);
+                       }
+                       catch (e)
+                       {
+                           error = e;
+                       }
+                       finally
+                       {
+                           if (error)
+                               CPLogWarn(error.toString());
+                            else
+                               CPLogMain('removed constraint :' + casso_constraint.toString());
+                       }
                    },
 
 updateConstraints : function(args)
@@ -211,6 +226,11 @@ addStay : function(args)
 var CPLogMain = function(x)
 {
     returnMessage('log', x);
+};
+
+var CPLogWarn = function(x)
+{
+    returnMessage('warn', x);
 };
 
 var newSolver = function()

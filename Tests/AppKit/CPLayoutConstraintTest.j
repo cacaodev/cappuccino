@@ -13,11 +13,16 @@
 
 - (void)testConstraintBasedLayoutPerf
 {
-/*
-    for (var m = 0; m < 64; m++)
-        [self _testConstraintBasedLayoutPerfWithMask:m];
-*/
+    var r = 0,
+        ms = 0,
+        me = 8;
 
+    for (var m = ms; m < me; m++)
+        r += [self _testConstraintBasedLayoutPerfWithMask:m];
+
+    CPLog.warn("AVG = x" + ROUND(1000*r/(me-ms))/1000 + " times slower");
+
+/*
     [self _testConstraintBasedLayoutPerfWithMask:CPViewNotSizable];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewMinXMargin];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewMaxXMargin];
@@ -27,9 +32,10 @@
     [self _testConstraintBasedLayoutPerfWithMask:CPViewWidthSizable|CPViewMinXMargin];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewWidthSizable|CPViewMaxXMargin];
     [self _testConstraintBasedLayoutPerfWithMask:CPViewWidthSizable|CPViewMinXMargin|CPViewMaxXMargin];
+*/
 }
 
-- (void)_testConstraintBasedLayoutPerfWithMask:(CPInteger)aMask
+- (CPInteger)_testConstraintBasedLayoutPerfWithMask:(CPInteger)aMask
 {
     var windowRect = CGRectMake(0, 0, 500, 500);
     var _autoSizeWindow = [[CPWindow alloc] initWithContentRect:windowRect styleMask:CPResizableWindowMask];
@@ -97,7 +103,9 @@
 
     end = new Date();
     var total2 = end - dd;
-    CPLog.warn("Auto-layout setFrame: " + ((end - dd)/ RESIZES_COUNT) + " ms. Total " + total2 + " ms (" + ROUND(100* total2/total1)/100 + "x times slower).");
+    var r = total2/total1;
+    var isSlower = (r > 1);
+    CPLog.warn("Auto-layout setFrame: " + ((end - dd)/ RESIZES_COUNT) + " ms. Total " + total2 + " ms (" + ROUND(100* (isSlower ? r : 1/r))/100 + "x times " + (isSlower ? "slower":"faster") + ").");
 
 
 // Check constraints/autoresizingmask equivalence correctness based on resulting frames.
@@ -114,6 +122,8 @@
     }
 
     CPLog.warn("\n");
+
+    return r;
 }
 
 @end

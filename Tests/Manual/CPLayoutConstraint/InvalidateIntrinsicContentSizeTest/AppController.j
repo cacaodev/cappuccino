@@ -60,7 +60,7 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     //CPTrace("CPWindow", "setFrameSize:");
-//    [CPLayoutConstraint setAllowsWebWorker:NO];
+    [CPLayoutConstraint setAllowsWebWorker:YES];
 
     [compressionWindow layout];
     [huggingWindow layout];
