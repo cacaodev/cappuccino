@@ -281,7 +281,7 @@ CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker
 
 - (void)solver_updateConstraintsOfType:(CPString)aType forView:(CPView)aView
 {
-CPLog.debug(_cmd + aType + [aView identifier]);
+CPLog.debug(_cmd + aType + aView);
     var containerUID = [aView UID],
         json_constraints = [];
 

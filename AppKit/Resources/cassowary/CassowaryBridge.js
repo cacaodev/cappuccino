@@ -263,7 +263,7 @@ var suggestValues = function(values, context)
         }
         catch (e)
         {
-            returnMessage('warn ', e);
+            returnMessage('warn', e);
         }
 
         EDIT_CONTEXT = context;
@@ -356,7 +356,13 @@ var CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
 
 var StrengthAndWeight = function(p)
 {
-    return {strength:(new c.Strength("Custom", 1, 0, 0)), weight:p};
+/*
+    var h = Math.floor(p / 100),
+        d = Math.floor((p - 100*c) / 10),
+        n = p - 100*c - 10*d;
+*/
+
+    return {strength:(new c.Strength("Custom", 0, 1, 0)), weight:p};
 };
 
 var CreateConstraint = function(args)
@@ -376,7 +382,7 @@ var CreateConstraint = function(args)
     var first = expressionForAttribute(firstItemArgs, (containerUUID === firstItemUUID), (firstItemUUID === null)),
         second = expressionForAttribute(secondItemArgs, (containerUUID === secondItemUUID), (secondItemUUID === null));
 
-    var msecond = (second && multiplier) ? c.plus(c.times(second, multiplier), constant) : constant;
+    var msecond = (!(second.isConstant && second.constant == 0) && multiplier !== 0) ? c.plus(c.times(second, multiplier), constant) : constant;
 
     switch(relation)
     {
@@ -412,7 +418,7 @@ var expressionForAttribute = function(args, isContainer, isNull)
     var attribute = args.attribute;
 
     if (isNull || attribute === CPLayoutAttributeNotAnAttribute)
-        return null;
+        return new c.Expression.fromConstant(0);
 
     var itemName = args.name,
         rect = args.rect,
@@ -437,7 +443,8 @@ var expressionForAttribute = function(args, isContainer, isNull)
             break;
         case CPLayoutAttributeCenterX   : exp = expressionForAttributeCenterX(uuid, itemName, rect, isContainer);
             break;
-        case CPLayoutAttributeBaseline  :
+        case CPLayoutAttributeBaseline  : exp = expressionForAttributeBottom(uuid, itemName, rect, isContainer);
+            break;
         case CPLayoutAttributeCenterY   : exp = expressionForAttributeCenterY(uuid, itemName, rect, isContainer);
             break;
     }
@@ -448,17 +455,17 @@ var expressionForAttribute = function(args, isContainer, isNull)
 var expressionForAttributeLeft = function(anIdentifier, aPrefix, aRect, isContainer)
 {
     if (!isContainer)
-        return CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableLeft, aRect.origin.x);
+        return new c.Expression.fromVariable(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableLeft, aRect.origin.x));
 
-    return 0;
+    return new c.Expression.fromConstant(0);
 };
 
 var expressionForAttributeTop = function(anIdentifier, aPrefix, aRect, isContainer)
 {
     if (!isContainer)
-        return CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableTop, aRect.origin.y);
+        return new c.Expression.fromVariable(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableTop, aRect.origin.y));
 
-    return 0;
+    return new c.Expression.fromConstant(0);
 };
 
 var expressionForAttributeRight = function(anIdentifier, aPrefix, aRect, isContainer)
@@ -466,11 +473,11 @@ var expressionForAttributeRight = function(anIdentifier, aPrefix, aRect, isConta
     var variableWidth = CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableWidth, aRect.size.width);
 
     if (isContainer)
-        return new c.Expression(variableWidth);
+        return new c.Expression.fromVariable(variableWidth);
 
     var left = CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableLeft, aRect.origin.x);
 
-    return new c.Expression(left).plus(variableWidth);
+    return new c.Expression.fromVariable(left).plus(variableWidth);
 };
 
 var expressionForAttributeBottom = function(anIdentifier, aPrefix, aRect, isContainer)
@@ -478,33 +485,33 @@ var expressionForAttributeBottom = function(anIdentifier, aPrefix, aRect, isCont
     var variableHeight = CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableHeight, aRect.size.height);
 
     if (isContainer)
-        return new c.Expression(variableHeight);
+        return new c.Expression.fromVariable(variableHeight);
 
     var top = CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableTop, aRect.origin.y);
 
-    return new c.Expression(top).plus(variableHeight);
+    return new c.Expression.fromVariable(top).plus(variableHeight);
 };
 
 var expressionForAttributeCenterX = function(anIdentifier, aPrefix, aRect, isContainer)
 {
-    var midWidth = new c.Expression(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableWidth, aRect.size.width)).divide(2);
+    var midWidth = new c.Expression.fromVariable(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableWidth, aRect.size.width)).divide(2);
 
     if (isContainer)
         return midWidth;
 
-    var left = new c.Expression(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableLeft, aRect.origin.x));
+    var left = new c.Expression.fromVariable(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableLeft, aRect.origin.x));
 
     return c.plus(left, midWidth);
 };
 
 var expressionForAttributeCenterY = function(anIdentifier, aPrefix, aRect, isContainer)
 {
-    var midHeight = new c.Expression(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableHeight, aRect.size.height)).divide(2);
+    var midHeight = new c.Expression.fromVariable(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableHeight, aRect.size.height)).divide(2);
 
     if (isContainer)
         return midHeight;
 
-    var top = new c.Expression(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableTop, aRect.origin.y));
+    var top = new c.Expression.fromVariable(CPViewLayoutVariable(anIdentifier, aPrefix, LayoutVariableTop, aRect.origin.y));
 
     return c.plus(top, midHeight);
 };
