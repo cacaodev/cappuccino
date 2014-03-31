@@ -26,6 +26,15 @@ CPLogRegister(CPLogConsole);
 
 @end
 
+@implementation CPPopUpButtonBaseline : CPPopUpButton
+
+- (float)baselineOffsetFromBottom
+{
+    return 4;
+}
+
+@end
+
 @implementation AppController : CPObject
 {
     @outlet CPWindow    theWindow;

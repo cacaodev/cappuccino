@@ -53,7 +53,7 @@ var CPLayoutConstraintAllowsWebWorker = YES;
 //    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
 }
 
-+ (id)constraintWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
++ (id)constraintWithItem:(id)item1 attribute:(CPInteger)att1 relatedBy:(CPInteger)relation toItem:(id)item2 attribute:(CPInteger)att2 multiplier:(double)multiplier constant:(double)constant
 {
     return [[CPLayoutConstraint alloc] initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
 }
@@ -89,12 +89,18 @@ var CPLayoutConstraintAllowsWebWorker = YES;
 
 - (void)setFirstItem:(id)anItem
 {
-    _firstItem = [anItem isEqual:[CPNull null]] ? nil : anItem;
+    if ([anItem isEqual:[CPNull null]])
+        anItem = nil;
+
+    _firstItem = anItem;
 }
 
 - (void)setSecondItem:(id)anItem
 {
-    _secondItem = [anItem isEqual:[CPNull null]] ? nil : anItem;
+    if ([anItem isEqual:[CPNull null]])
+        anItem = nil;
+
+    _secondItem = anItem;
 }
 
 - (void)_init
@@ -136,29 +142,21 @@ CPLog.debug(self +_cmd);
 
 - (Object)toJSON
 {
-    var firstItem = {
-        uuid        : [_firstItem UID],
-        name        : [_firstItem identifier] || [_firstItem className],
-        rect        : [_firstItem frame],
-        attribute   : _firstAttribute
-    };
+    var firstItemJSON = JSONForItem(_firstItem, _firstAttribute),
+        secondItemJSON = JSONForItem(_secondItem, _secondAttribute);
 
-    var secondItem = {
-        uuid        : [_secondItem UID],
-        name        : [_secondItem identifier] || [_secondItem className],
-        rect        : [_secondItem frame],
-        attribute   : _secondAttribute
-    };
+    var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
+        secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
 
     return {
        type           : "Constraint",
        uuid           : [self UID],
        containerUUID  : [_container UID],
-       firstItem      : firstItem,
-       secondItem     : secondItem,
+       firstItem      : firstItemJSON,
+       secondItem     : secondItemJSON,
        relation       : _relation,
        multiplier     : _coefficient,
-       constant       : _constant,
+       constant       : (_constant + secondOffset * _coefficient - firstOffset),
        priority       : _priority
     };
 }
@@ -254,6 +252,53 @@ var CPFirstItem         = @"CPFirstItem",
 }
 
 @end
+
+var JSONForItem = function(anItem, anAttribute)
+{
+    if (anItem == nil || anAttribute == CPLayoutAttributeNotAnAttribute)
+        return {attribute : anAttribute};
+
+    return {
+        uuid        : [anItem UID],
+        name        : [anItem identifier] || [anItem className],
+        rect        : [anItem frame],
+        attribute   : anAttribute
+    };
+};
+
+var alignmentRectOffsetForItem = function(anItem, anAttribute)
+{
+    var hasContentInset = [anItem hasThemeAttribute:@"alignment-rect-inset"],
+        inset = hasContentInset ? [anItem currentValueForThemeAttribute:@"alignment-rect-inset"] : CGInsetMakeZero();
+
+    var offset = 0;
+
+    switch (anAttribute)
+    {
+        case CPLayoutAttributeLeading :
+        case CPLayoutAttributeLeft     : offset = inset.left;
+        break;
+        case CPLayoutAttributeTrailing :
+        case CPLayoutAttributeRight    : offset = - inset.right;
+        break;
+        case CPLayoutAttributeTop      : offset = inset.top;
+        break;
+        case CPLayoutAttributeBottom   : offset = - inset.bottom;
+        break;
+        case CPLayoutAttributeBaseline : offset = - inset.bottom - [anItem baselineOffsetFromBottom];
+        break;
+        case CPLayoutAttributeWidth    : offset = - inset.left - inset.right;
+        break;
+        case CPLayoutAttributeHeight   : offset = - inset.top - inset.bottom;
+        break;
+        case CPLayoutAttributeCenterX  : offset =  - inset.right + inset.left;
+        break;
+        case CPLayoutAttributeCenterY  : offset =  - inset.bottom + inset.top;
+        break;
+    }
+
+    return offset;
+};
 
 var CPStringFromAttribute = function(attr)
 {

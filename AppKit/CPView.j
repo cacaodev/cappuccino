@@ -3597,6 +3597,11 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
 }
 
+- (float)baselineOffsetFromBottom
+{
+    return 0;
+}
+
 - (CPArray)_internalConstraints
 {
     return _internalConstraints;
