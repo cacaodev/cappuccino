@@ -19,16 +19,17 @@ CPLayoutAttributeBaseline   = 11;
 
 CPLayoutAttributeNotAnAttribute = 0;
 
-LayoutVariableLeft   = 2;
-LayoutVariableTop    = 4;
-LayoutVariableWidth  = 8;
-LayoutVariableHeight = 16;
+LayoutVariableConstant = 0;
+LayoutVariableLeft     = 2;
+LayoutVariableTop      = 4;
+LayoutVariableWidth    = 8;
+LayoutVariableHeight   = 16;
 
 DISABLE_ON_SOLVED_NOTIFICATIONS = false;
 
 VARIABLES_MAP = {};
 
-CONSTRAINTS_BY_VIEW_MAP = {};
+CONSTRAINTS_BY_VIEW_AND_TYPE_MAP = [];
 
 EDIT_CONTEXT = null;
 
@@ -68,6 +69,18 @@ info          : function()
                     return info;
                 },
 
+getconstraints : function()
+                {
+                    var str = "";
+
+                    CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.forEach(function(w)
+                    {
+                        str += w.constraint.toString() + "\n";
+                    });
+
+                    CPLogMain(str);
+                },
+
 addConstraint : function(json)
                 {
                     if (!SolverExists('addConstraint'))
@@ -98,11 +111,11 @@ addConstraint : function(json)
 
 addConstraints : function(jsonarray)
                  {
-                     var fn = self.caller.addConstraint;
+                     var add = self.caller.addConstraint;
 
                      jsonarray.forEach(function(json)
                      {
-                         fn(json);
+                         add(json);
                      });
                  },
 
@@ -127,37 +140,55 @@ removeConstraint : function(casso_constraint)
                        }
                    },
 
-updateConstraints : function(args)
+replaceConstraints : function(args)
                     {
                         var container = args.container,
                             type = args.type,
                             json_constraints = args.constraints;
 
-                        var old_constraints_wrapper = CONSTRAINTS_BY_VIEW_MAP[container],
-                            new_constraints_wrapper = [];
-
-                        if (typeof old_constraints_wrapper !== 'undefined')
+                        var constraints_by_view_and_type = CONSTRAINTS_BY_VIEW_AND_TYPE_MAP;
+                        var i = constraints_by_view_and_type.length;
+// remove
+                        while(i--)
                         {
-                            old_constraints_wrapper.forEach(function(constraint_wrapper)
+                            var constraint_view_type = constraints_by_view_and_type[i];
+                            if (constraint_view_type.container == container && constraint_view_type.type == type)
                             {
-                                if (constraint_wrapper.type == type)
-                                    self.caller.removeConstraint(constraint_wrapper.constraint);
-                                else
-                                    new_constraints_wrapper.push(constraint_wrapper);
-                            });
+                                self.caller.removeConstraint(constraint_view_type.constraint);
+                                constraints_by_view_and_type.splice(i, 1);
+                            }
                         }
-
+// add
                         json_constraints.forEach(function(json)
                         {
                             var casso_constraints = self.caller.addConstraint(json);
+
                             casso_constraints.forEach(function(constraint)
                             {
-                                var wrapper = {type:json.type, constraint:constraint};
-                                new_constraints_wrapper.push(wrapper);
+                                var wrapper = {container:container, type:json.type, constraint:constraint};
+                                constraints_by_view_and_type.push(wrapper);
                             });
                         });
+                    },
 
-                        CONSTRAINTS_BY_VIEW_MAP[container] = new_constraints_wrapper;
+updateSizeConstraints : function(args)
+                    {
+                        var container = args.container,
+                            size_constraints = args.constraints;
+
+                        size_constraints.forEach(function(size_constraint)
+                        {
+                            var orientation = size_constraint.orientation,
+                                constant = size_constraint.constant,
+                                hugg_constant_id = container + "_" + orientation + "_hugg",
+                                compr_constant_id = container + "_" + orientation + "_compr";
+
+                            self.caller.suggestValue({identifier:hugg_constant_id, tag:0, priority:10000, value:constant});
+                            self.caller.suggestValue({identifier:compr_constant_id, tag:0, priority:10000, value:constant});
+
+                        });
+
+                        self.solver.resolve();
                     },
 
 setEditVarsForContext : function(args)
@@ -200,7 +231,7 @@ suggestValue : function(args)
 
                    EDIT_CONTEXT = args.identifier;
 
-                   CPLogMain("suggestValue");
+                   CPLogMain("suggestValue " + args.value + " for " + variable.toString());
                },
 
 suggestValuesMultiple : function(args)
@@ -220,7 +251,7 @@ addStay : function(args)
               self.solver.addStay(variable, sw.strength, sw.weight);
 
               CPLogMain('add Stay ' + variable.toString());
-          }
+          },
 };
 
 var CPLogMain = function(x)
@@ -335,25 +366,41 @@ var CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
 
         switch (aTag)
         {
-            case LayoutVariableLeft   : name = "x";
+            case LayoutVariableConstant : name = "k";
             break;
-            case LayoutVariableTop    : name = "y";
+            case LayoutVariableLeft     : name = "x";
             break;
-            case LayoutVariableWidth  : name = "width";
+            case LayoutVariableTop      : name = "y";
             break;
-            case LayoutVariableHeight : name = "height";
+            case LayoutVariableWidth    : name = "width";
             break;
-            default: name = "[VAR]";
+            case LayoutVariableHeight   : name = "height";
+            break;
+            default: name = "";
         }
 
         variable = new c.Variable({prefix:aPrefix, name:name, value:aValue, identifier:anIdentifier, tag:aTag});
-
         VARIABLES_MAP[variable_hash] = variable;
+
+        // if (aTag == LayoutVariableWidth || aTag == LayoutVariableHeight)
+        // restrictToNonNegative(variable);
     }
 
     return variable;
 };
+/*
+var restrictToNonNegative = function(aVariable)
+{
+    var tag = aVariable._tag;
 
+    var restricted = new c.Inequality(new c.Expression.fromVariable(aVariable), c.GEQ, new c.Expression.fromConstant(0), c.Strength.required, 10000);
+
+    self.solver.addConstraint(restricted);
+
+    var wrapper = {container:null, type:"restricted", constraint:restricted};
+    CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
+};
+*/
 var StrengthAndWeight = function(p)
 {
 /*
@@ -399,16 +446,27 @@ var CreateConstraint = function(args)
 
 var CreateSizeConstraints = function(args)
 {
-    var tag = args.orientation ? LayoutVariableHeight : LayoutVariableWidth,
-        variable = CPViewLayoutVariable(args.firstItemUID, args.firstItemName, tag, args.value);
+    var container = args.firstItemUID,
+        orientation = args.orientation,
+        tag = orientation ? LayoutVariableHeight : LayoutVariableWidth;
 
-    var variableExp = new c.Expression.fromVariable(variable),
-        constantExp = new c.Expression.fromConstant(args.constant),
+    var hugg_constant_id = container + "_" + orientation + "_hugg";
+    var compr_constant_id = container + "_" + orientation + "_compr";
+
+    var sizeVariable = CPViewLayoutVariable(container, args.firstItemName, tag, args.value),
+        hugg_constant = CPViewLayoutVariable(hugg_constant_id, "CONSTANT", LayoutVariableConstant, args.constant),
+        compr_constant = CPViewLayoutVariable(compr_constant_id, "CONSTANT", LayoutVariableConstant, args.constant),
+        huggExp = new c.Expression.fromVariable(hugg_constant),
+        comprExp = new c.Expression.fromVariable(compr_constant),
+        variableExp = new c.Expression.fromVariable(sizeVariable),
         huggingSw = StrengthAndWeight(args.huggingPriority),
         compressionSw = StrengthAndWeight(args.compressionPriority);
 
-    var huggingConstraint = new c.Inequality(variableExp, c.LEQ, constantExp, huggingSw.strength, huggingSw.weight),
-        compressionConstraint = new c.Inequality(variableExp, c.GEQ, constantExp, compressionSw.strength, compressionSw.weight);
+    self.solver.addStay(hugg_constant, huggingSw.strength, huggingSw.weight + 1);
+    self.solver.addStay(compr_constant, compressionSw.strength, compressionSw.weight + 1);
+
+    var huggingConstraint = new c.Inequality(variableExp, c.LEQ, huggExp, huggingSw.strength, huggingSw.weight),
+        compressionConstraint = new c.Inequality(variableExp, c.GEQ, comprExp, compressionSw.strength, compressionSw.weight);
 
     return [huggingConstraint, compressionConstraint];
 };

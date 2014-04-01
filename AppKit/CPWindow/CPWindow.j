@@ -3668,7 +3668,7 @@ var interpolate = function(fromValue, toValue, progress)
         [self _updateWindowResizeConstraints];
 
     [engine beginUpdates];
-    [engine solver_updateConstraintsIfNeeded];
+    [engine solver_replaceConstraintsIfNeeded];
     [engine suggestValues:[newSize.width, newSize.height] fromItem:_windowView];
     [engine endUpdates];
 }
@@ -3697,7 +3697,8 @@ var interpolate = function(fromValue, toValue, progress)
         [self _updateWindowResizeConstraints];
 
     [engine beginUpdates];
-    [engine solver_updateConstraintsIfNeeded];
+
+    [engine solver_replaceConstraintsIfNeeded];
 
     var oldWindowViewFrame = [_windowView frameSize];
 

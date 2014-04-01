@@ -49,6 +49,19 @@ CPLog.debug(self +_cmd);
     return YES;
 }
 
+- (void)setConstant:(CPInteger)aConstant
+{
+    if (aConstant < 0)
+        aConstant = 0;
+
+    if (aConstant !== _constant)
+    {
+        _constant = aConstant;
+
+        [[_firstItem _layoutEngine] sendCommand:"setConstant" withArguments:{uuid:[self UID], value:_constant}];
+    }
+}
+
 - (id)copy
 {
     return [[[self class] alloc] initWithLayoutItem:_firstItem value:_constant huggingPriority:_huggingPriority compressionResistancePriority:_compressPriority orientation:_orientation];

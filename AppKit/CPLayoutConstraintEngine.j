@@ -248,12 +248,12 @@ CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker
     CPLog.debug([self class] + " addStay " + anItem + " tag:" + tag + " priority:" + aPriority);
 }
 
-- (void)solver_updateConstraintsIfNeeded
+- (void)solver_replaceConstraintsIfNeeded
 {
-    [self solver_updateConstraintsIfNeededOfTypes:["Constraint", "SizeConstraint"]];
+    [self solver_replaceConstraintsIfNeededOfTypes:["Constraint", "SizeConstraint"]];
 }
 
-- (void)solver_updateConstraintsIfNeededOfTypes:(CPArray)types
+- (void)solver_replaceConstraintsIfNeededOfTypes:(CPArray)types
 {
     if ([_CPEngineViewsNeedUpdateConstraints count] === 0)
         return;
@@ -268,7 +268,7 @@ CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker
 
             [types enumerateObjectsUsingBlock:function(type, idx, stop)
             {
-                 [self solver_updateConstraintsOfType:type forView:aView];
+                 [self solver_replaceConstraintsOfType:type forView:aView];
             }];
 
             [aView setNeedsUpdateConstraints:NO];
@@ -279,7 +279,7 @@ CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker
     [_CPEngineViewsNeedUpdateConstraints removeObjectsAtIndexes:updatedIndexes];
 }
 
-- (void)solver_updateConstraintsOfType:(CPString)aType forView:(CPView)aView
+- (void)solver_replaceConstraintsOfType:(CPString)aType forView:(CPView)aView
 {
 CPLog.debug(_cmd + aType + aView);
     var containerUID = [aView UID],
@@ -298,7 +298,27 @@ CPLog.debug(_cmd + aType + aView);
 
     var args = {container:containerUID, type:aType, constraints:json_constraints};
 
-    [self sendCommand:"updateConstraints" withArguments:args];
+    [self sendCommand:"replaceConstraints" withArguments:args];
+}
+
+- (void)solver_updateSizeConstraints:(CPArray)sizeConstraints forView:(CPView)aView
+{
+    var containerUID = [aView UID],
+        json_constraints = [];
+
+    [sizeConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+        var orientation = [aConstraint orientation],
+            constant = [aConstraint constant];
+
+        json_constraints.push({orientation:orientation, constant:constant});
+
+        // Not needed if update ?
+        [aConstraint registerItemsInEngine:self];
+    }];
+
+    var args = {container:containerUID, constraints:json_constraints};
+    [self sendCommand:"updateSizeConstraints" withArguments:args];
 }
 
 - (void)solver_addConstraint:(CPLayoutConstraint)aConstraint
@@ -336,7 +356,6 @@ CPLog.debug(_cmd + aType + aView);
 
     [self sendCommand:"removeConstraint" withArguments:args];
 }
-
 
 - (void)getInfo
 {
