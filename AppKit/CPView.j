@@ -3611,7 +3611,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 {
     if (![[self window] needsConstraintBasedLayout])
         return;
-
+    // TODO: no need to generate if both already exist, just update constant and send an update request to the worker.
     var contentSizeConstraints = [self _generateContentSizeConstraints];
 
 CPLog.debug(_cmd + "\nOLD " + _internalConstraints + "\nNEW " + contentSizeConstraints);

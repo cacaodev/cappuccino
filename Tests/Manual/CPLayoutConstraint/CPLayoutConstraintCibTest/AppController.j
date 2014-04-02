@@ -53,7 +53,6 @@ CPLogRegister(CPLogConsole);
     {
         CPLog.debug([[[self window] _layoutEngine] sendCommand:"getconstraints" withArguments:null]);
     }
-
 }
 
 @end
@@ -66,6 +65,8 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
+    [CPLayoutConstraint setAllowsWebWorker:NO];
+    [theWindow layout];
     //CPTrace("CPWindow", "setFrameSize:");
 }
 

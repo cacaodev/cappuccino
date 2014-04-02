@@ -60,12 +60,12 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     //CPTrace("CPWindow", "setFrameSize:");
-    [CPLayoutConstraint setAllowsWebWorker:YES];
+    [CPLayoutConstraint setAllowsWebWorker:NO];
 
     [compressionWindow layout];
-    [huggingWindow layout];
-    [sizeToFitButtonWindow layout];
-    [sizeToFitLabelWindow layout];
+    //[huggingWindow layout];
+    //[sizeToFitButtonWindow layout];
+    //[sizeToFitLabelWindow layout];
 
 }
 
@@ -83,7 +83,7 @@ CPLogRegister(CPLogConsole);
         textField = [[[sender window] contentView] viewWithTag:1000];
 
     [textField setStringValue:text];
-    [textField invalidateIntrinsicContentSize];
+    [textField invalidateIntrinsicContentSize]; // Remove when implemented in textfield
 }
 
 @end

@@ -58,7 +58,8 @@ CPLog.debug(self +_cmd);
     {
         _constant = aConstant;
 
-        [[_firstItem _layoutEngine] sendCommand:"setConstant" withArguments:{uuid:[self UID], value:_constant}];
+        var args = {container:[_firstItem UID], constraints:[{constant:_constant, orientation:_orientation}]};
+        [[_firstItem _layoutEngine] sendCommand:"updateSizeConstraints" withArguments:args];
     }
 }
 

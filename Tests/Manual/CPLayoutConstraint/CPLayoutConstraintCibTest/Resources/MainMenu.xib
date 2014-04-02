@@ -20,10 +20,10 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <button identifier="cancel" horizontalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1273">
-                        <rect key="frame" x="14" y="14" width="72" height="32"/>
+                        <rect key="frame" x="14" y="14" width="77" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="60" id="1442"/>
+                            <constraint firstAttribute="width" constant="65" id="1442"/>
                         </constraints>
                         <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" lineBreakMode="charWrapping" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1274">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>

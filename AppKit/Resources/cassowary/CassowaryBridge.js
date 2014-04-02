@@ -382,8 +382,8 @@ var CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
         variable = new c.Variable({prefix:aPrefix, name:name, value:aValue, identifier:anIdentifier, tag:aTag});
         VARIABLES_MAP[variable_hash] = variable;
 
-        // if (aTag == LayoutVariableWidth || aTag == LayoutVariableHeight)
-        // restrictToNonNegative(variable);
+        //if (aTag == LayoutVariableWidth || aTag == LayoutVariableHeight)
+        //    restrictToNonNegative(variable);
     }
 
     return variable;
@@ -391,9 +391,7 @@ var CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
 /*
 var restrictToNonNegative = function(aVariable)
 {
-    var tag = aVariable._tag;
-
-    var restricted = new c.Inequality(new c.Expression.fromVariable(aVariable), c.GEQ, new c.Expression.fromConstant(0), c.Strength.required, 10000);
+    var restricted = new c.Inequality(new c.Expression.fromVariable(aVariable), c.GEQ, new c.Expression.fromConstant(0), c.Strength.medium, 10000);
 
     self.solver.addConstraint(restricted);
 
@@ -462,6 +460,10 @@ var CreateSizeConstraints = function(args)
         huggingSw = StrengthAndWeight(args.huggingPriority),
         compressionSw = StrengthAndWeight(args.compressionPriority);
 
+    // What is the right value for sizeVariable stay priority ?
+    // maybe depends if the new fitting size > or < than current size.
+    // note: removeStay is not impl. in cassowary
+    self.solver.addStay(sizeVariable, huggingSw.strength, 50);
     self.solver.addStay(hugg_constant, huggingSw.strength, huggingSw.weight + 1);
     self.solver.addStay(compr_constant, compressionSw.strength, compressionSw.weight + 1);
 

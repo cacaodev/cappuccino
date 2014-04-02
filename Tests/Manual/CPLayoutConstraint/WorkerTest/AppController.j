@@ -44,6 +44,7 @@ CPLogRegister(CPLogConsole);
 {
     // Uncomment to disable Web Worker
     //[CPLayoutConstraint setAllowsWebWorker:NO];
+    [theWindow layout];
 }
 
 @end
