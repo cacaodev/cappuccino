@@ -39,10 +39,11 @@
 @import "Resources/cassowary/CassowaryBridge.js"
 */
 
-var SUPPORTS_WEB_WORKER;
+var ENGINE_SUPPORTS_WEB_WORKER,
+    ENGINE_ALLOWS_WEB_WORKER,
+    ENGINE_WORKER_PATH;
 
-var _CPLayoutEngineWorkerPath,
-    _CPLayoutEngineCachedEngines = {},
+var _CPLayoutEngineCachedEngines = {},
     _CPEngineViewsNeedUpdateConstraints = [],
     _CPEngineCallbacks = {};
 
@@ -59,29 +60,34 @@ var _CPLayoutEngineWorkerPath,
 + (void)initialize
 {
 #if PLATFORM(DOM)
-    SUPPORTS_WEB_WORKER = !!window.Worker;
+    ENGINE_SUPPORTS_WEB_WORKER = !!window.Worker;
 #else
-    SUPPORTS_WEB_WORKER = NO;
+    ENGINE_SUPPORTS_WEB_WORKER = NO;
 #endif
 
-    _CPLayoutEngineWorkerPath = [[CPBundle bundleForClass:self] pathForResource:@"cassowary/Worker.js"];
+    ENGINE_ALLOWS_WEB_WORKER = YES;
+
+    ENGINE_WORKER_PATH = [[CPBundle bundleForClass:self] pathForResource:@"cassowary/Worker.js"];
+}
+
++ (void)setAllowsWebWorker:(BOOL)flag
+{
+    ENGINE_ALLOWS_WEB_WORKER = flag;
 }
 
 + (BOOL)shouldEnableWebWorker
 {
-    return (SUPPORTS_WEB_WORKER && [CPLayoutConstraint allowsWebWorker]);
+    return (ENGINE_SUPPORTS_WEB_WORKER && ENGINE_ALLOWS_WEB_WORKER);
 }
 
 + (void)informViewNeedsConstraintUpdate:(CPView)aView
 {
 // Note: class method (and class var bellow) because some views may need to register themselves
 // before their related engine (window engine) was created.
-// Turn into instance method if we decide to create the CPengine & Cassowary-solver earlier.
+// Turn into instance method if we decide to create the CPEngine & Cassowary-solver earlier.
     if (aView && ![_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
     {
         _CPEngineViewsNeedUpdateConstraints.push(aView);
-
-        // CPLog.debug(_cmd + ([aView identifier] || aView));
     }
 }
 
@@ -100,7 +106,7 @@ var _CPLayoutEngineWorkerPath,
         // A webworker is created and the JavaScript file CassowaryBridge.js
         // is loaded into its context.
 
-        _worker = new Worker(_CPLayoutEngineWorkerPath);
+        _worker = new Worker(ENGINE_WORKER_PATH);
 
         if (_worker)
         {
@@ -111,7 +117,12 @@ var _CPLayoutEngineWorkerPath,
             _worker.addEventListener('message', function(e)
             {
                 onWorkerMessage(e.data, onSolvedFunction, engineUID);
-            });
+            }, false);
+
+            _worker.addEventListener('error', function(e)
+            {
+                CPLog.error('ERROR: Line ' + e.lineno + ' in ' + e.filename + ': ' + e.message);
+            }, false);
 
             [self beginUpdates];
             [self sendCommand:"createSolver" withArguments:null];

@@ -43,7 +43,7 @@ CPLogRegister(CPLogConsole);
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     // Uncomment to disable Web Worker
-    //[CPLayoutConstraint setAllowsWebWorker:NO];
+    //[CPLayoutConstraintEngine setAllowsWebWorker:NO];
     [theWindow layout];
 }
 

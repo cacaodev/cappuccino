@@ -74,28 +74,16 @@ CPLogRegister(CPLogConsole);
 
 @end
 
-@implementation WindowController : CPWindowController
-{
-}
-
-- (void)loadWindow
-{
-    if (_window)
-        return;
-
-    var owner = _cibOwner || self;
-
-    [[CPBundle mainBundle] loadCibFile:[self windowCibPath] externalNameTable:@{ CPCibOwner: owner }];
-}
-
-@end
-
 @implementation AppController : CPObject
 {
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
+    // With the web worker ON, logged speed results are not very relevant !!
+    // But visually they may ...
+    [CPLayoutConstraintEngine setAllowsWebWorker:NO];
+
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
         contentView = [theWindow contentView];
 
@@ -124,20 +112,17 @@ CPLogRegister(CPLogConsole);
         console.log("Autosizing: -resizeWithOldSuperviewSize: in " + duration + " avg = " + avg2(TOTAL_DURATION / TOTAL_COUNT));
     });
 */
-
-    // With the web worker ON, logged speed results are not very relevant !!
-    // But visually they may ...
-    [CPLayoutConstraint setAllowsWebWorker:NO];
 }
 
 - (void)_showWindowCibName:(CPString)aWindowCibName
 {
-    var currentController = [[WindowController alloc] initWithWindowCibName:aWindowCibName owner:nil];
+    var currentController = [[CPWindowController alloc] initWithWindowCibName:aWindowCibName];
 
     [currentController showWindow:nil];
 
     var window = [currentController window];
     [window setTitle:aWindowCibName];
+    [window layout];
 }
 
 @end
