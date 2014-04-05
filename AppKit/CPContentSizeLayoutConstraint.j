@@ -93,7 +93,8 @@ CPLog.debug(self +_cmd);
        value               : value,
        constant            : _constant,
        huggingPriority     : _huggingPriority,
-       compressionPriority : _compressPriority
+       compressionPriority : _compressPriority,
+       stayPriority        : CPLayoutPriorityControlStaySameSize
     };
 }
 

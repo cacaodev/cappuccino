@@ -39,11 +39,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)mouseDown:(CPEvent)anEvent
 {
-    if ([anEvent type] !== CPLeftMouseDown)
-        return;
-    var flags = [anEvent modifierFlags];
-
-    if (flags & CPCommandKeyMask)
+    if ([anEvent type] == CPLeftMouseDown && ([anEvent modifierFlags] & CPCommandKeyMask))
         CPLog.debug([[self window] _layoutEngine]);
 }
 
@@ -60,13 +56,12 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     //CPTrace("CPWindow", "setFrameSize:");
-    [CPLayoutConstraint setAllowsWebWorker:NO];
+    [CPLayoutConstraint setAllowsWebWorker:YES];
 
     [compressionWindow layout];
-    //[huggingWindow layout];
-    //[sizeToFitButtonWindow layout];
-    //[sizeToFitLabelWindow layout];
-
+    [huggingWindow layout];
+    [sizeToFitButtonWindow layout];
+    [sizeToFitLabelWindow layout];
 }
 
 - (IBAction)changeButtonTitle:(id)sender

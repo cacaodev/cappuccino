@@ -24,28 +24,33 @@ importScripts("src/SimplexSolver.js");
 
 importScripts("CassowaryBridge.js");
 
-worker = self;
+self.initDone = false;
 
 function returnMessage(type, result)
 {
     //  Send a message back to the main thread with the result
 
-    worker.postMessage({type:type, result:result});
+    self.postMessage({type:type, result:result});
 }
 // Our webworker registers for an message event so we can talk
 // to it from our main thread and ask it to do something.
 self.addEventListener('message', function(e)
 {
+    if (!self.initDone)
+    {
+        InitCassowaryFunctions(self);
+        self.initDone = true;
+    }
+
     var messages = e.data;
 
     messages.forEach(function(message)
     {
-        var command = worker.caller[message.command];
-
-        var r = command(message.args);
+        var command = self[message.command],
+            result = command(message.args);
 
         if (message.callback)
-            self.postMessage({type:"callback", uuid:message.callback, result:r});
+            self.postMessage({type:"callback", uuid:message.callback, result:result});
     });
 
 }, false);

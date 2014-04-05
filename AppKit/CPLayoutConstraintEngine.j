@@ -3,6 +3,8 @@
 @import <Foundation/CPBundle.j>
 @import <Foundation/CPIndexSet.j>
 
+@import "CPLayoutConstraint.j"
+
 @import "c.js"
 @import "HashTable.js"
 @import "HashSet.js"
@@ -18,6 +20,7 @@
 @import "SimplexSolver.js"
 
 @import "CassowaryBridge.js"
+
 /*
 @import <AppKit/c.js>
 @import <AppKit/HashTable.js>
@@ -38,19 +41,19 @@
 
 var SUPPORTS_WEB_WORKER;
 
-var _CPEngineRegisteredItems = {},
+var _CPLayoutEngineWorkerPath,
+    _CPLayoutEngineCachedEngines = {},
     _CPEngineViewsNeedUpdateConstraints = [],
-    _CPEngineCallbacks = {},
-    _CPEngineLayoutItems;
+    _CPEngineCallbacks = {};
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
-    //SimplexSolver   solver @accessors(getter=solver);
     CPArray         _constraints @accessors(getter=constraints);
 
     Object          _worker;
     CPInteger       _solverBachingModeLevel;
     CPArray         _workerMessagesQueue;
+    CPDictionary    _CPEngineRegisteredItems;
 }
 
 + (void)initialize
@@ -60,6 +63,8 @@ var _CPEngineRegisteredItems = {},
 #else
     SUPPORTS_WEB_WORKER = NO;
 #endif
+
+    _CPLayoutEngineWorkerPath = [[CPBundle bundleForClass:self] pathForResource:@"cassowary/Worker.js"];
 }
 
 + (BOOL)shouldEnableWebWorker
@@ -69,89 +74,100 @@ var _CPEngineRegisteredItems = {},
 
 + (void)informViewNeedsConstraintUpdate:(CPView)aView
 {
+// Note: class method (and class var bellow) because some views may need to register themselves
+// before their related engine (window engine) was created.
+// Turn into instance method if we decide to create the CPengine & Cassowary-solver earlier.
     if (aView && ![_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
     {
         _CPEngineViewsNeedUpdateConstraints.push(aView);
 
-        CPLog.debug(_cmd + ([aView identifier] || aView));
+        // CPLog.debug(_cmd + ([aView identifier] || aView));
     }
 }
 
-- (id)initWithWindow:(CPWindow)aWindow
+- (id)initWithSolverSetup:(Function)solverReadyFunction engineCompletion:(Function)onSolvedFunction
 {
-CPLog.debug(self + _cmd);
     self = [super init];
 
-    var contentViewUUID = [[aWindow contentView] UID];
-    _CPEngineLayoutItems = _CPEngineLayoutItemsFunction(contentViewUUID);
+    _constraints = [];
+    //_stayVariables = [];
+    _CPEngineRegisteredItems = @{};
+    _solverBachingModeLevel = 0;
+    _workerMessagesQueue = [];
 
     if ([[self class] shouldEnableWebWorker])
     {
         // A webworker is created and the JavaScript file CassowaryBridge.js
         // is loaded into its context.
 
-        var appkitBundle = [CPBundle bundleForClass:[self class]],
-            workerPath = [appkitBundle pathForResource:@"cassowary/Worker.js"];
-
-        _worker = new Worker(workerPath);
+        _worker = new Worker(_CPLayoutEngineWorkerPath);
 
         if (_worker)
         {
+            var engineUID = [self UID];
+            _CPLayoutEngineCachedEngines[engineUID] = self;
             // Register an event handler that will receive messages from our
             // web worker
             _worker.addEventListener('message', function(e)
             {
-                onWorkerMessage(e.data);
+                onWorkerMessage(e.data, onSolvedFunction, engineUID);
             });
 
+            [self beginUpdates];
             [self sendCommand:"createSolver" withArguments:null];
+            solverReadyFunction(self);
+            [self endUpdates];
         }
     }
     else
     {
-        _worker = {
+        _worker = new Object();
 
-        postMessage : function(messages)
-                      {
-                          messages.forEach(function(message)
-                                          {
-                                              var command = caller[message.command];
+        InitCassowaryFunctions(_worker);
 
-                                              command(message.args);
+        _worker.postMessage = function(messages)
+        {
+            messages.forEach(function(message)
+            {
+                var command = _worker[message.command];
+                command(message.args);
 
-                                              //if (message.callback)
-                                              //    returnMessage("callback", message.callback);
-                                          });
-                      }
+                //if (message.callback)
+                //    returnMessage("callback", message.callback);
+            });
         };
 
-        var s = caller["createSolver"]();
-        s.onsolved = _CPEngineLayoutItems;
+        var s = _worker.createSolver();
+        s.onsolved = new NoWorkerOnSlovedFunctionCreate(onSolvedFunction, self);
+
+        solverReadyFunction(self);
     }
 
-CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker=" + _worker);
-
-    _constraints = [];
-    //_stayVariables = [];
-    //_CPEngineRegisteredItems = {};
-    _solverBachingModeLevel = 0;
-    _workerMessagesQueue = [];
+CPLog.warn("Web Worker mode is " + [[self class] shouldEnableWebWorker] + "; worker=" + _worker.toString());
 
     return self;
 }
 
 - (void)registerItem:(id)anItem forIdentifier:(CPString)anIdentifier
 {
-    if (anItem && anIdentifier && !_CPEngineRegisteredItems[anIdentifier])
+    if (anItem && anIdentifier)
     {
-        CPLog.debug("register " + anItem + " ID " + anIdentifier);
-        _CPEngineRegisteredItems[anIdentifier] = anItem;
+        //CPLog.debug("Register " + anItem + " ID " + anIdentifier);
+        [_CPEngineRegisteredItems setObject:anItem forKey:anIdentifier];
     }
+}
+
+- (id)registeredItemForIdentifier:(CPString)anIdentifier
+{
+    if (anIdentifier == nil)
+        return nil;
+
+    return [_CPEngineRegisteredItems objectForKey:anIdentifier];
 }
 
 - (void)unregisterItemWithIdentifier:(CPString)anIdentifier
 {
-    delete (_CPEngineRegisteredItems[anIdentifier]);
+    [_CPEngineRegisteredItems removeObjectForKey:anIdentifier];
 }
 
 // ===================================
@@ -178,7 +194,7 @@ CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker
     if ([[self class] shouldEnableWebWorker])
         [self sendMessage:{command:aCommand, args:args}];
     else
-        return caller[aCommand](args);
+        return _worker[aCommand](args);
 }
 
 - (id)sendCommand:(CPString)aCommand withArguments:(Object)args callback:(Function)aCallBack
@@ -245,7 +261,7 @@ CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker
 
     [self sendCommand:"addStay" withArguments:args];
 
-    CPLog.debug([self class] + " addStay " + anItem + " tag:" + tag + " priority:" + aPriority);
+    //CPLog.debug([self class] + " addStay " + anItem + " tag:" + tag + " priority:" + aPriority);
 }
 
 - (void)solver_replaceConstraintsIfNeeded
@@ -281,7 +297,6 @@ CPLog.debug("Web Worker mode " + [[self class] shouldEnableWebWorker] + " worker
 
 - (void)solver_replaceConstraintsOfType:(CPString)aType forView:(CPView)aView
 {
-CPLog.debug(_cmd + aType + aView);
     var containerUID = [aView UID],
         json_constraints = [];
 
@@ -317,7 +332,7 @@ CPLog.debug(_cmd + aType + aView);
         [aConstraint registerItemsInEngine:self];
     }];
 
-    var args = {container:containerUID, constraints:json_constraints};
+    var args = {container:containerUID, editPriority:CPLayoutPriorityConstantEditing, constraints:json_constraints};
     [self sendCommand:"updateSizeConstraints" withArguments:args];
 }
 
@@ -364,62 +379,6 @@ CPLog.debug(_cmd + aType + aView);
 
 @end
 
-var _CPEngineLayoutItemsFunction = function(excludeUID)
-{
-    return function (records)
-    {
-        for (var identifier in records)
-        {
-            if (identifier === excludeUID)
-                continue;
-
-            var record = records[identifier],
-                target = _CPEngineRegisteredItems[identifier];
-
-            if (target)
-                updateFrameFromSolver(target, record.changeMask, record.changeValues);
-        }
-    };
-};
-
-var updateFrameFromSolver = function(target, mask, values)
-{
-    //CPLog.debug("Updated view " + target + " mask " + mask + " values " + values);
-
-    var frame = [target frame];
-
-    var pmask = mask & 6,
-        smask = mask & 24;
-
-    if (pmask == 6)
-    {
-        [target setFrameOrigin:CGPointMake(values[2], values[4])];
-    }
-    else if (pmask == 4)
-    {
-        [target setFrameOrigin:CGPointMake(CGRectGetMinX(frame), values[4])];
-    }
-    else if (pmask == 2)
-    {
-        [target setFrameOrigin:CGPointMake(values[2], CGRectGetMinY(frame))];
-    }
-
-    if (smask == 24)
-    {
-        [target setFrameSize:CGSizeMake(values[8], values[16])];
-    }
-    else if (smask == 16)
-    {
-        [target setFrameSize:CGSizeMake(CGRectGetWidth(frame), values[16])];
-    }
-    else if (smask == 8)
-    {
-        [target setFrameSize:CGSizeMake(values[8], CGRectGetHeight(frame))];
-    }
-
-    //[target setNeedsDisplay:YES];
-};
-
 // No worker version
 function returnMessage(type, result)
 {
@@ -427,15 +386,23 @@ function returnMessage(type, result)
     onWorkerMessage({type:type, result:result});
 };
 
-var onWorkerMessage = function(message)
+var NoWorkerOnSlovedFunctionCreate = function(onsolvedFunction, engine)
 {
-// Our webworker sends us a message when it is done.
-    var type = message.type,
-        result = message.result;
+    return function(records)
+    {
+        onsolvedFunction(engine, records);
+    };
+};
+
+var onWorkerMessage = function(aMessage, aSolvedFunction, anEngineUID)
+{
+    var type = aMessage.type,
+        result = aMessage.result;
 
     if (type === 'solved')
     {
-        _CPEngineLayoutItems(result);
+        var anEngine = _CPLayoutEngineCachedEngines[anEngineUID];
+        aSolvedFunction(anEngine, result);
         [[CPRunLoop mainRunLoop] performSelectors];
     }
     else if (type === 'log')
@@ -444,7 +411,7 @@ var onWorkerMessage = function(message)
        CPLog.warn(result);
     else if (type === 'callback')
     {
-        var callbackUUID = message.uuid,
+        var callbackUUID = aMessage.uuid,
             callback = _CPEngineCallbacks[callbackUUID];
 
         if (callback)

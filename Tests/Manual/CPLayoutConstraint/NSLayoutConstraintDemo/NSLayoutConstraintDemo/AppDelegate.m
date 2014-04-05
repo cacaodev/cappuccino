@@ -202,7 +202,7 @@
     [window center];
     [window becomeKeyWindow];
     [window display];
-    window.title = self.currentController.windowNibName;
+    window.title = [NSString stringWithFormat:@"cocoa - %@", self.currentController.windowNibName];
 }
 
 - (void)showWindowCibName:(NSString*)aWindowCibName

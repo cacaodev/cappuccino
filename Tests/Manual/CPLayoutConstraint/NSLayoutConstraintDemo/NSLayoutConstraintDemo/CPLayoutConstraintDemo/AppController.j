@@ -178,7 +178,8 @@ CPLogRegister(CPLogConsole);
 
     var window = [currentController window];
     [window center];
-    [window setTitle:aWindowCibName];
+    [window setTitle:@"Cappuccino - " + aWindowCibName];
+    [window layout];
 
 }
 

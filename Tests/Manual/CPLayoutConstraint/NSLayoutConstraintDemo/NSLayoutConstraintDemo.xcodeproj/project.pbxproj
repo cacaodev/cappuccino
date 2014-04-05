@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5B04B74518DDD50300F5CCFA /* hugging_priorities.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B04B74418DDD50300F5CCFA /* hugging_priorities.xib */; };
+		5B04B74518DDD50300F5CCFA /* hugging_priorities_weak_left.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B04B74418DDD50300F5CCFA /* hugging_priorities_weak_left.xib */; };
+		5B17AC5318EDF39200E41802 /* hugging_priorities_weak_right.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B17AC5218EDF39200E41802 /* hugging_priorities_weak_right.xib */; };
+		5B1DC5FB18EDF8470035D509 /* size_to_fit.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B1DC5FA18EDF8470035D509 /* size_to_fit.xib */; };
+		5B1DC5FD18EDF9D50035D509 /* size_to_fit_resize_window.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B1DC5FC18EDF9D50035D509 /* size_to_fit_resize_window.xib */; };
 		5B73CA591729BF0E005E8CBC /* CPLayoutConstraintDemo in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */; };
 		5B73CA73172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA6E172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib */; };
 		5B73CA74172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5B73CA6F172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib */; };
@@ -36,7 +39,10 @@
 
 /* Begin PBXFileReference section */
 		0FBD4CE29A35CF973AFE53A1 /* _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = _Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h; path = .XcodeSupport/_Volumes_GAMMA_DEVELOPPEMENT_cappuccino_cacaodev_Tests_Manual_CPLayoutConstraint_NSLayoutConstraintDemo_NSLayoutConstraintDemo_CPLayoutConstraintDemo_AppController.h; sourceTree = SOURCE_ROOT; };
-		5B04B74418DDD50300F5CCFA /* hugging_priorities.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = hugging_priorities.xib; path = CPLayoutConstraintDemo/Resources/hugging_priorities.xib; sourceTree = "<group>"; };
+		5B04B74418DDD50300F5CCFA /* hugging_priorities_weak_left.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = hugging_priorities_weak_left.xib; path = CPLayoutConstraintDemo/Resources/hugging_priorities_weak_left.xib; sourceTree = "<group>"; };
+		5B17AC5218EDF39200E41802 /* hugging_priorities_weak_right.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = hugging_priorities_weak_right.xib; path = CPLayoutConstraintDemo/Resources/hugging_priorities_weak_right.xib; sourceTree = "<group>"; };
+		5B1DC5FA18EDF8470035D509 /* size_to_fit.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = size_to_fit.xib; path = CPLayoutConstraintDemo/Resources/size_to_fit.xib; sourceTree = "<group>"; };
+		5B1DC5FC18EDF9D50035D509 /* size_to_fit_resize_window.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = size_to_fit_resize_window.xib; path = CPLayoutConstraintDemo/Resources/size_to_fit_resize_window.xib; sourceTree = "<group>"; };
 		5B2B9B3918DCE7BC004B7119 /* Stack.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Stack.xib; path = CPLayoutConstraintDemo/Resources/Stack.xib; sourceTree = "<group>"; };
 		5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CPLayoutConstraintDemo; sourceTree = "<group>"; };
 		5B73CA6D172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(499).xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "Fixed_left_top_bottom_right_width(499).xib"; path = "CPLayoutConstraintDemo/Resources/Fixed_left_top_bottom_right_width(499).xib"; sourceTree = "<group>"; };
@@ -169,7 +175,10 @@
 				5BE26B1F172C470E00B4423B /* 2_views_center_alignment.xib */,
 				5BE26B21172C4B8900B4423B /* 3_views_center_alignment.xib */,
 				5BE26B25172C71C200B4423B /* compression_priorities.xib */,
-				5B04B74418DDD50300F5CCFA /* hugging_priorities.xib */,
+				5B04B74418DDD50300F5CCFA /* hugging_priorities_weak_left.xib */,
+				5B17AC5218EDF39200E41802 /* hugging_priorities_weak_right.xib */,
+				5B1DC5FA18EDF8470035D509 /* size_to_fit.xib */,
+				5B1DC5FC18EDF9D50035D509 /* size_to_fit_resize_window.xib */,
 				5B73CA581729BF0E005E8CBC /* CPLayoutConstraintDemo */,
 				5B8071F2172824470084FC75 /* NSLayoutConstraintDemo-Info.plist */,
 				5B8071F3172824470084FC75 /* InfoPlist.strings */,
@@ -241,17 +250,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				5B8071F5172824470084FC75 /* InfoPlist.strings in Resources */,
-				5B04B74518DDD50300F5CCFA /* hugging_priorities.xib in Resources */,
+				5B04B74518DDD50300F5CCFA /* hugging_priorities_weak_left.xib in Resources */,
 				5B8071FB172824470084FC75 /* Credits.rtf in Resources */,
 				5B807201172824470084FC75 /* MainMenu.xib in Resources */,
 				5B73CA591729BF0E005E8CBC /* CPLayoutConstraintDemo in Resources */,
 				5B73CA73172BF8C9005E8CBC /* Fixed_left_top_bottom_right_width(501).xib in Resources */,
 				5B73CA74172BF8C9005E8CBC /* Fixed_left_top_bottom_right.xib in Resources */,
 				5B73CA75172BF8C9005E8CBC /* Fixed_left_top_bottom_width.xib in Resources */,
+				5B17AC5318EDF39200E41802 /* hugging_priorities_weak_right.xib in Resources */,
 				5B73CA76172BF8C9005E8CBC /* Fixed_left_top_width_height.xib in Resources */,
 				5BE26B10172BFF5000B4423B /* Fixed_top_right_width_height.xib in Resources */,
 				5B73CA78172BFA7B005E8CBC /* Fixed_left_top_bottom_right_width(499).xib in Resources */,
 				5BE26B12172C286F00B4423B /* Fixed_bottom_right_width_height.xib in Resources */,
+				5B1DC5FB18EDF8470035D509 /* size_to_fit.xib in Resources */,
 				5BE26B15172C2B3200B4423B /* Subview1.xib in Resources */,
 				5BE26B16172C2B3200B4423B /* Subview2.xib in Resources */,
 				5BE26B18172C3D4000B4423B /* Subview3.xib in Resources */,
@@ -259,6 +270,7 @@
 				5BE26B1E172C465C00B4423B /* center_x_alignment.xib in Resources */,
 				5BE26B20172C470E00B4423B /* 2_views_center_alignment.xib in Resources */,
 				5BE26B22172C4B8900B4423B /* 3_views_center_alignment.xib in Resources */,
+				5B1DC5FD18EDF9D50035D509 /* size_to_fit_resize_window.xib in Resources */,
 				5BE26B26172C71C200B4423B /* compression_priorities.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
