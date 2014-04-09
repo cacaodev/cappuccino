@@ -79,10 +79,11 @@ var CPTableViewDelegate_selectionShouldChangeInTableView_                       
     CPTableViewDelegate_tableView_toolTipForView_rect_tableColumn_row_mouseLocation_                    = 1 << 16,
     CPTableViewDelegate_tableView_typeSelectStringForTableColumn_row_                                   = 1 << 17,
     CPTableViewDelegate_tableView_willDisplayView_forTableColumn_row_                                   = 1 << 18,
-    CPTableViewDelegate_tableViewSelectionDidChange_                                                    = 1 << 19,
-    CPTableViewDelegate_tableViewSelectionIsChanging_                                                   = 1 << 20,
-    CPTableViewDelegate_tableViewMenuForTableColumn_row_                                                = 1 << 21,
-    CPTableViewDelegate_tableView_shouldReorderColumn_toColumn_                                         = 1 << 22;
+    CPTableViewDelegate_tableView_willRemoveView_forTableColumn_row_                                    = 1 << 19,
+    CPTableViewDelegate_tableViewSelectionDidChange_                                                    = 1 << 20,
+    CPTableViewDelegate_tableViewSelectionIsChanging_                                                   = 1 << 21,
+    CPTableViewDelegate_tableViewMenuForTableColumn_row_                                                = 1 << 22,
+    CPTableViewDelegate_tableView_shouldReorderColumn_toColumn_                                         = 1 << 23;
 
 //CPTableViewDraggingDestinationFeedbackStyles
 CPTableViewDraggingDestinationFeedbackStyleNone = -1;
@@ -159,6 +160,7 @@ CPTableViewFirstColumnOnlyAutoresizingStyle = 5;
 - (void)tableView:(CPTableView)aTableView didDragTableColumn:(CPTableColumn)aTableColumn;
 - (void)tableView:(CPTableView)aTableView mouseDownInHeaderOfTableColumn:(CPTableColumn)aTableColumn;
 - (void)tableView:(CPTableView)aTableView willDisplayView:(CPView)aView forTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)aRowIndex;
+- (void)tableView:(CPTableView)aTableView willRemoveView:(CPView)aView forTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)aRowIndex;
 - (void)tableViewSelectionDidChange:(CPNotification)aNotification;
 - (void)tableViewSelectionIsChanging:(CPNotification)aNotification;
 
@@ -1343,6 +1345,38 @@ NOT YET IMPLEMENTED
 
 /*!
     @ignore
+    cleanup a an indexset from the indexes that cannot be selected
+    according to the table view delegate.
+*/
+- (CPIndexSet)_cleanUpSelectionRowIndexes:(CPIndexSet)anIndexSet
+{
+    if ([self _delegateRespondsToSelectionIndexesForProposedSelection])
+    {
+        return [self _sendDelegateSelectionIndexesForProposedSelection:anIndexSet];
+    }
+    else if ([self _delegateRespondsToShouldSelectRow])
+    {
+        var indexesToRemove = [CPIndexSet new],
+            currentIndex = [anIndexSet firstIndex];
+
+        while (currentIndex != CPNotFound)
+        {
+            if (![self _sendDelegateShouldSelectRow:currentIndex])
+                [indexesToRemove addIndex:currentIndex];
+
+            currentIndex = [anIndexSet indexGreaterThanIndex:currentIndex];
+        }
+
+        [anIndexSet removeIndexes:indexesToRemove];
+
+        return anIndexSet;
+    }
+    else
+        return anIndexSet;
+}
+
+/*!
+    @ignore
 */
 - (void)_updateHighlightWithOldRows:(CPIndexSet)oldRows newRows:(CPIndexSet)newRows
 {
@@ -1565,7 +1599,10 @@ NOT YET IMPLEMENTED
         if ([[self selectedColumnIndexes] count])
             [self selectColumnIndexes:[CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, [self numberOfColumns])] byExtendingSelection:NO];
         else
-            [self selectRowIndexes:[CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, [self numberOfRows])] byExtendingSelection:NO];
+        {
+            var range = [self _cleanUpSelectionRowIndexes:[CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, [self numberOfRows])]];
+            [self selectRowIndexes:range byExtendingSelection:NO];
+        }
     }
 }
 
@@ -2915,6 +2952,9 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
     if ([_delegate respondsToSelector:@selector(tableView:willDisplayView:forTableColumn:row:)])
         _implementedDelegateMethods |= CPTableViewDelegate_tableView_willDisplayView_forTableColumn_row_;
 
+    if ([_delegate respondsToSelector:@selector(tableView:willRemoveView:forTableColumn:row:)])
+        _implementedDelegateMethods |= CPTableViewDelegate_tableView_willRemoveView_forTableColumn_row_;
+
     if ([_delegate respondsToSelector:@selector(tableView:menuForTableColumn:row:)])
         _implementedDelegateMethods |= CPTableViewDelegate_tableViewMenuForTableColumn_row_;
 
@@ -3549,6 +3589,8 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
                 [[self window] makeFirstResponder:self];
 
             var dataView = [dataViews objectAtIndex:row];
+
+            [self _sendDelegateWillRemoveView:dataView forTableColumn:tableColumn row:row];
 
             [dataViews replaceObjectAtIndex:row withObject:nil];
 
@@ -5253,9 +5295,9 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
     if (i >= [self numberOfRows] || i < 0)
         return;
 
-    if (![self _delegateRespondsToSelectionIndexesForProposedSelection] && [self _delegateRespondsToShouldSelectRow])
+    if ([self _delegateRespondsToSelectionIndexesForProposedSelection] || [self _delegateRespondsToShouldSelectRow])
     {
-        var shouldSelect = [self _sendDelegateShouldSelectRow:i];
+        var shouldSelect = !![[self _cleanUpSelectionRowIndexes:[CPIndexSet indexSetWithIndex:i]] count];
 
         /* If shouldSelect returns NO it means this row cannot be selected.
             The proper behaviour is to then try to see if the next/previous
@@ -5264,7 +5306,7 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
         while (!shouldSelect && (i < [self numberOfRows] && i > 0))
         {
             shouldGoUpward ? --i : ++i; //check to see if the row can be selected. If it can't be then see if the next row can be selected.
-            shouldSelect = [self _sendDelegateShouldSelectRow:i];
+            shouldSelect = !![[self _cleanUpSelectionRowIndexes:[CPIndexSet indexSetWithIndex:i]] count];
         }
 
         if (!shouldSelect)
@@ -5624,6 +5666,18 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
         return;
 
     [_delegate tableView:self willDisplayView:aCell forTableColumn:aTableColumn row:aRowIndex];
+}
+
+/*!
+    @ignore
+    Call the delegate tableView:willRemoveView:forTableColumn:row:
+*/
+- (void)_sendDelegateWillRemoveView:(id)aCell forTableColumn:(CPTableColumn)aTableColumn row:(CPInteger)aRowIndex
+{
+    if (!(_implementedDelegateMethods & CPTableViewDelegate_tableView_willRemoveView_forTableColumn_row_))
+        return;
+
+    [_delegate tableView:self willRemoveView:aCell forTableColumn:aTableColumn row:aRowIndex];
 }
 
 /*!
