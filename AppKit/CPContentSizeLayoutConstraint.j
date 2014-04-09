@@ -2,8 +2,8 @@
 
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
 {
-    double _huggingPriority  @accessors(getter=huggingPriority);
-    double _compressPriority @accessors(getter=compressPriority);
+    double _huggingPriority  @accessors(property=huggingPriority);
+    double _compressPriority @accessors(property=compressPriority);
     int    _orientation      @accessors(getter=orientation);
 }
 
@@ -82,19 +82,19 @@ CPLog.debug(self +_cmd);
 - (Object)toJSON
 {
     var frame = [_firstItem frame],
+        uuid = [_firstItem UID] + "_" + _orientation,
         value = _orientation ? CGRectGetHeight(frame) : CGRectGetWidth(frame);
 
     return {
-       type                : "SizeConstraint",
-       uuid                : [self UID],
-       orientation         : _orientation,
-       firstItemUID        : [_firstItem UID],
-       firstItemName       : [_firstItem identifier] || [_firstItem className],
-       value               : value,
-       constant            : _constant,
-       huggingPriority     : _huggingPriority,
-       compressionPriority : _compressPriority,
-       stayPriority        : CPLayoutPriorityControlStaySameSize
+       type                 : "SizeConstraint",
+       uuid                 : uuid,
+       orientation          : _orientation,
+       firstItemUID         : [_firstItem UID],
+       firstItemName        : [_firstItem identifier] || [_firstItem className],
+       value                : value,
+       constant             : _constant,
+       huggingPriority      : _huggingPriority,
+       compressionPriority  : _compressPriority
     };
 }
 

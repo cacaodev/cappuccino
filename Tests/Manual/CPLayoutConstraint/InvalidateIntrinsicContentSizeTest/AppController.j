@@ -9,6 +9,7 @@
 @import <Foundation/CPObject.j>
 @import <AppKit/CPView.j>
 
+@import "CPLayoutConstraintEngine.j"
 //@import "../CPTrace.j"
 
 CPLogRegister(CPLogConsole);
@@ -39,8 +40,20 @@ CPLogRegister(CPLogConsole);
 
 - (void)mouseDown:(CPEvent)anEvent
 {
-    if ([anEvent type] == CPLeftMouseDown && ([anEvent modifierFlags] & CPCommandKeyMask))
-        CPLog.debug([[self window] _layoutEngine]);
+    if ([anEvent type] !== CPLeftMouseDown)
+        return;
+    var flags = [anEvent modifierFlags];
+
+    if (flags & CPCommandKeyMask)
+    {
+        CPLog.debug([self identifier] + " " + CPStringFromRect([self frame]));
+        CPLog.debug([[[self window] _layoutEngine] getInfo]);
+    }
+
+    if (flags & CPShiftKeyMask)
+    {
+        CPLog.debug([[[self window] _layoutEngine] sendCommand:"getconstraints" withArguments:null]);
+    }
 }
 
 @end

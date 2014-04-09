@@ -3547,20 +3547,13 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     _constraintsArray = [CPArray array];
     _huggingPriorities = nil;
     _compressionPriorities = nil;
-
-//    _contrainedVariablesMask = 30;
 }
 
 - (id)_layoutEngine
 {
     return [[self window] _layoutEngine];
 }
-/*
-- (void)notifyConstrainedVariable:(CPInteger)aVariableFlag
-{
-    _contrainedVariablesMask &= (~aVariableFlag);
-}
-*/
+
 - (CGSize)_contentHuggingPriorities
 {
     if (!_huggingPriorities)
@@ -3579,19 +3572,33 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 + (CGSize)_defaultHuggingPriorities
 {
-    return CGSizeMake(250, 250);
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
 }
 
 + (CGSize)_defaultCompressionPriorities
 {
-    return CGSizeMake(750, 750);
+    return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
 }
 
+/*!
+    Returns the minimum size of the view that satisfies the constraints it holds.
+    @return The minimum size of the view that satisfies the constraints it holds.
+    @discussion Determines the best size of the view considering all constraints it holds and those of its subviews, together with a preference(*) for the view itself to be as small as possible.
+    (*) This preference's priority of CPLayoutPriorityFittingSizeCompression
+*/
 - (CGSize)fittingSize
 {
+    // Subclasses should override.
     return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
 }
 
+/*!
+    Returns the natural size for the receiving view, considering only properties of the view itself.
+    @return A size indicating the natural size for the receiving view based on its intrinsic properties.
+    @discussion Custom views typically have content that they display of which the layout system is unaware. Overriding this method allows a custom view to communicate to the layout system what size it would like to be based on its content. This intrinsic size must be independent of the content frame, because there’s no way to dynamically communicate a changed width to the layout system based on a changed height, for example.
+
+        If a custom view has no intrinsic size for a given dimension, it can return CPViewNoInstrinsicMetric for that dimension.
+*/
 - (CGSize)intrinsicContentSize
 {
     return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
@@ -3599,7 +3606,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (float)baselineOffsetFromBottom
 {
-    return 0;
+    return 0.0;
 }
 
 - (CPArray)_internalConstraints
@@ -3607,6 +3614,10 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return _internalConstraints;
 }
 
+/*!
+    Invalidates the view’s intrinsic content size.
+    @discussion Call this when something changes in your custom view that invalidates its intrinsic content size. This allows the constraint-based layout system to take the new intrinsic content size into account in its next layout pass.
+*/
 - (void)invalidateIntrinsicContentSize
 {
     if (![[self window] needsConstraintBasedLayout])
@@ -3626,6 +3637,7 @@ CPLog.debug(_cmd + "\nOLD " + _internalConstraints + "\nNEW " + contentSizeConst
     [engine beginUpdates];
 
     [engine stopEditing];
+    [[self window] _updateWindowViewStayConstraints];
     [engine solver_updateSizeConstraints:_internalConstraints forView:self];
     //[[self window] layout];
 
@@ -3708,14 +3720,55 @@ CPLog.debug(_cmd + constraints);
     return constraints;
 }
 
-- (void)setContentHuggingPriority:(CPLayoutPriority)priority forOrientation:(CPLayoutConstraintOrientation)orientation
+- (void)setContentHuggingPriority:(CPInteger)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
 {
-    orientation ? _huggingPriorities.height : _huggingPriorities.width = priority;
+    var huggingPriorities = [self _contentHuggingPriorities];
+
+    orientation ? huggingPriorities.height : huggingPriorities.width = aPriority;
+    // update contentSize constraints here. Cocoa allows mutation when constraints are installed ?
+    var constr = [self _contentSizeConstraintForOrientation:orientation];
+    [constr setCompressPriority:aPriority];
 }
 
-- (CPLayoutPriority)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
+- (CPInteger)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
-    return orientation ? _huggingPriorities.height : _huggingPriorities.width;
+    var huggingPriorities = [self _contentHuggingPriorities];
+
+    return orientation ? huggingPriorities.height : huggingPriorities.width;
+}
+
+- (void)setContentCompressionResistancePriority:(CPInteger)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
+
+    orientation ? compressionResistancePriorities.height : compressionResistancePriorities.width = aPriority;
+    // update contentSize constraints here. Cocoa allows mutation when constraints are installed ?
+    var constr = [self _contentSizeConstraintForOrientation:orientation];
+    [constr setHuggingPriority:aPriority];
+}
+
+- (CPInteger)contentCompressionResistancePriorityForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
+
+    return orientation ? compressionResistancePriorities.height : compressionResistancePriorities.width;
+}
+
+- (CPLayoutConstraint)_contentSizeConstraintForOrientation:(CPInteger)orientation
+{
+    [self _updateContentSizeConstraints];
+
+    var contentSizeConstraints = [self _contentSizeConstraints];
+
+    var idx = [contentSizeConstraints indexOfObjectPassingTest:function(aConstraint, idx, stop)
+    {
+       return ([aConstraint orientation] == orientation);
+    }];
+
+    if (idx !== CPNotFound)
+        return [contentSizeConstraints objectAtIndex:idx];
+
+    return nil;
 }
 
 - (CPArray)constraints
@@ -3965,6 +4018,12 @@ CPLog.debug([self identifier] + _cmd);
     [result addObject:sconstraint];
 
     return result;
+}
+
+// Debugging
+- (BOOL)hasAmbiguousLayout
+{
+    // Not Implemented
 }
 
 @end

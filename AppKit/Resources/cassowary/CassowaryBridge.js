@@ -81,7 +81,7 @@ scope.getconstraints = function()
 
                     scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.forEach(function(w)
                     {
-                        str += w.constraint.toString() + "\n";
+                        str += w.type + " " + w.constraint.toString() + "\n";
                     });
 
                     WorkerLog(str);
@@ -144,8 +144,10 @@ scope.removeConstraint = function(casso_constraint)
                             else
                                WorkerLog('removed constraint :' + casso_constraint.toString());
                        }
-                   };
 
+                       return (error == null);
+                   };
+// Replace all contraints of the given type owned by the given container.
 scope.replaceConstraints = function(args)
                     {
                         var container = args.container,
@@ -171,7 +173,7 @@ scope.replaceConstraints = function(args)
 
                             casso_constraints.forEach(function(constraint)
                             {
-                                var wrapper = {container:container, type:json.type, constraint:constraint};
+                                var wrapper = {uuid:json.uuid, container:container, type:json.type, constraint:constraint};
                                 constraints_by_view_and_type.push(wrapper);
                             });
                         });
@@ -180,21 +182,26 @@ scope.replaceConstraints = function(args)
 scope.updateSizeConstraints = function(args)
                     {
                         var container = args.container,
-                            size_constraints = args.constraints,
-                            priority = args.editPriority;
+                            json_constraints = args.constraints;
 
-                        size_constraints.forEach(function(size_constraint)
+                        json_constraints.forEach(function(json)
                         {
-                            var orientation = size_constraint.orientation,
-                                constant = size_constraint.constant,
-                                hugg_constant_id = container + "_" + orientation + "_hugg",
-                                compr_constant_id = container + "_" + orientation + "_compr";
+                            var uuid = json.uuid;
 
-                            scope.suggestValue({identifier:hugg_constant_id, tag:0, priority:priority, value:constant});
-                            scope.suggestValue({identifier:compr_constant_id, tag:0, priority:priority, value:constant});
+                            // Removes constraints for both hugging and antiCompression
+                            scope.removeConstraintWithUUID(uuid, "SizeConstraint");
+
+                            var casso_constraints = scope.addConstraint(json);
+
+                            casso_constraints.forEach(function(casso_constraint)
+                            {
+                                var wrapper = {uuid:uuid, container:container, type:"SizeConstraint", constraint:casso_constraint};
+
+                                scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
+                            });
                         });
 
-                        scope.solver.resolve();
+                        scope.solver.solve();
                     };
 
 scope.setEditVarsForContext = function(args)
@@ -246,20 +253,58 @@ scope.suggestValuesMultiple = function(args)
                             //WorkerLog("suggestValuesMultiple");
                         };
 
-scope.addStay = function(args)
+scope.addStayVariable = function(variable, priority)
           {
               WorkerLog('this is ' + this);
 
               if (!scope.SolverExists('addStay'))
                   return;
 
-              var variable = scope.CPViewLayoutVariable(args.identifier, args.prefix, args.tag, args.value),
-                  sw = scope.StrengthAndWeight(args.priority);
+              var sw = scope.StrengthAndWeight(priority),
+                  container = variable._identifier,
+                  uuid = container + "_" + variable._tag,
+                  stayConstraint = new c.StayConstraint(variable, sw.strength, sw.weight);
 
-              scope.solver.addStay(variable, sw.strength, sw.weight);
+              var replace_count = scope.removeConstraintWithUUID(uuid);
 
-              WorkerLog('add Stay ' + variable.toString());
+              scope.solver.addConstraint(stayConstraint);
+
+              var wrapper = {uuid:uuid ,container:container, type:"Stay", constraint:stayConstraint};
+              scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
+
+              WorkerLog('add Stay ' + variable.toString() + ' replacing ' + replace_count);
           };
+
+scope.addStay = function(args)
+{
+    var variable = scope.CPViewLayoutVariable(args.identifier, args.prefix, args.tag, args.value),
+        priority = args.priority;
+
+    scope.addStayVariable(variable, priority);
+};
+
+scope.removeConstraintWithUUID = function(uuid, type)
+{
+    var constraints_list = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP,
+        count = constraints_list.length,
+        ret = 0;
+
+    while(count--)
+    {
+        var w = constraints_list[count];
+
+        if ((type == null || w.type == type) && w.uuid == uuid)
+        {
+            ret += scope.removeConstraint(w.constraint);
+            constraints_list.splice(count, 1);
+
+            if (type !== "SizeConstraint")
+                break;
+        }
+    }
+
+    return ret;
+};
 
 scope.suggestValues = function(values, context)
 {
@@ -331,7 +376,9 @@ scope.CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
 
         switch (aTag)
         {
-            case LayoutVariableConstant : name = "k";
+            case 0 : name = "H";
+            break;
+            case 1 : name = "V";
             break;
             case LayoutVariableLeft     : name = "x";
             break;
@@ -410,34 +457,16 @@ scope.CreateConstraint = function(args)
 scope.CreateSizeConstraints = function(args)
 {
     var container = args.firstItemUID,
-        orientation = args.orientation,
-        tag = orientation ? LayoutVariableHeight : LayoutVariableWidth,
-        stayPriority = args.stayPriority;
-
-    var hugg_constant_id = container + "_" + orientation + "_hugg";
-    var compr_constant_id = container + "_" + orientation + "_compr";
+        tag = args.orientation ? LayoutVariableHeight : LayoutVariableWidth;
 
     var sizeVariable = scope.CPViewLayoutVariable(container, args.firstItemName, tag, args.value),
-        hugg_constant = scope.CPViewLayoutVariable(hugg_constant_id, "CONSTANT", LayoutVariableConstant, args.constant),
-        compr_constant = scope.CPViewLayoutVariable(compr_constant_id, "CONSTANT", LayoutVariableConstant, args.constant),
-        huggExp = new c.Expression.fromVariable(hugg_constant),
-        comprExp = new c.Expression.fromVariable(compr_constant),
         variableExp = new c.Expression.fromVariable(sizeVariable),
+        constantExp = new c.Expression.fromConstant(args.constant),
         huggingSw = scope.StrengthAndWeight(args.huggingPriority),
         compressionSw = scope.StrengthAndWeight(args.compressionPriority);
 
-    // What is the right value for sizeVariable stay priority ?
-    // maybe depends if the new fitting size > or < than current size.
-    // note: removeStay is not impl. in cassowary
-
-    var solver = scope.solver;
-
-    solver.addStay(sizeVariable, huggingSw.strength, 50);
-    solver.addStay(hugg_constant, huggingSw.strength, stayPriority);
-    solver.addStay(compr_constant, compressionSw.strength, stayPriority);
-
-    var huggingConstraint = new c.Inequality(variableExp, c.LEQ, huggExp, huggingSw.strength, huggingSw.weight),
-        compressionConstraint = new c.Inequality(variableExp, c.GEQ, comprExp, compressionSw.strength, compressionSw.weight);
+    var huggingConstraint = new c.Inequality(variableExp, c.LEQ, constantExp, huggingSw.strength, huggingSw.weight),
+        compressionConstraint = new c.Inequality(variableExp, c.GEQ, constantExp, compressionSw.strength, compressionSw.weight);
 
     return [huggingConstraint, compressionConstraint];
 };

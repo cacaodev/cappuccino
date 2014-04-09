@@ -888,12 +888,14 @@ CPButtonImageOffset   = 3.0;
 
 - (CGSize)fittingSize
 {
+    // TODO: fittingSize should be the minimum possible size that SATISFIES the constraints involving
+    // the size variables. The 'strength' used to minimize the size in this computation is CPLayoutPriorityFittingSizeCompression.
     return [self _minimumFrameSize];
 }
 
 + (CGSize)_defaultHuggingPriorities
 {
-    return CGSizeMake(250, 750);
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
 }
 
 @end

@@ -3716,6 +3716,13 @@ var interpolate = function(fromValue, toValue, progress)
     [engine endUpdates];
 }
 
+- (void)_updateWindowViewStayConstraints
+{
+    var engine = [self _layoutEngine];
+    [engine addStayVariable:8 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
+    [engine addStayVariable:16 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
+}
+
 - (void)_updateWindowResizeConstraints
 {
     var cRect = [_contentView frame],
@@ -3771,7 +3778,7 @@ var _EngineOnSolvedFunctionCreate = function(aWindow)
                 continue;
 
             var target = [anEngine registeredItemForIdentifier:anIdentifier];
-//CPLog.debug(anEngine + " TARGETID " + anIdentifier + " TARGET " + target);
+
             if (target)
             {
                 var record = records[anIdentifier];
@@ -3779,7 +3786,7 @@ var _EngineOnSolvedFunctionCreate = function(aWindow)
             }
             else
             {
-                console.log(anEngine);
+                CPLog.warn("NO TARGET IN " + anEngine + ", TARGET_ID=" + anIdentifier);
             }
         }
     };

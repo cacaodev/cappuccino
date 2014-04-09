@@ -2,8 +2,8 @@
 @import <Foundation/CPRunLoop.j>
 @import <Foundation/CPBundle.j>
 @import <Foundation/CPIndexSet.j>
-
-@import "CPLayoutConstraint.j"
+/*
+@import <AppKit/CPLayoutConstraint.j>
 
 @import "c.js"
 @import "HashTable.js"
@@ -20,8 +20,8 @@
 @import "SimplexSolver.js"
 
 @import "CassowaryBridge.js"
+*/
 
-/*
 @import <AppKit/c.js>
 @import <AppKit/HashTable.js>
 @import <AppKit/HashSet.js>
@@ -37,7 +37,6 @@
 @import <AppKit/SimplexSolver.js>
 
 @import "Resources/cassowary/CassowaryBridge.js"
-*/
 
 var ENGINE_SUPPORTS_WEB_WORKER,
     ENGINE_ALLOWS_WEB_WORKER,
@@ -154,7 +153,7 @@ var _CPLayoutEngineCachedEngines = {},
         solverReadyFunction(self);
     }
 
-CPLog.warn("Web Worker mode is " + [[self class] shouldEnableWebWorker] + "; worker=" + _worker.toString());
+    //CPLog.warn("Web Worker mode is " + [[self class] shouldEnableWebWorker] + "; worker=" + _worker.toString());
 
     return self;
 }
@@ -334,16 +333,15 @@ CPLog.warn("Web Worker mode is " + [[self class] shouldEnableWebWorker] + "; wor
 
     [sizeConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        var orientation = [aConstraint orientation],
-            constant = [aConstraint constant];
+        var json = [aConstraint toJSON];
 
-        json_constraints.push({orientation:orientation, constant:constant});
+        json_constraints.push(json);
 
         // Not needed if update ?
         [aConstraint registerItemsInEngine:self];
     }];
 
-    var args = {container:containerUID, editPriority:CPLayoutPriorityConstantEditing, constraints:json_constraints};
+    var args = {container:containerUID, constraints:json_constraints};
     [self sendCommand:"updateSizeConstraints" withArguments:args];
 }
 

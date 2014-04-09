@@ -35,10 +35,6 @@ CPLayoutPriorityDragThatCannotResizeWindow = 490; // This is the priority level 
 CPLayoutPriorityDefaultLow = 250; // this is the priority level at which a button hugs its contents horizontally.
 CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingSize], the smallest size that is large enough for the view's contents is computed.  This is the priority level with which the view wants to be as small as possible in that computation.  It's quite low.  It is generally not appropriate to make a constraint at exactly this priority.  You want to be higher or lower.
 
-CPLayoutPriorityControlStaySameSize = 9000;
-
-CPLayoutPriorityConstantEditing = 10000;
-
 CPLayoutPriorityResizeWindowEditing = 1000;
 
 CPLayoutPriorityWindowEqualsContentView = 1001;
