@@ -15,12 +15,19 @@
 {
     var r = 0,
         ms = 0,
-        me = 8;
+        me = 8,
+        autolayout = 0,
+        autosize = 0;
+
 
     for (var m = ms; m < me; m++)
-        r += [self _testConstraintBasedLayoutPerfWithMask:m];
+    {
+        var res = [self _testConstraintBasedLayoutPerfWithMask:m];
+        autolayout += res[0];
+        autosize += res[1];
+    }
 
-    CPLog.warn("AVG = x" + ROUND(1000*r/(me-ms))/1000 + " times slower");
+    CPLog.warn("Autolayout=" + autolayout + " ms. Autosize=" + autosize + " ms. AVG = x" + ROUND(1000*autolayout/autosize)/1000 + " times slower");
 
 /*
     [self _testConstraintBasedLayoutPerfWithMask:CPViewNotSizable];
@@ -123,7 +130,7 @@
 
     CPLog.warn("\n");
 
-    return r;
+    return [total2, total1];
 }
 
 @end
@@ -208,6 +215,9 @@ Commit 2a322f3
 2014-03-25 12:31:45.054 objj [warn]:    Autosize setFrame: 1.47 ms. Total 735 ms.
 2014-03-25 12:31:46.022 objj [warn]: Auto-layout setFrame: 1.698 ms. Total 849 ms (1.16x times slower).
 2014-03-25 12:31:46.023 objj [warn]:
+
+commit 8a084d2b19fba57ce555943b0d404cb8972e1792
+
 */
 
 /*

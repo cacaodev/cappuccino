@@ -2,8 +2,8 @@
 @import <Foundation/CPRunLoop.j>
 @import <Foundation/CPBundle.j>
 @import <Foundation/CPIndexSet.j>
-/*
-@import <AppKit/CPLayoutConstraint.j>
+
+@import "CPLayoutConstraint.j"
 
 @import "c.js"
 @import "HashTable.js"
@@ -20,8 +20,8 @@
 @import "SimplexSolver.js"
 
 @import "CassowaryBridge.js"
-*/
 
+/*
 @import <AppKit/c.js>
 @import <AppKit/HashTable.js>
 @import <AppKit/HashSet.js>
@@ -37,7 +37,7 @@
 @import <AppKit/SimplexSolver.js>
 
 @import "Resources/cassowary/CassowaryBridge.js"
-
+*/
 var ENGINE_SUPPORTS_WEB_WORKER,
     ENGINE_ALLOWS_WEB_WORKER,
     ENGINE_WORKER_PATH;
