@@ -1,3 +1,4 @@
+
 @import <AppKit/AppKit.j>
 @import <Foundation/Foundation.j>
 
@@ -14,6 +15,7 @@
     if (self) {
         intrinsicContentWidth = 100.0;
     }
+
     return self;
 }
 
@@ -29,10 +31,18 @@
     CPWindow      window;
     CPView        mainView;
     IntrinsicView intrinsicView;
+    CPArray       antiCompressionTestData;
+    CPArray       huggingTestData;
 }
 
 - (void)setUp
 {
+    var path = [[CPBundle bundleForClass:[self class]] pathForResource:@"AntiCompression.plist"];
+    antiCompressionTestData = [self arrayWithContentsOfFile:path];
+
+    path = [[CPBundle bundleForClass:[self class]] pathForResource:@"Hugging.plist"];
+    huggingTestData = [self arrayWithContentsOfFile:path];
+
     window = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 1002, 1002) styleMask:CPTitledWindowMask];
 
     mainView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 1000, 1000)];
@@ -45,95 +55,80 @@
 
 - (void)testAntiCompression1
 {
-    [self doTestIntrinsicContentSize:@[1000,1000,1000,1  ,100,100,100,50,100]];
+    [self doTestIntrinsicContentSize:antiCompressionTestData[0]];
 }
 
 - (void)testAntiCompression2
 {
-    [self doTestIntrinsicContentSize:@[1000,500 ,1000,1  ,100,100,100,50,100]];
+    [self doTestIntrinsicContentSize:antiCompressionTestData[1]];
 }
 
 - (void)testAntiCompression3
 {
-    [self doTestIntrinsicContentSize:@[1000,498 ,1000,499,100,100,100,50,50]];
+    [self doTestIntrinsicContentSize:antiCompressionTestData[2]];
 }
 
 - (void)testAntiCompression4
 {
-    [self doTestIntrinsicContentSize:@[1000,499 ,1000,498,100,100,100,50,100]];
+    [self doTestIntrinsicContentSize:antiCompressionTestData[3]];
 }
 
 - (void)testAntiCompression5
 {
-    [self doTestIntrinsicContentSize:@[1000,502 ,1000,501,100,100,100,50,50]];
-}
-
-- (void)testAntiCompression6
-{
-    [self doTestIntrinsicContentSize:@[1000,501 ,1000,502,100,100,100,50,50]];
-}
-
-- (void)testAntiCompression7
-{
-    [self doTestIntrinsicContentSize:@[1000,499 ,1000,501,100,100,100,50,50]];
-}
-
-- (void)testAntiCompression8
-{
-    [self doTestIntrinsicContentSize:@[1000,501 ,1000,499,100,100,100,50,100]];
+    [self doTestIntrinsicContentSize:antiCompressionTestData[4]];
 }
 
 - (void)testHugging1
 {
-    [self doTestIntrinsicContentSize:@[1000,1000,1  ,1000,50,50,50,100,50 ]];
+    [self doTestIntrinsicContentSize:huggingTestData[0]];
 }
 
 - (void)testHugging2
 {
-    [self doTestIntrinsicContentSize:@[1000,500 ,1  ,1000,50,50,50,100,50 ]];
+    [self doTestIntrinsicContentSize:huggingTestData[1]];
 }
 
 - (void)testHugging3
 {
-    [self doTestIntrinsicContentSize:@[1000,498 ,499,1000,50,50,50,100,100 ]];
+    [self doTestIntrinsicContentSize:huggingTestData[2]];
 }
 
 - (void)testHugging4
 {
-    [self doTestIntrinsicContentSize:@[1000,499 ,498,1000,50,50,50,100,50 ]];
+    [self doTestIntrinsicContentSize:huggingTestData[3]];
 }
 
 - (void)testHugging5
 {
-    [self doTestIntrinsicContentSize:@[1000,502 ,501,1000,50,50,50,100,100]];
+    [self doTestIntrinsicContentSize:huggingTestData[4]];
 }
 
 - (void)testHugging6
 {
-    [self doTestIntrinsicContentSize:@[1000,501 ,502,1000,50,50,50,100,100]];
+    [self doTestIntrinsicContentSize:huggingTestData[5]];
 }
 
 - (void)testHugging7
 {
-    [self doTestIntrinsicContentSize:@[1000,499 ,501,1000,50,50,50,100,100]];
+    [self doTestIntrinsicContentSize:huggingTestData[6]];
 }
 
 - (void)testHugging8
 {
-    [self doTestIntrinsicContentSize:@[1000,501 ,499,1000,50,50,50,100,50 ]];
+    [self doTestIntrinsicContentSize:huggingTestData[7]];
 }
 
-- (void)doTestIntrinsicContentSize:(CPArray)params/*leftPriority,rightPriority,compressionResistancePriority,huggingPriority,initialIntrinsicWidth,initialWidth,excpectedInitialWidth,newIntrinsicWidth,excpectedNewWidth*/
+- (void)doTestIntrinsicContentSize:(CPDictionary)params
 {
-    var leftPriority          = params[0];
-    var rightPriority         = params[1];
-    var antiComprPriority     = params[2];
-    var huggingPriority       = params[3];
-    var initialIntrinsicWidth = params[4];
-    var initialWidth          = params[5];
-    var excpectedInitialWidth = params[6];
-    var newIntrinsicWidth     = params[7];
-    var excpectedNewWidth     = params[8];
+    var leftPriority = [params objectForKey:@"leftPriority"];
+    var rightPriority = [params objectForKey:@"rightPriority"];
+    var compressionResistancePriority = [params objectForKey:@"compressionResistancePriority"];
+    var huggingPriority = [params objectForKey:@"huggingPriority"];
+    var initialIntrinsicWidth = [params objectForKey:@"initialIntrinsicWidth"];
+    var initialWidth = [params objectForKey:@"initialWidth"];
+    var excpectedWidth = [params objectForKey:@"excpectedWidth"];
+    var newIntrinsicWidth = [params objectForKey:@"newIntrinsicWidth"];
+    var excpectedNewWidth = [params objectForKey:@"excpectedNewWidth"];
 
     var left = [CPLayoutConstraint constraintWithItem:intrinsicView
                                                             attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:mainView attribute:CPLayoutAttributeLeft multiplier:1 constant:10];
@@ -144,8 +139,8 @@
                                                              relatedBy:CPLayoutRelationEqual toItem:mainView attribute:CPLayoutAttributeRight multiplier:1 constant:(-990 + initialWidth)];
     [right setPriority:rightPriority];
 
-    intrinsicView.intrinsicContentWidth = initialIntrinsicWidth;
-    [intrinsicView setContentCompressionResistancePriority:antiComprPriority  forOrientation:CPLayoutConstraintOrientationHorizontal];
+    [intrinsicView setIntrinsicContentWidth:initialIntrinsicWidth];
+    [intrinsicView setContentCompressionResistancePriority:compressionResistancePriority  forOrientation:CPLayoutConstraintOrientationHorizontal];
     [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:CPLayoutConstraintOrientationHorizontal];
 
     [mainView removeConstraints:[mainView constraints]];
@@ -159,17 +154,25 @@
     var intrinsicWidth = [intrinsicView intrinsicContentSize].width;
 
     [self assert:minX equals:10 message:@"minX should be %d", 10];
-    [self assert:excpectedInitialWidth equals:w message:@"Initial width wrong. Params:\n" + [params description]];
+    [self assert:w equals:excpectedWidth message:@"Initial width wrong. Params:\n" + [params description]];
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicWidth];
     [intrinsicView invalidateIntrinsicContentSize];
 
     intrinsicWidth = [intrinsicView intrinsicContentSize].width;
 
-    //[window layout];
     w = [intrinsicView frame].size.width;
 
-    [self assert:excpectedNewWidth equals:w /*message:@"New width wrong. Params:\n" + [params description]*/];
+    [self assert:w equals:excpectedNewWidth message:@"New width wrong. Params:\n" + [params description]];
+}
+
+- (CPArray)arrayWithContentsOfFile:(CPString)aPath
+{
+    var aURL = [CPURL URLWithString:aPath];
+
+    var data = [CPURLConnection sendSynchronousRequest:[CPURLRequest requestWithURL:aURL] returningResponse:NULL];
+
+    return [CPPropertyListSerialization propertyListFromData:data format:CPPropertyListXMLFormat_v1_0];
 }
 
 @end

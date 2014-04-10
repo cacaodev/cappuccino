@@ -36,6 +36,8 @@
     NSWindow *window;
     NSView *mainView;
     IntrinsicView *intrinsicView;
+    NSArray *antiCompressionTestData;
+    NSArray *huggingTestData;
 }
 @end
 
@@ -43,6 +45,12 @@
 
 - (void)setUp
 {
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"AntiCompression" ofType:@"plist"];
+    antiCompressionTestData = [[NSArray alloc] initWithContentsOfFile:path];
+
+    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"Hugging" ofType:@"plist"];
+    huggingTestData = [[NSArray alloc] initWithContentsOfFile:path];
+
     window = [[NSWindow alloc] initWithContentRect:CGRectMake(0, 0, 1000, 1000) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:YES];
     
     mainView = [[NSView alloc] initWithFrame:CGRectMake(0, 0, 1000, 1000)];
@@ -61,39 +69,27 @@
 
 - (void)testAntiCompression
 {
-    [self doTestIntrinsicContentSize:@[@1000,@1000,@1000,@1 ,@100,@100,@100,@50,@100]];
-    [self doTestIntrinsicContentSize:@[@1000,@500,@1000,@1  ,@100,@100,@100,@50,@100]];
-    [self doTestIntrinsicContentSize:@[@1000,@498,@1000,@499,@100,@100,@100,@50,@50 ]];
-    [self doTestIntrinsicContentSize:@[@1000,@499,@1000,@498,@100,@100,@100,@50,@100]];
-    [self doTestIntrinsicContentSize:@[@1000,@502,@1000,@501,@100,@100,@100,@50,@50 ]];
-    [self doTestIntrinsicContentSize:@[@1000,@501,@1000,@502,@100,@100,@100,@50,@50 ]];
-    [self doTestIntrinsicContentSize:@[@1000,@499,@1000,@501,@100,@100,@100,@50,@50 ]];
-    [self doTestIntrinsicContentSize:@[@1000,@501,@1000,@499,@100,@100,@100,@50,@100]];
+    for (NSDictionary *test in antiCompressionTestData)
+        [self doTestIntrinsicContentSize:test];
 }
 
 - (void)testHugging
 {
-    [self doTestIntrinsicContentSize:@[@1000,@1000,@1  ,@1000,@50,@50,@50,@100,@50 ]];
-    [self doTestIntrinsicContentSize:@[@1000,@500 ,@1  ,@1000,@50,@50,@50,@100,@50 ]];
-    [self doTestIntrinsicContentSize:@[@1000,@498 ,@499,@1000,@50,@50,@50,@100,@100]];
-    [self doTestIntrinsicContentSize:@[@1000,@499 ,@498,@1000,@50,@50,@50,@100,@50 ]];
-    [self doTestIntrinsicContentSize:@[@1000,@502 ,@501,@1000,@50,@50,@50,@100,@100]];
-    [self doTestIntrinsicContentSize:@[@1000,@501 ,@502,@1000,@50,@50,@50,@100,@100]];
-    [self doTestIntrinsicContentSize:@[@1000,@499 ,@501,@1000,@50,@50,@50,@100,@100]];
-    [self doTestIntrinsicContentSize:@[@1000,@501 ,@499,@1000,@50,@50,@50,@100,@50 ]];
+    for (NSDictionary *test in huggingTestData)
+        [self doTestIntrinsicContentSize:test];
 }
 
-- (void)doTestIntrinsicContentSize:(NSArray*)params/*leftPriority,rightPriority,compressionResistancePriority,huggingPriority,initialIntrinsicWidth,initialWidth,excpectedWidth,newIntrinsicWidth,excpectedNewWidth*/
+- (void)doTestIntrinsicContentSize:(NSDictionary*)params
 {
-    float leftPriority = [[params objectAtIndex:0] floatValue];
-    float rightPriority = [[params objectAtIndex:1] floatValue];
-    float compressionResistancePriority = [[params objectAtIndex:2] floatValue];
-    float huggingPriority = [[params objectAtIndex:3] floatValue];
-    float initialIntrinsicWidth = [[params objectAtIndex:4] floatValue];
-    float initialWidth = [[params objectAtIndex:5] floatValue];
-    float excpectedWidth = [[params objectAtIndex:6] floatValue];
-    float newIntrinsicWidth = [[params objectAtIndex:7] floatValue];
-    float excpectedNewWidth = [[params objectAtIndex:8] floatValue];
+    float leftPriority = [[params objectForKey:@"leftPriority"] floatValue];
+    float rightPriority = [[params objectForKey:@"rightPriority"] floatValue];
+    float compressionResistancePriority = [[params objectForKey:@"compressionResistancePriority"] floatValue];
+    float huggingPriority = [[params objectForKey:@"huggingPriority"] floatValue];
+    float initialIntrinsicWidth = [[params objectForKey:@"initialIntrinsicWidth"] floatValue];
+    float initialWidth = [[params objectForKey:@"initialWidth"] floatValue];
+    float excpectedWidth = [[params objectForKey:@"excpectedWidth"] floatValue];
+    float newIntrinsicWidth = [[params objectForKey:@"newIntrinsicWidth"] floatValue];
+    float excpectedNewWidth = [[params objectForKey:@"excpectedNewWidth"] floatValue];
     
     NSLayoutConstraint *left = [NSLayoutConstraint constraintWithItem:intrinsicView
                                                             attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual toItem:mainView attribute:NSLayoutAttributeLeft multiplier:1 constant:10];
@@ -105,11 +101,13 @@
     [right setPriority:rightPriority];
     
     intrinsicView.intrinsicContentWidth = initialIntrinsicWidth;
+    
     [intrinsicView setContentCompressionResistancePriority:compressionResistancePriority forOrientation:NSLayoutConstraintOrientationHorizontal];
     [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
     
     [mainView removeConstraints:mainView.constraints];
     [mainView addConstraints:@[left,right]];
+
     [window layoutIfNeeded];
     
     float minX = intrinsicView.frame.origin.x;
@@ -117,9 +115,9 @@
     
     float intrinsicWidth = intrinsicView.intrinsicContentSize.width;
     
-        //XCTAssertFalse(mainView.hasAmbiguousLayout, @"Ambiguous layout for %@", mainView);
+    //XCTAssertFalse(mainView.hasAmbiguousLayout, @"Ambiguous layout for %@", mainView);
     XCTAssertEqual(minX, 10, @"minX = %f", minX);
-    XCTAssertTrue(w == excpectedWidth, @"w = %f ics=%f", w, intrinsicWidth);
+    XCTAssertEqual(w , excpectedWidth, @"params=%@", [params description]);
     
     intrinsicView.intrinsicContentWidth = newIntrinsicWidth;
     [intrinsicView invalidateIntrinsicContentSize];
@@ -129,9 +127,9 @@
     [window layoutIfNeeded];
     w = intrinsicView.frame.size.width;
     
-        //XCTAssertFalse(mainView.hasAmbiguousLayout, @"Ambiguous layout for %@", mainView);
-        //XCTAssertTrue(intrinsicWidth = );
-    XCTAssertTrue(w == excpectedNewWidth, @"width:%f intrinsic:%f", w, intrinsicWidth);
+    //XCTAssertFalse(mainView.hasAmbiguousLayout, @"Ambiguous layout for %@", mainView);
+    //XCTAssertTrue(intrinsicWidth = );
+    XCTAssertEqual(w , excpectedNewWidth, @"params=%@", [params description]);
 }
 
 @end

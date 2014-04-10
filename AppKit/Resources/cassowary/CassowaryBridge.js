@@ -41,239 +41,245 @@ scope.EDITVARS_FOR_CONTEXT = {};
 scope.solver = null;
 
 scope.setDisableOnSolvedNotification = function(flag)
-                                 {
-                                     scope.solver.onvaluechange = flag ? onValueChange : scope.noop;
-                                     scope.solver.onSolved = flag ? onSolved : scope.noop;
-                                 };
-scope.createSolver  = function()
-                {
-                    var simplexSolver = new c.SimplexSolver();
-                    simplexSolver.autoSolve = false;
-                    simplexSolver.onvaluechange = onValueChange;
-                    simplexSolver.onsolved = onSolved;
-                    scope.solver = simplexSolver;
-                    WorkerLog('created solver');
+{
+    scope.solver.onvaluechange = flag ? onValueChange : scope.noop;
+    scope.solver.onSolved = flag ? onSolved : scope.noop;
+};
 
-                    return simplexSolver;
-                };
+scope.createSolver = function()
+{
+    var simplexSolver = new c.SimplexSolver();
+    simplexSolver.autoSolve = false;
+    simplexSolver.onvaluechange = onValueChange;
+    simplexSolver.onsolved = onSolved;
+    scope.solver = simplexSolver;
+    WorkerLog('created solver');
+
+    return simplexSolver;
+};
 
 scope.solve = function()
-                {
-                    if (!scope.SolverExists('solve'))
-                        return;
+{
+    if (!scope.SolverExists('solve'))
+        return;
 
-                    scope.solver.solve();
+    scope.solver.solve();
 
-                    WorkerLog("solve");
-                };
+    WorkerLog("solve");
+};
 
 scope.info = function()
-                {
-                    var info = scope.solver.toString();
-                    WorkerLog(info);
+{
+    var info = scope.solver.toString();
+    WorkerLog(info);
 
-                    return info;
-                };
+    return info;
+};
 
 scope.getconstraints = function()
-                {
-                    var str = "";
+{
+    var str = "";
 
-                    scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.forEach(function(w)
-                    {
-                        str += w.type + " " + w.constraint.toString() + "\n";
-                    });
+    scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.forEach(function(w)
+    {
+        str += w.type + " " + w.constraint.toString() + "\n";
+    });
 
-                    WorkerLog(str);
-                };
+    WorkerLog(str);
+};
 
 scope.addConstraint = function(json)
-                {
-                    if (!scope.SolverExists('addConstraint'))
-                        return;
+{
+    if (!scope.SolverExists('addConstraint'))
+        return;
 
-                    var type = json.type,
-                        constraints = [];
+    var type = json.type,
+        constraints = [];
 
-                    if (type == "Constraint")
-                    {
-                        var newConstraint = scope.CreateConstraint(json);
-                        constraints.push(newConstraint);
-                    }
-                    else if (type == "SizeConstraint")
-                    {
-                        var newConstraints = scope.CreateSizeConstraints(json);
-                        constraints.push.apply(constraints, newConstraints);
-                    }
+    if (type == "Constraint")
+    {
+        var newConstraint = scope.CreateConstraint(json);
+        constraints.push(newConstraint);
+    }
+    else if (type == "SizeConstraint")
+    {
+        var newConstraints = scope.CreateSizeConstraints(json);
+        constraints.push.apply(constraints, newConstraints);
+    }
 
-                    constraints.forEach(function(constraint)
-                    {
-                        scope.solver.addConstraint(constraint);
-                        WorkerLog('addConstraint uuid: ' + json.uuid  + " type: " + type + " cst:" + constraint.toString());
-                    });
+    constraints.forEach(function(constraint)
+    {
+        scope.solver.addConstraint(constraint);
+        WorkerLog('addConstraint uuid: ' + json.uuid  + " type: " + type + " cst:" + constraint.toString());
+    });
 
-                    return constraints;
-                };
+    return constraints;
+};
+
+scope._addConstraint = function(casso_constraint, uuid, container, type)
+{
+    scope.solver.addConstraint(casso_constraint);
+
+    var wrapper = {uuid:uuid ,container:container, type:type, constraint:casso_constraint};
+    scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
+};
 
 scope.addConstraints = function(jsonarray)
-                 {
-                     var add = scope.addConstraint;
+{
+    var add = scope.addConstraint;
 
-                     jsonarray.forEach(function(json)
-                     {
-                         scope.addConstraint(json);
-                     });
-                 };
+    jsonarray.forEach(function(json)
+    {
+        scope.addConstraint(json);
+    });
+};
 
 scope.removeConstraint = function(casso_constraint)
-                   {
-                       var error = null;
+{
+    var error = null;
 
-                       try
-                       {
-                           scope.solver.removeConstraint(casso_constraint);
-                       }
-                       catch (e)
-                       {
-                           error = e;
-                       }
-                       finally
-                       {
-                           if (error)
-                               WorkerWarn(error.toString());
-                            else
-                               WorkerLog('removed constraint :' + casso_constraint.toString());
-                       }
+    try
+    {
+        scope.solver.removeConstraint(casso_constraint);
+    }
+    catch (e)
+    {
+        error = e;
+    }
+    finally
+    {
+        if (error)
+            WorkerWarn(error.toString());
+         else
+            WorkerLog('removed constraint :' + casso_constraint.toString());
+    }
 
-                       return (error == null);
-                   };
+    return (error == null);
+};
 // Replace all contraints of the given type owned by the given container.
 scope.replaceConstraints = function(args)
-                    {
-                        var container = args.container,
-                            type = args.type,
-                            json_constraints = args.constraints;
+{
+    var container = args.container,
+        type = args.type,
+        json_constraints = args.constraints;
 
-                        var constraints_by_view_and_type = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP;
-                        var i = constraints_by_view_and_type.length;
-// remove
-                        while(i--)
-                        {
-                            var constraint_view_type = constraints_by_view_and_type[i];
-                            if (constraint_view_type.container == container && constraint_view_type.type == type)
-                            {
-                                scope.removeConstraint(constraint_view_type.constraint);
-                                constraints_by_view_and_type.splice(i, 1);
-                            }
-                        }
-// add
-                        json_constraints.forEach(function(json)
-                        {
-                            var casso_constraints = scope.addConstraint(json);
+    var constraints_by_view_and_type = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP;
+    var i = constraints_by_view_and_type.length;
 
-                            casso_constraints.forEach(function(constraint)
-                            {
-                                var wrapper = {uuid:json.uuid, container:container, type:json.type, constraint:constraint};
-                                constraints_by_view_and_type.push(wrapper);
-                            });
-                        });
-                    };
+    while(i--)
+    {
+        var constraint_view_type = constraints_by_view_and_type[i];
+        if (constraint_view_type.container == container && constraint_view_type.type == type)
+        {
+            scope.removeConstraint(constraint_view_type.constraint);
+            constraints_by_view_and_type.splice(i, 1);
+        }
+    }
+
+    json_constraints.forEach(function(json)
+    {
+        var casso_constraints = scope.addConstraint(json);
+
+        casso_constraints.forEach(function(constraint)
+        {
+            var wrapper = {uuid:json.uuid, container:container, type:json.type, constraint:constraint};
+            constraints_by_view_and_type.push(wrapper);
+        });
+    });
+};
 
 scope.updateSizeConstraints = function(args)
-                    {
-                        var container = args.container,
-                            json_constraints = args.constraints;
+{
+    var container = args.container,
+        json_constraints = args.constraints;
 
-                        json_constraints.forEach(function(json)
-                        {
-                            var uuid = json.uuid;
+    json_constraints.forEach(function(json)
+    {
+        var uuid = json.uuid;
 
-                            // Removes constraints for both hugging and antiCompression
-                            scope.removeConstraintWithUUID(uuid, "SizeConstraint");
+        // Removes constraints for both hugging and antiCompression
+        scope.removeConstraintWithUUID(uuid, "SizeConstraint", true);
 
-                            var casso_constraints = scope.addConstraint(json);
+        var casso_constraints = scope.addConstraint(json);
 
-                            casso_constraints.forEach(function(casso_constraint)
-                            {
-                                var wrapper = {uuid:uuid, container:container, type:"SizeConstraint", constraint:casso_constraint};
+        casso_constraints.forEach(function(casso_constraint)
+        {
+            var wrapper = {uuid:uuid, container:container, type:"SizeConstraint", constraint:casso_constraint};
 
-                                scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
-                            });
-                        });
+            scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
+        });
+    });
 
-                        scope.solver.solve();
-                    };
+    scope.solver.solve();
+};
 
 scope.setEditVarsForContext = function(args)
-                        {
-                            var tags = args.tags,
-                                identifier = args.identifier,
-                                priority = args.priority,
-                                editVars = [];
+{
+    var tags = args.tags,
+        identifier = args.identifier,
+        priority = args.priority,
+        editVars = [];
 
-                            tags.forEach(function(tag)
-                            {
-                               var variable = scope.GetVariable(identifier, tag);
-                               editVars.push({variable:variable, priority:priority});
-                            });
+    tags.forEach(function(tag)
+    {
+       var variable = scope.GetVariable(identifier, tag);
+       editVars.push({variable:variable, priority:priority});
+    });
 
-                            scope.EDITVARS_FOR_CONTEXT[identifier] = editVars;
-                        };
+    scope.EDITVARS_FOR_CONTEXT[identifier] = editVars;
+};
 
 scope.removeAllEditVars = function()
-                    {
-                        scope.solver.removeAllEditVars();
-                        scope.EDIT_CONTEXT = null;
-                    };
+{
+    scope.solver.removeAllEditVars();
+    scope.EDIT_CONTEXT = null;
+};
 
 scope.suggestValue = function(args)
-               {
-                   if (!scope.SolverExists('suggestValue'))
-                        return;
+{
+    if (!scope.SolverExists('suggestValue'))
+         return;
 
-                   var solver = scope.solver,
-                       variable = scope.GetVariable(args.identifier, args.tag),
-                       sw = scope.StrengthAndWeight(args.priority);
+    var solver = scope.solver,
+        variable = scope.GetVariable(args.identifier, args.tag),
+        sw = scope.StrengthAndWeight(args.priority);
 
-                   if (scope.EDIT_CONTEXT !== null)
-                       solver.removeAllEditVars();
+    if (scope.EDIT_CONTEXT !== null)
+        solver.removeAllEditVars();
 
-                   solver.addEditVar(variable, sw.strength, sw.weight).beginEdit();
-                   solver.suggestValue(variable, args.value);
-                   solver.endEdit();
+    solver.addEditVar(variable, sw.strength, sw.weight).beginEdit();
+    solver.suggestValue(variable, args.value);
+    solver.endEdit();
 
-                   scope.EDIT_CONTEXT = args.identifier;
+    scope.EDIT_CONTEXT = args.identifier;
 
-                   WorkerLog("suggestValue " + args.value + " for " + variable.toString());
-               };
+    WorkerLog("suggestValue " + args.value + " for " + variable.toString());
+};
 
 scope.suggestValuesMultiple = function(args)
-                        {
-                            scope.suggestValues(args.values, args.context);
-                            //WorkerLog("suggestValuesMultiple");
-                        };
+{
+    scope.suggestValues(args.values, args.context);
+    //WorkerLog("suggestValuesMultiple");
+};
 
 scope.addStayVariable = function(variable, priority)
-          {
-              WorkerLog('this is ' + this);
+{
+    WorkerLog('this is ' + this);
 
-              if (!scope.SolverExists('addStay'))
-                  return;
+    if (!scope.SolverExists('addStay'))
+        return;
 
-              var sw = scope.StrengthAndWeight(priority),
-                  container = variable._identifier,
-                  uuid = container + "_" + variable._tag,
-                  stayConstraint = new c.StayConstraint(variable, sw.strength, sw.weight);
+    var sw = scope.StrengthAndWeight(priority),
+        container = variable._identifier,
+        uuid = container + "_" + variable._tag,
+        stayConstraint = new c.StayConstraint(variable, sw.strength, sw.weight);
 
-              var replace_count = scope.removeConstraintWithUUID(uuid);
+    var replace_count = scope.removeConstraintWithUUID(uuid, "Stay", false);
 
-              scope.solver.addConstraint(stayConstraint);
+    scope._addConstraint(stayConstraint, uuid, container, "Stay");
 
-              var wrapper = {uuid:uuid ,container:container, type:"Stay", constraint:stayConstraint};
-              scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
-
-              WorkerLog('add Stay ' + variable.toString() + ' replacing ' + replace_count);
-          };
+    WorkerLog('add Stay ' + variable.toString() + ' replacing ' + replace_count);
+};
 
 scope.addStay = function(args)
 {
@@ -283,7 +289,7 @@ scope.addStay = function(args)
     scope.addStayVariable(variable, priority);
 };
 
-scope.removeConstraintWithUUID = function(uuid, type)
+scope.removeConstraintWithUUID = function(uuid, type, isMultiple)
 {
     var constraints_list = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP,
         count = constraints_list.length,
@@ -298,7 +304,7 @@ scope.removeConstraintWithUUID = function(uuid, type)
             ret += scope.removeConstraint(w.constraint);
             constraints_list.splice(count, 1);
 
-            if (type !== "SizeConstraint")
+            if (!isMultiple)
                 break;
         }
     }
