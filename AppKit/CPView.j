@@ -3609,6 +3609,23 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return 0.0;
 }
 
+- (CGRect)alignmentRectForFrame:(CGRect)frame
+{
+    return CGRectInsetByInset(frame, [self alignmentRectInsets]);
+}
+
+- (CGRect)frameForAlignmentRect:(CGRect)alignmentRect
+{
+    var invertedInset = CGInsetMakeInvertedCopy([self alignmentRectInsets]);
+
+    return CGRectInsetByInset(alignmentRect, invertedInset);
+}
+
+- (CGInset)alignmentRectInsets
+{
+    return CGInsetMakeZero();
+}
+
 - (CPArray)_internalConstraints
 {
     return _internalConstraints;

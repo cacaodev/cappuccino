@@ -260,10 +260,8 @@ var JSONForItem = function(anItem, anAttribute)
 
 var alignmentRectOffsetForItem = function(anItem, anAttribute)
 {
-    var hasContentInset = [anItem hasThemeAttribute:@"alignment-rect-inset"],
-        inset = hasContentInset ? [anItem currentValueForThemeAttribute:@"alignment-rect-inset"] : CGInsetMakeZero();
-
-    var offset = 0;
+    var inset = [anItem alignmentRectInsets],
+        offset = 0;
 
     switch (anAttribute)
     {
