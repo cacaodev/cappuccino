@@ -3696,13 +3696,19 @@ CPLog.debug(([self identifier] || [self class]) + _cmd);
 - (CGSize)resolvedIntrinsicContentSize
 {
     var intrinsicContentSize = CGSizeMakeCopy([self intrinsicContentSize]),
-        fittingSize = [self fittingSize];
+        isNoIntrinsicWidth = (intrinsicContentSize.width === CPViewNoInstrinsicMetric),
+        isNoIntrinsicHeight = (intrinsicContentSize.height === CPViewNoInstrinsicMetric);
 
-    if (intrinsicContentSize.width === CPViewNoInstrinsicMetric)
-        intrinsicContentSize.width = fittingSize.width;
+    if (isNoIntrinsicWidth || isNoIntrinsicHeight)
+    {
+        var fittingSize = [self fittingSize];
+CPLog.debug(_cmd + CGStringFromSize(intrinsicContentSize) + CGStringFromSize(fittingSize));
+        if (isNoIntrinsicWidth)
+            intrinsicContentSize.width = fittingSize.width;
 
-    if (intrinsicContentSize.height === CPViewNoInstrinsicMetric)
-        intrinsicContentSize.height = fittingSize.height;
+        if (isNoIntrinsicHeight)
+            intrinsicContentSize.height = fittingSize.height;
+    }
 
     return intrinsicContentSize;
 }
@@ -3711,25 +3717,25 @@ CPLog.debug(([self identifier] || [self class]) + _cmd);
 {
     var constraints = [CPArray array],
         intrinsicContentSize = [self resolvedIntrinsicContentSize],
-        intrinsicContentSizeWidth = intrinsicContentSize.width,
-        intrinsicContentSizeHeight = intrinsicContentSize.height;
+        isNoIntrinsicWidth = (intrinsicContentSize.width === CPViewNoInstrinsicMetric),
+        isNoIntrinsicHeight = (intrinsicContentSize.height === CPViewNoInstrinsicMetric);
 
-    if (intrinsicContentSizeWidth === CPViewNoInstrinsicMetric && intrinsicContentSizeHeight === CPViewNoInstrinsicMetric)
+    if (isNoIntrinsicWidth && isNoIntrinsicHeight)
         return constraints;
 
     var huggingPriorities = [self _contentHuggingPriorities],
         compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
-    if (intrinsicContentSizeWidth !== CPViewNoInstrinsicMetric)
+    if (!isNoIntrinsicWidth)
     {
-        var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSizeWidth huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:CPLayoutConstraintOrientationHorizontal];
+        var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSize.width huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:CPLayoutConstraintOrientationHorizontal];
 
         [constraints addObject:constraint];
     }
 
-    if (intrinsicContentSizeHeight !== CPViewNoInstrinsicMetric)
+    if (!isNoIntrinsicHeight)
     {
-        var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSizeHeight huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:CPLayoutConstraintOrientationVertical];
+        var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSize.height huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:CPLayoutConstraintOrientationVertical];
 
         [constraints addObject:constraint];
     }
