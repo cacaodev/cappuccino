@@ -893,6 +893,11 @@ CPButtonImageOffset   = 3.0;
     return [self _minimumFrameSize];
 }
 
+- (CGSize)intrinsicContentSize
+{
+    return CGSizeMake(CPViewNoInstrinsicMetric, 25);
+}
+
 + (CGSize)_defaultHuggingPriorities
 {
     return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);

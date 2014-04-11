@@ -14,7 +14,30 @@
 
 CPLogRegister(CPLogConsole);
 
-@implementation ColorView : CPView
+@implementation ConstraintView : CPView
+
+- (void)mouseDown:(CPEvent)anEvent
+{
+    if ([anEvent type] !== CPLeftMouseDown)
+        return;
+    var flags = [anEvent modifierFlags];
+
+    if (flags & CPCommandKeyMask)
+    {
+        CPLog.debug([self identifier] + " " + CPStringFromRect([self frame]));
+        CPLog.debug([[[self window] _layoutEngine] getInfo]);
+    }
+
+    if (flags & CPShiftKeyMask)
+    {
+        CPLog.debug([[[self window] _layoutEngine] sendCommand:"getconstraints" withArguments:null]);
+    }
+}
+
+
+@end
+
+@implementation ColorView : ConstraintView
 
 - (void)drawRect:(CGRect)aRect
 {
@@ -30,7 +53,7 @@ CPLogRegister(CPLogConsole);
 
 - (float)baselineOffsetFromBottom
 {
-    return 4;
+    return 4.0;
 }
 
 @end

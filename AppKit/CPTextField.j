@@ -1823,17 +1823,35 @@ CPTextFieldStatePlaceholder = CPThemeState("placeholder");
 
 @implementation CPTextField (ConstraintBasedLayout)
 
+- (CGSize)_editableIntrinsicContentSize
+{
+    return CGSizeMake(CPViewNoInstrinsicMetric, 29);
+}
+
+- (CGSize)intrinsicContentSize
+{
+    if ([self isEditable])
+        return [self _editableIntrinsicContentSize];
+
+    return [super intrinsicContentSize];
+}
+
 - (CGSize)fittingSize
 {
     if ([self isEditable])
-        return CGSizeMake(-1, -1);
+        return [self _editableIntrinsicContentSize];
 
     return [self _minimumFrameSize];
 }
 
+- (float)baselineOffsetFromBottom
+{
+    return [super baselineOffsetFromBottom];
+}
+
 + (CGSize)_defaultHuggingPriorities
 {
-    return CGSizeMake(250, 750);
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
 }
 
 @end

@@ -3623,6 +3623,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (CGInset)alignmentRectInsets
 {
+    if ([self hasThemeAttribute:@"bezel-inset"])
+        return [self currentValueForThemeAttribute:@"bezel-inset"];
+
     return CGInsetMakeZero();
 }
 

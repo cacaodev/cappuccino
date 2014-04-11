@@ -14,22 +14,22 @@
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="371">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="335" y="390" width="491" height="293"/>
+            <rect key="contentRect" x="335" y="390" width="518" height="294"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
-            <view key="contentView" identifier="mainView" id="372">
-                <rect key="frame" x="0.0" y="0.0" width="491" height="293"/>
+            <view key="contentView" identifier="mainView" id="372" customClass="ConstraintView">
+                <rect key="frame" x="0.0" y="0.0" width="518" height="294"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <customView identifier="leftView" translatesAutoresizingMaskIntoConstraints="NO" id="466" customClass="ColorView">
-                        <rect key="frame" x="89" y="102" width="153" height="112"/>
+                    <customView identifier="leftView" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="466" customClass="ColorView">
+                        <rect key="frame" x="89" y="102" width="167" height="113"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     </customView>
-                    <customView identifier="rightView" translatesAutoresizingMaskIntoConstraints="NO" id="474" customClass="ColorView">
-                        <rect key="frame" x="254" y="102" width="153" height="112"/>
+                    <customView identifier="rightView" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="474" customClass="ColorView">
+                        <rect key="frame" x="268" y="102" width="166" height="113"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     </customView>
                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ieH-ju-h4U">
-                        <rect key="frame" x="18" y="20" width="38" height="17"/>
+                        <rect key="frame" x="7" y="21" width="38" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="bNb-0v-tmj">
                             <font key="font" metaFont="system"/>
@@ -38,7 +38,7 @@
                         </textFieldCell>
                     </textField>
                     <popUpButton horizontalHuggingPriority="1000" verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kCB-aE-Hkx" customClass="CPPopUpButtonBaseline">
-                        <rect key="frame" x="57" y="14" width="75" height="26"/>
+                        <rect key="frame" x="60" y="14" width="78" height="26"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="WhC-rU-yx4" id="AAI-8T-SKc">
                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -52,9 +52,12 @@
                             </menu>
                         </popUpButtonCell>
                     </popUpButton>
-                    <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="foX-FB-pji">
-                        <rect key="frame" x="135" y="21" width="255" height="17"/>
+                    <textField horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="foX-FB-pji">
+                        <rect key="frame" x="141" y="20" width="359" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="251" id="4ar-VX-348"/>
+                        </constraints>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="My baseline is V aligned with the popup" id="UmS-cU-tzd">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -71,12 +74,12 @@
                     <constraint firstItem="474" firstAttribute="bottom" secondItem="466" secondAttribute="bottom" id="477"/>
                     <constraint firstItem="474" firstAttribute="leading" secondItem="466" secondAttribute="trailing" constant="12" id="483"/>
                     <constraint firstItem="474" firstAttribute="width" secondItem="466" secondAttribute="width" id="485"/>
-                    <constraint firstItem="kCB-aE-Hkx" firstAttribute="baseline" secondItem="ieH-ju-h4U" secondAttribute="baseline" id="697-Q6-0bz"/>
-                    <constraint firstItem="foX-FB-pji" firstAttribute="baseline" secondItem="kCB-aE-Hkx" secondAttribute="baseline" constant="-1" id="TMq-K0-8lI"/>
+                    <constraint firstItem="kCB-aE-Hkx" firstAttribute="baseline" secondItem="ieH-ju-h4U" secondAttribute="baseline" constant="1" id="697-Q6-0bz"/>
+                    <constraint firstItem="foX-FB-pji" firstAttribute="baseline" secondItem="kCB-aE-Hkx" secondAttribute="baseline" id="TMq-K0-8lI"/>
                     <constraint firstItem="foX-FB-pji" firstAttribute="leading" secondItem="kCB-aE-Hkx" secondAttribute="trailing" constant="8" id="cpm-gd-kyN"/>
-                    <constraint firstAttribute="bottom" secondItem="ieH-ju-h4U" secondAttribute="bottom" constant="20" id="dMe-KV-oMg"/>
-                    <constraint firstItem="ieH-ju-h4U" firstAttribute="leading" secondItem="372" secondAttribute="leading" constant="20" id="uiz-LR-gbR"/>
-                    <constraint firstItem="kCB-aE-Hkx" firstAttribute="leading" secondItem="ieH-ju-h4U" secondAttribute="trailing" constant="5" id="xtY-tI-wgj"/>
+                    <constraint firstAttribute="bottom" secondItem="ieH-ju-h4U" secondAttribute="bottom" constant="21" id="dMe-KV-oMg"/>
+                    <constraint firstItem="kCB-aE-Hkx" firstAttribute="leading" secondItem="ieH-ju-h4U" secondAttribute="trailing" constant="19" id="tB4-ET-kxm"/>
+                    <constraint firstItem="ieH-ju-h4U" firstAttribute="leading" secondItem="372" secondAttribute="leading" constant="9" id="uiz-LR-gbR"/>
                 </constraints>
             </view>
         </window>

@@ -59,7 +59,7 @@ DQ
                         </buttonCell>
                     </button>
                     <customView identifier="colorView" translatesAutoresizingMaskIntoConstraints="NO" id="1445" customClass="ColorView">
-                        <rect key="frame" x="20" y="62" width="547" height="299"/>
+                        <rect key="frame" x="20" y="62" width="547" height="306"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     </customView>
                     <textField identifier="textField" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1476">
@@ -84,13 +84,13 @@ DQ
                     <constraint firstItem="1445" firstAttribute="leading" secondItem="573" secondAttribute="leading" constant="20" symbolic="YES" id="1448"/>
                     <constraint firstAttribute="trailing" secondItem="1445" secondAttribute="trailing" constant="20" id="1452"/>
                     <constraint firstItem="1379" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="1273" secondAttribute="trailing" constant="12" id="1468"/>
-                    <constraint firstItem="1476" firstAttribute="top" secondItem="573" secondAttribute="top" constant="20" id="1478"/>
+                    <constraint firstItem="1476" firstAttribute="top" secondItem="573" secondAttribute="top" constant="20" symbolic="YES" id="1478"/>
                     <constraint firstItem="1476" firstAttribute="leading" secondItem="573" secondAttribute="leading" constant="20" symbolic="YES" id="1485"/>
                     <constraint firstAttribute="trailing" secondItem="1476" secondAttribute="trailing" constant="20" symbolic="YES" id="1486"/>
                     <constraint firstItem="1379" firstAttribute="baseline" secondItem="1375" secondAttribute="baseline" id="1499"/>
                     <constraint firstItem="1379" firstAttribute="top" secondItem="1445" secondAttribute="bottom" constant="20" id="O3V-uf-QMO"/>
+                    <constraint firstItem="1445" firstAttribute="top" secondItem="1476" secondAttribute="bottom" constant="8" symbolic="YES" id="OIc-2t-jwJ"/>
                     <constraint firstAttribute="bottom" secondItem="1273" secondAttribute="bottom" constant="21" id="P7h-NT-4Km"/>
-                    <constraint firstItem="1445" firstAttribute="top" secondItem="573" secondAttribute="top" constant="57" id="ms2-W7-Lhh"/>
                 </constraints>
             </view>
         </window>
