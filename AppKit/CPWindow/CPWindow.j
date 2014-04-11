@@ -3720,11 +3720,12 @@ var interpolate = function(fromValue, toValue, progress)
     {
         // debug
         [_windowView setIdentifier:@"windowView"];
+        [_contentView setIdentifier:@"contentView"];
 
-        var onSolverReady = new _EngineOnSolverReadyFunctionCreate(_windowView);
+        var onSolverReady = new _EngineOnSolverReadyFunctionCreate(self);
         var onViewsSolved = new _EngineOnSolvedFunctionCreate(self);
 
-        _layoutEngine = [[CPLayoutConstraintEngine alloc] initWithSolverSetup:onSolverReady engineCompletion:onViewsSolved];
+        _layoutEngine = [[CPLayoutConstraintEngine alloc] initWithSolverCreatedCallback:onSolverReady onSolvedCallback:onViewsSolved];
     }
 
     return _layoutEngine;
@@ -3808,11 +3809,16 @@ var interpolate = function(fromValue, toValue, progress)
     [engine endUpdates];
 }
 
-- (void)_updateWindowViewStayConstraints
+// Update because the Cassowary Engine removes first if a stay constraint already exists for this variable;
+- (void)_updateWindowStayConstraintsInEngine:(id)anEngine
 {
-    var engine = [self _layoutEngine];
-    [engine addStayVariable:8 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
-    [engine addStayVariable:16 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
+    [anEngine addStayVariable:8 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
+    [anEngine addStayVariable:16 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
+}
+
+- (void)_setWindowEditConstraintsInEngine:(id)anEngine
+{
+    [anEngine setEditVariables:[8, 16] priority:CPLayoutPriorityResizeWindowEditing fromItem:_windowView];
 }
 
 - (void)_updateWindowResizeConstraints
@@ -3847,13 +3853,12 @@ function _CPWindowFullPlatformWindowSessionMake(aWindowView, aContentRect, hasSh
     return { windowView:aWindowView, contentRect:aContentRect, hasShadow:hasShadow, level:aLevel };
 }
 
-var _EngineOnSolverReadyFunctionCreate = function(aWindowView)
+var _EngineOnSolverReadyFunctionCreate = function(aWindow)
 {
     return function(anEngine)
     {
-        [anEngine addStayVariable:8 priority:CPLayoutPriorityWindowSizeStayPut fromItem:aWindowView];
-        [anEngine addStayVariable:16 priority:CPLayoutPriorityWindowSizeStayPut fromItem:aWindowView];
-        [anEngine setEditVariables:[8, 16] priority:CPLayoutPriorityResizeWindowEditing fromItem:aWindowView];
+        [aWindow _updateWindowStayConstraintsInEngine:anEngine];
+        [aWindow _setWindowEditConstraintsInEngine:anEngine];
     };
 };
 

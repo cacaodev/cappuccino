@@ -3654,7 +3654,7 @@ CPLog.debug(_cmd + "\nOLD " + _internalConstraints + "\nNEW " + contentSizeConst
     [engine beginUpdates];
 
     [engine stopEditing];
-    [[self window] _updateWindowViewStayConstraints];
+    [[self window] _updateWindowStayConstraintsInEngine:engine];
     [engine solver_updateSizeConstraints:_internalConstraints forView:self];
     //[[self window] layout];
 

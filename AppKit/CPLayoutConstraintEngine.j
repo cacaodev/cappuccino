@@ -90,7 +90,7 @@ var _CPLayoutEngineCachedEngines = {},
     }
 }
 
-- (id)initWithSolverSetup:(Function)solverReadyFunction engineCompletion:(Function)onSolvedFunction
+- (id)initWithSolverCreatedCallback:(Function)solverReadyFunction onSolvedCallback:(Function)onSolvedFunction
 {
     self = [super init];
 
@@ -120,7 +120,7 @@ var _CPLayoutEngineCachedEngines = {},
 
             _worker.addEventListener('error', function(e)
             {
-                CPLog.error('ERROR: Line ' + e.lineno + ' in ' + e.filename + ': ' + e.message);
+                CPLog.error("Worker error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
             }, false);
 
             [self beginUpdates];
