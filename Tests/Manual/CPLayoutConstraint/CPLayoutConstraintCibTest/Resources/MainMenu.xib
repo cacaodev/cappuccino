@@ -13,10 +13,10 @@
         <customObject id="-3" userLabel="Application"/>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" showsToolbarButton="NO" animationBehavior="default" id="572">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <rect key="contentRect" x="552" y="411" width="514" height="304"/>
+            <rect key="contentRect" x="552" y="411" width="587" height="418"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
             <view key="contentView" identifier="mainView" id="573" customClass="ColorView">
-                <rect key="frame" x="0.0" y="0.0" width="514" height="304"/>
+                <rect key="frame" x="0.0" y="0.0" width="587" height="418"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <button identifier="cancel" horizontalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1273">
@@ -34,7 +34,7 @@ Gw
                         </buttonCell>
                     </button>
                     <button identifier="ok" horizontalHuggingPriority="750" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1375">
-                        <rect key="frame" x="448" y="14" width="52" height="32"/>
+                        <rect key="frame" x="521" y="14" width="52" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="40" id="1496"/>
@@ -48,7 +48,7 @@ DQ
                         </buttonCell>
                     </button>
                     <button identifier="middle" horizontalHuggingPriority="1" verticalHuggingPriority="749" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1379">
-                        <rect key="frame" x="142" y="14" width="306" height="32"/>
+                        <rect key="frame" x="215" y="14" width="306" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <constraints>
                             <constraint firstAttribute="width" priority="271" constant="294" id="1503"/>
@@ -59,11 +59,11 @@ DQ
                         </buttonCell>
                     </button>
                     <customView identifier="colorView" translatesAutoresizingMaskIntoConstraints="NO" id="1445" customClass="ColorView">
-                        <rect key="frame" x="20" y="57" width="474" height="200"/>
+                        <rect key="frame" x="20" y="62" width="547" height="299"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     </customView>
-                    <textField identifier="textField" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1476">
-                        <rect key="frame" x="20" y="270" width="474" height="22"/>
+                    <textField identifier="textField" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1476">
+                        <rect key="frame" x="20" y="376" width="547" height="22"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="Change Middle Button Text" drawsBackground="YES" id="1477">
                             <font key="font" metaFont="system"/>
@@ -77,20 +77,20 @@ DQ
                 </subviews>
                 <constraints>
                     <constraint firstItem="1273" firstAttribute="leading" secondItem="573" secondAttribute="leading" constant="20" id="1373"/>
-                    <constraint firstAttribute="trailing" secondItem="1375" secondAttribute="trailing" constant="20" id="1378"/>
-                    <constraint firstItem="1375" firstAttribute="leading" secondItem="1379" secondAttribute="trailing" priority="750" constant="12" id="1399"/>
-                    <constraint firstAttribute="bottom" secondItem="1273" secondAttribute="bottom" constant="21" id="1425"/>
+                    <constraint firstAttribute="trailing" secondItem="1375" secondAttribute="trailing" constant="20" symbolic="YES" id="1378"/>
+                    <constraint firstItem="1375" firstAttribute="leading" secondItem="1379" secondAttribute="trailing" priority="750" constant="12" symbolic="YES" id="1399"/>
                     <constraint firstAttribute="centerX" secondItem="1379" secondAttribute="centerX" priority="1" id="1429"/>
                     <constraint firstItem="1273" firstAttribute="baseline" secondItem="1375" secondAttribute="baseline" id="1437"/>
-                    <constraint firstItem="1445" firstAttribute="leading" secondItem="573" secondAttribute="leading" constant="20" id="1448"/>
-                    <constraint firstAttribute="bottom" secondItem="1445" secondAttribute="bottom" constant="57" id="1451"/>
+                    <constraint firstItem="1445" firstAttribute="leading" secondItem="573" secondAttribute="leading" constant="20" symbolic="YES" id="1448"/>
                     <constraint firstAttribute="trailing" secondItem="1445" secondAttribute="trailing" constant="20" id="1452"/>
                     <constraint firstItem="1379" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="1273" secondAttribute="trailing" constant="12" id="1468"/>
-                    <constraint firstItem="1445" firstAttribute="top" secondItem="573" secondAttribute="top" constant="47" id="1475"/>
-                    <constraint firstItem="1476" firstAttribute="top" secondItem="573" secondAttribute="top" constant="12" id="1478"/>
-                    <constraint firstItem="1476" firstAttribute="leading" secondItem="573" secondAttribute="leading" constant="20" id="1485"/>
-                    <constraint firstAttribute="trailing" secondItem="1476" secondAttribute="trailing" constant="20" id="1486"/>
+                    <constraint firstItem="1476" firstAttribute="top" secondItem="573" secondAttribute="top" constant="20" id="1478"/>
+                    <constraint firstItem="1476" firstAttribute="leading" secondItem="573" secondAttribute="leading" constant="20" symbolic="YES" id="1485"/>
+                    <constraint firstAttribute="trailing" secondItem="1476" secondAttribute="trailing" constant="20" symbolic="YES" id="1486"/>
                     <constraint firstItem="1379" firstAttribute="baseline" secondItem="1375" secondAttribute="baseline" id="1499"/>
+                    <constraint firstItem="1379" firstAttribute="top" secondItem="1445" secondAttribute="bottom" constant="20" id="O3V-uf-QMO"/>
+                    <constraint firstAttribute="bottom" secondItem="1273" secondAttribute="bottom" constant="21" id="P7h-NT-4Km"/>
+                    <constraint firstItem="1445" firstAttribute="top" secondItem="573" secondAttribute="top" constant="57" id="ms2-W7-Lhh"/>
                 </constraints>
             </view>
         </window>

@@ -52,6 +52,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     double   _constant         @accessors(getter=constant);
     float    _coefficient      @accessors(getter=multiplier);
     float    _priority         @accessors(property=priority);
+
+    CPString _symbolicConstant;
 //    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
 }
 
@@ -71,12 +73,18 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     _relation = relation;
     _coefficient = multiplier;
     _constant = constant;
+    _symbolicConstant = nil;
     _priority = CPLayoutPriorityRequired;
 //    _shouldBeArchived = NO;
 
     [self _init];
 
     return self;
+}
+
+- (void)_init
+{
+    _container = nil;
 }
 
 - (void)setFirstItem:(id)anItem
@@ -93,11 +101,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
         anItem = nil;
 
     _secondItem = anItem;
-}
-
-- (void)_init
-{
-    _container = nil;
 }
 
 - (void)registerItemsInEngine:(id)anEngine
@@ -172,6 +175,39 @@ CPLog.debug(self +_cmd);
     }
 }
 
+- (BOOL)resolvedConstant:(@ref)refConstant forSymbolicConstant:(CPString)symbol error:(@ref)refError
+{
+    var error = nil;
+    var constant = @deref(refConstant);
+    var result = NO;
+
+    if (symbol !== nil)
+    {
+        if (_container == nil)
+        {
+            error = @"Cannot resolve symbolic constant because the constraint is not installed.";
+            result = NO;
+        }
+
+        else if (symbol == @"NSSpace" && _firstAttribute <= 6 && _secondAttribute <= 6)
+        {
+            if (_firstItem == _container || _secondItem == _container)
+                constant = 20.0;
+            else if (_firstItem !== nil && _secondItem !== nil)
+                constant = 8.0;
+
+            result = YES;
+        }
+    }
+
+    if (refError)
+        refError(error);
+
+    refConstant(constant);
+
+    return result;
+}
+
 @end
 
 var CPFirstItem         = @"CPFirstItem",
@@ -207,6 +243,9 @@ var CPFirstItem         = @"CPFirstItem",
 
     [aCoder encodeDouble:_constant forKey:CPConstant];
 
+    if (_symbolicConstant)
+        [aCoder encodeObject:_symbolicConstant forKey:CPSymbolicConstant];
+
     if (_priority !== CPLayoutPriorityRequired)
         [aCoder encodeInt:_priority forKey:CPPriority];
 
@@ -231,7 +270,7 @@ var CPFirstItem         = @"CPFirstItem",
     _secondAttribute = [aCoder decodeIntForKey:CPSecondAttribute];
 
     _constant = [aCoder decodeDoubleForKey:CPConstant];
-
+    _symbolicConstant = [aCoder decodeObjectForKey:CPSymbolicConstant];
     //_shouldBeArchived = [aCoder decodeBoolForKey:CPShouldBeArchived];
     //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
 

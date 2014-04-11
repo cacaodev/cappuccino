@@ -35,22 +35,27 @@
         _firstAttribute = [aCoder decodeIntForKey:@"NSFirstAttribute"];
 
         var hasKey = [aCoder containsValueForKey:@"NSRelation"];
-        _relation = hasKey ? [aCoder decodeIntForKey:@"NSRelation"] : 0 ;// TODO: relation when not in xib;
+        _relation = hasKey ? [aCoder decodeIntForKey:@"NSRelation"] : CPLayoutRelationEqual ;// TODO: check relation when not in xib;
 
         _secondItem = [aCoder decodeObjectForKey:@"NSSecondItem"];
         _secondAttribute = [aCoder decodeIntForKey:@"NSSecondAttribute"];
 
         var hasKey = [aCoder containsValueForKey:@"NSMultiplier"];
-        _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:@"NSMultiplier"] : 1 ;// TODO: multiplier when not in xib;
+        _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:@"NSMultiplier"] : 1 ;// TODO: check multiplier when not in xib;
 
-        var symbolicConstant = [aCoder decodeObjectForKey:"NSSymbolicConstant"];
-        _constant = (symbolicConstant == "NSSpace") ? 20 : [aCoder decodeDoubleForKey:@"NSConstant"];
+        var hasKey = [aCoder containsValueForKey:@"NSConstant"];
+        _constant = [aCoder decodeDoubleForKey:@"NSConstant"];
+        _symbolicConstant = [aCoder decodeObjectForKey:"NSSymbolicConstant"];
+
+        // Debug
+        if (!hasKey)
+            CPLog.warn(@"No NSConstant in xib. Symbolic constant is " + _symbolicConstant);
+
+        var hasKey = [aCoder containsValueForKey:@"NSPriority"];
+        _priority = (hasKey) ? [aCoder decodeIntForKey:@"NSPriority"] : CPLayoutPriorityRequired; // TODO: check _priority when not in xib;
 
         //_shouldBeArchived = [aCoder decodeBoolForKey:@"NSShouldBeArchived"];
         //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
-
-        var hasKey = [aCoder containsValueForKey:@"NSPriority"];
-        _priority = (hasKey) ? [aCoder decodeIntForKey:@"NSPriority"] : CPLayoutPriorityRequired; // TODO: _priority when not in xib;
     }
 
     return self;
