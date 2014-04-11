@@ -1,30 +1,28 @@
-Autolayout
-==========
+#Autolayout
 
-Autolayout in cappuccino based on cassowary.js
+**Autolayout in cappuccino based on [Cassowary.js](https://github.com/slightlyoff/cassowary.js)**
 
-Original Cassowary from Badros and Borning: http://www.cs.washington.edu/research/constraints/cassowary/
-Cassowary js port: https://github.com/slightlyoff/cassowary.js
+[Original Cassowary from Badros and Borning](http://www.cs.washington.edu/research/constraints/cassowary/)
 
-TODO:
-=====
+
+###TODO:
 
 - Call CPWindow -layout at appropriate time in the FMW.
-- -layout should be -layoutIfNeeded : figure out what "ifNeeded" means: constraints update, frames out of sync.
-- Implement -baselineOffsetFromBottom in controls where relevant.
-- Implement -alignmentRectInsets in controls where relevant. Note: what about nib2cib conversion ? when we adjust frames in nib2cib we will need to also adjust constraints constants.
+- -layout should be `-layoutIfNeeded` : figure out what "ifNeeded" means: constraints update, frames out of sync.
+- Implement `-baselineOffsetFromBottom` in controls where relevant.
+- Implement `-alignmentRectInsets` in controls where relevant. Note: what about nib2cib conversion ? when we adjust frames in nib2cib we will need to also adjust constraints constants.
 - Decide how autosize and autolayout can live together. Apple: on a view basis, certainly to make adoption easier. On a CPWindow basis is enough for us but ... we still need to handle private views with masks (created in code or in IB). <- done.
 - -layoutSubviews is not tested. It should continue to work.
 - Default constraints when a view is added to its superview ? currently none.
 - Handle addSubview: , removeSubview: , when a view moves from a window to another (different engines) and in general situations where the engine frames and the local frame are out of sync.
-- call -invalidateIntrinsicContentSize in controls when appropriate (the fitting size changes). Currently done in CPButton & subclasses.
-- compute fittingSize in controls. The computation take care of constraints and CPLayoutPriorityFittingSize
+- call `-invalidateIntrinsicContentSize` in controls when appropriate (the content changes). Currently done in CPButton & subclasses.
+- compute -fittingSize in controls. The computation should take care of constraints and CPLayoutPriorityFittingSize
 - ojtest Tests comparing autosize and autolayout.
 - In capp, the contentView size is 2px < than the windowView, in cocoa/IB they are ==. Is this a problem ?
-- Rewrite SplitView with constraints ! Splitview resize = user input with a certain priority.
+- Rewrite CPSplitView with constraints ! CPSplitview drag = user input with a given priority.
 - Write a Quadrilatere demo in capp. currently i don't think it can be done with the cocoa API where a constraint can link no more than 2 items. Maybe by abstracting item variables with a protocol ?
-- Detect when cassowary variables are mutually exclusive ? And create separate solvers for each independant group of constraints ? In a web worker working in // ? And wake up ?
-- Do not import cassowary files twice when the WebWorker is enabled and need to import files on its own.
+- Detect when cassowary variables are mutually exclusive ? And create separate solvers for each independant group of constraints ? In a web worker working in // 
+- Do not import cassowary files twice when the WebWorker is enabled and imports files itself.
 
 Welcome to Cappuccino!
 ======================
