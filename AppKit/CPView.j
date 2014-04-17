@@ -3845,7 +3845,7 @@ CPLog.debug(_cmd + " " + [constraints description]);
         if ([_constraintsArray containsObject:aConstraint])
             return;
 
-        [aConstraint setContainer:self];
+        [aConstraint _setContainer:self];
 
         var firstItem = [aConstraint firstItem],
             secondItem = [aConstraint secondItem];

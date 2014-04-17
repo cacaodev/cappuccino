@@ -41,6 +41,10 @@ CPLayoutPriorityWindowEqualsContentView = 1001;
 
 var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bottom",  "Left",  "Right",  "Width",  "Height",  "CenterX",  "CenterY",  "Baseline"];
 
+var CPLayoutItemIsNull = 1 << 1,
+    CPLayoutItemIsContainer = 1 << 2,
+    CPLayoutItemIsNotContainer = 1 << 3;
+
 @implementation CPLayoutConstraint : CPObject
 {
     id       _container        @accessors(property=container);
@@ -52,6 +56,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
     double   _constant         @accessors(getter=constant);
     float    _coefficient      @accessors(getter=multiplier);
     float    _priority         @accessors(property=priority);
+    int      _contraintFlags;
 
     CPString _symbolicConstant;
 //    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
@@ -85,6 +90,15 @@ var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bo
 - (void)_init
 {
     _container = nil;
+    _contraintFlags = 0;
+}
+
+- (void)_setContainer:(id)aContainer
+{
+    _container = aContainer;
+
+    _contraintFlags = (CPLayoutConstraintFlags(_container, _firstItem)) |
+                      (CPLayoutConstraintFlags(_container, _secondItem) << 3);
 }
 
 - (void)setFirstItem:(id)anItem
@@ -137,8 +151,11 @@ CPLog.debug(self +_cmd);
 
 - (Object)toJSON
 {
-    var firstItemJSON = JSONForItem(_firstItem, _firstAttribute),
-        secondItemJSON = JSONForItem(_secondItem, _secondAttribute);
+    if (_container == nil)
+        CPLog.warn(self + " container is nil and it should not");
+
+    var firstItemJSON = JSONForItem(_container, _firstItem, _firstAttribute),
+        secondItemJSON = JSONForItem(_container, _secondItem, _secondAttribute);
 
     var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
         secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
@@ -152,7 +169,8 @@ CPLog.debug(self +_cmd);
        relation       : _relation,
        multiplier     : _coefficient,
        constant       : (_constant + secondOffset * _coefficient - firstOffset),
-       priority       : _priority
+       priority       : _priority,
+       flags          : _contraintFlags
     };
 }
 
@@ -284,16 +302,17 @@ var CPFirstItem         = @"CPFirstItem",
 
 @end
 
-var JSONForItem = function(anItem, anAttribute)
+var JSONForItem = function(aContainer, anItem, anAttribute)
 {
     if (anItem == nil || anAttribute == CPLayoutAttributeNotAnAttribute)
-        return {attribute : anAttribute};
+        return {attribute : anAttribute, flags:2};
 
     return {
         uuid        : [anItem UID],
         name        : [anItem identifier] || [anItem className],
         rect        : [anItem frame],
-        attribute   : anAttribute
+        attribute   : anAttribute,
+        flags       : CPLayoutConstraintFlags(aContainer, anItem)
     };
 };
 
@@ -342,4 +361,9 @@ var CPStringFromRelation = function(relation)
         case 0  : return "==";
         case 1  : return ">=";
     }
+};
+
+var CPLayoutConstraintFlags = function(aContainer, anItem)
+{
+    return (anItem == nil) ? CPLayoutItemIsNull : ((anItem == aContainer) ? CPLayoutItemIsContainer : CPLayoutItemIsNotContainer);
 };

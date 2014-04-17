@@ -85,7 +85,7 @@ scope.getconstraints = function()
         str += w.type + " " + w.constraint.toString() + "\n";
     });
 
-    WorkerLog(str);
+    WorkerLog(str + "\n" + scope.solver.rows.toString());
 };
 
 scope.addConstraint = function(json)
@@ -430,6 +430,8 @@ scope.StrengthAndWeight = function(p)
 
 scope.CreateConstraint = function(args)
 {
+WorkerLog(args.firstItem.uuid + " " + args.secondItem.uuid + " " + args.containerUUID + " " + args.flags);
+
     var firstItemArgs   = args.firstItem,
         secondItemArgs  = args.secondItem,
         firstItemUUID   = firstItemArgs.uuid,
@@ -443,8 +445,9 @@ scope.CreateConstraint = function(args)
         constraint,
         rhs_term;
 
-    var first = scope.expressionForAttribute(firstItemArgs, (containerUUID === firstItemUUID), (firstItemUUID === null)),
-        second = scope.expressionForAttribute(secondItemArgs, (containerUUID === secondItemUUID), (secondItemUUID === null));
+    var first = scope.expressionForAttribute(firstItemArgs),
+        second = scope.expressionForAttribute(secondItemArgs);
+
     if (second.isConstant)
         rhs_term = new c.Expression.fromConstant(second.constant * multiplier + constant);
     else if (multiplier === 0)
@@ -484,9 +487,10 @@ scope.CreateSizeConstraints = function(args)
     return [huggingConstraint, compressionConstraint];
 };
 
-scope.expressionForAttribute = function(args, isContainer, isNull)
+scope.expressionForAttribute = function(args)
 {
-    var attribute = args.attribute;
+    var attribute = args.attribute,
+        isNull = args.flags & 2;
 
     if (isNull || attribute === CPLayoutAttributeNotAnAttribute)
         return new c.Expression.fromConstant(0);
@@ -494,6 +498,7 @@ scope.expressionForAttribute = function(args, isContainer, isNull)
     var itemName = args.name,
         rect = args.rect,
         uuid = args.uuid,
+        isContainer = args.flags & 4,
         exp;
 
     switch(attribute)
