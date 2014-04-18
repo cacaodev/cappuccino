@@ -445,25 +445,23 @@ WorkerLog(args.firstItem.uuid + " " + args.secondItem.uuid + " " + args.containe
         constraint,
         rhs_term;
 
-    var first = scope.expressionForAttribute(firstItemArgs),
-        second = scope.expressionForAttribute(secondItemArgs);
+    var lhs_term = scope.expressionForAttribute(firstItemArgs),
+        secondExp = scope.expressionForAttribute(secondItemArgs);
 
-    if (second.isConstant)
-        rhs_term = new c.Expression.fromConstant(second.constant * multiplier + constant);
+    if (secondExp.isConstant)
+        rhs_term = new c.Expression.fromConstant(secondExp.constant * multiplier + constant);
     else if (multiplier === 0)
         rhs_term = new c.Expression.fromConstant(constant);
     else
-        rhs_term = c.plus(c.times(second, multiplier), constant);
-
-    var msecond = !((second.isConstant && second.constant == 0) || multiplier === 0) ? c.plus(c.times(second, multiplier), constant) : constant;
+        rhs_term = c.plus(c.times(secondExp, multiplier), constant);
 
     switch(relation)
     {
-        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(first, c.LEQ, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(lhs_term, c.LEQ, rhs_term, sw.strength, sw.weight);
             break;
-        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(first, c.GEQ, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(lhs_term, c.GEQ, rhs_term, sw.strength, sw.weight);
             break;
-        case CPLayoutRelationEqual              : constraint = new c.Equation(first, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationEqual              : constraint = new c.Equation(lhs_term, rhs_term, sw.strength, sw.weight);
             break;
     }
 
