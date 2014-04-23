@@ -32,8 +32,10 @@
 @import "CPTheme.j"
 @import "CPWindow_Constants.j"
 @import "_CPDisplayServer.j"
+
 @import "CPLayoutConstraint.j"
 @import "CPContentSizeLayoutConstraint.j"
+@import "CPAutoresizingMaskLayoutConstraint.j"
 
 @class _CPToolTip
 @class CPWindow
@@ -3953,101 +3955,57 @@ CPLog.debug([self identifier] + _cmd);
 
 - (CPArray)_constraintsEquivalentToAutoresizingMask
 {
-    var hconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:0],
-        vconstraints = [self _constraintsEquivalentToAutoresizingMaskOrientation:1];
+    var superview = [self superview];
 
-    return [hconstraints arrayByAddingObjectsFromArray:vconstraints];
-}
-
-- (CPArray)_constraintsEquivalentToAutoresizingMaskOrientation:(CPInteger)orientation
-{
-    var result = [CPArray array],
-        superview = [self superview];
-
-    if (!superview)
-        return result;
-
-    var mask = [self autoresizingMask],
-        sRect = [superview bounds],
-        rect = [self frame];
-
-    var min                     = orientation ? CGRectGetMinY(rect) : CGRectGetMinX(rect),
-        max                     = orientation ? CGRectGetMaxY(rect) : CGRectGetMaxX(rect),
-        size                    = orientation ? CGRectGetHeight(rect) : CGRectGetWidth(rect),
-        ssize                   = orientation ? CGRectGetHeight(sRect) : CGRectGetWidth(sRect),
-        CPViewMinMargin         = orientation ? CPViewMinYMargin : CPViewMinXMargin,
-        CPViewMaxMargin         = orientation ? CPViewMaxYMargin : CPViewMaxXMargin,
-        CPViewSizable           = orientation ? CPViewHeightSizable : CPViewWidthSizable,
-        CPLayoutAttributeMin    = orientation ? CPLayoutAttributeTop : CPLayoutAttributeLeft,
-        CPLayoutAttributeMax    = orientation ? CPLayoutAttributeBottom : CPLayoutAttributeRight,
-        CPLayoutAttributeSize   = orientation ? CPLayoutAttributeHeight : CPLayoutAttributeWidth;
-
-    var pconstraint, sconstaint;
-
-    if (!(mask & CPViewSizable))
-    {
-        var sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:size];
-
-        if ((mask & CPViewMinMargin) && (mask & CPViewMaxMargin))
-        {
-            var m = min / (ssize - size);
-            var c = - m * size;
-            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:c];
-        }
-        else if (mask & CPViewMinMargin)
-        {
-            pconstraint = [CPLayoutConstraint constraintWithItem:superview attribute:CPLayoutAttributeMax relatedBy:CPLayoutRelationEqual toItem:self attribute:CPLayoutAttributeMax multiplier:1 constant:(ssize - max)];
-        }
-        else // CPViewMaxMargin or no H mask
-        {
-            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:min];
-        }
-    }
-    else
-    {
-        var pconstraint, sconstaint;
-
-        if ((mask & CPViewMinMargin) && (mask & CPViewMaxMargin))
-        {
-            var m = min / ssize;
-            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:0];
-
-            m = size / ssize;
-            sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:0];
-        }
-        else if (mask & CPViewMinMargin)
-        {
-            pconstraint = [CPLayoutConstraint constraintWithItem:superview attribute:CPLayoutAttributeMax relatedBy:CPLayoutRelationEqual toItem:self attribute:CPLayoutAttributeMax multiplier:1 constant:(ssize - max)];
-
-            var m = size / max;
-            var c = size - m * ssize;
-            sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:c];
-
-        }
-        else if (mask & CPViewMaxMargin)
-        {
-            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:min];
-
-            var m = size / (ssize - min);
-            var c = - m * min;
-            sconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeSize relatedBy:CPLayoutRelationEqual toItem:superview attribute:CPLayoutAttributeSize multiplier:m constant:c];
-        }
-        else
-        {
-            pconstraint = [CPLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:min];
-
-            sconstraint = [CPLayoutConstraint constraintWithItem:superview attribute:CPLayoutAttributeMax relatedBy:CPLayoutRelationEqual toItem:self attribute:CPLayoutAttributeMax multiplier:1 constant:(ssize - max)];
-        }
-    }
-
-    [result addObject:pconstraint];
-    [result addObject:sconstraint];
-
-    return result;
+    return [CPAutoresizingMaskLayoutConstraint constraintsWithAutoresizingMask:[self autoresizingMask] subitem:self frame:[self frame] superitem:superview bounds:[superview bounds]];
 }
 
 // Debugging
 - (BOOL)hasAmbiguousLayout
+{
+    // Not Implemented
+}
+
+/*
+Perform layout in concert with the constraint-based layout system.
+
+- (void)layout
+
+@discussion Override this method if your custom view needs to perform custom layout not expressible using the constraint-based layout system. In this case you are responsible for calling setNeedsLayout: when something that impacts your custom layout changes.
+
+You may not invalidate any constraints as part of your layout phase, nor invalidate the layout of your superview or views outside of your view hierarchy. You also may not invoke a drawing pass as part of layout.
+
+You must call [super layout] as part of your implementation.
+*/
+- (void)layout
+{
+    // Not Implemented
+}
+
+/*
+Updates the layout of the receiving view and its subviews based on the current views and constraints.
+
+- (void)layoutSubtreeIfNeeded
+
+@discussion Before displaying a view that uses constraints-based layout the system invokes this method to ensure that the layout of the view and its subviews is up to date. This method updates the layout if needed, first invoking updateConstraintsForSubtreeIfNeeded to ensure that all constraints are up to date. This method is called automatically by the system, but may be invoked manually if you need to examine the most up to date layout.
+
+Subclasses should not override this method.
+*/
+- (void)layoutSubtreeIfNeeded
+{
+    // Not Implemented
+}
+
+/*
+Updates the constraints for the receiving view and its subviews.
+
+- (void)updateConstraintsForSubtreeIfNeeded
+
+@discussion Whenever a new layout pass is triggered for a view, the system invokes this method to ensure that any constraints for the view and its subviews are updated with information from the current view hierarchy and its constraints. This method is called automatically by the system, but may be invoked manually if you need to examine the most up to date constraints.
+
+Subclasses should not override this method.
+*/
+- (void)updateConstraintsForSubtreeIfNeeded
 {
     // Not Implemented
 }
