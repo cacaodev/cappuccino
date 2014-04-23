@@ -3828,15 +3828,19 @@ var interpolate = function(fromValue, toValue, progress)
 
     var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:CGRectGetMinX(cRect)];
     [left setPriority:CPLayoutPriorityWindowEqualsContentView];
+    [left _setContainer:_contentView];
 
     var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:CGRectGetMinY(cRect)];
     [top setPriority:CPLayoutPriorityWindowEqualsContentView];
+    [top _setContainer:_contentView];
 
     var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:(CGRectGetWidth(wRect) - CGRectGetWidth(cRect))];
     [width setPriority:CPLayoutPriorityWindowEqualsContentView];
+    [width _setContainer:_windowView];
 
     var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:(CGRectGetHeight(wRect) - CGRectGetHeight(cRect))];
     [height setPriority:CPLayoutPriorityWindowEqualsContentView];
+    [height _setContainer:_windowView];
 
     var internalConstraints = @[left, top, width, height];
     [[_contentView _constraintsArray] addObjectsFromArray:internalConstraints];
