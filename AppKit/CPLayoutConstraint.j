@@ -47,14 +47,14 @@ var CPLayoutItemIsNull = 1 << 1,
 
 @implementation CPLayoutConstraint : CPObject
 {
-    id       _container        @accessors(property=container);
-    id       _firstItem        @accessors(getter=firstItem);
-    id       _secondItem       @accessors(getter=secondItem);
-    int      _firstAttribute   @accessors(getter=firstAttribute);
-    int      _secondAttribute  @accessors(getter=secondAttribute);
-    int      _relation         @accessors(getter=relation);
-    double   _constant         @accessors(getter=constant);
-    float    _coefficient      @accessors(getter=multiplier);
+    id       _container        @accessors(getter=container);
+    id       _firstItem        @accessors(property=firstItem);
+    id       _secondItem       @accessors(property=secondItem);
+    int      _firstAttribute   @accessors(property=firstAttribute);
+    int      _secondAttribute  @accessors(property=secondAttribute);
+    int      _relation         @accessors(property=relation);
+    double   _constant         @accessors(property=constant);
+    float    _coefficient      @accessors(property=multiplier);
     float    _priority         @accessors(property=priority);
     int      _contraintFlags;
 
@@ -64,7 +64,7 @@ var CPLayoutItemIsNull = 1 << 1,
 
 + (id)constraintWithItem:(id)item1 attribute:(CPInteger)att1 relatedBy:(CPInteger)relation toItem:(id)item2 attribute:(CPInteger)att2 multiplier:(double)multiplier constant:(double)constant
 {
-    return [[CPLayoutConstraint alloc] initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
+    return [[[self class] alloc] initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
 }
 
 - (id)initWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
