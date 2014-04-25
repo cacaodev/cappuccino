@@ -87,6 +87,11 @@ var CPLayoutItemIsNull = 1 << 1,
     return self;
 }
 
+- (CPString)_constraintType
+{
+    return @"Constraint";
+}
+
 - (void)_init
 {
     _container = nil;
@@ -163,7 +168,7 @@ CPLog.debug(self +_cmd);
     return {
        type           : "Constraint",
        uuid           : [self UID],
-       containerUUID  : [_container UID],
+       container      : [_container UID],
        firstItem      : firstItemJSON,
        secondItem     : secondItemJSON,
        relation       : _relation,

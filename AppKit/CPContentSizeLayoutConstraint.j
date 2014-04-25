@@ -24,6 +24,11 @@
     return self;
 }
 
+- (CPString)_constraintType
+{
+    return @"SizeConstraint";
+}
+
 - (void)registerItemsInEngine:(id)anEngine
 {
     [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
@@ -89,6 +94,7 @@ CPLog.debug(self +_cmd);
        type                 : "SizeConstraint",
        uuid                 : uuid,
        orientation          : _orientation,
+       container            : [_firstItem UID],
        firstItemUID         : [_firstItem UID],
        firstItemName        : [_firstItem identifier] || [_firstItem className],
        value                : value,

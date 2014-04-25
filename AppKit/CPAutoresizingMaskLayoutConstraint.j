@@ -2,12 +2,16 @@
 
 @implementation CPAutoresizingMaskLayoutConstraint : CPLayoutConstraint
 {
-    CPInteger subItemIndex @accessors;
 }
 
 - (CPView)viewForAutoresizingMask
 {
-    return (subItemIndex == 0) ? _firstItem : _secondItem;
+    return (_firstItem !== _container) ? _firstItem : _secondItem;
+}
+
+- (CPString)_constraintType
+{
+    return @"AutoresizingConstraint";
 }
 
 + (CPArray)constraintsWithAutoresizingMask:(unsigned)aMask subitem:(id)subItem frame:(CGRect)aFrame superitem:(id)superItem bounds:(CGRect)bounds
@@ -100,8 +104,8 @@
         }
     }
 
-    [pconstraint setSubItemIndex:0];
-    [sconstraint setSubItemIndex:0];
+    [pconstraint _setContainer:superItem];
+    [sconstraint _setContainer:superItem];
 
     [result addObject:pconstraint];
     [result addObject:sconstraint];
