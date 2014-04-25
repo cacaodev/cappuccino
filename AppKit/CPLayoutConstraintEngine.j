@@ -6,20 +6,7 @@
 @import "CPLayoutConstraint.j"
 
 @import "c.js"
-@import "HashTable.js"
-@import "HashSet.js"
-@import "Error.js"
-@import "SymbolicWeight.js"
-@import "Strength.js"
-@import "Variable.js"
-@import "Point.js"
-@import "Expression.js"
-@import "Constraint.js"
-@import "EditInfo.js"
-@import "Tableau.js"
-@import "SimplexSolver.js"
-
-@import "CassowaryBridge.js"
+@import "Engine.js"
 
 /*
 @import <AppKit/c.js>

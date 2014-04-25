@@ -7,22 +7,8 @@
 // Parts Copyright (C) 2011-2012, Alex Russell (slightlyoff@chromium.org)
 // Parts Copyright (C) 2013, cacaodev (cacaodev@google.com)
 */
-
-importScripts("src/c.js");
-importScripts("src/HashTable.js");
-importScripts("src/HashSet.js");
-importScripts("src/Error.js");
-importScripts("src/SymbolicWeight.js");
-importScripts("src/Strength.js");
-importScripts("src/Variable.js");
-importScripts("src/Point.js");
-importScripts("src/Expression.js");
-importScripts("src/Constraint.js");
-importScripts("src/EditInfo.js");
-importScripts("src/Tableau.js");
-importScripts("src/SimplexSolver.js");
-
-importScripts("CassowaryBridge.js");
+importScripts("Engine.js");
+importScripts("c.js");
 
 self.initDone = false;
 
