@@ -79,15 +79,15 @@ var _CPLayoutEngineCachedEngines = {},
     return (ENGINE_SUPPORTS_WEB_WORKER && ENGINE_ALLOWS_WEB_WORKER);
 }
 
-+ (void)informViewNeedsConstraintUpdate:(CPView)aView
++ (void)informNeedsConstraintUpdateForView:(CPView)aView
 {
 // Note: class method (and class var bellow) because some views may need to register themselves
 // before their related engine (window engine) was created.
 // Turn into instance method if we decide to create the CPEngine & Cassowary-solver earlier.
-    if (aView && ![_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
-    {
-        _CPEngineViewsNeedUpdateConstraints.push(aView);
-    }
+    if (!aView || [_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
+        return;
+
+    [_CPEngineViewsNeedUpdateConstraints addObject:aView];
 }
 
 - (id)initWithSolverCreatedCallback:(Function)solverReadyFunction onSolvedCallback:(Function)onSolvedFunction
@@ -276,11 +276,6 @@ var _CPLayoutEngineCachedEngines = {},
 
 - (void)solver_replaceConstraintsIfNeeded
 {
-    [self solver_replaceConstraintsIfNeededOfTypes:["Constraint", "SizeConstraint"]];
-}
-
-- (void)solver_replaceConstraintsIfNeededOfTypes:(CPArray)types
-{
     if ([_CPEngineViewsNeedUpdateConstraints count] === 0)
         return;
 
@@ -290,40 +285,27 @@ var _CPLayoutEngineCachedEngines = {},
     {
         if ([[aView window] _layoutEngineIfExists] === self && [aView needsUpdateConstraints])
         {
-            [aView updateConstraints];
+            [aView updateConstraintsIfNeeded];
 
-            [types enumerateObjectsUsingBlock:function(type, idx, stop)
+            var json_constraints = [],
+                containerUID = [aView UID];
+
+            [[aView constraints] enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
             {
-                 [self solver_replaceConstraintsOfType:type forView:aView];
+                var json_constraint = [aConstraint toJSON];
+
+                [aConstraint registerItemsInEngine:self];
+                json_constraints.push(json_constraint);
             }];
 
-            [aView setNeedsUpdateConstraints:NO];
             [updatedIndexes addIndex:idx];
+
+            var args = {container:containerUID, constraints:json_constraints};
+            [self sendCommand:"replaceConstraints" withArguments:args];
         }
     }];
 
     [_CPEngineViewsNeedUpdateConstraints removeObjectsAtIndexes:updatedIndexes];
-}
-
-- (void)solver_replaceConstraintsOfType:(CPString)aType forView:(CPView)aView
-{
-    var containerUID = [aView UID],
-        json_constraints = [];
-
-    [[aView constraints] enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
-    {
-        var json_constraint = [aConstraint toJSON];
-
-        if (json_constraint.type == aType)
-        {
-            [aConstraint registerItemsInEngine:self];
-            [json_constraints addObject:json_constraint];
-        }
-    }];
-
-    var args = {container:containerUID, type:aType, constraints:json_constraints};
-
-    [self sendCommand:"replaceConstraints" withArguments:args];
 }
 
 - (void)solver_updateSizeConstraints:(CPArray)sizeConstraints forView:(CPView)aView
