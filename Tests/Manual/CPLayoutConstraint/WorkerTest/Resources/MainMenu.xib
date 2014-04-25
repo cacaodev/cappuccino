@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="5053" systemVersion="13C64" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="5056" systemVersion="13C64" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="5053"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="5056"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -14,21 +14,34 @@
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="371">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="335" y="390" width="518" height="294"/>
+            <rect key="contentRect" x="335" y="390" width="726" height="422"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
             <view key="contentView" identifier="mainView" id="372" customClass="ConstraintView">
-                <rect key="frame" x="0.0" y="0.0" width="518" height="294"/>
+                <rect key="frame" x="0.0" y="0.0" width="726" height="422"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <customView identifier="leftView" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="466" customClass="ColorView">
-                        <rect key="frame" x="89" y="102" width="167" height="113"/>
+                    <customView identifier="redColor" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="466" customClass="ColorView">
+                        <rect key="frame" x="89" y="102" width="270" height="241"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <subviews>
+                            <customView identifier="blueColor" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="akP-9M-Gwq" userLabel="Blue" customClass="ColorView" colorLabel="IBBuiltInLabel-Blue">
+                                <rect key="frame" x="54" y="72" width="163" height="96"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <accessibility description="Blue"/>
+                            </customView>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="akP-9M-Gwq" firstAttribute="centerY" secondItem="466" secondAttribute="centerY" id="Ey1-2T-IDR"/>
+                            <constraint firstItem="akP-9M-Gwq" firstAttribute="leading" secondItem="466" secondAttribute="leading" constant="54" id="N5o-gM-PAB"/>
+                            <constraint firstItem="akP-9M-Gwq" firstAttribute="top" secondItem="466" secondAttribute="top" constant="73" id="ae5-pL-1Bc"/>
+                            <constraint firstItem="akP-9M-Gwq" firstAttribute="centerX" secondItem="466" secondAttribute="centerX" id="kcO-0g-M8o"/>
+                        </constraints>
+                    </customView>
+                    <customView identifier="greenColor" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="474" customClass="ColorView">
+                        <rect key="frame" x="371" y="102" width="271" height="241"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     </customView>
-                    <customView identifier="rightView" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="474" customClass="ColorView">
-                        <rect key="frame" x="268" y="102" width="166" height="113"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    </customView>
-                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ieH-ju-h4U">
+                    <textField identifier="left" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ieH-ju-h4U">
                         <rect key="frame" x="7" y="21" width="38" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="bNb-0v-tmj">
@@ -37,8 +50,8 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <popUpButton horizontalHuggingPriority="1000" verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kCB-aE-Hkx" customClass="CPPopUpButtonBaseline">
-                        <rect key="frame" x="60" y="14" width="78" height="26"/>
+                    <popUpButton identifier="popup" horizontalHuggingPriority="1000" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="kCB-aE-Hkx" customClass="CPPopUpButtonBaseline">
+                        <rect key="frame" x="60" y="14" width="185" height="26"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="WhC-rU-yx4" id="AAI-8T-SKc">
                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -52,8 +65,8 @@
                             </menu>
                         </popUpButtonCell>
                     </popUpButton>
-                    <textField horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="foX-FB-pji">
-                        <rect key="frame" x="141" y="20" width="359" height="17"/>
+                    <textField identifier="right" horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="foX-FB-pji">
+                        <rect key="frame" x="248" y="20" width="255" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="251" id="4ar-VX-348"/>
@@ -62,6 +75,32 @@
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
+                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dnG-iP-F79">
+                        <rect key="frame" x="502" y="374" width="146" height="32"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="134" id="iFV-Yw-fS6"/>
+                        </constraints>
+                        <buttonCell key="cell" type="push" title="Add Autosize View" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Is7-8b-kgB">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="addView:" target="450" id="lIX-Sy-eOu"/>
+                        </connections>
+                    </button>
+                    <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IoX-eA-ZjS">
+                        <rect key="frame" x="453" y="380" width="47" height="22"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="47" id="GLS-eu-h05"/>
+                        </constraints>
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="mask" drawsBackground="YES" id="YLl-BO-7cc">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
                 </subviews>
@@ -73,18 +112,24 @@
                     <constraint firstAttribute="trailing" secondItem="474" secondAttribute="trailing" constant="84" id="476"/>
                     <constraint firstItem="474" firstAttribute="bottom" secondItem="466" secondAttribute="bottom" id="477"/>
                     <constraint firstItem="474" firstAttribute="leading" secondItem="466" secondAttribute="trailing" constant="12" id="483"/>
-                    <constraint firstItem="474" firstAttribute="width" secondItem="466" secondAttribute="width" id="485"/>
                     <constraint firstItem="kCB-aE-Hkx" firstAttribute="baseline" secondItem="ieH-ju-h4U" secondAttribute="baseline" constant="1" id="697-Q6-0bz"/>
+                    <constraint firstItem="474" firstAttribute="width" secondItem="466" secondAttribute="width" id="BdA-J2-bTJ"/>
+                    <constraint firstAttribute="trailing" secondItem="dnG-iP-F79" secondAttribute="trailing" constant="84" id="En6-o9-Jgy"/>
+                    <constraint firstItem="dnG-iP-F79" firstAttribute="leading" secondItem="IoX-eA-ZjS" secondAttribute="trailing" constant="8" symbolic="YES" id="NHg-mN-Q4P"/>
                     <constraint firstItem="foX-FB-pji" firstAttribute="baseline" secondItem="kCB-aE-Hkx" secondAttribute="baseline" id="TMq-K0-8lI"/>
                     <constraint firstItem="foX-FB-pji" firstAttribute="leading" secondItem="kCB-aE-Hkx" secondAttribute="trailing" constant="8" id="cpm-gd-kyN"/>
                     <constraint firstAttribute="bottom" secondItem="ieH-ju-h4U" secondAttribute="bottom" constant="21" id="dMe-KV-oMg"/>
                     <constraint firstItem="kCB-aE-Hkx" firstAttribute="leading" secondItem="ieH-ju-h4U" secondAttribute="trailing" constant="19" id="tB4-ET-kxm"/>
                     <constraint firstItem="ieH-ju-h4U" firstAttribute="leading" secondItem="372" secondAttribute="leading" constant="9" id="uiz-LR-gbR"/>
+                    <constraint firstItem="IoX-eA-ZjS" firstAttribute="top" secondItem="dnG-iP-F79" secondAttribute="top" id="vbn-QD-I6K"/>
+                    <constraint firstItem="dnG-iP-F79" firstAttribute="top" secondItem="372" secondAttribute="top" constant="20" id="zeb-ul-vGQ"/>
                 </constraints>
             </view>
         </window>
         <customObject id="450" customClass="AppController">
             <connections>
+                <outlet property="greenView" destination="474" id="uEX-9b-3fb"/>
+                <outlet property="maskField" destination="IoX-eA-ZjS" id="nN1-Z6-snc"/>
                 <outlet property="theWindow" destination="371" id="459"/>
             </connections>
         </customObject>

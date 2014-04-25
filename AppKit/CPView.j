@@ -236,7 +236,7 @@ CPViewNoInstrinsicMetric = -1;
     BOOL                _toolTipInstalled;
 
     CPArray             _constraintsArray @accessors(getter=_constraintsArray);
-    CPArray             _autoresizingConstraints;
+    CPArray             _autoresizingConstraints @accessors;
     CPArray             _internalConstraints @accessors(getter=_internalConstraints, setter=_setInternalConstraints:);
 
     CGSize              _huggingPriorities;
@@ -3807,8 +3807,8 @@ CPLog.debug(_cmd + constraints);
     {
         if ([aView translatesAutoresizingMaskIntoConstraints])
         {
-            var array = [aView _autoresizingConstraints];
-            [constraints addObjectsFromArray:array];
+            [aView _updateAutoresizingConstraints];
+            [constraints addObjectsFromArray:[aView _autoresizingConstraints]];
         }
     }];
 
@@ -3862,10 +3862,10 @@ CPLog.debug(_cmd + " " + [constraints description]);
         // But don't have constraints set in IB.
 
         if (![firstItem isKindOfClass:[_CPWindowView class]])
-            [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:firstItem];
+            [CPLayoutConstraintEngine informNeedsConstraintUpdateForView:firstItem];
 
         if (![secondItem isKindOfClass:[_CPWindowView class]])
-            [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:secondItem];
+            [CPLayoutConstraintEngine informNeedsConstraintUpdateForView:secondItem];
 
         [_constraintsArray addObject:aConstraint];
     }];
@@ -3876,8 +3876,7 @@ CPLog.debug(_cmd + " " + [constraints description]);
         _needsConstraintBasedLayout = YES;
     }
 
-    if (_needsUpdateConstraints)
-        [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:self];
+    [self setNeedsUpdateConstraints:YES];
 }
 
 - (void)removeConstraint:(CPLayoutConstraint)aConstraint
@@ -3889,8 +3888,7 @@ CPLog.debug(_cmd + " " + [constraints description]);
 {
     [_constraintsArray removeObjectsInArray:constraints];
 
-    if (_needsUpdateConstraints)
-        [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:self];
+    [self setNeedsUpdateConstraints:YES];
 }
 
 - (id)valueForVariable:(int)aTag
@@ -3910,17 +3908,12 @@ CPLog.debug(_cmd + " " + [constraints description]);
     }
 }
 
-- (CPArray)_autoresizingConstraints
-{
-    return _autoresizingConstraints;
-}
-
 - (void)setNeedsUpdateConstraints:(BOOL)flag
 {
     _needsUpdateConstraints = flag;
 
     if (_needsUpdateConstraints)
-        [CPLayoutConstraintEngine informViewNeedsConstraintUpdate:self];
+        [CPLayoutConstraintEngine informNeedsConstraintUpdateForView:self];
 }
 
 - (void)updateConstraintsIfNeeded

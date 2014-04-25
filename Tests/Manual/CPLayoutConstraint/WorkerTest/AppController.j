@@ -22,6 +22,11 @@ CPLogRegister(CPLogConsole);
         return;
     var flags = [anEvent modifierFlags];
 
+    if (flags & CPAlternateKeyMask)
+    {
+        CPLog.debug([self identifier] + "\n" + [[self constraints] description]);
+    }
+
     if (flags & CPCommandKeyMask)
     {
         CPLog.debug([self identifier] + " " + CPStringFromRect([self frame]));
@@ -38,11 +43,29 @@ CPLogRegister(CPLogConsole);
 @end
 
 @implementation ColorView : ConstraintView
+{
+    CPColor color;
+}
+
+- (void)viewDidMoveToSuperview
+{
+    var identifier = [self identifier];
+CPLog.debug(identifier);
+    if (identifier)
+    {
+        var selColor = CPSelectorFromString(identifier);
+
+        if ([CPColor respondsToSelector:selColor])
+            color = [CPColor performSelector:selColor];
+    }
+
+    [self setNeedsDisplay:YES];
+}
 
 - (void)drawRect:(CGRect)aRect
 {
     var ctx = [[CPGraphicsContext currentContext] graphicsPort];
-    [[CPColor redColor] set];
+    [color set];
 
     CGContextFillRect(ctx, [self bounds]);
 }
@@ -61,6 +84,20 @@ CPLogRegister(CPLogConsole);
 @implementation AppController : CPObject
 {
     @outlet CPWindow    theWindow;
+    @outlet ColorView   greenView;
+    @outlet CPTextField maskField;
+}
+
+- (IBAction)addView:(id)sender
+{
+    var view = [[ColorView alloc] initWithFrame:CGRectMake(10, 10, 100, 100)];
+    [view setIdentifier:@"orangeColor"];
+    [view setAutoresizingMask:[maskField intValue]];
+    [view setTranslatesAutoresizingMaskIntoConstraints:YES];
+
+    [greenView addSubview:view];
+    //[view setNeedsUpdateConstraints:YES];
+    [greenView setNeedsUpdateConstraints:YES];
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
