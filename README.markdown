@@ -1,12 +1,11 @@
 #Autolayout
 
-**Autolayout in cappuccino based on [Cassowary.js](https://github.com/slightlyoff/cassowary.js)**
-
+**Autolayout in cappuccino based on** [Cassowary.js](https://github.com/slightlyoff/cassowary.js) and 
 [Original Cassowary from Badros and Borning](http://www.cs.washington.edu/research/constraints/cassowary/)
 
-#Online demos:
-[Constraints Editor](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/CPLayoutConstraintTest/)
-[Intrinsic Content Size](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/InvalidateIntrinsicContentSizeTest/)
+**Online demos:**
+[Constraints Editor](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/CPLayoutConstraintTest/), 
+[Intrinsic Content Size](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/InvalidateIntrinsicContentSizeTest/), 
 [CPAlert with constraints](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/CPLayoutConstraintCibTest/)
 
 ###TODO:
@@ -27,6 +26,9 @@
 - Write a Quadrilatere demo in capp. currently i don't think it can be done with the cocoa API where a constraint can link no more than 2 items. Maybe by abstracting item variables with a protocol ?
 - Detect when cassowary variables are mutually exclusive ? And create separate solvers for each independant group of constraints ? In a web worker working in //
 - Do not import cassowary files twice when the WebWorker is enabled and imports files itself.
+-Handle ambiguous layout and solver failures. The Apple way is to lower the priority on a constraint and try to resolve.
+- Visual debug support
+- Parser API. Visual language with PEGJS grammar like Angular.js ?
 
 Welcome to Cappuccino!
 ======================
