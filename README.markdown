@@ -4,6 +4,10 @@
 
 [Original Cassowary from Badros and Borning](http://www.cs.washington.edu/research/constraints/cassowary/)
 
+#Online demos:
+[Constraints Editor](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/CPLayoutConstraintTest/)
+[Intrinsic Content Size](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/InvalidateIntrinsicContentSizeTest/)
+[CPAlert with constraints](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/CPLayoutConstraintCibTest/)
 
 ###TODO:
 
@@ -21,7 +25,7 @@
 - In capp, the contentView size is 2px < than the windowView, in cocoa/IB they are ==. Is this a problem ?
 - Rewrite CPSplitView with constraints ! CPSplitview drag = user input with a given priority.
 - Write a Quadrilatere demo in capp. currently i don't think it can be done with the cocoa API where a constraint can link no more than 2 items. Maybe by abstracting item variables with a protocol ?
-- Detect when cassowary variables are mutually exclusive ? And create separate solvers for each independant group of constraints ? In a web worker working in // 
+- Detect when cassowary variables are mutually exclusive ? And create separate solvers for each independant group of constraints ? In a web worker working in //
 - Do not import cassowary files twice when the WebWorker is enabled and imports files itself.
 
 Welcome to Cappuccino!
