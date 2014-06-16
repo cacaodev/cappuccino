@@ -100,7 +100,6 @@ var HORIZONTAL_MARGIN = 2;
 {
     CPArray                         _content;
     CPArray                         _items;
-    CPInteger                       _numberOfItems;
     CPIndexSet                      _displayedIndexes;
 
     CPData                          _itemData;
@@ -180,7 +179,6 @@ var HORIZONTAL_MARGIN = 2;
     _items = [];
     _cachedItems = [];
     _displayedIndexes = [CPIndexSet indexSet];
-    _numberOfItems = 0;
 
     _numberOfColumns = CPNotFound;
     _numberOfRows = CPNotFound;
@@ -589,7 +587,7 @@ var HORIZONTAL_MARGIN = 2;
         return;
 
     _lockResizing = YES;
-
+    _needsFullDisplay = YES;
     [self tile];
 
     _lockResizing = NO;
@@ -722,12 +720,12 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
     if (startIndex === CPNotFound)
         return [CPIndexSet indexSet];
 
-    var endIndex = [self _indexAtPoint:CGPointMake(CGRectGetMaxX(visibleRect), CGRectGetMaxY(visibleRect))];
+    var endIndex = [self _indexAtPoint:CGPointMake(CGRectGetMaxX(visibleRect), CGRectGetMaxY(visibleRect)) sloppy:YES];
 
     if (endIndex === CPNotFound)
         endIndex = _content.length - 1;
 
-    return [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(startIndex, endIndex - startIndex + 1)];
+    return [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(startIndex, MIN(endIndex - startIndex + 1, _content.length - 1))];
 }
 
 - (void)displayItemsAtIndexes:(CPIndexSet)itemIndexes frameSize:(CGSize)aFrameSize itemSize:(CGSize)anItemSize columns:(CPInteger)numberOfColumns rows:(CPInteger)numberOfRows count:(CPInteger)displayCount
@@ -1055,20 +1053,30 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
     return [self _sendDelegateMenuForItemAtIndex:index];
 }
 
-- (int)_indexAtPoint:(CGPoint)thePoint
+- (int)_indexAtPoint:(CGPoint)thePoint sloppy:(BOOL) sloppyFlag
 {
     var column = FLOOR(thePoint.x / (_itemSize.width + _horizontalMargin));
+
+    if (sloppyFlag)
+       column = MIN(_numberOfColumns - 1, column);
 
     if (column < _numberOfColumns)
     {
         var row = FLOOR(thePoint.y / (_itemSize.height + _verticalMargin));
 
         if (row < _numberOfRows)
-            return (row * _numberOfColumns + column);
+            return MIN(row * _numberOfColumns + column, _content.length - 1);
+        if (sloppyFlag && row >= _numberOfRows)
+           return _content.length - 1;
     }
-
-    return CPNotFound;
+   return CPNotFound;
 }
+
+- (int)_indexAtPoint:(CGPoint)thePoint
+{
+    return [self _indexAtPoint:thePoint sloppy:NO];
+}
+
 
 - (CGRect)frameForItemAtIndex:(CPUInteger)anIndex
 {
