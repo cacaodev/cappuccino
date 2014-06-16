@@ -38,7 +38,7 @@
 
 - (CGRect)documentVisibleRect
 {
-    return [self convertRect:[self bounds] fromView:_documentView];
+    return [_documentView convertRect:[self bounds] fromView:self];
 }
 /*!
     Sets the document view to be \c aView.
