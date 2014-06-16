@@ -1066,8 +1066,6 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
 
         if (row < _numberOfRows)
             return MIN(row * _numberOfColumns + column, _content.length - 1);
-        if (sloppyFlag && row >= _numberOfRows)
-           return _content.length - 1;
     }
    return CPNotFound;
 }
