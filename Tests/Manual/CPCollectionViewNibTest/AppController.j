@@ -47,7 +47,12 @@ CPLogRegister(CPLogConsole);
     //[theWindow setFullPlatformWindow:YES];
 
     [collectionView setMaxNumberOfRows:0];
-    [collectionView setContent:[self valueForKey:@"values"]];
+    var v=[];
+    for(var i=0;i<100;i++)
+    {
+        v[i]= @{"value":(""+i), "color":[CPColor randomColor]};
+    }
+    [collectionView setContent:v];
 }
 
 - (IBAction)setPrototypeItem:(id)sender
