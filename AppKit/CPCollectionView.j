@@ -723,9 +723,9 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
     var endIndex = [self _indexAtPoint:CGPointMake(CGRectGetMaxX(visibleRect), CGRectGetMaxY(visibleRect)) sloppy:YES];
 
     if (endIndex === CPNotFound)
-        endIndex = _content.length - 1;
+        endIndex = [_content count] - 1;
 
-    return [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(startIndex, MIN(endIndex - startIndex + 1, _content.length - 1))];
+    return [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(startIndex, MIN(endIndex - startIndex + 1, [_content count] - 1))];
 }
 
 - (void)displayItemsAtIndexes:(CPIndexSet)itemIndexes frameSize:(CGSize)aFrameSize itemSize:(CGSize)anItemSize columns:(CPInteger)numberOfColumns rows:(CPInteger)numberOfRows count:(CPInteger)displayCount
@@ -951,7 +951,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
     var location = [self convertPoint:[anEvent locationInWindow] fromView:nil],
         index = [self _indexAtPoint:location];
 
-    if (index >= 0 && index < _content.length)
+    if (index >= 0 && index < [_content count])
     {
         if (_allowsMultipleSelection && ([anEvent modifierFlags] & CPPlatformActionKeyMask || [anEvent modifierFlags] & CPShiftKeyMask))
         {
@@ -1065,7 +1065,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
         var row = FLOOR(thePoint.y / (_itemSize.height + _verticalMargin));
 
         if (row < _numberOfRows)
-            return MIN(row * _numberOfColumns + column, _content.length - 1);
+            return MIN(row * _numberOfColumns + column, [_content count] - 1);
     }
    return CPNotFound;
 }
