@@ -715,7 +715,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
 - (CPIndexSet)_indexesToDisplay
 {
     var visibleRect = [[self superview] documentVisibleRect],
-        startIndex = [self _indexAtPoint:visibleRect.origin];
+        startIndex = [self _indexAtPoint:visibleRect.origin sloppy:YES];
 
     if (startIndex === CPNotFound)
         return [CPIndexSet indexSet];
@@ -1064,7 +1064,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
     {
         var row = FLOOR(thePoint.y / (_itemSize.height + _verticalMargin));
 
-        if (row < _numberOfRows)
+        if (row < _numberOfRows || sloppyFlag)
             return MIN(row * _numberOfColumns + column, [_content count] - 1);
     }
    return CPNotFound;
