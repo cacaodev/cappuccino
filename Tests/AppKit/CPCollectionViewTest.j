@@ -110,6 +110,31 @@
     [self assert:[CPIndexSet indexSetWithIndex:1] equals:[_collectionView selectionIndexes]];
 }
 
+- (void)testCollectionItemsLazyCreation
+{
+	var cv = [[CPCollectionView alloc] initWithFrame:CGRectMake(0,0,200,200)],
+	    sv = [[CPScrollView alloc] initWithFrame:CGRectMake(0,0,200,200)],
+	    itemPrototype = [[CPCollectionViewItem alloc] init],
+	    content = [];
+
+	[sv setDocumentView:cv];
+	
+	for(var i = 0; i < 100; i++)
+	{
+		content.push("" + i);
+	}
+	
+	[cv setMinItemSize:CGSizeMake(50, 50)];
+	[cv setMaxItemSize:CGSizeMake(50, 50)];
+	[cv setMaxNumberOfRows:0];
+	[cv setMaxNumberOfColumns:4];
+
+    [cv setItemPrototype:itemPrototype];
+	[cv setContent:content];
+	
+	[self assert:12 equals:[[cv subviews] count] message:" The collection view should contain 12 item views among a total of 100"];
+}
+
 @end
 
 @implementation _CPCollectionViewWithHooks : CPCollectionView
