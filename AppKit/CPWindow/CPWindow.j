@@ -54,7 +54,6 @@
 
 @global CPApp
 
-
 @protocol CPWindowDelegate <CPObject>
 
 @optional
@@ -1145,7 +1144,7 @@ CPTexturedBackgroundWindowMask
 */
 - (void)setContentView:(CPView)aView
 {
-    if (_contentView)
+    if (_contentView && _contentView !== aView)
         [_contentView removeFromSuperview];
 
     var bounds = CGRectMake(0.0, 0.0, CGRectGetWidth(_frame), CGRectGetHeight(_frame));
@@ -1808,9 +1807,13 @@ CPTexturedBackgroundWindowMask
                     // even that we just moved it to a new first responder.
                     [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:NO]
 #endif
-                }
 
+                }
                 return didTabBack;
+            }
+            else if ([anEvent charactersIgnoringModifiers] == CPEscapeFunctionKey && [self _processKeyboardUIKey:anEvent])
+            {
+                return;
             }
 
             [[self firstResponder] keyDown:anEvent];
@@ -3034,20 +3037,9 @@ CPTexturedBackgroundWindowMask
     if ([selectors count] <= 0)
         return NO;
 
-    if (character !== CPEscapeFunctionKey)
-    {
-        var selector = [selectors objectAtIndex:0];
-        return [[self firstResponder] tryToPerform:selector with:self];
-    }
-    else
-    {
-        /*
-            Cocoa sends complete: for the escape key (instead of the default cancelOperation:). This is also the only action that is not sent directly to the first responder, but through doCommandBySelector. The difference is that doCommandBySelector: will also send the action to the window and application delegates.
-        */
-        [[self firstResponder] doCommandBySelector:@selector(complete:)];
-    }
+    var selector = [selectors objectAtIndex:0];
 
-    return NO;
+    return [[self firstResponder] tryToPerform:selector with:self];
 }
 
 - (void)_dirtyKeyViewLoop
