@@ -1590,6 +1590,32 @@ CPViewNoInstrinsicMetric = -1;
 }
 
 /*!
+    Returns the closest ancestor shared by the receiver and a given view.
+    @param aView The view to test (along with the receiver) for closest shared ancestor.
+    @returns The closest ancestor or nil if there’s no such object. Returns self if aView is identical to the receiver.
+*/
+- (CPView)ancestorSharedWithView:(CPView)aView
+{
+    if (self == aView)			// Are they the same view?
+      return self;
+
+    if ([self isDescendantOf:aView])	// Is self a descendant of view?
+      return aView;
+
+    if ([aView isDescendantOf:self])	// Is view a descendant of self?
+      return self;
+
+    // If neither are descendants of each other and either does not have a
+    // superview then they cannot have a common ancestor
+
+    if (![self superview] || ![aView superview])
+      return nil;
+
+    // Find the common ancestor of superviews
+    return [[self superview] ancestorSharedWithView:[aView superview]];
+}
+
+/*!
     Returns YES if the view is not hidden, has no hidden ancestor and doesn't belong to a hidden window.
 */
 - (BOOL)_isVisible

@@ -56,6 +56,7 @@ var CPLayoutItemIsNull = 1 << 1,
     double   _constant         @accessors(property=constant);
     float    _coefficient      @accessors(property=multiplier);
     float    _priority         @accessors(property=priority);
+    BOOL     _active           @accessors(getter=isActive, setter=setActive:);
     int      _contraintFlags;
 
     CPString _symbolicConstant;
@@ -96,6 +97,35 @@ var CPLayoutItemIsNull = 1 << 1,
 {
     _container = nil;
     _contraintFlags = 0;
+}
+
+- (void)setActive:(BOOL)shouldActivate
+{
+    if (shouldActivate && !_active)
+    {
+        if (_firstItem !== nil && _secondItem == nil)
+            ancestor = _firstItem;
+        else if (_firstItem == nil && _secondItem !== nil)
+            ancestor = _secondItem;
+        else if (_firstItem !== nil && _secondItem !== nil)
+            ancestor = [_firstItem ancestorSharedWithView:_secondItem];
+
+        if (ancestor !== nil)
+        {
+            [ancestor addConstraint:self];
+            _active = YES;
+        }
+    }
+    else if (!shouldActivate && _active)
+    {
+        [_container removeConstraint:self];
+        _active = NO;
+    }
+}
+
+- (BOOL)isActive
+{
+    return _active;
 }
 
 - (void)_setContainer:(id)aContainer
