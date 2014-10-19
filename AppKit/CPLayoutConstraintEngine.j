@@ -277,12 +277,10 @@ var _CPLayoutEngineCachedEngines = {},
             var json_constraints = [],
                 containerUID = [aView UID];
 
-            [[aView constraints] enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+            [[aView constraints] enumerateObjectsUsingBlock:function(aConstraint, idx_, stop)
             {
-                var json_constraint = [aConstraint toJSON];
-
                 [aConstraint registerItemsInEngine:self];
-                json_constraints.push(json_constraint);
+                json_constraints.push([aConstraint toJSON]);
             }];
 
             [updatedIndexes addIndex:idx];
@@ -302,12 +300,8 @@ var _CPLayoutEngineCachedEngines = {},
 
     [sizeConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        var json = [aConstraint toJSON];
-
-        json_constraints.push(json);
-
-        // Not needed if update ?
         [aConstraint registerItemsInEngine:self];
+        json_constraints.push([aConstraint toJSON]);
     }];
 
     var args = {container:containerUID, constraints:json_constraints};
