@@ -5,7 +5,9 @@
  * Created by You on November 24, 2012.
  * Copyright 2012, Your Company All rights reserved.
  */
-CPLogRegister(CPLogConsole);
+
+CPLogRegister(CPLogConsole)
+
 @import <Foundation/CPObject.j>
 
 @implementation AppController : CPObject
@@ -30,9 +32,9 @@ CPLogRegister(CPLogConsole);
 
 - (id)newObject
 {
-    var randIndex = FLOOR(RAND()*3),
-        randLabel = ["un", "deux", "trois", nil][FLOOR(RAND()*4)],
-        randTag = FLOOR(RAND()*3);
+    var randIndex = FLOOR(RAND() * 3),
+        randLabel = ["Label1", "Label2", "Label3", nil][FLOOR(RAND() * 4)],
+        randTag = FLOOR(RAND() * 3);
 
     return [CPDictionary dictionaryWithObjectsAndKeys:randIndex, @"index", randLabel, @"label", randTag, @"tag"];
 }

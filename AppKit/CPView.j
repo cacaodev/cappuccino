@@ -235,6 +235,8 @@ CPViewNoInstrinsicMetric = -1;
     Function            _toolTipFunctionOut;
     BOOL                _toolTipInstalled;
 
+    BOOL                _isObserving;
+
     CPArray             _constraintsArray @accessors(getter=_constraintsArray);
     CPArray             _autoresizingConstraints @accessors;
     CPArray             _internalConstraints @accessors(getter=_internalConstraints, setter=_setInternalConstraints:);
@@ -531,8 +533,12 @@ CPViewNoInstrinsicMetric = -1;
         [CPException raise:CPInvalidArgumentException reason:"can't insert a subview in duplicate (probably partially decoded)"];
 #endif
 
+    // Notify the subview that it will be moving.
+    [aSubview viewWillMoveToSuperview:self];
+
     // We will have to adjust the z-index of all views starting at this index.
-    var count = _subviews.length;
+    var count = _subviews.length,
+        lastWindow;
 
     // Dirty the key view loop, in case the window wants to auto recalculate it
     [[self window] _dirtyKeyViewLoop];
@@ -560,14 +566,12 @@ CPViewNoInstrinsicMetric = -1;
     }
     else
     {
+        var superview = aSubview._superview;
+
+        lastWindow = [superview window];
+
         // Remove the view from its previous superview.
-        [aSubview removeFromSuperview];
-
-        // Set the subview's window to our own.
-        [aSubview _setWindow:_window];
-
-        // Notify the subview that it will be moving.
-        [aSubview viewWillMoveToSuperview:self];
+        [aSubview _removeFromSuperview];
 
         // Set ourselves as the superview.
         aSubview._superview = self;
@@ -600,6 +604,15 @@ CPViewNoInstrinsicMetric = -1;
     if (![aSubview isHidden] && [self isHiddenOrHasHiddenAncestor])
         [aSubview _notifyViewDidHide];
 
+    [aSubview viewDidMoveToSuperview];
+
+    // Set the subview's window to our own.
+    if (_window)
+        [aSubview _setWindow:_window];
+
+    if (!_window && lastWindow)
+        [aSubview _setWindow:nil];
+
     // This method might be called before we are fully unarchived, in which case the theme state isn't set up yet
     // and none of the below matters anyhow.
     if (_themeState)
@@ -614,8 +627,6 @@ CPViewNoInstrinsicMetric = -1;
         else
             [aSubview _notifyWindowDidResignKey];
     }
-
-    [aSubview viewDidMoveToSuperview];
 
     [self didAddSubview:aSubview];
 }
@@ -633,6 +644,18 @@ CPViewNoInstrinsicMetric = -1;
     Does nothing if there's no container view.
 */
 - (void)removeFromSuperview
+{
+    var superview = _superview;
+
+    [self viewWillMoveToSuperview:nil];
+    [self _removeFromSuperview];
+    [self viewDidMoveToSuperview];
+
+    if (superview)
+        [self _setWindow:nil];
+}
+
+- (void)_removeFromSuperview
 {
     if (!_superview)
         return;
@@ -657,8 +680,6 @@ CPViewNoInstrinsicMetric = -1;
     [self _notifyViewDidResignFirstResponder];
 
     _superview = nil;
-
-    [self _setWindow:nil];
 }
 
 /*!
@@ -668,14 +689,14 @@ CPViewNoInstrinsicMetric = -1;
 */
 - (void)replaceSubview:(CPView)aSubview with:(CPView)aView
 {
-    if (aSubview._superview !== self)
+    if (aSubview._superview !== self || aSubview === aView)
         return;
 
     var index = [_subviews indexOfObjectIdenticalTo:aSubview];
 
-    [aSubview removeFromSuperview];
-
     [self _insertSubview:aView atIndex:index];
+
+    [aSubview removeFromSuperview];
 }
 
 - (void)setSubviews:(CPArray)newSubviews
@@ -750,13 +771,10 @@ CPViewNoInstrinsicMetric = -1;
 /* @ignore */
 - (void)_setWindow:(CPWindow)aWindow
 {
-    if (_window === aWindow)
-        return;
-
     [[self window] _dirtyKeyViewLoop];
 
     // Clear out first responder if we're the first responder and leaving.
-    if ([_window firstResponder] === self)
+    if ([_window firstResponder] === self && _window != aWindow)
         [_window makeFirstResponder:nil];
 
     // Notify the view and its subviews
@@ -826,6 +844,10 @@ CPViewNoInstrinsicMetric = -1;
 */
 - (void)viewWillMoveToSuperview:(CPView)aView
 {
+    [self _removeObservers];
+
+    if (aView)
+        [self _addObservers];
 }
 
 /*!
@@ -842,6 +864,32 @@ CPViewNoInstrinsicMetric = -1;
 */
 - (void)willRemoveSubview:(CPView)aView
 {
+}
+
+- (void)_removeObservers
+{
+    if (!_isObserving)
+        return;
+
+    var count = [_subviews count];
+
+    while (count--)
+        [_subviews[count] _removeObservers];
+
+    _isObserving = NO;
+}
+
+- (void)_addObservers
+{
+    if (_isObserving)
+        return;
+
+    var count = [_subviews count];
+
+    while (count--)
+        [_subviews[count] _addObservers];
+
+    _isObserving = YES;
 }
 
 /*!
@@ -3013,10 +3061,10 @@ setBoundsOrigin:
 
 - (BOOL)unsetThemeState:(ThemeState)aState
 {
-     if (aState && aState.isa && [aState isKindOfClass:CPArray])
+    if (aState && aState.isa && [aState isKindOfClass:CPArray])
         aState = CPThemeState.apply(null, aState);
 
-    var oldThemeState = _themeState
+    var oldThemeState = _themeState;
     _themeState = _themeState.without(aState);
 
     if (oldThemeState === _themeState)
