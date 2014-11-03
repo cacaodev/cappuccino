@@ -78,3 +78,7 @@
 }
 
 @end
+
+@implementation NSIBPrototypingLayoutConstraint : NSLayoutConstraint
+@end
+
