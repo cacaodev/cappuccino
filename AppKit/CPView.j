@@ -4122,9 +4122,12 @@ CPLog.debug([self identifier] + _cmd);
 
 - (CPArray)_constraintsEquivalentToAutoresizingMask
 {
-    var superview = [self superview];
+    var superview = [self superview],
+        bounds = [superview bounds],
+        frame = [self frame],
+        mask = [self autoresizingMask];
 
-    return [CPAutoresizingMaskLayoutConstraint constraintsWithAutoresizingMask:[self autoresizingMask] subitem:self frame:[self frame] superitem:superview bounds:[superview bounds]];
+    return [CPAutoresizingMaskLayoutConstraint constraintsWithAutoresizingMask:mask subitem:self frame:frame  superitem:superview bounds:bounds];
 }
 
 // Debugging
