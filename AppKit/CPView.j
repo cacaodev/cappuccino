@@ -4100,8 +4100,8 @@ CPLog.debug([self identifier] + _cmd);
 
     if (translate)
         [self _updateAutoresizingConstraints];
-
-    [self _updateContentSizeConstraints];
+    else
+        [self _updateContentSizeConstraints];
 }
 
 - (void)_updateAutoresizingConstraints
