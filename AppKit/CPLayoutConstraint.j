@@ -159,20 +159,6 @@ var CPLayoutItemIsNull = 1 << 1,
     [anEngine registerItem:_secondItem forIdentifier:[_secondItem UID]];
 }
 
-- (void)addToEngine:(id)anEngine
-{
-    [self registerItemsInEngine:anEngine];
-    [anEngine addConstraint:self];
-}
-
-- (void)removeFromEngine:(id)anEngine
-{
-CPLog.debug(self +_cmd);
-
-    [anEngine unregisterItemWithIdentifier:[_firstItem UID]];
-    [anEngine removeConstraint:self];
-}
-
 - (BOOL)isEqual:(id)anObject
 {
     if (anObject === self)

@@ -34,26 +34,6 @@
     [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
 }
 
-- (BOOL)addToEngine:(id)anEngine
-{
-CPLog.debug(self +_cmd);
-
-    [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
-    [anEngine addConstraint:self];
-
-    return YES;
-}
-
-- (BOOL)removeFromEngine:(id)anEngine
-{
-CPLog.debug(self +_cmd);
-
-    [anEngine unregisterItemWithIdentifier:[_firstItem UID]];
-    [anEngine removeConstraint:self];
-
-    return YES;
-}
-
 - (void)setConstant:(CPInteger)aConstant
 {
     if (aConstant < 0)

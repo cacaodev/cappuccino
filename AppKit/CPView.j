@@ -3992,15 +3992,6 @@ CPLog.debug(_cmd + constraints);
     return constraints;
 }
 
-- (void)_addConstraints:(CPArray)constraints toEngine:(id)anEngine
-{
-//CPLog.debug((_identifier || self) + _cmd);
-    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
-    {
-        [aConstraint addToEngine:anEngine];
-    }];
-}
-
 - (void)addConstraint:(CPLayoutConstraint)aConstraint
 {
     [self _addConstraints:@[aConstraint]];
@@ -4096,9 +4087,10 @@ CPLog.debug(_cmd + " " + [constraints description]);
 - (void)updateConstraintsIfNeeded
 {
     if (_needsUpdateConstraints)
+    {
         [self updateConstraints];
-
-    _needsUpdateConstraints = NO;
+        _needsUpdateConstraints = NO;
+    }
 }
 
 - (void)updateConstraints
