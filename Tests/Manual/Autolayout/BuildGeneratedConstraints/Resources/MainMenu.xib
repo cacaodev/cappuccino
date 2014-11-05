@@ -279,22 +279,61 @@
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="371">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="335" y="390" width="488" height="357"/>
+            <rect key="contentRect" x="335" y="390" width="526" height="361"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
             <view key="contentView" id="372">
-                <rect key="frame" x="0.0" y="-1" width="488" height="357"/>
+                <rect key="frame" x="0.0" y="0.0" width="526" height="361"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <customView identifier="redColor" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="460" customClass="ColorView">
-                        <rect key="frame" x="77" y="89" width="327" height="188"/>
+                    <customView identifier="redColor" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="460" customClass="ColorView">
+                        <rect key="frame" x="77" y="93" width="365" height="188"/>
                     </customView>
+                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kHB-HE-cGe">
+                        <rect key="frame" x="193" y="23" width="144" height="22"/>
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" borderStyle="bezel" title="RedView.width ≤ 300" id="aH7-SU-5z6">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
+                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1SY-Ss-CPT">
+                        <rect key="frame" x="430" y="15" width="82" height="32"/>
+                        <buttonCell key="cell" type="push" title="Layout" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="wsj-ED-jrg">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="layout:" target="450" id="aeY-As-TzP"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="N5b-RG-o2H">
+                        <rect key="frame" x="339" y="15" width="91" height="32"/>
+                        <buttonCell key="cell" type="push" title="Activate" alternateTitle="Desctivate" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YRn-5m-ham">
+                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="activate:" target="450" id="xtd-PH-nLW"/>
+                        </connections>
+                    </button>
                 </subviews>
+                <constraints>
+                    <constraint firstAttribute="bottom" secondItem="1SY-Ss-CPT" secondAttribute="bottom" constant="22" id="Ggs-kK-CgM"/>
+                    <constraint firstItem="kHB-HE-cGe" firstAttribute="baseline" secondItem="N5b-RG-o2H" secondAttribute="baseline" id="co9-1z-3ob"/>
+                    <constraint firstItem="1SY-Ss-CPT" firstAttribute="leading" secondItem="N5b-RG-o2H" secondAttribute="trailing" constant="12" id="dEu-6g-PbB"/>
+                    <constraint firstItem="N5b-RG-o2H" firstAttribute="baseline" secondItem="1SY-Ss-CPT" secondAttribute="baseline" id="eDH-2r-6SD"/>
+                    <constraint firstAttribute="trailing" secondItem="1SY-Ss-CPT" secondAttribute="trailing" constant="20" id="jgh-3Y-ash"/>
+                    <constraint firstItem="N5b-RG-o2H" firstAttribute="leading" secondItem="kHB-HE-cGe" secondAttribute="trailing" constant="8" id="krw-st-UuG"/>
+                    <constraint firstItem="460" firstAttribute="leading" secondItem="372" secondAttribute="leading" constant="77" id="oyh-54-j7a"/>
+                    <constraint firstAttribute="trailing" secondItem="460" secondAttribute="trailing" constant="84" id="ttz-4v-dC1"/>
+                </constraints>
             </view>
-            <point key="canvasLocation" x="674" y="395.5"/>
+            <point key="canvasLocation" x="693" y="397.5"/>
         </window>
         <customObject id="450" customClass="AppController">
             <connections>
                 <outlet property="theWindow" destination="371" id="459"/>
+                <outlet property="view" destination="460" id="5aH-DO-lG2"/>
             </connections>
         </customObject>
     </objects>

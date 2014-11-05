@@ -4016,6 +4016,7 @@ CPLog.debug(_cmd + " " + [constraints description]);
             return;
 
         [aConstraint _setContainer:self];
+        [aConstraint _setActive:YES];
 
         var firstItem = [aConstraint firstItem],
             secondItem = [aConstraint secondItem];
@@ -4055,6 +4056,10 @@ CPLog.debug(_cmd + " " + [constraints description]);
 - (void)removeConstraints:(CPArray)constraints
 {
     [_constraintsArray removeObjectsInArray:constraints];
+    [constraints enumerateObjectsUsingBlock:function(cst, idx, stop)
+    {
+       [cst _setActive:NO];
+    }];
 
     [self setNeedsUpdateConstraints:YES];
 }

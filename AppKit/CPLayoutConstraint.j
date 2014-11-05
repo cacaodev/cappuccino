@@ -97,35 +97,55 @@ var CPLayoutItemIsNull = 1 << 1,
 {
     _container = nil;
     _contraintFlags = 0;
+    _active = NO;
+}
+
+- (id)_findCommonAncestorForItem:(id)firstItem andItem:(id)secondItem
+{
+    var ancestor = nil;
+
+    if (firstItem !== nil && secondItem == nil)
+        ancestor = _firstItem;
+    else if (firstItem == nil && secondItem !== nil)
+        ancestor = _secondItem;
+    else if (firstItem !== nil && secondItem !== nil)
+        ancestor = [firstItem ancestorSharedWithView:secondItem];
+
+    return ancestor;
 }
 
 - (void)setActive:(BOOL)shouldActivate
 {
-    if (shouldActivate && !_active)
+    if (shouldActivate == _active)
+        return;
+CPLog.debug(self +_cmd + shouldActivate);
+    if (shouldActivate)
     {
-        if (_firstItem !== nil && _secondItem == nil)
-            ancestor = _firstItem;
-        else if (_firstItem == nil && _secondItem !== nil)
-            ancestor = _secondItem;
-        else if (_firstItem !== nil && _secondItem !== nil)
-            ancestor = [_firstItem ancestorSharedWithView:_secondItem];
+        var container = [self _findCommonAncestorForItem:_firstItem andItem:_secondItem];
 
-        if (ancestor !== nil)
+        if (container !== nil)
         {
-            [ancestor addConstraint:self];
-            _active = YES;
+            [container addConstraint:self];
+        }
+        else
+        {
+            [CPException raise:CPGenericException format:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor.  Does the constraint reference items in different view hierarchies ?  That's illegal.", _firstItem, _secondItem];
         }
     }
-    else if (!shouldActivate && _active)
+    else
     {
         [_container removeConstraint:self];
-        _active = NO;
     }
 }
 
 - (BOOL)isActive
 {
     return _active;
+}
+
+- (void)_setActive:(BOOl)active
+{
+    _active = active;
 }
 
 - (void)_setContainer:(id)aContainer

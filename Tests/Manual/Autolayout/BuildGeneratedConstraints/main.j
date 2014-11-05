@@ -1,6 +1,6 @@
 /*
  * AppController.j
- * null
+ * IBGeneratedConstraints
  *
  * Created by You on November 3, 2014.
  * Copyright 2014, Your Company All rights reserved.
