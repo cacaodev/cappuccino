@@ -385,6 +385,7 @@ CPViewNoInstrinsicMetric = -1;
         [self _loadThemeAttributes];
 
         [self _initConstraintsIvars];
+        _translatesAutoresizingMaskIntoConstraints = NO;
         _identifier = nil;
     }
 
@@ -3471,7 +3472,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     CPViewIsScaledKey               = @"CPViewIsScaledKey",
     CPViewConstraints               = @"CPViewConstraints",
     CPHuggingPriority               = @"CPHuggingPriority",
-    CPAntiCompressionPriority       = @"CPAntiCompressionPriority";
+    CPAntiCompressionPriority       = @"CPAntiCompressionPriority",
+    CPDoNotTranslateAutoresizingMask = @"CPDoNotTranslateAutoresizingMask";
 
 @implementation CPView (CPCoding)
 
@@ -3590,6 +3592,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         [self _initConstraintsIvars];
 
+        _translatesAutoresizingMaskIntoConstraints = !([aCoder decodeBoolForKey:CPDoNotTranslateAutoresizingMask] == YES);
+
         if ([aCoder containsValueForKey:CPHuggingPriority])
             _huggingPriorities = [aCoder decodeSizeForKey:CPHuggingPriority];
 
@@ -3704,6 +3708,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     if (_compressionPriorities)
         [aCoder encodeSize:_compressionPriorities forKey:CPAntiCompressionPriority];
+
+    if (!_translatesAutoresizingMaskIntoConstraints)
+        [aCoder encodeBool:YES forKey:CPDoNotTranslateAutoresizingMask];
 }
 
 @end
@@ -3883,8 +3890,10 @@ CPLog.debug(([self identifier] || [self class]) + _cmd);
 
     if (isNoIntrinsicWidth || isNoIntrinsicHeight)
     {
+        // TODO: Maybe what we need here is the minimumFrameSize (not implemented in all controls).
+        // fittingSize is the minimumFrameSize but given all constraints involving the view.
         var fittingSize = [self fittingSize];
-CPLog.debug(_cmd + CGStringFromSize(intrinsicContentSize) + CGStringFromSize(fittingSize));
+
         if (isNoIntrinsicWidth)
             intrinsicContentSize.width = fittingSize.width;
 

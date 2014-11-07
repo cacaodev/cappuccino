@@ -80,6 +80,8 @@ var NSViewAutoresizingMask = 0x3F,
         if ([aCoder containsValueForKey:@"NSViewConstraints"])
             _constraintsArray = [aCoder decodeObjectForKey:@"NSViewConstraints"];
 
+        _translatesAutoresizingMaskIntoConstraints = !([aCoder decodeObjectForKey:@"CPDoNotTranslateAutoresizingMask"] == YES);
+
         var huggingPriorities = [aCoder decodeSizeForKey:@"NSHuggingPriority"];
         if (huggingPriorities && !CGSizeEqualToSize(huggingPriorities, CGSizeMakeZero()))
             _huggingPriorities = huggingPriorities;

@@ -43,19 +43,18 @@
         var hasKey = [aCoder containsValueForKey:@"NSMultiplier"];
         _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:@"NSMultiplier"] : 1 ;// TODO: check multiplier when not in xib;
 
-        var hasKey = [aCoder containsValueForKey:@"NSConstant"];
         _constant = [aCoder decodeDoubleForKey:@"NSConstant"];
         _symbolicConstant = [aCoder decodeObjectForKey:"NSSymbolicConstant"];
 
         // Debug
-        if (!hasKey)
+        if (![aCoder containsValueForKey:@"NSConstant"])
             CPLog.warn(@"No NSConstant in xib. Symbolic constant is " + _symbolicConstant);
 
         var hasKey = [aCoder containsValueForKey:@"NSPriority"];
         _priority = (hasKey) ? [aCoder decodeIntForKey:@"NSPriority"] : CPLayoutPriorityRequired; // TODO: check _priority when not in xib;
 
         //_shouldBeArchived = [aCoder decodeBoolForKey:@"NSShouldBeArchived"];
-        //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
+        _identifier = [aCoder decodeObjectForKey:@"NSLayoutIdentifier"];
     }
 
     return self;
