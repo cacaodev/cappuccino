@@ -56,7 +56,8 @@ var CPLayoutItemIsNull = 1 << 1,
     double   _constant         @accessors(property=constant);
     float    _coefficient      @accessors(property=multiplier);
     float    _priority         @accessors(property=priority);
-    BOOL     _active           @accessors(getter=isActive, setter=setActive:);
+    BOOL     _active           @accessors(getter=isActive);
+    CPString _identifier       @accessors(property=identifier);
     int      _contraintFlags;
 
     CPString _symbolicConstant;
@@ -81,6 +82,7 @@ var CPLayoutItemIsNull = 1 << 1,
     _constant = constant;
     _symbolicConstant = nil;
     _priority = CPLayoutPriorityRequired;
+    _identifier = nil;
 //    _shouldBeArchived = NO;
 
     [self _init];
@@ -114,11 +116,16 @@ var CPLayoutItemIsNull = 1 << 1,
     return ancestor;
 }
 
+- (BOOL)_isSubtreeRelationship
+{
+    return _contraintFlags & CPLayoutItemIsNotContainer || ((_contraintFlags >> 3) & CPLayoutItemIsNotContainer);
+}
+
 - (void)setActive:(BOOL)shouldActivate
 {
     if (shouldActivate == _active)
         return;
-CPLog.debug(self +_cmd + shouldActivate);
+
     if (shouldActivate)
     {
         var container = [self _findCommonAncestorForItem:_firstItem andItem:_secondItem];
@@ -129,7 +136,7 @@ CPLog.debug(self +_cmd + shouldActivate);
         }
         else
         {
-            [CPException raise:CPGenericException format:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor.  Does the constraint reference items in different view hierarchies ?  That's illegal.", _firstItem, _secondItem];
+            [CPException raise:CPGenericException format:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", _firstItem, _secondItem];
         }
     }
     else
@@ -138,14 +145,27 @@ CPLog.debug(self +_cmd + shouldActivate);
     }
 }
 
-- (BOOL)isActive
-{
-    return _active;
-}
-
 - (void)_setActive:(BOOl)active
 {
     _active = active;
+}
+
++ (void)activateConstraints:(CPArray)constraints
+{
+    [self constraints:constraints activateOrNot:YES];
+}
+
++ (void)desactivateConstraints:(CPArray)constrainst
+{
+    [self constraints:constraints activateOrNot:NO];
+}
+
++ (void)constraints:(CPArray)constraints activateOrNot:(BOOL)activate
+{
+    [constraints enumerateObjectsUsingBlock:function(cst, idx, stop)
+    {
+        [cst setActive:activate];
+    }];
 }
 
 - (void)_setContainer:(id)aContainer
@@ -175,8 +195,12 @@ CPLog.debug(self +_cmd + shouldActivate);
 - (void)registerItemsInEngine:(id)anEngine
 {
     [anEngine registerItem:_container forIdentifier:[_container UID]];
-    [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
-    [anEngine registerItem:_secondItem forIdentifier:[_secondItem UID]];
+
+    if (_firstItem)
+        [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
+
+    if (_secondItem)
+        [anEngine registerItem:_secondItem forIdentifier:[_secondItem UID]];
 }
 
 - (BOOL)isEqual:(id)anObject
@@ -309,7 +333,7 @@ var CPFirstItem         = @"CPFirstItem",
         [aCoder encodeInt:_priority forKey:CPPriority];
 
     //[aCoder encodeBool:_shouldBeArchived forKey:CPShouldBeArchived];
-    //[aCoder encodeObject:[self _identifier] forKey:CPLayoutIdentifier];
+    [aCoder encodeObject:_identifier forKey:CPLayoutIdentifier];
 }
 
 - (id)initWithCoder:(CPCoder)aCoder
@@ -331,7 +355,7 @@ var CPFirstItem         = @"CPFirstItem",
     _constant = [aCoder decodeDoubleForKey:CPConstant];
     _symbolicConstant = [aCoder decodeObjectForKey:CPSymbolicConstant];
     //_shouldBeArchived = [aCoder decodeBoolForKey:CPShouldBeArchived];
-    //[self _setIdentifier:[aCoder decodeObjectForKey:CPLayoutIdentifier]];
+    _identifier = [aCoder decodeObjectForKey:CPLayoutIdentifier];
 
     var hasKey = [aCoder containsValueForKey:CPPriority];
     _priority = (hasKey) ? [aCoder decodeIntForKey:CPPriority] : CPLayoutPriorityRequired;
@@ -359,6 +383,9 @@ var JSONForItem = function(aContainer, anItem, anAttribute)
 
 var alignmentRectOffsetForItem = function(anItem, anAttribute)
 {
+    if (anAttribute === CPLayoutAttributeNotAnAttribute || anItem == nil)
+        return 0;
+
     var inset = [anItem alignmentRectInsets],
         offset = 0;
 
@@ -380,9 +407,9 @@ var alignmentRectOffsetForItem = function(anItem, anAttribute)
         break;
         case CPLayoutAttributeHeight   : offset = - inset.top - inset.bottom;
         break;
-        case CPLayoutAttributeCenterX  : offset =  - inset.right + inset.left;
+        case CPLayoutAttributeCenterX  : offset = - inset.right + inset.left;
         break;
-        case CPLayoutAttributeCenterY  : offset =  - inset.bottom + inset.top;
+        case CPLayoutAttributeCenterY  : offset = - inset.bottom + inset.top;
         break;
     }
 
