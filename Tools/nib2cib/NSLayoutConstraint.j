@@ -48,7 +48,7 @@
 
         // Debug
         if (![aCoder containsValueForKey:@"NSConstant"])
-            CPLog.warn(@"No NSConstant in xib. Symbolic constant is " + _symbolicConstant);
+            CPLog.warn(@"No NSConstant in xib. Symbolic constant = " + _symbolicConstant);
 
         var hasKey = [aCoder containsValueForKey:@"NSPriority"];
         _priority = (hasKey) ? [aCoder decodeIntForKey:@"NSPriority"] : CPLayoutPriorityRequired; // TODO: check _priority when not in xib;

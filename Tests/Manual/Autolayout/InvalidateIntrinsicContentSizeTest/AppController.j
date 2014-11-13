@@ -71,6 +71,11 @@ CPLogRegister(CPLogConsole);
     //CPTrace("CPWindow", "setFrameSize:");
     [CPLayoutConstraintEngine setAllowsWebWorker:YES];
 
+    [compressionWindow     setAutolayoutEnabled:YES];
+    [huggingWindow         setAutolayoutEnabled:YES];
+    [sizeToFitButtonWindow setAutolayoutEnabled:YES];
+    [sizeToFitLabelWindow  setAutolayoutEnabled:YES];
+
     [compressionWindow layout];
     [huggingWindow layout];
     [sizeToFitButtonWindow layout];

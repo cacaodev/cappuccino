@@ -1936,6 +1936,7 @@ CPTextFieldStatePlaceholder = CPThemeState("placeholder");
     return [super intrinsicContentSize];
 }
 
+// TODO: We need to take care of all constraints involving self when calculating fittingSize
 - (CGSize)fittingSize
 {
     if ([self isEditable])

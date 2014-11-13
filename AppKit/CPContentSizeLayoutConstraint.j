@@ -1,3 +1,4 @@
+@import <AppKit/CGGeometry.j>
 @import "CPLayoutConstraint.j"
 
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
@@ -29,12 +30,7 @@
     return @"SizeConstraint";
 }
 
-- (void)registerItemsInEngine:(id)anEngine
-{
-    [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
-}
-
-- (void)setConstant:(CPInteger)aConstant
+- (void)setConstant:(double)aConstant
 {
     if (aConstant < 0)
         aConstant = 0;

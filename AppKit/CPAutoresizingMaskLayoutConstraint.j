@@ -4,6 +4,13 @@
 {
 }
 
+- (id)initWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
+{
+    self = [super initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
+
+    return self;
+}
+
 - (CPView)viewForAutoresizingMask
 {
     return (_firstItem !== _container) ? _firstItem : _secondItem;
@@ -25,10 +32,8 @@
 
 + (CPArray)_constraintsWithAutoresizingMask:(unsigned)aMask subitem:(id)subItem frame:(CGRect)aFrame superitem:(id)superItem bounds:(CGRect)bounds orientation:(CPInteger)orientation
 {
-    var result = [CPArray array];
-
     if (!superItem)
-        return result;
+        return [CPArray array];
 
     var min                   = orientation ? CGRectGetMinY(aFrame) : CGRectGetMinX(aFrame),
         max                   = orientation ? CGRectGetMaxY(aFrame) : CGRectGetMaxX(aFrame),
@@ -107,10 +112,7 @@
     [pconstraint _setContainer:superItem];
     [sconstraint _setContainer:superItem];
 
-    [result addObject:pconstraint];
-    [result addObject:sconstraint];
-
-    return result;
+    return @[pconstraint, sconstraint];
 }
 
 @end

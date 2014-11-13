@@ -121,6 +121,8 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
         [view setHidden:[self isHidden]];
         [view setAlphaValue:[self alphaValue]];
         [view setIdentifier:[self identifier]];
+        [view setAutolayoutEnabled:[self isAutolayoutEnabled]];
+        [view _setNeedsUpdateConstraints:[self _needsUpdateConstraints]];
 
         [_superview replaceSubview:self with:view];
 
@@ -136,14 +138,20 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
             {
                 var firstItem = [aConstraint firstItem];
                 if (firstItem && [firstItem isKindOfClass:[_CPCibCustomView class]])
+                {
                     [aConstraint setFirstItem:[firstItem replacementView]];
+                    [firstItem setAutolayoutEnabled:YES];
+                }
 
                 var secondItem = [aConstraint secondItem];
                 if (secondItem && [secondItem isKindOfClass:[_CPCibCustomView class]])
+                {
                     [aConstraint setSecondItem:[secondItem replacementView]];
+                    [firstItem setAutolayoutEnabled:YES];
+                }
             }];
 
-            [view _addConstraints:constraints];
+            [view addConstraints:[self constraints]];
         }
     }
 

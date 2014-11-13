@@ -3,6 +3,8 @@
 
 @import "CPLayoutConstraintEngine.j"
 
+@class _CPCibCustomView;
+
 CPLayoutRelationLessThanOrEqual = -1;
 CPLayoutRelationEqual = 0;
 CPLayoutRelationGreaterThanOrEqual = 1;
@@ -35,10 +37,6 @@ CPLayoutPriorityDragThatCannotResizeWindow = 490; // This is the priority level 
 CPLayoutPriorityDefaultLow = 250; // this is the priority level at which a button hugs its contents horizontally.
 CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingSize], the smallest size that is large enough for the view's contents is computed.  This is the priority level with which the view wants to be as small as possible in that computation.  It's quite low.  It is generally not appropriate to make a constraint at exactly this priority.  You want to be higher or lower.
 
-CPLayoutPriorityResizeWindowEditing = 1000;
-
-CPLayoutPriorityWindowEqualsContentView = 1001;
-
 var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bottom",  "Left",  "Right",  "Width",  "Height",  "CenterX",  "CenterY",  "Baseline"];
 
 var CPLayoutItemIsNull = 1 << 1,
@@ -50,15 +48,15 @@ var CPLayoutItemIsNull = 1 << 1,
     id       _container        @accessors(getter=container);
     id       _firstItem        @accessors(property=firstItem);
     id       _secondItem       @accessors(property=secondItem);
-    int      _firstAttribute   @accessors(property=firstAttribute);
-    int      _secondAttribute  @accessors(property=secondAttribute);
-    int      _relation         @accessors(property=relation);
+    unsigned _firstAttribute   @accessors(property=firstAttribute);
+    unsigned _secondAttribute  @accessors(property=secondAttribute);
+    unsigned _relation         @accessors(property=relation);
     double   _constant         @accessors(property=constant);
     float    _coefficient      @accessors(property=multiplier);
     float    _priority         @accessors(property=priority);
     BOOL     _active           @accessors(getter=isActive);
     CPString _identifier       @accessors(property=identifier);
-    int      _contraintFlags;
+    unsigned _contraintFlags   @accessors(getter=contraintFlags);
 
     CPString _symbolicConstant;
 //    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
@@ -118,7 +116,7 @@ var CPLayoutItemIsNull = 1 << 1,
 
 - (BOOL)_isSubtreeRelationship
 {
-    return _contraintFlags & CPLayoutItemIsNotContainer || ((_contraintFlags >> 3) & CPLayoutItemIsNotContainer);
+    return ((_contraintFlags & 8) || (_contraintFlags & 64)) > 0;
 }
 
 - (void)setActive:(BOOL)shouldActivate
@@ -145,7 +143,7 @@ var CPLayoutItemIsNull = 1 << 1,
     }
 }
 
-- (void)_setActive:(BOOl)active
+- (void)_setActive:(BOOL)active
 {
     _active = active;
 }
@@ -178,29 +176,26 @@ var CPLayoutItemIsNull = 1 << 1,
 
 - (void)setFirstItem:(id)anItem
 {
-    if ([anItem isEqual:[CPNull null]])
-        anItem = nil;
+    var item = [self _validateItem:anItem];
+    [item setAutolayoutEnabled:YES];
 
-    _firstItem = anItem;
+    _firstItem = item;
 }
 
 - (void)setSecondItem:(id)anItem
 {
-    if ([anItem isEqual:[CPNull null]])
-        anItem = nil;
+    var item = [self _validateItem:anItem];
+    [item setAutolayoutEnabled:YES];
 
-    _secondItem = anItem;
+    _secondItem = item;
 }
 
-- (void)registerItemsInEngine:(id)anEngine
+- (id)_validateItem:(id)anItem
 {
-    [anEngine registerItem:_container forIdentifier:[_container UID]];
+    if ([anItem isEqual:[CPNull null]])
+        return nil;
 
-    if (_firstItem)
-        [anEngine registerItem:_firstItem forIdentifier:[_firstItem UID]];
-
-    if (_secondItem)
-        [anEngine registerItem:_secondItem forIdentifier:[_secondItem UID]];
+    return anItem;
 }
 
 - (BOOL)isEqual:(id)anObject
@@ -241,7 +236,7 @@ var CPLayoutItemIsNull = 1 << 1,
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@ %@ %@ %@ %@ x%@ +%@ (%@)", ([_firstItem identifier] || [_firstItem className] || ""), CPStringFromAttribute(_firstAttribute), CPStringFromRelation(_relation), ([_secondItem identifier] || [_secondItem className] || ""), CPStringFromAttribute(_secondAttribute), _coefficient, _constant, _priority];
+    return [CPString stringWithFormat:@"%@.%@ %@ %@.%@ x%@ +%@ (%@) [%@]", [_firstItem debugID], CPStringFromAttribute(_firstAttribute), CPStringFromRelation(_relation), [_secondItem debugID], CPStringFromAttribute(_secondAttribute), _coefficient, _constant, _priority, (_identifier || "")];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem
@@ -258,11 +253,19 @@ var CPLayoutItemIsNull = 1 << 1,
     }
 }
 
+- (void)resolveConstant
+{
+    var constant = _constant;
+
+    if ([self resolvedConstant:@ref(constant) forSymbolicConstant:_symbolicConstant error:nil])
+        _constant = constant;
+}
+
 - (BOOL)resolvedConstant:(@ref)refConstant forSymbolicConstant:(CPString)symbol error:(@ref)refError
 {
-    var error = nil;
-    var constant = @deref(refConstant);
-    var result = NO;
+    var error = nil,
+        constant = @deref(refConstant),
+        result = NO;
 
     if (symbol !== nil)
     {
@@ -271,7 +274,6 @@ var CPLayoutItemIsNull = 1 << 1,
             error = @"Cannot resolve symbolic constant because the constraint is not installed.";
             result = NO;
         }
-
         else if (symbol == @"NSSpace" && _firstAttribute <= 6 && _secondAttribute <= 6)
         {
             if (_firstItem == _container || _secondItem == _container)
@@ -307,13 +309,24 @@ var CPFirstItem         = @"CPFirstItem",
 
 @implementation CPLayoutConstraint (CPCoding)
 
+- (void)awakeFromCib
+{
+    [self _enableAutoLayoutIfNeeded];
+}
+
+- (void)_enableAutoLayoutIfNeeded
+{
+    [_firstItem setAutolayoutEnabled:YES];
+    [_secondItem setAutolayoutEnabled:YES];
+}
+
 - (void)encodeWithCoder:(CPCoder)aCoder
 {
     if (_firstItem)
-        [aCoder encodeObject:_firstItem forKey:CPFirstItem];
+        [aCoder encodeConditionalObject:_firstItem forKey:CPFirstItem];
 
     if (_secondItem)
-        [aCoder encodeObject:_secondItem forKey:CPSecondItem];
+        [aCoder encodeConditionalObject:_secondItem forKey:CPSecondItem];
 
     [aCoder encodeInt:_firstAttribute forKey:CPFirstAttribute];
     [aCoder encodeInt:_secondAttribute forKey:CPSecondAttribute];
@@ -340,7 +353,9 @@ var CPFirstItem         = @"CPFirstItem",
 {
     self = [super init];
 
-    _firstItem = [aCoder decodeObjectForKey:CPFirstItem];
+    var firstItem = [aCoder decodeObjectForKey:CPFirstItem];
+    [self setFirstItem:firstItem];
+
     _firstAttribute = [aCoder decodeIntForKey:CPFirstAttribute];
 
     var hasKey = [aCoder containsValueForKey:CPRelation];
@@ -349,7 +364,8 @@ var CPFirstItem         = @"CPFirstItem",
     var hasKey = [aCoder containsValueForKey:CPMultiplier];
     _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:CPMultiplier] : 1 ;
 
-    _secondItem = [aCoder decodeObjectForKey:CPSecondItem];
+    var secondItem = [aCoder decodeObjectForKey:CPSecondItem];
+    [self setSecondItem:secondItem];
     _secondAttribute = [aCoder decodeIntForKey:CPSecondAttribute];
 
     _constant = [aCoder decodeDoubleForKey:CPConstant];
@@ -374,7 +390,7 @@ var JSONForItem = function(aContainer, anItem, anAttribute)
 
     return {
         uuid        : [anItem UID],
-        name        : [anItem identifier] || [anItem className],
+        name        : [anItem debugID],
         rect        : [anItem frame],
         attribute   : anAttribute,
         flags       : CPLayoutConstraintFlags(aContainer, anItem)
@@ -433,5 +449,10 @@ var CPStringFromRelation = function(relation)
 
 var CPLayoutConstraintFlags = function(aContainer, anItem)
 {
-    return (anItem == nil) ? CPLayoutItemIsNull : ((anItem == aContainer) ? CPLayoutItemIsContainer : CPLayoutItemIsNotContainer);
+    if (anItem == nil)
+        return CPLayoutItemIsNull;
+    else if (anItem == aContainer)
+        return CPLayoutItemIsContainer;
+    else
+        return CPLayoutItemIsNotContainer;
 };

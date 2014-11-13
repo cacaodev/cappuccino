@@ -30,13 +30,11 @@ InitCassowaryFunctions = function(scope)
 
 scope.DISABLE_ON_SOLVED_NOTIFICATIONS = false;
 
-scope.VARIABLES_MAP = {};
-
 scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP = [];
 
-scope.EDIT_CONTEXT = null;
+scope.VARIABLES_MAP = {};
 
-scope.EDITVARS_FOR_CONTEXT = {};
+scope.EDIT_VARIABLES = null;
 
 scope.solver = null;
 
@@ -68,6 +66,16 @@ scope.solve = function()
     WorkerLog("solve");
 };
 
+scope.resolve = function()
+{
+    if (!scope.SolverExists('solve'))
+        return;
+
+    scope.solver.resolve();
+
+    WorkerLog("resolve");
+};
+
 scope.info = function()
 {
     var info = scope.solver.toString();
@@ -76,13 +84,28 @@ scope.info = function()
     return info;
 };
 
+scope.layoutConstraint = function(uuid, container, type, casso_constraint)
+{
+    this.uuid = uuid;
+    this.container = container;
+    this.type = type;
+    this.constraint = casso_constraint;
+
+    this.toString = function()
+    {
+        return (this.uuid + " " + this.type + " " + this.constraint.toString());
+    };
+
+    return this;
+};
+
 scope.getconstraints = function()
 {
     var str = "";
 
     scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.forEach(function(w)
     {
-        str += w.type + " " + w.constraint.toString() + "\n";
+        str += w.toString() + "\n";
     });
 
     WorkerLog(str + "\n" + scope.solver.rows.toString());
@@ -119,10 +142,10 @@ scope._addConstraint = function(casso_constraint, uuid, container, type)
 {
     scope.solver.addConstraint(casso_constraint);
 
-    var wrapper = {uuid:uuid ,container:container, type:type, constraint:casso_constraint};
+    var wrapper = new scope.layoutConstraint(uuid , container, type, casso_constraint);
     scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
-    
-    WorkerLog('Added uuid:' + uuid  + " type: " + type + " " + casso_constraint.toString());
+
+    WorkerLog("Added: " + wrapper.toString());
 };
 
 scope.removeConstraintWithUUID = function(uuid, type, isMultiple)
@@ -138,6 +161,7 @@ scope.removeConstraintWithUUID = function(uuid, type, isMultiple)
         if ((type == null || w.type == type) && w.uuid == uuid)
         {
             ret += scope.removeConstraint(w.constraint);
+            WorkerLog('Removed: ' +  w.toString());
             constraints_list.splice(count, 1);
 
             if (!isMultiple)
@@ -174,8 +198,6 @@ scope.removeConstraint = function(casso_constraint)
     {
         if (error)
             WorkerWarn(error.toString());
-         else
-            WorkerLog('removed constraint :' + casso_constraint.toString());
     }
 
     return (error == null);
@@ -183,23 +205,24 @@ scope.removeConstraint = function(casso_constraint)
 
 scope.replaceConstraints = function(args)
 {
-    var allConstraints = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP,
+    var orig_all_constraints = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP,
+        final_constraints = args.constraints,
         container = args.container;
-        
-    var containerConstraints = allConstraints.filter(function(obj)
+
+    var orig_constraints = orig_all_constraints.filter(function(cst)
     {
-        return (obj.container == container);
+        return (cst.container == container && cst.type == "Constraint");
     });
-    
-    var mutation = compareArrays(containerConstraints, "uuid", args.constraints, "uuid"),
+
+    var mutation = compareArrays(orig_constraints, "uuid", final_constraints, "uuid"),
         removed = mutation.removed,
         added = mutation.added;
-    
-    WorkerLog("Should add " + mutation.added.length + " and remove " +mutation.removed.length);
-    
-    removed.forEach(function(constraintByView)
+
+    WorkerLog("Constraints: should add " + added.length + " and remove " + removed.length);
+
+    removed.forEach(function(cst)
     {
-        scope.removeConstraintWithUUID(constraintByView.uuid, null, false);
+        scope.removeConstraintWithUUID(cst.uuid, "Constraint", false);
     });
 
     added.forEach(function(json)
@@ -208,45 +231,87 @@ scope.replaceConstraints = function(args)
     });
 };
 
-scope.updateSizeConstraints = function(args)
+scope.replaceSizeConstraints = function(args)
 {
-    var container = args.container,
-        json_constraints = args.constraints;
+    var json_constraints = args.constraints;
+    WorkerLog("Size Constraints: should replace " + json_constraints.length);
 
     json_constraints.forEach(function(json)
     {
-        var uuid = json.uuid;
-
         // Removes constraints for both hugging and antiCompression
-        scope.removeConstraintWithUUID(uuid, "SizeConstraint", true);
-
+        scope.removeConstraintWithUUID(json.uuid, "SizeConstraint", true);
         scope.addConstraint(json);
-
     });
-
-    scope.solver.solve();
+};
+/*
+scope.createContext = function(container, variableTag, priority)
+{
+    return new scope.Context(container, variableTag, priority);
 };
 
-scope.setEditVarsForContext = function(args)
+scope.Context = function(uuid, prefix, variableTag, priority)
 {
-    var tags = args.tags,
-        identifier = args.identifier,
-        priority = args.priority,
-        editVars = [];
+    this.uuid = uuid;
+    this.prefix = prefix;
+    this.tags = variableTag;
+    this.priority = priority;
 
-    tags.forEach(function(tag)
+    return this;
+};
+
+scope.pushContext = function(aContext)
+{
+    scope.CONTEXT_STACK.push(aContext);
+};
+
+scope.popContext = function()
+{
+    return scope.CONTEXT_STACK.pop();
+};
+*/
+
+scope.stopEditing = function()
+{
+    if (scope.EDIT_VARIABLES !== null)
     {
-       var variable = scope.GetVariable(identifier, tag);
-       editVars.push({variable:variable, priority:priority});
-    });
-
-    scope.EDITVARS_FOR_CONTEXT[identifier] = editVars;
+        scope.solver.removeAllEditVars();
+        scope.EDIT_VARIABLES = null;
+        WorkerLog("removeAllEditVars");
+    }
 };
 
-scope.removeAllEditVars = function()
+scope.suggestValues = function(args)
 {
-    scope.solver.removeAllEditVars();
-    scope.EDIT_CONTEXT = null;
+    var values = args.values,
+        solver = scope.solver,
+        editVariables = scope.EDIT_VARIABLES;
+
+    if (editVariables == null)
+    {
+        var tags = args.tags,
+            prefix = args.prefix,
+            uuid = args.uuid,
+            priority = args.priority,
+            var_array = [];
+
+        tags.forEach(function(tag)
+        {
+           var variable = scope.CPViewLayoutVariable(uuid, prefix, tag, null);
+           var sw = scope.StrengthAndWeight(priority);
+           solver.addEditVar(variable, sw.strength, sw.weight);
+           var_array.push(variable);
+        });
+
+        editVariables = var_array;
+        scope.EDIT_VARIABLES = var_array;
+    }
+
+    editVariables.forEach(function(variable, idx)
+    {
+        solver.suggestValue(variable, values[idx]);
+    });
+
+    solver.resolve();
 };
 
 scope.suggestValue = function(args)
@@ -268,12 +333,6 @@ scope.suggestValue = function(args)
     scope.EDIT_CONTEXT = args.identifier;
 
     WorkerLog("suggestValue " + args.value + " for " + variable.toString());
-};
-
-scope.suggestValuesMultiple = function(args)
-{
-    scope.suggestValues(args.values, args.context);
-    //WorkerLog("suggestValuesMultiple");
 };
 
 scope.addStayVariable = function(variable, priority)
@@ -299,40 +358,6 @@ scope.addStay = function(args)
         priority = args.priority;
 
     scope.addStayVariable(variable, priority);
-};
-
-scope.suggestValues = function(values, context)
-{
-    var solver = scope.solver,
-        editVars = scope.EDITVARS_FOR_CONTEXT[context];
-
-    if (context !== scope.EDIT_CONTEXT)
-    {
-        try
-        {
-            if (scope.EDIT_CONTEXT !== null)
-                solver.removeAllEditVars();
-
-            editVars.forEach(function(editVar)
-            {
-                var sw = scope.StrengthAndWeight(editVar.priority);
-                solver.addEditVar(editVar.variable, sw.strength, sw.weight);
-            });
-        }
-        catch (e)
-        {
-            returnMessage('warn', e);
-        }
-
-        scope.EDIT_CONTEXT = context;
-    }
-
-    editVars.forEach(function(editVar, idx)
-    {
-        solver.suggestValue(editVar.variable, values[idx]);
-    });
-
-    solver.resolve();
 };
 
 scope.noop = function()
@@ -386,7 +411,11 @@ scope.CPViewLayoutVariable = function(anIdentifier, aPrefix, aTag, aValue)
             default: name = "";
         }
 
-        variable = new c.Variable({prefix:aPrefix, name:name, value:aValue, identifier:anIdentifier, tag:aTag});
+        if (aValue == null)
+            aValue = 0;
+
+        var options = {prefix:aPrefix, name:name, identifier:anIdentifier, tag:aTag, value:aValue};
+        variable = new c.Variable(options);
         scope.VARIABLES_MAP[variable_hash] = variable;
 
         //if (aTag == LayoutVariableWidth || aTag == LayoutVariableHeight)
@@ -414,7 +443,7 @@ scope.StrengthAndWeight = function(p)
         n = p - 100*c - 10*d;
 */
 
-    return {strength:(new c.Strength("Custom", 0, 1, 0)), weight:p};
+    return {strength:(new c.Strength("", 0, 1, 0)), weight:p};
 };
 
 scope.CreateConstraint = function(args)
@@ -613,12 +642,12 @@ var onSolved = function(records)
     returnMessage('solved', records);
 };
 
-var compareArrays = function (o,keyo,n,keyn)
+var compareArrays = function (o, keyo, n, keyn)
 {
   // sort both arrays (or this won't work)
     var sorto = function(a,b){return a[keyo]-b[keyo];};
     var sortn = function(a,b){return a[keyn]-b[keyn];};
-    
+
     o.sort(sorto); n.sort(sortn);
 
   // don't compare if either list is empty

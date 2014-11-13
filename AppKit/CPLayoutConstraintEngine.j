@@ -30,7 +30,6 @@ var ENGINE_SUPPORTS_WEB_WORKER,
     ENGINE_WORKER_PATH;
 
 var _CPLayoutEngineCachedEngines = {},
-    _CPEngineViewsNeedUpdateConstraints = [],
     _CPEngineCallbacks = {};
 
 @implementation CPLayoutConstraintEngine : CPObject
@@ -64,17 +63,6 @@ var _CPLayoutEngineCachedEngines = {},
 + (BOOL)shouldEnableWebWorker
 {
     return (ENGINE_SUPPORTS_WEB_WORKER && ENGINE_ALLOWS_WEB_WORKER);
-}
-
-+ (void)informNeedsConstraintUpdateForView:(CPView)aView
-{
-// Note: class method (and class var bellow) because some views may need to register themselves
-// before their related engine (window engine) was created.
-// Turn into instance method if we decide to create the CPEngine & Cassowary-solver earlier.
-    if (!aView || [_CPEngineViewsNeedUpdateConstraints containsObjectIdenticalTo:aView])
-        return;
-
-    [_CPEngineViewsNeedUpdateConstraints addObject:aView];
 }
 
 - (id)initWithSolverCreatedCallback:(Function)solverReadyFunction onSolvedCallback:(Function)onSolvedFunction
@@ -149,22 +137,34 @@ var _CPLayoutEngineCachedEngines = {},
 {
     if (anItem && anIdentifier)
     {
-        //CPLog.debug("Register " + anItem + " ID " + anIdentifier);
+        //CPLog.debug("Register " + ([anItem identifier] || [anItem className]) + " for ID " + anIdentifier);
         [_CPEngineRegisteredItems setObject:anItem forKey:anIdentifier];
     }
 }
 
 - (id)registeredItemForIdentifier:(CPString)anIdentifier
 {
-    if (anIdentifier == nil)
-        return nil;
+    if (anIdentifier !== nil)
+        return [_CPEngineRegisteredItems objectForKey:anIdentifier];
 
-    return [_CPEngineRegisteredItems objectForKey:anIdentifier];
+    return nil;
+}
+
+- (CPString)registeredItems
+{
+    var str = "";
+    [_CPEngineRegisteredItems enumerateKeysAndObjectsUsingBlock:function(key,obj,stop)
+    {
+        str += (key + " = " + [obj debugID] + "\n");
+    }];
+
+    return str;
 }
 
 - (void)unregisterItemWithIdentifier:(CPString)anIdentifier
 {
-    [_CPEngineRegisteredItems removeObjectForKey:anIdentifier];
+    if (anIdentifier !== nil)
+        [_CPEngineRegisteredItems removeObjectForKey:anIdentifier];
 }
 
 // ===================================
@@ -216,36 +216,51 @@ var _CPLayoutEngineCachedEngines = {},
     [self sendCommand:"setDisableOnSolvedNotification" withArguments:shouldDisable];
 }
 
-- (void)suggestValue:(id)aValue forVariable:(int)aTag priority:(CPInteger)aPriority fromItem:(id)anItem
+- (void)suggestValue:(float)aValue forVariable:(CPInteger)aTag priority:(CPInteger)aPriority fromItem:(id)anItem
 {
     var args = {tag:aTag, value:aValue, identifier:[anItem UID], priority:aPriority};
 
     [self sendCommand:"suggestValue" withArguments:args];
 }
 
-- (void)setEditVariables:(CPArray)tags priority:(CPInteger)aPriority fromItem:(id)anItem
-{
-    var args = {identifier:[anItem UID], tags:tags, priority:aPriority};
-
-    [self sendCommand:"setEditVarsForContext" withArguments:args];
-}
-
-- (void)stopEditing
-{
-    [self sendCommand:"removeAllEditVars" withArguments:null];
-}
-
 - (void)suggestValues:(CPArray)values fromItem:(id)anItem
 {
 // TODO: in no-worker mode, call the target function directly for perf.
-    var context = [anItem UID];
+    var args = {values:values, uuid:[anItem UID], prefix:[anItem debugID], tags:[8, 16], priority:1000};
 
-    [self sendCommand:"suggestValuesMultiple" withArguments:{values:values, context:context}];
+    [self sendCommand:"suggestValues" withArguments:args];
+}
+
+- (void)suggestSize:(CPArray)values fromItem:(id)anItem
+{
+// TODO: in no-worker mode, call the target function directly for perf.
+    var args = {values:values, uuid:[anItem UID]};
+
+    [self sendCommand:"suggestSize" withArguments:args];
+}
+
+/*
+- (void)setEditVariables:(CPArray)tags priority:(CPInteger)aPriority fromItem:(id)anItem
+{
+    var prefix = [anItem identifier] || [anItem className],
+        args = {identifier:[anItem UID], prefix:prefix, tags:tags, priority:aPriority};
+
+    [self sendCommand:"registerEditVariables" withArguments:args];
+}
+*/
+- (void)stopEditing
+{
+    [self sendCommand:"stopEditing" withArguments:null];
 }
 
 - (void)solve
 {
     [self sendCommand:"solve" withArguments:null];
+}
+
+- (void)resolve
+{
+    [self sendCommand:"resolve" withArguments:null];
 }
 
 - (void)addStayVariable:(int)tag priority:(int)aPriority fromItem:(id)anItem
@@ -261,36 +276,37 @@ var _CPLayoutEngineCachedEngines = {},
     //CPLog.debug([self class] + " addStay " + anItem + " tag:" + tag + " priority:" + aPriority);
 }
 
-- (void)solver_replaceConstraintsIfNeeded
+- (void)solver_replaceConstraints:(CPDictionary)constraintsByView
 {
-    if ([_CPEngineViewsNeedUpdateConstraints count] === 0)
-        return;
+    CPLog.debug("Registered Items = \n " + [self registeredItems]);
+    CPLog.debug("Constraints to replace = \n");
 
-    var updatedIndexes = [CPIndexSet indexSet];
-
-    [_CPEngineViewsNeedUpdateConstraints enumerateObjectsUsingBlock:function(aView, idx, stop)
+    var toJSON = function(constraint)
     {
-        if ([[aView window] _layoutEngineIfExists] === self && [aView needsUpdateConstraints])
+        return [constraint toJSON];
+    }
+
+    [constraintsByView enumerateKeysAndObjectsUsingBlock:function(containerUID, constraintsDict, stop)
+    {
+        CPLog.debug([[self registeredItemForIdentifier:containerUID] debugID] + "=" + [constraintsDict description]);
+
+        var json_constraints = [constraintsDict objectForKey:@"Constraint"],
+            json_size_constraints = [constraintsDict objectForKey:@"SizeConstraint"];
+
+        if (json_size_constraints)
         {
-            [aView updateConstraintsIfNeeded];
+            var sizeConstraints = [json_size_constraints mapUsingFunction:toJSON];
+            var args = {container:containerUID, constraints:sizeConstraints};
+            [self sendCommand:"replaceSizeConstraints" withArguments:args];
+        }
 
-            var json_constraints = [],
-                containerUID = [aView UID];
-
-            [[aView constraints] enumerateObjectsUsingBlock:function(aConstraint, idx_, stop)
-            {
-                [aConstraint registerItemsInEngine:self];
-                json_constraints.push([aConstraint toJSON]);
-            }];
-
-            [updatedIndexes addIndex:idx];
-
-            var args = {container:containerUID, constraints:json_constraints};
+        if (json_constraints)
+        {
+            var constraints = [json_constraints mapUsingFunction:toJSON];
+            var args = {container:containerUID, constraints:constraints};
             [self sendCommand:"replaceConstraints" withArguments:args];
         }
     }];
-
-    [_CPEngineViewsNeedUpdateConstraints removeObjectsAtIndexes:updatedIndexes];
 }
 
 - (void)solver_updateSizeConstraints:(CPArray)sizeConstraints forView:(CPView)aView
@@ -300,7 +316,7 @@ var _CPLayoutEngineCachedEngines = {},
 
     [sizeConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        [aConstraint registerItemsInEngine:self];
+        [[aConstraint firstItem] resisterInEngineIfNeeded];
         json_constraints.push([aConstraint toJSON]);
     }];
 
@@ -351,6 +367,25 @@ var _CPLayoutEngineCachedEngines = {},
 
 @end
 
+@implementation CPArray (CPLayoutConstraint)
+
+- (CPArray)mapUsingFunction:(Function)aFunction
+{
+    var result = @[];
+
+    [self enumerateObjectsUsingBlock:function(obj, idx, stop)
+    {
+        var r;
+        if (r = aFunction(obj))
+            [result addObject:r];
+    }];
+
+    return result;
+}
+
+
+
+@end
 // No worker version
 function returnMessage(type, result)
 {
@@ -378,9 +413,13 @@ var onWorkerMessage = function(aMessage, aSolvedFunction, anEngineUID)
         [[CPRunLoop mainRunLoop] performSelectors];
     }
     else if (type === 'log')
-       CPLog.debug("Worker: did " + result);
+    {
+       CPLog.debug("Worker: " + result);
+    }
     else if (type === 'warn')
-       CPLog.warn(result);
+    {
+       CPLog.warn("Worker: " + result);
+    }
     else if (type === 'callback')
     {
         var callbackUUID = aMessage.uuid,

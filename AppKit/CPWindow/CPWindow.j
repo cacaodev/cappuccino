@@ -241,8 +241,8 @@ var CPWindowActionMessageKeys = [
     _CPWindowFrameAnimation             _frameAnimation;
 
     CPLayoutConstraintEngine            _layoutEngine;
-    BOOL                                _needsContentSizeConstraintsUpdate;
-    BOOL                                _needsConstraintBasedLayout @accessors(getter=needsConstraintBasedLayout);
+    BOOL _autolayoutEnabled      @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
+    BOOL _needsUpdateConstraints @accessors(property=needsUpdateConstraints);
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -329,7 +329,10 @@ CPTexturedBackgroundWindowMask
 
         // Create our border view which is the actual root of our view hierarchy.
         _windowView = [[windowViewClass alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(_frame), CGRectGetHeight(_frame)) styleMask:aStyleMask];
-
+        // DEBUG
+        [_windowView setIdentifier:@"windowView"];
+        [_windowView _setNeedsUpdateConstraints:YES];
+        [_windowView _setNeedsUpdateSizeConstraints:NO];
         [_windowView _setWindow:self];
         [_windowView setNextResponder:self];
 
@@ -372,8 +375,8 @@ CPTexturedBackgroundWindowMask
         _keyViewLoopIsDirty = NO;
         _hasBecomeKeyWindow = NO;
 
-        _needsContentSizeConstraintsUpdate = YES;
-        _needsConstraintBasedLayout = NO;
+        _autolayoutEnabled = NO;
+        _needsUpdateConstraints = YES;
         _layoutEngine = nil;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
@@ -744,7 +747,7 @@ CPTexturedBackgroundWindowMask
 
         if (!CGSizeEqualToSize(size, newSize))
         {
-            if (_needsConstraintBasedLayout)
+            if (_autolayoutEnabled)
                 [self _suggestFrameSize:newSize];
             else
             {
@@ -1159,8 +1162,6 @@ CPTexturedBackgroundWindowMask
 
     [_contentView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
     [_windowView addSubview:_contentView];
-
-    [self _updateNeedsConstraintBasedLayout];
 
     /*
         If the initial first responder has been set to something other than
@@ -3713,14 +3714,15 @@ var interpolate = function(fromValue, toValue, progress)
 
 @implementation CPWindow (CPLayoutConstraint)
 
+- (id)_layoutEngineIfExists
+{
+    return _layoutEngine;
+}
+
 - (id)_layoutEngine
 {
     if (!_layoutEngine)
     {
-        // debug
-        [_windowView setIdentifier:@"windowView"];
-        [_contentView setIdentifier:@"contentView"];
-
         var onSolverReady = new _EngineOnSolverReadyFunctionCreate(self);
         var onViewsSolved = new _EngineOnSolvedFunctionCreate(self);
 
@@ -3730,32 +3732,33 @@ var interpolate = function(fromValue, toValue, progress)
     return _layoutEngine;
 }
 
-- (id)_layoutEngineIfExists
+- (void)updateConstraintsAtWindowLevelIfNeeded
 {
-    return _layoutEngine;
+    if (_needsUpdateConstraints)
+    {
+        //CPLog.debug([self className] + " Needs updateConstraintsAtWindowLevel");
+        [self updateConstraintsAtWindowLevel];
+        _needsUpdateConstraints = NO;
+    }
 }
 
-- (void)_notifyViewNeedsConstraintBasedLayout:(CPView)aView
+- (void)updateConstraintsAtWindowLevel
 {
-    if (_needsConstraintBasedLayout === NO && aView === _contentView)
-        _needsConstraintBasedLayout = YES;
-}
+    //[_windowView _setContentSizeConstraints:nil];
+    //[_windowView _setNeedsUpdateSizeConstraints:YES];
+    [_windowView setAutolayoutEnabled:YES];
+    [_contentView setAutolayoutEnabled:YES];
 
-- (void)_updateNeedsConstraintBasedLayout
-{
-    if ([[_contentView class] requiresConstraintBasedLayout] && [[_contentView constraints] count])
-        _needsConstraintBasedLayout = YES;
+    var constraintsByView = [_windowView updateConstraintsForSubtree];
+    [[self _layoutEngine] solver_replaceConstraints:constraintsByView];
 }
 
 - (void)_suggestFrameSize:(CGSize)newSize
 {
     var engine = [self _layoutEngine];
 
-    if (_needsContentSizeConstraintsUpdate)
-        [self _updateWindowResizeConstraints];
-
     [engine beginUpdates];
-    [engine solver_replaceConstraintsIfNeeded];
+    [self updateConstraintsAtWindowLevelIfNeeded];
     [engine suggestValues:[newSize.width, newSize.height] fromItem:_windowView];
     [engine endUpdates];
 }
@@ -3773,32 +3776,27 @@ var interpolate = function(fromValue, toValue, progress)
 
 - (void)layout
 {
-    [self layoutWithCallback:nil];
+    CPLog.debug("BEGIN LAYOUT");
+    [self layoutWithCallback:function()
+    {
+        CPLog.debug("END LAYOUT");
+    }];
 }
 
 - (void)layoutWithCallback:(Function)postLayoutCallback
 {
     var engine = [self _layoutEngine];
 
-    if (_needsContentSizeConstraintsUpdate)
-        [self _updateWindowResizeConstraints];
-
     [engine beginUpdates];
 
-    [engine solver_replaceConstraintsIfNeeded];
+    [engine stopEditing];
+    [self _updateWindowStayConstraintsInEngine:engine];
 
-    var oldWindowViewFrame = [_windowView frameSize];
+    [self updateConstraintsAtWindowLevelIfNeeded];
 
     [engine sendCommand:@"solve" withArguments:null callback:function()
     {
-        var windowFrame = [self frame];
-
-        windowFrame.size = CGSizeMakeCopy([_windowView frameSize]);
-
-        _needsConstraintBasedLayout = NO;
-        [self setFrame:windowFrame];
-        _needsConstraintBasedLayout = YES;
-
+        [self _updateFrameFromCurrentWindowViewFrame];
         [[CPRunLoop mainRunLoop] performSelectors];
 
         if (postLayoutCallback)
@@ -3806,6 +3804,16 @@ var interpolate = function(fromValue, toValue, progress)
     }];
 
     [engine endUpdates];
+}
+
+- (void)_updateFrameFromCurrentWindowViewFrame
+{
+    var windowFrame = [self frame];
+    windowFrame.size = CGSizeMakeCopy([_windowView frameSize]);
+
+    _autolayoutEnabled = NO;
+    [self setFrame:windowFrame];
+    _autolayoutEnabled = YES;
 }
 
 // Update because the Cassowary Engine removes first if a stay constraint already exists for this variable;
@@ -3817,36 +3825,7 @@ var interpolate = function(fromValue, toValue, progress)
 
 - (void)_setWindowEditConstraintsInEngine:(id)anEngine
 {
-    [anEngine setEditVariables:[8, 16] priority:CPLayoutPriorityResizeWindowEditing fromItem:_windowView];
-}
-
-- (void)_updateWindowResizeConstraints
-{
-    var cRect = [_contentView frame],
-        wRect = [_windowView frame];
-
-    var left = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:CGRectGetMinX(cRect)];
-    [left setPriority:CPLayoutPriorityWindowEqualsContentView];
-    [left _setContainer:_contentView];
-
-    var top = [CPLayoutConstraint constraintWithItem:_contentView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:CGRectGetMinY(cRect)];
-    [top setPriority:CPLayoutPriorityWindowEqualsContentView];
-    [top _setContainer:_contentView];
-
-    var width = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeWidth multiplier:1 constant:(CGRectGetWidth(wRect) - CGRectGetWidth(cRect))];
-    [width setPriority:CPLayoutPriorityWindowEqualsContentView];
-    [width _setContainer:_windowView];
-
-    var height = [CPLayoutConstraint constraintWithItem:_windowView attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:_contentView attribute:CPLayoutAttributeHeight multiplier:1 constant:(CGRectGetHeight(wRect) - CGRectGetHeight(cRect))];
-    [height setPriority:CPLayoutPriorityWindowEqualsContentView];
-    [height _setContainer:_windowView];
-
-    var internalConstraints = @[left, top, width, height];
-    [[_contentView _constraintsArray] addObjectsFromArray:internalConstraints];
-
-    [_windowView setHasConstraintBasedSubviews:NO];
-
-    _needsContentSizeConstraintsUpdate = NO;
+    [anEngine setEditVariables:[8, 16] priority:CPLayoutPriorityDragThatCanResizeWindow fromItem:_windowView];
 }
 
 @end
@@ -3861,22 +3840,16 @@ var _EngineOnSolverReadyFunctionCreate = function(aWindow)
     return function(anEngine)
     {
         [aWindow _updateWindowStayConstraintsInEngine:anEngine];
-        [aWindow _setWindowEditConstraintsInEngine:anEngine];
+        //[aWindow _setWindowEditConstraintsInEngine:anEngine];
     };
 };
 
 var _EngineOnSolvedFunctionCreate = function(aWindow)
 {
-    // We don't want the content view frame to be managed by the engine
-    var excludeUID = [[aWindow contentView] UID];
-
     return function(anEngine, records)
     {
         for (var anIdentifier in records)
         {
-            if (anIdentifier === excludeUID)
-                continue;
-
             var target = [anEngine registeredItemForIdentifier:anIdentifier];
 
             if (target)
@@ -3886,7 +3859,7 @@ var _EngineOnSolvedFunctionCreate = function(aWindow)
             }
             else
             {
-                CPLog.warn("NO TARGET IN " + anEngine + ", TARGET_ID=" + anIdentifier);
+                CPLog.warn("NO TARGET FOUND IN " + anEngine + ", ID=" + anIdentifier);
             }
         }
     };
@@ -3894,7 +3867,7 @@ var _EngineOnSolvedFunctionCreate = function(aWindow)
 
 var CPWindowChangeFrameFromEngine = function(target, mask, values)
 {
-    //CPLog.debug("Updated view " + target + " mask " + mask + " values " + values);
+    //CPLog.debug("Updated view " + [target debugID] + " mask " + mask + " values " + values);
 
     var frame = [target frame];
 

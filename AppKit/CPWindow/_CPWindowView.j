@@ -106,7 +106,17 @@ _CPWindowViewResizeSlop = 3;
             @"title-vertical-alignment": CPTopVerticalTextAlignment,
         };
 }
+/*
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(CPLayoutPriorityWindowSizeStayPut, CPLayoutPriorityWindowSizeStayPut);
+}
 
++ (CGSize)_defaultCompressionPriorities
+{
+    return CGSizeMake(CPLayoutPriorityWindowSizeStayPut, CPLayoutPriorityWindowSizeStayPut);
+}
+*/
 - (CGRect)contentRectForFrameRect:(CGRect)aFrameRect
 {
     var contentRect = [[self class] contentRectForFrameRect:aFrameRect],
@@ -151,6 +161,11 @@ _CPWindowViewResizeSlop = 3;
     }
 
     return self;
+}
+
+- (CGSize)intrinsicContentSize
+{
+    return [self frameSize];
 }
 
 - (void)setDocumentEdited:(BOOL)isEdited

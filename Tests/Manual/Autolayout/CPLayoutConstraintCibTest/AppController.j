@@ -66,7 +66,8 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     [CPLayoutConstraintEngine setAllowsWebWorker:NO];
-    [theWindow layout];
+    [theWindow setAutolayoutEnabled:YES];
+    //[theWindow layout];
     //CPTrace("CPWindow", "setFrameSize:");
 }
 
