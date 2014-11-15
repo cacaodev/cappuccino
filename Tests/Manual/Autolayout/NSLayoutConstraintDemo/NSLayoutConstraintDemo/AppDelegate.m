@@ -222,7 +222,7 @@
     CGRect frame = [window frame];
     
     CGRect baseRect = [[self window] convertRectFromScreen:frame];
-    CGRect rect = [windowSpace convertRectFromBase:baseRect];
+    CGRect rect = [windowSpace convertRectFromBacking:baseRect];
     
     NSString *objj_msgSend = [NSString stringWithFormat:@"[[CPApp delegate] setWindowLeft:%f top:%f Width:%f height:%f];[[CPRunLoop mainRunLoop] performSelectors];", rect.origin.x, rect.origin.y, rect.size.width, rect.size.height];
     
@@ -231,13 +231,14 @@
 
 - (void)updateConstrainedRectForWindow:(Window*)aWindow
 {
-    CGRect baseWindowSpace = [[windowSpace superview] convertRectToBase:[windowSpace frame]];
+    CGRect baseWindowSpace = [[windowSpace superview] convertRectToBacking:[windowSpace frame]];
     aWindow.constraintRect  = [[self window] convertRectToScreen:baseWindowSpace];
 }
 
 - (void)mainWindowDidMove:(NSNotification*)note
 {
     Window *window = self.currentController.window;
+    
     if (!window)
         return;
     

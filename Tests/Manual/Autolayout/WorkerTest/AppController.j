@@ -104,7 +104,7 @@ CPLog.debug(identifier);
 {
     // Uncomment to disable Web Worker
     //[CPLayoutConstraintEngine setAllowsWebWorker:NO];
-    [theWindow layout];
+    [theWindow setAutolayoutEnabled:YES];
 }
 
 @end

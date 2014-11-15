@@ -57,10 +57,6 @@ CPLogRegister(CPLogConsole);
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     [theWindow setAutolayoutEnabled:YES];
-
-    var dict = @{"toto":@[1,2,3]};
-    [[dict objectForKey:"toto"] addObjectsFromArray:@[4,5]];
-    CPLogConsole([dict description]);
 }
 
 - (void)awakeFromCib
