@@ -139,9 +139,11 @@ CPLogRegister(CPLogConsole);
 {
     constraintWindow = [[CPNonKeyWindow alloc] initWithContentRect:CGRectMake(0,0,520,200) styleMask:CPTitledWindowMask|CPResizableWindowMask];
     [constraintWindow setTitle:@"Autolayout"];
+    [constraintWindow setAutolayoutEnabled:YES];
 
     mainView = [[ConstraintView alloc] initWithFrame:[[constraintWindow contentView] frame]];
     //[mainView setVisualizeConstraints:YES];
+    [mainView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [constraintWindow setContentView:mainView];
 
     view1 = [[ColorView alloc] initWithFrame:CGRectMake(50,50,300,100)];
@@ -154,7 +156,6 @@ CPLogRegister(CPLogConsole);
     [mainView addSubview:view1];
     [mainView addSubview:view2];
 
-CPLog.debug(_cmd);
     [self setItems:[mainView, view1, view2]];
 
     [constraintWindow center];

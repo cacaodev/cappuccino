@@ -20,10 +20,10 @@
                 <rect key="frame" x="0.0" y="0.0" width="726" height="422"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <customView identifier="redColor" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="466" customClass="ColorView">
+                    <customView identifier="redColor" translatesAutoresizingMaskIntoConstraints="NO" id="466" customClass="ColorView">
                         <rect key="frame" x="89" y="102" width="271" height="241"/>
                         <subviews>
-                            <customView identifier="blueColor" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="akP-9M-Gwq" userLabel="Blue" customClass="ColorView" colorLabel="IBBuiltInLabel-Blue">
+                            <customView identifier="blueColor" translatesAutoresizingMaskIntoConstraints="NO" id="akP-9M-Gwq" userLabel="Blue" customClass="ColorView" colorLabel="IBBuiltInLabel-Blue">
                                 <rect key="frame" x="54" y="72" width="164" height="96"/>
                                 <accessibility description="Blue"/>
                             </customView>
@@ -35,7 +35,7 @@
                             <constraint firstItem="akP-9M-Gwq" firstAttribute="centerX" secondItem="466" secondAttribute="centerX" id="kcO-0g-M8o"/>
                         </constraints>
                     </customView>
-                    <customView identifier="greenColor" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="474" customClass="ColorView">
+                    <customView identifier="greenColor" translatesAutoresizingMaskIntoConstraints="NO" id="474" customClass="ColorView">
                         <rect key="frame" x="372" y="102" width="270" height="241"/>
                     </customView>
                     <textField identifier="label" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ieH-ju-h4U">

@@ -115,6 +115,7 @@ CPLogRegister(CPLogConsole);
 - (void)windowDidLoad
 {
     CPLog.debug("windowDidLoad");
+    [_window setAutolayoutEnabled:YES];
 }
 
 @end

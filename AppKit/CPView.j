@@ -3884,15 +3884,18 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 */
 - (void)invalidateIntrinsicContentSize
 {
+    if (![[self window] isAutolayoutEnabled])
+        return;
+
     var sizeConstraints = [self _contentSizeConstraints];
     [_constraintsArray removeObjectsInArray:sizeConstraints];
 
     [self _setContentSizeConstraints:nil];
     [self _setNeedsUpdateSizeConstraints:YES];
-    CPLog.debug("START LAYOUT " + [self debugID] + _cmd);
+    CPLog.debug(_cmd + ": START LAYOUT AFTER CHANGE FOR " + [self debugID]);
     [[self window] layoutWithCallback:function()
     {
-        CPLog.debug("END LAYOUT");
+        CPLog.debug(_cmd + " END LAYOUT ");
     }];
 }
 
