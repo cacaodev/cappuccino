@@ -1927,17 +1927,12 @@ CPTextFieldStatePlaceholder = CPThemeState("placeholder");
 
 @implementation CPTextField (ConstraintBasedLayout)
 
-- (CGSize)_editableIntrinsicContentSize
-{
-    return CGSizeMake(CPViewNoInstrinsicMetric, 29);
-}
-
 - (CGSize)intrinsicContentSize
 {
     if ([self isEditable])
-        return [self _editableIntrinsicContentSize];
+        return CGSizeMake(CPViewNoInstrinsicMetric, 29);
 
-    return [super intrinsicContentSize];
+    return [self _minimumFrameSize];
 }
 
 - (CGSize)fittingSize

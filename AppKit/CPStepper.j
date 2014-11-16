@@ -287,6 +287,24 @@
 
 @end
 
+@implementation CPStepper (ConstraintBasedLayout)
+
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
+}
+
+- (CGSize)intrinsicContentSize
+{
+    // TODO: min/max-size needed in themes.
+    var up = [self currentValueForThemeAttribute:@"up-button-size"],
+        down = [self currentValueForThemeAttribute:@"down-button-size"];
+
+    return CGSizeMake(up.width, up.height + down.height + 1);
+}
+
+@end
+
 @implementation _CPStepperValueBinder : CPBinder
 {
 }

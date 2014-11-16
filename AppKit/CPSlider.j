@@ -420,6 +420,32 @@ CPCircularSlider    = 1;
 
 @end
 
+@implementation CPSlider (ConstraintBasedLayout)
+
++ (CGSize)_defaultHuggingPriorities
+{
+    if ([self hasThemeState:CPThemeStateCircular])
+        return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
+    else if ([self isVertical])
+        return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultLow);
+    else
+        return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
+
+}
+
+- (CGSize)intrinsicContentSize
+{
+// TODO: min/max-size needed in themes.
+    if ([self hasThemeState:CPThemeStateCircular])
+        return CGSizeMake(30.0, 30.0);
+    else if ([self isVertical])
+        return CGSizeMake(24.0, CPViewNoInstrinsicMetric);
+    else
+        return CGSizeMake(CPViewNoInstrinsicMetric, 24.0);
+}
+
+@end
+
 var CPSliderMinValueKey             = "CPSliderMinValueKey",
     CPSliderMaxValueKey             = "CPSliderMaxValueKey",
     CPSliderAltIncrValueKey         = "CPSliderAltIncrValueKey";
