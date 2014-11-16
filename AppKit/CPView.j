@@ -3739,6 +3739,26 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return [[self window] _layoutEngine];
 }
 
+- (void)suggestFrameSize:(CGSize)newSize
+{
+    var engine = [self _layoutEngine];
+
+    [engine beginUpdates];
+    [[self window] updateConstraintsAtWindowLevelIfNeeded];
+    [engine suggestSize:[newSize.width, newSize.height] forItem:self];
+    [engine endUpdates];
+}
+
+- (void)suggestFrameOrigin:(CGPoint)aPoint
+{
+    var engine = [self _layoutEngine];
+
+    [engine beginUpdates];
+    [[self window] updateConstraintsAtWindowLevelIfNeeded];
+    [engine suggesOrigin:[aPoint.x, aPoint.y] forItem:self];
+    [engine endUpdates];
+}
+
 - (id)valueForVariable:(int)aTag
 {
     var frame = [self frame];

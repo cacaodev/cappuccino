@@ -223,7 +223,7 @@ var _CPLayoutEngineCachedEngines = {},
     [self sendCommand:"suggestValue" withArguments:args];
 }
 
-- (void)suggestValues:(CPArray)values fromItem:(id)anItem
+- (void)suggestSize:(CPArray)values forItem:(id)anItem
 {
 // TODO: in no-worker mode, call the target function directly for perf.
     var args = {values:values, uuid:[anItem UID], prefix:[anItem debugID], tags:[8, 16], priority:1000};
@@ -231,12 +231,12 @@ var _CPLayoutEngineCachedEngines = {},
     [self sendCommand:"suggestValues" withArguments:args];
 }
 
-- (void)suggestSize:(CPArray)values fromItem:(id)anItem
+- (void)suggestOrigin:(CPArray)values forItem:(id)anItem
 {
 // TODO: in no-worker mode, call the target function directly for perf.
-    var args = {values:values, uuid:[anItem UID]};
+    var args = {values:values, uuid:[anItem UID], prefix:[anItem debugID], tags:[2, 4], priority:1000};
 
-    [self sendCommand:"suggestSize" withArguments:args];
+    [self sendCommand:"suggestValues" withArguments:args];
 }
 
 /*

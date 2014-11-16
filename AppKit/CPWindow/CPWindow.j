@@ -3765,7 +3765,7 @@ var interpolate = function(fromValue, toValue, progress)
 
     [engine beginUpdates];
     [self updateConstraintsAtWindowLevelIfNeeded];
-    [engine suggestValues:[newSize.width, newSize.height] fromItem:_windowView];
+    [engine suggestSize:[newSize.width, newSize.height] forItem:_windowView];
     [engine endUpdates];
 }
 
