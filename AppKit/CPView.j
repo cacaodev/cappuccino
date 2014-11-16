@@ -3933,7 +3933,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     [self _setInternalConstraints:constraints];
 }
-
+/*
 - (CGSize)resolvedIntrinsicContentSize
 {
     var intrinsicContentSize = CGSizeMakeCopy([self intrinsicContentSize]),
@@ -3955,11 +3955,12 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     return intrinsicContentSize;
 }
-
+*/
 - (CPArray)_generateContentSizeConstraints
 {
     var constraints = [CPArray array],
-        intrinsicContentSize = [self resolvedIntrinsicContentSize],
+        // TODO: intrinsicContentSize = [self resolvedIntrinsicContentSize] when -fittingSize is implemented
+        intrinsicContentSize = [self intrinsicContentSize],
         isNoIntrinsicWidth = (intrinsicContentSize.width === CPViewNoInstrinsicMetric),
         isNoIntrinsicHeight = (intrinsicContentSize.height === CPViewNoInstrinsicMetric);
 
@@ -4079,9 +4080,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (void)_addConstraints:(CPArray)constraints
 {
 //CPLog.debug([self debugID] + _cmd + " " + [constraints description]);
-    if (![constraints count])
-        return;
-
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
         if ([_constraintsArray containsObject:aConstraint])

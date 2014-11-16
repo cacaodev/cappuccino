@@ -1940,13 +1940,10 @@ CPTextFieldStatePlaceholder = CPThemeState("placeholder");
     return [super intrinsicContentSize];
 }
 
-// TODO: We need to take care of all constraints involving self when calculating fittingSize
 - (CGSize)fittingSize
 {
-    if ([self isEditable])
-        return [self _editableIntrinsicContentSize];
-
-    return [self _minimumFrameSize];
+    // Not implemented
+    // TODO: We need to take care of all constraints involving self when calculating fittingSize.
 }
 
 - (float)baselineOffsetFromBottom
