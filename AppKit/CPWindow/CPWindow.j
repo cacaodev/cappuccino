@@ -3880,28 +3880,28 @@ var CPWindowChangeFrameFromEngine = function(target, mask, values)
     var pmask = mask & 6,
         smask = mask & 24;
 
-    if (pmask == 6)
+    if (pmask === 6)
     {
         [target setFrameOrigin:CGPointMake(values[2], values[4])];
     }
-    else if (pmask == 4)
+    else if (pmask === 4)
     {
         [target setFrameOrigin:CGPointMake(CGRectGetMinX(frame), values[4])];
     }
-    else if (pmask == 2)
+    else if (pmask === 2)
     {
         [target setFrameOrigin:CGPointMake(values[2], CGRectGetMinY(frame))];
     }
 
-    if (smask == 24)
+    if (smask === 24)
     {
         [target setFrameSize:CGSizeMake(values[8], values[16])];
     }
-    else if (smask == 16)
+    else if (smask === 16)
     {
         [target setFrameSize:CGSizeMake(CGRectGetWidth(frame), values[16])];
     }
-    else if (smask == 8)
+    else if (smask === 8)
     {
         [target setFrameSize:CGSizeMake(values[8], CGRectGetHeight(frame))];
     }

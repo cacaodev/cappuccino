@@ -291,13 +291,13 @@ scope.suggestValues = function(args)
         var tags = args.tags,
             prefix = args.prefix,
             uuid = args.uuid,
-            priority = args.priority,
+            sw = scope.StrengthAndWeight(args.priority),
             var_array = [];
 
         tags.forEach(function(tag)
         {
            var variable = scope.CPViewLayoutVariable(uuid, prefix, tag, null);
-           var sw = scope.StrengthAndWeight(priority);
+
            solver.addEditVar(variable, sw.strength, sw.weight);
            var_array.push(variable);
         });
