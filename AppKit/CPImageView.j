@@ -292,6 +292,8 @@ var CPImageViewEmptyPlaceholderImage = nil;
 #endif
         [_shadowView setHidden:NO];
     }
+
+    [self invalidateIntrinsicContentSize];
 }
 
 /*!
@@ -466,6 +468,27 @@ var CPImageViewEmptyPlaceholderImage = nil;
     }
 
     return YES;
+}
+
+@end
+
+@implementation CPImageView (ConstraintBasedLayout)
+
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(271, 271);
+}
+
+- (CGSize)intrinsicContentSize
+{
+    // cocoa: returns this when imageFrameStyle == NSImageFrameNone and (-1,-1) otherwise.
+    // Currently imageFrameStyle not implemented in cappuccino, equivalent to NSImageFrameNone.
+    var image = [self image];
+
+    if (image == nil)
+        return CGSizeMakeZero();
+
+    return [image size];
 }
 
 @end

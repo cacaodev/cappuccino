@@ -1002,6 +1002,15 @@ var CPControlBlackColor = [CPColor blackColor];
 
 @end
 
+@implementation CPControl (ConstraintBasedLayout)
+
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
+}
+
+@end
+
 var CPControlActionKey                  = @"CPControlActionKey",
     CPControlControlSizeKey             = @"CPControlControlSizeKey",
     CPControlControlStateKey            = @"CPControlControlStateKey",

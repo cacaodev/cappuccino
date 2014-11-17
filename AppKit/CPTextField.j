@@ -1927,10 +1927,18 @@ CPTextFieldStatePlaceholder = CPThemeState("placeholder");
 
 @implementation CPTextField (ConstraintBasedLayout)
 
++ (CGSize)_defaultHuggingPriorities
+{
+    if (![self isEditable])
+        return CGSizeMake(271, CPLayoutPriorityDefaultHigh);
+
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
+}
+
 - (CGSize)intrinsicContentSize
 {
     if ([self isEditable])
-        return CGSizeMake(CPViewNoInstrinsicMetric, 29);
+        return CGSizeMake(CPViewNoInstrinsicMetric, [self currentValueForThemeAttribute:@"min-size"].height);
 
     return [self _minimumFrameSize];
 }

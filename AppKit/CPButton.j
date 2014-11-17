@@ -897,9 +897,14 @@ CPButtonImageOffset   = 3.0;
 
 @implementation CPButton (ConstraintBasedLayout)
 
-+ (CGSize)_defaultHuggingPriorities
+- (CGSize)_contentHuggingPriorities
 {
-    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
+    var bezelStyle = [self bezelStyle];
+
+    if (bezelStyle == CPRegularSquareBezelStyle || bezelStyle ==  CPSmallSquareBezelStyle)
+        return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
+
+    return [super _contentHuggingPriorities];
 }
 
 - (CGSize)intrinsicContentSize

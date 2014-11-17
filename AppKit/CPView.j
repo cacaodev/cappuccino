@@ -243,6 +243,7 @@ CPViewNoInstrinsicMetric = -1;
 
     CGSize              _huggingPriorities;
     CGSize              _compressionPriorities;
+    CGSize              _storedIntrinsicContentSize;
 
     unsigned  _updateConstraintsFlags;
     BOOL _needsUpdateConstraints @accessors(property=needsUpdateConstraints);
@@ -3732,6 +3733,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     _constraintsArray = [CPArray array];
     _huggingPriorities = nil;
     _compressionPriorities = nil;
+    _storedIntrinsicContentSize = CGSizeMake(-1, -1);
 }
 
 - (id)_layoutEngine
@@ -3810,6 +3812,16 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 }
 
 // Content Size Constraints
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
+}
+
++ (CGSize)_defaultCompressionPriorities
+{
+    return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
+}
+
 - (CGSize)_contentHuggingPriorities
 {
     if (!_huggingPriorities)
@@ -3824,16 +3836,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         _compressionPriorities = [[self class] _defaultCompressionPriorities];
 
     return _compressionPriorities;
-}
-
-+ (CGSize)_defaultHuggingPriorities
-{
-    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
-}
-
-+ (CGSize)_defaultCompressionPriorities
-{
-    return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
 }
 
 /*!
@@ -3904,7 +3906,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 */
 - (void)invalidateIntrinsicContentSize
 {
-    if (![[self window] isAutolayoutEnabled])
+    var intrinsicContentSize;
+
+    if (![[self window] isAutolayoutEnabled] || CGSizeEqualToSize((intrinsicContentSize = [self intrinsicContentSize]), _storedIntrinsicContentSize))
         return;
 
     var sizeConstraints = [self _contentSizeConstraints];
@@ -3917,6 +3921,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     {
         CPLog.debug(_cmd + " END LAYOUT ");
     }];
+
+    _storedIntrinsicContentSize = intrinsicContentSize;
 }
 
 - (CPArray)_contentSizeConstraints
