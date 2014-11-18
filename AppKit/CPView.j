@@ -3916,11 +3916,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     [self _setContentSizeConstraints:nil];
     [self _setNeedsUpdateSizeConstraints:YES];
-    CPLog.debug(_cmd + ": START LAYOUT AFTER CHANGE FOR " + [self debugID]);
-    [[self window] layoutWithCallback:function()
-    {
-        CPLog.debug(_cmd + " END LAYOUT ");
-    }];
+
+    [[self window] setNeedsLayout];
 
     _storedIntrinsicContentSize = intrinsicContentSize;
 }

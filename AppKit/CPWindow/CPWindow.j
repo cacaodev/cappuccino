@@ -241,8 +241,9 @@ var CPWindowActionMessageKeys = [
     _CPWindowFrameAnimation             _frameAnimation;
 
     CPLayoutConstraintEngine            _layoutEngine;
-    BOOL _autolayoutEnabled      @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
+    BOOL _autolayoutEnabled      @accessors(getter=isAutolayoutEnabled);
     BOOL _needsUpdateConstraints @accessors(property=needsUpdateConstraints);
+    BOOL _needsLayout;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -377,6 +378,7 @@ CPTexturedBackgroundWindowMask
 
         _autolayoutEnabled = NO;
         _needsUpdateConstraints = YES;
+        _needsLayout = NO;
         _layoutEngine = nil;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
@@ -3780,12 +3782,43 @@ var interpolate = function(fromValue, toValue, progress)
         [_shadowView setNeedsLayout];
 }
 
+- (void)setAutolayoutEnabled:(BOOL)enable
+{
+    if (_autolayoutEnabled !== enable)
+    {
+        _autolayoutEnabled = enable;
+
+        [self setNeedsLayout];
+    }
+}
+
+- (void)setNeedsLayout
+{
+    if (_needsLayout || !_autolayoutEnabled)
+        return;
+
+    _needsLayout = YES;
+
+    _CPDisplayServerAddLayoutObject(self);
+}
+
+- (void)layoutIfNeeded
+{
+    if (_needsLayout)
+    {
+        [self layout];
+        _needsLayout = NO;
+    }
+}
+
 - (void)layout
 {
-    CPLog.debug("BEGIN LAYOUT");
+    var uuid = uuidgen();
+
+    CPLog.debug("BEGIN LAYOUT " + uuid);
     [self layoutWithCallback:function()
     {
-        CPLog.debug("END LAYOUT");
+        CPLog.debug("END LAYOUT " + uuid);
     }];
 }
 
@@ -3828,12 +3861,12 @@ var interpolate = function(fromValue, toValue, progress)
     [anEngine addStayVariable:8 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
     [anEngine addStayVariable:16 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
 }
-
+/*
 - (void)_setWindowEditConstraintsInEngine:(id)anEngine
 {
     [anEngine setEditVariables:[8, 16] priority:CPLayoutPriorityDragThatCanResizeWindow fromItem:_windowView];
 }
-
+*/
 @end
 
 function _CPWindowFullPlatformWindowSessionMake(aWindowView, aContentRect, hasShadow, aLevel)
@@ -3907,4 +3940,9 @@ var CPWindowChangeFrameFromEngine = function(target, mask, values)
     }
 
     //[target setNeedsDisplay:YES];
+};
+
+uuidgen = function () {
+    return Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
 };
