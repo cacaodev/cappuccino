@@ -75,11 +75,6 @@ CPLogRegister(CPLogConsole);
     [huggingWindow         setAutolayoutEnabled:YES];
     [sizeToFitButtonWindow setAutolayoutEnabled:YES];
     [sizeToFitLabelWindow  setAutolayoutEnabled:YES];
-
-    [compressionWindow layout];
-    [huggingWindow layout];
-    [sizeToFitButtonWindow layout];
-    [sizeToFitLabelWindow layout];
 }
 
 - (IBAction)changeButtonTitle:(id)sender

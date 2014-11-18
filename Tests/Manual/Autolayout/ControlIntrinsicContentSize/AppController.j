@@ -19,7 +19,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    [self setUrls:@[@{"name":"Regular", "url":"Resources/cappuccino.png"}, @{"name":"Regular (same size)", "url":"Resources/cappuccino2.png"}, @{"name":"Small", "url":"Resources/cappuccino-small.png"}]];
+    [self setUrls:@[@{"name":"Regular", "url":"Resources/cappuccino.png"}, @{"name":"Regular (same size)", "url":"Resources/cappuccino2.png"}, @{"name":"Small", "url":"Resources/cappuccino-small.png"}, @{"name":"Big", "url":"Resources/photo.png"}]];
 }
 
 - (void)awakeFromCib
