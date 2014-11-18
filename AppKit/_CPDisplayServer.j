@@ -30,7 +30,8 @@ var displayObjects      = [],
     layoutObjects       = [],
     layoutObjectsByUID  = { },
 
-    runLoop             = [CPRunLoop mainRunLoop];
+    runLoop             = [CPRunLoop mainRunLoop],
+    locked = 0;
 
 function _CPDisplayServerAddDisplayObject(anObject)
 {
@@ -62,8 +63,26 @@ function _CPDisplayServerAddLayoutObject(anObject)
 {
 }
 
++ (void)lock
+{
+    locked++;
+    CPLog.warn("_CPDisplayServer locked level = " + locked);
+}
+
++ (void)unlock
+{
+    locked--;
+    CPLog.warn("_CPDisplayServer " + locked ? ("locked level = " + locked) : "unlocked");
+}
+
 + (void)run
 {
+    if (locked > 0)
+    {
+        CPLog.warn("Tried to run _CPDisplayServer while locked. Aborting.");
+        return;
+    }
+
     while (layoutObjects.length || displayObjects.length)
     {
         var index = 0;

@@ -3816,10 +3816,14 @@ var interpolate = function(fromValue, toValue, progress)
     var uuid = uuidgen();
 
     CPLog.debug("BEGIN LAYOUT " + uuid);
+    [_CPDisplayServer lock];
+
     [self layoutWithCallback:function()
     {
         CPLog.debug("END LAYOUT " + uuid);
     }];
+
+    [_CPDisplayServer unlock];
 }
 
 - (void)layoutWithCallback:(Function)postLayoutCallback
