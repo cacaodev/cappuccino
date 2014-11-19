@@ -53,8 +53,8 @@
         var hasKey = [aCoder containsValueForKey:@"NSPriority"];
         _priority = (hasKey) ? [aCoder decodeIntForKey:@"NSPriority"] : CPLayoutPriorityRequired; // TODO: check _priority when not in xib;
 
-        //_shouldBeArchived = [aCoder decodeBoolForKey:@"NSShouldBeArchived"];
         _identifier = [aCoder decodeObjectForKey:@"NSLayoutIdentifier"];
+        _shouldBeArchived = YES;
     }
 
     return self;

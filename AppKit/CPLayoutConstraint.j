@@ -59,7 +59,7 @@ var CPLayoutItemIsNull = 1 << 1,
     unsigned _contraintFlags   @accessors(getter=contraintFlags);
 
     CPString _symbolicConstant;
-//    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
+    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
 }
 
 + (id)constraintWithItem:(id)item1 attribute:(CPInteger)att1 relatedBy:(CPInteger)relation toItem:(id)item2 attribute:(CPInteger)att2 multiplier:(double)multiplier constant:(double)constant
@@ -81,7 +81,7 @@ var CPLayoutItemIsNull = 1 << 1,
     _symbolicConstant = nil;
     _priority = CPLayoutPriorityRequired;
     _identifier = nil;
-//    _shouldBeArchived = NO;
+    _shouldBeArchived = NO;
 
     [self _init];
 
@@ -345,7 +345,6 @@ var CPFirstItem         = @"CPFirstItem",
     if (_priority !== CPLayoutPriorityRequired)
         [aCoder encodeInt:_priority forKey:CPPriority];
 
-    //[aCoder encodeBool:_shouldBeArchived forKey:CPShouldBeArchived];
     [aCoder encodeObject:_identifier forKey:CPLayoutIdentifier];
 }
 
@@ -370,11 +369,12 @@ var CPFirstItem         = @"CPFirstItem",
 
     _constant = [aCoder decodeDoubleForKey:CPConstant];
     _symbolicConstant = [aCoder decodeObjectForKey:CPSymbolicConstant];
-    //_shouldBeArchived = [aCoder decodeBoolForKey:CPShouldBeArchived];
     _identifier = [aCoder decodeObjectForKey:CPLayoutIdentifier];
 
     var hasKey = [aCoder containsValueForKey:CPPriority];
     _priority = (hasKey) ? [aCoder decodeIntForKey:CPPriority] : CPLayoutPriorityRequired;
+
+    _shouldBeArchived = YES;
 
     [self _init];
 

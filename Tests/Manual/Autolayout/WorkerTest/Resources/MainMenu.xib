@@ -14,17 +14,17 @@
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="371">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="335" y="390" width="726" height="422"/>
+            <rect key="contentRect" x="335" y="390" width="760" height="439"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
             <view key="contentView" identifier="mainView" id="372" customClass="ConstraintView">
-                <rect key="frame" x="0.0" y="0.0" width="726" height="422"/>
+                <rect key="frame" x="0.0" y="0.0" width="760" height="439"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <customView identifier="redColor" translatesAutoresizingMaskIntoConstraints="NO" id="466" customClass="ColorView">
-                        <rect key="frame" x="89" y="102" width="271" height="241"/>
+                        <rect key="frame" x="89" y="102" width="288" height="258"/>
                         <subviews>
                             <customView identifier="blueColor" translatesAutoresizingMaskIntoConstraints="NO" id="akP-9M-Gwq" userLabel="Blue" customClass="ColorView" colorLabel="IBBuiltInLabel-Blue">
-                                <rect key="frame" x="54" y="72" width="164" height="96"/>
+                                <rect key="frame" x="54" y="72" width="180" height="113"/>
                                 <accessibility description="Blue"/>
                             </customView>
                         </subviews>
@@ -36,7 +36,7 @@
                         </constraints>
                     </customView>
                     <customView identifier="greenColor" translatesAutoresizingMaskIntoConstraints="NO" id="474" customClass="ColorView">
-                        <rect key="frame" x="372" y="102" width="270" height="241"/>
+                        <rect key="frame" x="389" y="102" width="287" height="258"/>
                     </customView>
                     <textField identifier="label" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ieH-ju-h4U">
                         <rect key="frame" x="7" y="21" width="38" height="17"/>
@@ -71,21 +71,8 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <button identifier="button" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dnG-iP-F79">
-                        <rect key="frame" x="502" y="374" width="146" height="32"/>
-                        <constraints>
-                            <constraint firstAttribute="width" constant="134" id="iFV-Yw-fS6"/>
-                        </constraints>
-                        <buttonCell key="cell" type="push" title="Add Autosize View" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Is7-8b-kgB">
-                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="system"/>
-                        </buttonCell>
-                        <connections>
-                            <action selector="addView:" target="450" id="lIX-Sy-eOu"/>
-                        </connections>
-                    </button>
                     <textField identifier="testField" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IoX-eA-ZjS">
-                        <rect key="frame" x="453" y="380" width="47" height="22"/>
+                        <rect key="frame" x="629" y="395" width="47" height="22"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="47" id="GLS-eu-h05"/>
                         </constraints>
@@ -95,6 +82,19 @@
                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
+                    <button identifier="button" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dnG-iP-F79">
+                        <rect key="frame" x="457" y="389" width="170" height="32"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="158" id="VhB-8s-Bkx"/>
+                        </constraints>
+                        <buttonCell key="cell" type="push" title="Add view with mask:" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Is7-8b-kgB">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="addView:" target="450" id="lIX-Sy-eOu"/>
+                        </connections>
+                    </button>
                 </subviews>
                 <constraints>
                     <constraint firstItem="466" firstAttribute="leading" secondItem="372" secondAttribute="leading" constant="89" id="469"/>
@@ -105,18 +105,19 @@
                     <constraint firstItem="474" firstAttribute="bottom" secondItem="466" secondAttribute="bottom" id="477"/>
                     <constraint firstItem="474" firstAttribute="leading" secondItem="466" secondAttribute="trailing" constant="12" id="483"/>
                     <constraint firstItem="kCB-aE-Hkx" firstAttribute="baseline" secondItem="ieH-ju-h4U" secondAttribute="baseline" constant="1" id="697-Q6-0bz"/>
+                    <constraint firstItem="dnG-iP-F79" firstAttribute="baseline" secondItem="IoX-eA-ZjS" secondAttribute="baseline" constant="-2" id="6G8-NN-cnL"/>
                     <constraint firstItem="474" firstAttribute="width" secondItem="466" secondAttribute="width" id="BdA-J2-bTJ"/>
-                    <constraint firstAttribute="trailing" secondItem="dnG-iP-F79" secondAttribute="trailing" constant="84" id="En6-o9-Jgy"/>
-                    <constraint firstItem="dnG-iP-F79" firstAttribute="leading" secondItem="IoX-eA-ZjS" secondAttribute="trailing" constant="8" symbolic="YES" id="NHg-mN-Q4P"/>
                     <constraint firstItem="foX-FB-pji" firstAttribute="baseline" secondItem="kCB-aE-Hkx" secondAttribute="baseline" id="TMq-K0-8lI"/>
+                    <constraint firstItem="IoX-eA-ZjS" firstAttribute="top" secondItem="372" secondAttribute="top" constant="22" id="XaX-lB-a4Y"/>
+                    <constraint firstAttribute="trailing" secondItem="IoX-eA-ZjS" secondAttribute="trailing" constant="84" id="ZBN-eX-DWl"/>
                     <constraint firstItem="foX-FB-pji" firstAttribute="leading" secondItem="kCB-aE-Hkx" secondAttribute="trailing" constant="8" id="cpm-gd-kyN"/>
                     <constraint firstAttribute="bottom" secondItem="ieH-ju-h4U" secondAttribute="bottom" constant="21" id="dMe-KV-oMg"/>
+                    <constraint firstItem="IoX-eA-ZjS" firstAttribute="leading" secondItem="dnG-iP-F79" secondAttribute="trailing" constant="8" id="nfI-lR-z4X"/>
                     <constraint firstItem="kCB-aE-Hkx" firstAttribute="leading" secondItem="ieH-ju-h4U" secondAttribute="trailing" constant="19" id="tB4-ET-kxm"/>
                     <constraint firstItem="ieH-ju-h4U" firstAttribute="leading" secondItem="372" secondAttribute="leading" constant="9" id="uiz-LR-gbR"/>
-                    <constraint firstItem="IoX-eA-ZjS" firstAttribute="top" secondItem="dnG-iP-F79" secondAttribute="top" id="vbn-QD-I6K"/>
-                    <constraint firstItem="dnG-iP-F79" firstAttribute="top" secondItem="372" secondAttribute="top" constant="20" id="zeb-ul-vGQ"/>
                 </constraints>
             </view>
+            <point key="canvasLocation" x="157" y="156.5"/>
         </window>
         <customObject id="450" customClass="AppController">
             <connections>

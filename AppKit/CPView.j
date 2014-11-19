@@ -3701,8 +3701,13 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [aCoder encodeSize:[self _hierarchyScaleSize] forKey:CPViewSizeScaleKey];
     [aCoder encodeBool:_isScaled forKey:CPViewIsScaledKey];
 
-    if ([_constraintsArray count])
-        [aCoder encodeObject:_constraintsArray forKey:CPViewConstraints];
+    var constraints = [_constraintsArray arrayWithObjectsPassingTest:function(obj, idx)
+    {
+        return [obj shouldBeArchived];
+    }];
+
+    if ([constraints count])
+        [aCoder encodeObject:constraints forKey:CPViewConstraints];
 
     if (_huggingPriorities)
         [aCoder encodeSize:_huggingPriorities forKey:CPHuggingPriority];
@@ -4332,16 +4337,21 @@ Subclasses should not override this method.
 
 @end
 
-@implementation CPDictionary (CPViewAdditions)
+@implementation CPArray (CPView)
 
-- (void)addObjects:(CPArray)objects forKey:(CPString)aKey
+- (CPArray)arrayWithObjectsPassingTest:(Function)aFunction
 {
-    var obj = [self objectForKey:aKey];
+    var result = @[];
 
-    if (obj !== nil)
-        [obj addObjectsFromArray:objects];
-    else
-        [self setObject:objects forKey:aKey];
+    [self enumerateObjectsUsingBlock:function(obj, idx, stop)
+    {
+        if (aFunction(obj, idx) == YES)
+        {
+            [result addObject:obj];
+        }
+    }];
+
+    return result;
 }
 
 @end
