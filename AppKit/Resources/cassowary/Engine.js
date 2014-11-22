@@ -93,9 +93,16 @@ scope.layoutConstraint = function(uuid, container, type, casso_constraint)
 
     this.toString = function()
     {
-        return (this.uuid + " " + this.type + " " + this.constraint.toString());
+        return (this.type + " " + this.uuid.substring(0,4) + " " + this.constraint.toString());
     };
-
+    
+    this.addToSolver = function(aSolver)
+    {
+        aSolver.addConstraint(this.constraint);
+        scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(this);
+        WorkerLog("Added " + this.toString());
+    }
+    
     return this;
 };
 
@@ -111,48 +118,36 @@ scope.getconstraints = function()
     WorkerLog(str + "\n" + scope.solver.rows.toString());
 };
 
-scope.addConstraint = function(json)
+scope.addConstraintFromJSON = function(container, type, args)
 {
-    if (!scope.SolverExists('addConstraint'))
+    if (!scope.SolverExists('addConstraintFromJSON'))
         return;
-
-    var type = json.type,
-        constraints = [];
-
-    if (type == "Constraint")
+    
+    var casso_constraint = null;
+    
+    switch (type)
     {
-        var newConstraint = scope.CreateConstraint(json);
-        constraints.push(newConstraint);
+        case "AutoresizingConstraint" : 
+        case "Constraint" : casso_constraint = scope.CreateConstraint(container, args);
+        break;
+        case "SizeConstraint" : casso_constraint = scope.CreateSizeConstraint(container, args);
+        break;
+        case "StayConstraint" : casso_constraint = scope.CreateStayConstraint(container, args);
+        break;
     }
-    else if (type == "SizeConstraint")
+    
+    if (casso_constraint)
     {
-        var newConstraints = scope.CreateSizeConstraints(json);
-        constraints.push.apply(constraints, newConstraints);
+        var layoutConstraint = new scope.layoutConstraint(args.uuid, container, type, casso_constraint);
+        layoutConstraint.addToSolver(scope.solver);
     }
-
-    constraints.forEach(function(constraint)
-    {
-        scope._addConstraint(constraint, json.uuid, json.container, type);
-    });
-
-    return constraints;
 };
 
-scope._addConstraint = function(casso_constraint, uuid, container, type)
-{
-    scope.solver.addConstraint(casso_constraint);
-
-    var wrapper = new scope.layoutConstraint(uuid , container, type, casso_constraint);
-    scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(wrapper);
-
-    WorkerLog("Added: " + wrapper.toString());
-};
-
-scope.removeConstraintWithUUID = function(uuid, type, isMultiple)
+scope.removeConstraintWithUUID = function(uuid, type)
 {
     var constraints_list = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP,
         count = constraints_list.length,
-        ret = 0;
+        ret = false;
 
     while(count--)
     {
@@ -160,26 +155,15 @@ scope.removeConstraintWithUUID = function(uuid, type, isMultiple)
 
         if ((type == null || w.type == type) && w.uuid == uuid)
         {
-            ret += scope.removeConstraint(w.constraint);
-            WorkerLog('Removed: ' +  w.toString());
+            ret = scope.removeConstraint(w.constraint);
             constraints_list.splice(count, 1);
-
-            if (!isMultiple)
-                break;
+            
+            WorkerLog('Removed: ' +  w.toString());
+            break;
         }
     }
 
     return ret;
-};
-
-scope.addConstraints = function(jsonarray)
-{
-    var add = scope.addConstraint;
-
-    jsonarray.forEach(function(json)
-    {
-        scope.addConstraint(json);
-    });
 };
 
 scope.removeConstraint = function(casso_constraint)
@@ -205,44 +189,32 @@ scope.removeConstraint = function(casso_constraint)
 
 scope.replaceConstraints = function(args)
 {
-    var orig_all_constraints = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP,
-        final_constraints = args.constraints,
-        container = args.container;
-
-    var orig_constraints = orig_all_constraints.filter(function(cst)
+    var final_constraints = args.constraints,
+        container = args.container,
+        type = args.type;
+    
+    var current_constraints = scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.filter(function(cst)
     {
-        return (cst.container == container && cst.type == "Constraint");
+        return (cst.container == container && cst.type == type);
     });
 
-    var mutation = compareArrays(orig_constraints, "uuid", final_constraints, "uuid"),
+    var mutation = compareArrays(current_constraints, final_constraints, compareUUID),
         removed = mutation.removed,
         added = mutation.added;
 
-    WorkerLog("Constraints: should add " + added.length + " and remove " + removed.length);
+    WorkerLog(type + ": should add " + added.length + " and remove " + removed.length);
 
     removed.forEach(function(cst)
     {
-        scope.removeConstraintWithUUID(cst.uuid, "Constraint", false);
+        scope.removeConstraintWithUUID(cst.uuid, type);
     });
 
     added.forEach(function(json)
     {
-        scope.addConstraint(json);
+        scope.addConstraintFromJSON(container, type, json);
     });
 };
 
-scope.replaceSizeConstraints = function(args)
-{
-    var json_constraints = args.constraints;
-    WorkerLog("Size Constraints: should replace " + json_constraints.length);
-
-    json_constraints.forEach(function(json)
-    {
-        // Removes constraints for both hugging and antiCompression
-        scope.removeConstraintWithUUID(json.uuid, "SizeConstraint", true);
-        scope.addConstraint(json);
-    });
-};
 /*
 scope.createContext = function(container, variableTag, priority)
 {
@@ -313,7 +285,7 @@ scope.suggestValues = function(args)
 
     solver.resolve();
 };
-
+/*
 scope.suggestValue = function(args)
 {
     if (!scope.SolverExists('suggestValue'))
@@ -334,32 +306,7 @@ scope.suggestValue = function(args)
 
     WorkerLog("suggestValue " + args.value + " for " + variable.toString());
 };
-
-scope.addStayVariable = function(variable, priority)
-{
-    if (!scope.SolverExists('addStay'))
-        return;
-
-    var sw = scope.StrengthAndWeight(priority),
-        container = variable._identifier,
-        uuid = container + "_" + variable._tag,
-        stayConstraint = new c.StayConstraint(variable, sw.strength, sw.weight);
-
-    var replace_count = scope.removeConstraintWithUUID(uuid, "StayConstraint", false);
-
-    scope._addConstraint(stayConstraint, uuid, container, "StayConstraint");
-
-    WorkerLog('add Stay ' + variable.toString() + ' replacing ' + replace_count);
-};
-
-scope.addStay = function(args)
-{
-    var variable = scope.CPViewLayoutVariable(args.identifier, args.prefix, args.tag, args.value),
-        priority = args.priority;
-
-    scope.addStayVariable(variable, priority);
-};
-
+*/
 scope.noop = function()
 {
 };
@@ -446,7 +393,7 @@ scope.StrengthAndWeight = function(p)
     return {strength:(new c.Strength("", 0, 1, 0)), weight:p};
 };
 
-scope.CreateConstraint = function(args)
+scope.CreateConstraint = function(container, args)
 {
 // WorkerLog("firstItem " + args.firstItem.uuid + " secondItem " + args.secondItem.uuid + " containerUUID " + args.containerUUID + " flags " + args.flags);
 
@@ -454,7 +401,6 @@ scope.CreateConstraint = function(args)
         secondItemArgs  = args.secondItem,
         firstItemUUID   = firstItemArgs.uuid,
         secondItemUUID  = secondItemArgs.uuid,
-        containerUUID   = args.container,
         relation        = args.relation,
         multiplier      = args.multiplier,
         constant        = args.constant,
@@ -486,21 +432,25 @@ scope.CreateConstraint = function(args)
     return constraint;
 };
 
-scope.CreateSizeConstraints = function(args)
+scope.CreateSizeConstraint = function(container, args)
 {
-    var container = args.firstItemUID,
-        tag = args.orientation ? LayoutVariableHeight : LayoutVariableWidth;
+    var tag = args.orientation ? LayoutVariableHeight : LayoutVariableWidth;
 
-    var sizeVariable = scope.CPViewLayoutVariable(container, args.firstItemName, tag, args.value),
+    var sizeVariable = scope.CPViewLayoutVariable(container, args.containerName, tag, args.value),
         variableExp = new c.Expression.fromVariable(sizeVariable),
         constantExp = new c.Expression.fromConstant(args.constant),
-        huggingSw = scope.StrengthAndWeight(args.huggingPriority),
-        compressionSw = scope.StrengthAndWeight(args.compressionPriority);
+        inequality = (args.relation === CPLayoutRelationGreaterThanOrEqual) ? c.GEQ : c.LEQ,
+        sw = scope.StrengthAndWeight(args.priority);
 
-    var huggingConstraint = new c.Inequality(variableExp, c.LEQ, constantExp, huggingSw.strength, huggingSw.weight),
-        compressionConstraint = new c.Inequality(variableExp, c.GEQ, constantExp, compressionSw.strength, compressionSw.weight);
+    return (new c.Inequality(variableExp, inequality, constantExp, sw.strength, sw.weight));
+};
 
-    return [huggingConstraint, compressionConstraint];
+scope.CreateStayConstraint = function(container, args)
+{
+    var variable = scope.CPViewLayoutVariable(container, args.prefix, args.tag, args.value),
+        sw = scope.StrengthAndWeight(args.priority);
+    
+    return new c.StayConstraint(variable, sw.strength, sw.weight);
 };
 
 scope.expressionForAttribute = function(args)
@@ -642,13 +592,21 @@ var onSolved = function(records)
     returnMessage('solved', records);
 };
 
-var compareArrays = function (o, keyo, n, keyn)
+var compareUUID = function(a, b)
+{
+    var uuida = a.uuid,
+        uuidb = b.uuid;
+
+    if (uuida == uuidb)
+        return 0;
+
+    return (uuida > uuidb) ? 1 : -1;
+};
+
+var compareArrays = function (o, n, sortFunction)
 {
   // sort both arrays (or this won't work)
-    var sorto = function(a,b){return a[keyo]-b[keyo];};
-    var sortn = function(a,b){return a[keyn]-b[keyn];};
-
-    o.sort(sorto); n.sort(sortn);
+    o.sort(sortFunction); n.sort(sortFunction);
 
   // don't compare if either list is empty
   if (o.length == 0 || n.length == 0) return {added: n, removed: o};
@@ -659,12 +617,14 @@ var compareArrays = function (o, keyo, n, keyn)
 
   // compare arrays and add to add or remove lists
   while (op < o.length && np < n.length) {
-      if (o[op][keyo] < n[np][keyn]) {
+      var compare = sortFunction(o[op], n[np]);
+
+      if (compare == -1) {
           // push to diff?
           r.push(o[op]);
           op++;
       }
-      else if (o[op][keyo] > n[np][keyn]) {
+      else if (compare == 1) {
           // push to diff?
           a.push(n[np]);
           np++;

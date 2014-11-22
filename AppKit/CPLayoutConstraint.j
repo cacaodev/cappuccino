@@ -60,6 +60,7 @@ var CPLayoutItemIsNull = 1 << 1,
 
     CPString _symbolicConstant;
     BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
+    CPString _uuid;
 }
 
 + (id)constraintWithItem:(id)item1 attribute:(CPInteger)att1 relatedBy:(CPInteger)relation toItem:(id)item2 attribute:(CPInteger)att2 multiplier:(double)multiplier constant:(double)constant
@@ -98,6 +99,7 @@ var CPLayoutItemIsNull = 1 << 1,
     _container = nil;
     _contraintFlags = 0;
     _active = NO;
+    _uuid = uuidgen();
 }
 
 - (id)_findCommonAncestorForItem:(id)firstItem andItem:(id)secondItem
@@ -198,6 +200,21 @@ var CPLayoutItemIsNull = 1 << 1,
     return anItem;
 }
 
+- (void)setConstant:(float)aConstant
+{
+    if (aConstant !== _constant)
+    {
+        _constant = aConstant;
+
+        if (_container)
+        {
+            _uuid = uuidgen();
+            [_container setNeedsUpdateConstraints:YES];
+            [[_container window] setNeedsLayout];
+        }
+    }
+}
+
 - (BOOL)isEqual:(id)anObject
 {
     if (anObject === self)
@@ -222,7 +239,7 @@ var CPLayoutItemIsNull = 1 << 1,
 
     return {
        type           : "Constraint",
-       uuid           : [self UID],
+       uuid           : _uuid,
        container      : [_container UID],
        firstItem      : firstItemJSON,
        secondItem     : secondItemJSON,
@@ -386,7 +403,7 @@ var CPFirstItem         = @"CPFirstItem",
 var JSONForItem = function(aContainer, anItem, anAttribute)
 {
     if (anItem == nil || anAttribute == CPLayoutAttributeNotAnAttribute)
-        return {attribute : anAttribute, flags:2};
+        return {attribute:CPLayoutAttributeNotAnAttribute, flags:CPLayoutItemIsNull};
 
     return {
         uuid        : [anItem UID],

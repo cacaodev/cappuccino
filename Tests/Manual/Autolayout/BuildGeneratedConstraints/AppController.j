@@ -77,7 +77,8 @@ CPLog.debug(_cmd);
     var state = [sender state],
         title = state ? "Desactivate" : "Activate";
 
-    [widthLimit setActive:state];
+    [widthLimit setActive:YES];
+    [widthLimit setConstant:[widthLimit constant] + 50];
     [sender setTitle:title];
 }
 

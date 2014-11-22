@@ -1,6 +1,9 @@
 @import <AppKit/CGGeometry.j>
 @import "CPLayoutConstraint.j"
 
+CPLayoutConstraintOrientationHorizontal  = 0;
+CPLayoutConstraintOrientationVertical  = 1;
+
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
 {
     double _huggingPriority  @accessors(property=huggingPriority);
@@ -20,6 +23,8 @@
 
         _constant = value;
         _firstItem = anItem;
+        _secondItem = nil;
+        _uuid = uuidgen();
     }
 
     return self;
@@ -28,20 +33,6 @@
 - (CPString)_constraintType
 {
     return @"SizeConstraint";
-}
-
-- (void)setConstant:(double)aConstant
-{
-    if (aConstant < 0)
-        aConstant = 0;
-
-    if (aConstant !== _constant)
-    {
-        _constant = aConstant;
-
-        var args = {container:[_firstItem UID], constraints:[{constant:_constant, orientation:_orientation}]};
-        [[_firstItem _layoutEngine] sendCommand:"updateSizeConstraints" withArguments:args];
-    }
 }
 
 - (id)copy
@@ -63,26 +54,42 @@
 - (Object)toJSON
 {
     var frame = [_firstItem frame],
-        uuid = [_firstItem UID] + "_" + _orientation,
-        value = _orientation ? CGRectGetHeight(frame) : CGRectGetWidth(frame);
+        value = _orientation ? CGRectGetHeight(frame) : CGRectGetWidth(frame),
+        //inset = [_firstItem alignmentRectInsets],
+        //offset = _orientation ? (inset.top + inset.bottom) : (inset.left + inset.right),
+        constant = _constant, //+ offset,
+        containerUID = [_firstItem UID],
+        containerName = [_firstItem debugID];        
 
-    return {
+    return [{uuid           : _uuid + "_HUG",
+       relation             : CPLayoutRelationLessThanOrEqual,
+       priority             : _huggingPriority,
        type                 : "SizeConstraint",
-       uuid                 : uuid,
-       orientation          : _orientation,
-       container            : [_firstItem UID],
-       firstItemUID         : [_firstItem UID],
-       firstItemName        : [_firstItem identifier] || [_firstItem className],
+       container            : containerUID,
+       containerName        : containerName,
        value                : value,
-       constant             : _constant,
-       huggingPriority      : _huggingPriority,
-       compressionPriority  : _compressPriority
-    };
+       constant             : constant,
+       orientation          : _orientation},
+       
+       {uuid                : _uuid + "_COMPR",
+       relation             : CPLayoutRelationGreaterThanOrEqual,
+       priority             : _compressPriority,
+       type                 : "SizeConstraint",
+       container            : containerUID,
+       containerName        : containerName,
+       value                : value,
+       constant             : constant,
+       orientation          : _orientation}];
 }
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@", (_orientation ? "H:" : "W:"), ([_firstItem identifier] || _firstItem), _constant, _huggingPriority, _compressPriority];
+    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@", [self _orientationDescription], ([_firstItem debugID]), _constant, _huggingPriority, _compressPriority];
+}
+
+- (CPString)_orientationDescription
+{
+    return _orientation ? "V" : "H";
 }
 
 @end

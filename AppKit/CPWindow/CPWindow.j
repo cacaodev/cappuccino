@@ -3890,18 +3890,20 @@ var interpolate = function(fromValue, toValue, progress)
     _autolayoutEnabled = YES;
 }
 
-// Update because the Cassowary Engine removes first if a stay constraint already exists for this variable;
+// The need to replace stay constraints when the variable value changes seems to be a bug in cassowary.
+// See https://github.com/slightlyoff/cassowary.js/pull/51
 - (void)_updateWindowStayConstraintsInEngine:(id)anEngine
 {
-    [anEngine addStayVariable:8 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
-    [anEngine addStayVariable:16 priority:CPLayoutPriorityWindowSizeStayPut fromItem:_windowView];
+    var newSize = [_windowView frameSize],
+        oldSize = [_windowView storedIntrinsicContentSize];        
+    
+    if (!CGSizeEqualToSize(newSize, oldSize))
+    {
+        [anEngine addStayConstraintForItem:_windowView tags:[8,16] priority:CPLayoutPriorityWindowSizeStayPut];
+        [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
+    }
 }
-/*
-- (void)_setWindowEditConstraintsInEngine:(id)anEngine
-{
-    [anEngine setEditVariables:[8, 16] priority:CPLayoutPriorityDragThatCanResizeWindow fromItem:_windowView];
-}
-*/
+
 @end
 
 function _CPWindowFullPlatformWindowSessionMake(aWindowView, aContentRect, hasShadow, aLevel)
@@ -3914,7 +3916,6 @@ var _EngineOnSolverReadyFunctionCreate = function(aWindow)
     return function(anEngine)
     {
         [aWindow _updateWindowStayConstraintsInEngine:anEngine];
-        //[aWindow _setWindowEditConstraintsInEngine:anEngine];
     };
 };
 

@@ -66,13 +66,13 @@ function _CPDisplayServerAddLayoutObject(anObject)
 + (void)lock
 {
     locked++;
-    CPLog.warn("_CPDisplayServer locked level = " + locked);
+    CPLog.warn("_CPDisplayServer: locked level = " + locked);
 }
 
 + (void)unlock
 {
     locked--;
-    CPLog.warn("_CPDisplayServer " + locked ? ("locked level = " + locked) : "unlocked");
+    CPLog.warn("_CPDisplayServer: " + (locked ? ("locked level = " + locked) : "unlocked"));
 }
 
 + (void)run

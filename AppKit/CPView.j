@@ -243,7 +243,7 @@ CPViewNoInstrinsicMetric = -1;
 
     CGSize              _huggingPriorities;
     CGSize              _compressionPriorities;
-    CGSize              _storedIntrinsicContentSize;
+    CGSize              _storedIntrinsicContentSize @accessors(property=storedIntrinsicContentSize);
 
     unsigned  _updateConstraintsFlags;
     BOOL _needsUpdateConstraints @accessors(property=needsUpdateConstraints);
@@ -3913,18 +3913,14 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 {
     var intrinsicContentSize;
 
-    if (![[self window] isAutolayoutEnabled] || CGSizeEqualToSize((intrinsicContentSize = [self intrinsicContentSize]), _storedIntrinsicContentSize))
+    if (![[self window] isAutolayoutEnabled] || 
+        CGSizeEqualToSize((intrinsicContentSize = [self intrinsicContentSize]), _storedIntrinsicContentSize))
         return;
 
-    var sizeConstraints = [self _contentSizeConstraints];
-    [_constraintsArray removeObjectsInArray:sizeConstraints];
-
-    [self _setContentSizeConstraints:nil];
     [self _setNeedsUpdateSizeConstraints:YES];
 
+    _storedIntrinsicContentSize = CGSizeMakeCopy(intrinsicContentSize);
     [[self window] setNeedsLayout];
-
-    _storedIntrinsicContentSize = intrinsicContentSize;
 }
 
 - (CPArray)_contentSizeConstraints
@@ -3976,11 +3972,19 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         return constraints;
 
     var huggingPriorities = [self _contentHuggingPriorities],
-        compressionResistancePriorities = [self _contentCompressionResistancePriorities];
+        compressionResistancePriorities = [self _contentCompressionResistancePriorities],
+        oldContentSizeConstraints = [self _contentSizeConstraints];
 
     if (!isNoIntrinsicWidth)
     {
         var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSize.width huggingPriority:huggingPriorities.width compressionResistancePriority:compressionResistancePriorities.width orientation:CPLayoutConstraintOrientationHorizontal];
+        
+        if (oldContentSizeConstraints !== nil)
+        {
+            var idx = [oldContentSizeConstraints indexOfObject:constraint];
+            if (idx !== CPNotFound)
+                constraint = [oldContentSizeConstraints objectAtIndex:idx];
+        }
 
         [constraints addObject:constraint];
     }
@@ -3988,6 +3992,13 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if (!isNoIntrinsicHeight)
     {
         var constraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:self value:intrinsicContentSize.height huggingPriority:huggingPriorities.height compressionResistancePriority:compressionResistancePriorities.height orientation:CPLayoutConstraintOrientationVertical];
+
+        if (oldContentSizeConstraints !== nil)
+        {
+            var idx = [oldContentSizeConstraints indexOfObject:constraint];
+            if (idx !== CPNotFound)
+                constraint = [oldContentSizeConstraints objectAtIndex:idx];
+        }
 
         [constraints addObject:constraint];
     }
@@ -4265,13 +4276,16 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if ([self translatesAutoresizingMaskIntoConstraints])
         return;
 
-    var contentSizeConstraints = [self _contentSizeConstraints];
-
-    if (contentSizeConstraints == nil)
+    if ([self _needsUpdateSizeConstraints])
     {
-        var contentSizeConstraints = [self _generateContentSizeConstraints];
-        [_constraintsArray addObjectsFromArray:contentSizeConstraints];
-        [self _setContentSizeConstraints:contentSizeConstraints];
+        var oldContentSizeConstraints = [self _contentSizeConstraints];
+        
+        if (oldContentSizeConstraints !== nil)
+            [_constraintsArray removeObjectsInArray:oldContentSizeConstraints];
+    
+        var newContentSizeConstraints = [self _generateContentSizeConstraints];
+        [_constraintsArray addObjectsFromArray:newContentSizeConstraints];
+        [self _setContentSizeConstraints:newContentSizeConstraints];
     }
 }
 

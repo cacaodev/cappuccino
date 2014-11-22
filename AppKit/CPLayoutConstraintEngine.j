@@ -263,15 +263,25 @@ var _CPLayoutEngineCachedEngines = {},
     [self sendCommand:"resolve" withArguments:null];
 }
 
-- (void)addStayVariable:(int)tag priority:(int)aPriority fromItem:(id)anItem
+- (void)addStayConstraintForItem:(id)anItem tags:(CPArray)tags priority:(CPInteger)aPriority
 {
-    var value = [anItem valueForVariable:tag],
-        identifier = [anItem UID],
-        prefix = [anItem identifier] || [anItem className];
+    var container = [anItem UID],
+        prefix = [anItem debugID],
+        count = tags.length,
+        json_constraints = [];
+    
+    while (count--)
+    {
+        var tag = tags[count],
+            value = [anItem valueForVariable:tag],
+            hash = (container + "_" + tag + "_" + value + "_" + aPriority);
+            
+        var json = {uuid:hash, prefix:prefix, value:value, tag:tag, priority:aPriority};
+        json_constraints.push(json);
+    }
 
-    var args = {identifier:identifier, prefix:prefix, value:value, tag:tag, priority:aPriority};
-
-    [self sendCommand:"addStay" withArguments:args];
+    var args = {type:@"StayConstraint", container:container, constraints:json_constraints};
+    [self sendCommand:"replaceConstraints" withArguments:args];
 
     //CPLog.debug([self class] + " addStay " + anItem + " tag:" + tag + " priority:" + aPriority);
 }
@@ -284,8 +294,8 @@ var _CPLayoutEngineCachedEngines = {},
     var toJSON = function(constraint)
     {
         return [constraint toJSON];
-    }
-
+    };
+        
     [constraintsByView enumerateKeysAndObjectsUsingBlock:function(containerUID, constraintsDict, stop)
     {
         CPLog.debug([[self registeredItemForIdentifier:containerUID] debugID] + "=" + [constraintsDict description]);
@@ -295,15 +305,21 @@ var _CPLayoutEngineCachedEngines = {},
 
         if (json_size_constraints)
         {
-            var sizeConstraints = [json_size_constraints mapUsingFunction:toJSON];
-            var args = {container:containerUID, constraints:sizeConstraints};
-            [self sendCommand:"replaceSizeConstraints" withArguments:args];
+            var constraints = [];
+            [json_size_constraints enumerateObjectsUsingBlock:function(cst, idx, stop)
+            {
+                var json = [cst toJSON];
+                constraints.push.apply(constraints, json);
+            }];
+
+            var args = {type:@"SizeConstraint", container:containerUID, constraints:constraints};
+            [self sendCommand:"replaceConstraints" withArguments:args];
         }
 
         if (json_constraints)
         {
             var constraints = [json_constraints mapUsingFunction:toJSON];
-            var args = {container:containerUID, constraints:constraints};
+            var args = {type:@"Constraint", container:containerUID, constraints:constraints};
             [self sendCommand:"replaceConstraints" withArguments:args];
         }
     }];
@@ -383,9 +399,8 @@ var _CPLayoutEngineCachedEngines = {},
     return result;
 }
 
-
-
 @end
+
 // No worker version
 function returnMessage(type, result)
 {
@@ -414,11 +429,11 @@ var onWorkerMessage = function(aMessage, aSolvedFunction, anEngineUID)
     }
     else if (type === 'log')
     {
-       CPLog.debug("Worker: " + result);
+       console.log('%c [worker]: ' + result, 'color:darkblue; font-weight:bold');
     }
     else if (type === 'warn')
     {
-       CPLog.warn("Worker: " + result);
+       console.warn('%c [worker]: ' + result.toUpperCase(), 'color:darkblue; font-weight:bold');
     }
     else if (type === 'callback')
     {

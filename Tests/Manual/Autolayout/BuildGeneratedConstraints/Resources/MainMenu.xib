@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="13F34" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="14B25" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6250"/>
     </dependencies>
@@ -280,7 +280,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="335" y="390" width="510" height="361"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
             <view key="contentView" identifier="yellowColor" autoresizesSubviews="NO" id="372">
                 <rect key="frame" x="0.0" y="0.0" width="510" height="361"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -289,7 +289,7 @@
                         <rect key="frame" x="77" y="93" width="349" height="188"/>
                     </customView>
                     <textField identifier="textField" autoresizesSubviews="NO" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kHB-HE-cGe">
-                        <rect key="frame" x="177" y="23" width="144" height="22"/>
+                        <rect key="frame" x="184" y="23" width="138" height="22"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" borderStyle="bezel" title="RedView.width ≤ 300" id="aH7-SU-5z6">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -307,7 +307,7 @@
                         </connections>
                     </button>
                     <button identifier="activate" autoresizesSubviews="NO" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="N5b-RG-o2H">
-                        <rect key="frame" x="323" y="15" width="91" height="32"/>
+                        <rect key="frame" x="324" y="15" width="90" height="32"/>
                         <buttonCell key="cell" type="push" title="Activate" alternateTitle="Desctivate" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="YRn-5m-ham">
                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
                             <font key="font" metaFont="system"/>
