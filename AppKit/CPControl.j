@@ -1019,6 +1019,14 @@ var CPControlBlackColor = [CPColor blackColor];
     return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
 }
 
+- (CGSize)intrinsicContentSize
+{
+    if ([self hasThemeAttribute:@"min-size"])
+        return [self currentValueForThemeAttribute:@"min-size"];
+
+    return [super intrinsicContentSize];
+}
+
 @end
 
 var CPControlActionKey                  = @"CPControlActionKey",
