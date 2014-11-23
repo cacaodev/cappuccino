@@ -47,9 +47,14 @@
     var windowRect = CGRectMake(0, 0, 500, 500);
     var _autoSizeWindow = [[CPWindow alloc] initWithContentRect:windowRect styleMask:CPResizableWindowMask];
     var _constraintsWindow = [[CPWindow alloc] initWithContentRect:windowRect styleMask:CPResizableWindowMask];
+    [_constraintsWindow setAutolayoutEnabled:YES];
+    var autosizeContentView = [_autoSizeWindow contentView];
+    var constraintContentView = [_constraintsWindow contentView];
     var autoSizeSubviews = [];
     var constraintSubviews = [];
-
+    
+    [constraintContentView setIdentifier:@"ContentView"];
+    
     var NUMBER_OF_VIEWS = 100,
         RESIZES_COUNT = 500;
 
@@ -61,19 +66,15 @@
 
         var autosizeView = [[CPView alloc] initWithFrame:rect];
         [autosizeView setAutoresizingMask:aMask];
-        [[_autoSizeWindow contentView] addSubview:autosizeView];
+        [autosizeContentView addSubview:autosizeView];
         autoSizeSubviews.push(autosizeView);
 
         var constraintView = [[CPView alloc] initWithFrame:rect];
-        [constraintView setIdentifier:@"View"];
         [constraintView setAutoresizingMask:aMask];
-
-        [[_constraintsWindow contentView] setIdentifier:@"ContentView"];
-        [[_constraintsWindow contentView] addSubview:constraintView];
+        [constraintView setTranslatesAutoresizingMaskIntoConstraints:YES];
+        [constraintView setIdentifier:@"View"];
+        [constraintContentView addSubview:constraintView];
         constraintSubviews.push(constraintView);
-
-        var constraints = [constraintView _constraintsEquivalentToAutoresizingMask];
-        [[_constraintsWindow contentView] addConstraints:constraints];
     }
 
     var start = new Date();

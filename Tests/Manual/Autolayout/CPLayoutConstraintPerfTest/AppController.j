@@ -5,7 +5,7 @@
  * Created by You on January 23, 2013.
  * Copyright 2013, Your Company All rights reserved.
  */
-
+@import <AppKit/CPView.j>
 @import <Foundation/CPObject.j>
 @import "../../CPTrace.j"
 
@@ -41,35 +41,42 @@ CPLogRegister(CPLogConsole);
 {
 }
 
-- (void)resizeWithOldSuperviewSize:(CGSize)aSize
-{
-    [self _resizeWithOldSuperviewSize:aSize];
-}
-
-- (void)_resizeWithOldSuperviewSize:(CGSize)aSize
-{
-    [super resizeWithOldSuperviewSize:aSize];
-}
-
-- (void)mouseDown:(CPEvent)anEvent
-{
-    [[self _layoutEngine] getInfo];
-}
-
 @end
 
 @implementation NoConstraintView : ColorView
 {
 }
 
-- (void)resizeWithOldSuperviewSize:(CGSize)aSize
+- (void)_setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
 {
-    [self _resizeWithOldSuperviewSize:aSize];
+    [self __setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
 }
 
-- (void)_resizeWithOldSuperviewSize:(CGSize)aSize
+- (void)__setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
 {
-    [super resizeWithOldSuperviewSize:aSize];
+    [super _setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
+}
+
+@end
+
+@implementation ConstraintWindow : CPWindow
+{
+}
+
+- (void)_setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
+{
+    [self __setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
+}
+
+- (void)__setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
+{
+    [super _setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
+}
+
+@end
+
+@implementation NoConstraintWindow : CPWindow
+{
 }
 
 @end
@@ -95,23 +102,15 @@ CPLogRegister(CPLogConsole);
     var avg = moving_averager(20),
         avg2 = moving_averager(10);
 
-
-    CPTrace("CPWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
+    CPTrace("ConstraintWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
     {
-        console.log("CPWindow: setFrame: in " + duration + " average(20) in " + avg(duration));
+        console.log("%c Autolayout: setFrame: in " + duration + " average(20) in " + avg(duration), 'color:green');
     });
-/*
-    CPTrace("NoConstraintView", "_resizeWithOldSuperviewSize:", function(receiver, selector, args, duration)
-    {
-        if (duration < 10)
-        {
-            TOTAL_COUNT++;
-            TOTAL_DURATION += duration;
-        }
 
-        console.log("Autosizing: -resizeWithOldSuperviewSize: in " + duration + " avg = " + avg2(TOTAL_DURATION / TOTAL_COUNT));
+    CPTrace("NoConstraintWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
+    {
+        console.log("Autosize: setFrame: in " + duration + " average(20) in " + avg2(duration));
     });
-*/
 }
 
 - (void)_showWindowCibName:(CPString)aWindowCibName
@@ -122,7 +121,9 @@ CPLogRegister(CPLogConsole);
 
     var window = [currentController window];
     [window setTitle:aWindowCibName];
-    [window layout];
+    
+    if (aWindowCibName == @"Constraints")
+        [window setAutolayoutEnabled:YES];
 }
 
 @end

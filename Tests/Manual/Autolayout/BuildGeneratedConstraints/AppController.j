@@ -51,7 +51,7 @@ CPLogRegister(CPLogConsole);
 {
     @outlet CPWindow    theWindow;
     @outlet ColorView   view;
-    CPLayoutConstraint  widthLimit;
+    CPLayoutConstraint  constraint @accessors;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -66,20 +66,23 @@ CPLog.debug(_cmd);
     // You can implement this method on any object instantiated from a Cib.
     // It's a useful hook for setting up current UI values, and other things.
 
-    widthLimit = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationLessThanOrEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:300];
-    [widthLimit setPriority:1000];
+    var cst = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationLessThanOrEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:300];
+    [cst setPriority:1000];
+
+    [self setConstraint:cst];
     // In this case, we want the window from Cib to become our full browser window
     [theWindow setFullPlatformWindow:NO];
 }
 
 - (@action)activate:(id)sender
 {
-    var state = [sender state],
-        title = state ? "Desactivate" : "Activate";
+    [constraint setActive:[sender state]];
+}
 
-    [widthLimit setActive:YES];
-    [widthLimit setConstant:[widthLimit constant] + 50];
-    [sender setTitle:title];
+- (@action)setConstant:(id)sender
+{
+    var constant = [sender intValue];
+    [constraint setConstant:constant];
 }
 
 - (@action)layout:(id)sender
