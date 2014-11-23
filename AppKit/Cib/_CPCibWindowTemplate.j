@@ -117,11 +117,11 @@
     {
         var firstItem = [aConstraint firstItem];
         if (firstItem && [firstItem isKindOfClass:[_CPCibCustomView class]])
-            [aConstraint setFirstItem:[firstItem replacementView]];
+            [aConstraint _setFirstItem:[firstItem replacementView]];
 
         var secondItem = [aConstraint secondItem];
         if (secondItem && [secondItem isKindOfClass:[_CPCibCustomView class]])
-            [aConstraint setSecondItem:[secondItem replacementView]];
+            [aConstraint _setSecondItem:[secondItem replacementView]];
     }];
 
     [theWindow setContentView:_windowView];

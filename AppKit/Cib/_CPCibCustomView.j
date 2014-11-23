@@ -139,14 +139,14 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
                 var firstItem = [aConstraint firstItem];
                 if (firstItem && [firstItem isKindOfClass:[_CPCibCustomView class]])
                 {
-                    [aConstraint setFirstItem:[firstItem replacementView]];
+                    [aConstraint _setFirstItem:[firstItem replacementView]];
                     [firstItem setAutolayoutEnabled:YES];
                 }
 
                 var secondItem = [aConstraint secondItem];
                 if (secondItem && [secondItem isKindOfClass:[_CPCibCustomView class]])
                 {
-                    [aConstraint setSecondItem:[secondItem replacementView]];
+                    [aConstraint _setSecondItem:[secondItem replacementView]];
                     [firstItem setAutolayoutEnabled:YES];
                 }
             }];

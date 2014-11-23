@@ -37,7 +37,7 @@ CPLayoutPriorityDragThatCannotResizeWindow = 490; // This is the priority level 
 CPLayoutPriorityDefaultLow = 250; // this is the priority level at which a button hugs its contents horizontally.
 CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingSize], the smallest size that is large enough for the view's contents is computed.  This is the priority level with which the view wants to be as small as possible in that computation.  It's quite low.  It is generally not appropriate to make a constraint at exactly this priority.  You want to be higher or lower.
 
-var CPLayoutAttributeLabels = ["NotAnAttribute",  "Left",  "Right",  "Top",  "Bottom",  "Left",  "Right",  "Width",  "Height",  "CenterX",  "CenterY",  "Baseline"];
+var CPLayoutAttributeLabels = ["NotAnAttribute", "left", "right", "top", "bottom", "left", "right", "width",  "height", "centerX", "centerY", "baseline"];
 
 var CPLayoutItemIsNull = 1 << 1,
     CPLayoutItemIsContainer = 1 << 2,
@@ -46,21 +46,31 @@ var CPLayoutItemIsNull = 1 << 1,
 @implementation CPLayoutConstraint : CPObject
 {
     id       _container        @accessors(getter=container);
-    id       _firstItem        @accessors(property=firstItem);
-    id       _secondItem       @accessors(property=secondItem);
-    unsigned _firstAttribute   @accessors(property=firstAttribute);
-    unsigned _secondAttribute  @accessors(property=secondAttribute);
-    unsigned _relation         @accessors(property=relation);
+    id       _firstItem        @accessors(getter=firstItem, setter=_setFirstItem:);
+    id       _secondItem       @accessors(getter=secondItem, setter=_setSecondItem:);
+    unsigned _firstAttribute   @accessors(getter=firstAttribute);
+    unsigned _secondAttribute  @accessors(getter=secondAttribute);
+    unsigned _relation         @accessors(getter=relation);
     double   _constant         @accessors(property=constant);
-    float    _coefficient      @accessors(property=multiplier);
+    float    _coefficient      @accessors(getter=multiplier);
     float    _priority         @accessors(property=priority);
     BOOL     _active           @accessors(getter=isActive);
-    CPString _identifier       @accessors(property=identifier);
+    CPString _identifier       @accessors(getter=identifier);
     unsigned _contraintFlags   @accessors(getter=contraintFlags);
 
     CPString _symbolicConstant;
     BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
     CPString _uuid;
+}
+
++ (CPSet)keyPathsForValuesAffectingValueForKey:(CPString)key
+{
+    if (key == @"description")
+    {
+        return [CPSet setWithObjects:@"constant", @"priority"];
+    }
+
+    return [CPSet set];
 }
 
 + (id)constraintWithItem:(id)item1 attribute:(CPInteger)att1 relatedBy:(CPInteger)relation toItem:(id)item2 attribute:(CPInteger)att2 multiplier:(double)multiplier constant:(double)constant
@@ -72,8 +82,8 @@ var CPLayoutItemIsNull = 1 << 1,
 {
     self = [super init];
 
-    [self setFirstItem:item1];
-    [self setSecondItem:item2];
+    [self _setFirstItem:item1];
+    [self _setSecondItem:item2];
     _firstAttribute = att1;
     _secondAttribute = att2;
     _relation = relation;
@@ -176,7 +186,7 @@ var CPLayoutItemIsNull = 1 << 1,
                       (CPLayoutConstraintFlags(_container, _secondItem) << 3);
 }
 
-- (void)setFirstItem:(id)anItem
+- (void)_setFirstItem:(id)anItem
 {
     var item = [self _validateItem:anItem];
     [item setAutolayoutEnabled:YES];
@@ -184,7 +194,7 @@ var CPLayoutItemIsNull = 1 << 1,
     _firstItem = item;
 }
 
-- (void)setSecondItem:(id)anItem
+- (void)_setSecondItem:(id)anItem
 {
     var item = [self _validateItem:anItem];
     [item setAutolayoutEnabled:YES];
@@ -205,6 +215,21 @@ var CPLayoutItemIsNull = 1 << 1,
     if (aConstant !== _constant)
     {
         _constant = aConstant;
+
+        if (_container)
+        {
+            _uuid = uuidgen();
+            [_container setNeedsUpdateConstraints:YES];
+            [[_container window] setNeedsLayout];
+        }
+    }
+}
+
+- (void)setPriority:(float)aPriority
+{
+    if (aPriority !== _priority)
+    {
+        _priority = aPriority;
 
         if (_container)
         {
@@ -253,7 +278,12 @@ var CPLayoutItemIsNull = 1 << 1,
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@.%@ %@ %@.%@ x%@ +%@ (%@) [%@]", [_firstItem debugID], CPStringFromAttribute(_firstAttribute), CPStringFromRelation(_relation), [_secondItem debugID], CPStringFromAttribute(_secondAttribute), _coefficient, _constant, _priority, (_identifier || "")];
+    var term1 = (_firstItem && _firstAttribute) ? [CPString stringWithFormat:@"%@.%@", [_firstItem debugID], CPStringFromAttribute(_firstAttribute)] : "",
+        term2 = (_secondItem && _secondAttribute && _coefficient) ? [CPString stringWithFormat:@"%@.%@ x%@", [_secondItem debugID], CPStringFromAttribute(_secondAttribute), _coefficient] : "",
+        identifier = (_identifier) ? [CPString stringWithFormat:@" [%@]"] : "",
+        plusMinus = (_constant < 0) ? "-" : "+";
+
+    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem
@@ -370,7 +400,7 @@ var CPFirstItem         = @"CPFirstItem",
     self = [super init];
 
     var firstItem = [aCoder decodeObjectForKey:CPFirstItem];
-    [self setFirstItem:firstItem];
+    [self _setFirstItem:firstItem];
 
     _firstAttribute = [aCoder decodeIntForKey:CPFirstAttribute];
 
@@ -381,7 +411,7 @@ var CPFirstItem         = @"CPFirstItem",
     _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:CPMultiplier] : 1 ;
 
     var secondItem = [aCoder decodeObjectForKey:CPSecondItem];
-    [self setSecondItem:secondItem];
+    [self _setSecondItem:secondItem];
     _secondAttribute = [aCoder decodeIntForKey:CPSecondAttribute];
 
     _constant = [aCoder decodeDoubleForKey:CPConstant];
