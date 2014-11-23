@@ -98,9 +98,24 @@ scope.layoutConstraint = function(uuid, container, type, casso_constraint)
     
     this.addToSolver = function(aSolver)
     {
-        aSolver.addConstraint(this.constraint);
-        scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(this);
-        WorkerLog("Added " + this.toString());
+        var error = null;
+
+        try
+        {
+            aSolver.addConstraint(this.constraint);
+            scope.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(this);
+        }
+        catch (e)
+        {
+            error = e;
+        }
+        finally
+        {
+            if (error !== null)
+                WorkerError(error.toString());
+            else
+                WorkerLog("Added " + this.toString());
+        }
     }
     
     return this;
@@ -181,7 +196,7 @@ scope.removeConstraint = function(casso_constraint)
     finally
     {
         if (error)
-            WorkerWarn(error.toString());
+            WorkerError(error.toString());
     }
 
     return (error == null);
@@ -388,9 +403,12 @@ scope.StrengthAndWeight = function(p)
     var h = Math.floor(p / 100),
         d = Math.floor((p - 100*c) / 10),
         n = p - 100*c - 10*d;
+    (new c.Strength("", h, d, n))
 */
+    if (p >= 1000)
+        return c.Strength.required;
 
-    return {strength:(new c.Strength("", 0, 1, 0)), weight:p};
+    return {strength:c.Strength.medium, weight:p};
 };
 
 scope.CreateConstraint = function(container, args)
@@ -568,6 +586,11 @@ var WorkerLog = function(x)
 var WorkerWarn = function(x)
 {
     returnMessage('warn', x);
+};
+
+var WorkerError = function(x)
+{
+    returnMessage('error', x);
 };
 
 var onValueChange = function(v, records)

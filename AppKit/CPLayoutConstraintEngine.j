@@ -4,26 +4,12 @@
 @import <Foundation/CPIndexSet.j>
 
 @import "CPLayoutConstraint.j"
-
-@import "c.js"
 @import "Engine.js"
+@import "c.js"
 
 /*
 @import <AppKit/c.js>
-@import <AppKit/HashTable.js>
-@import <AppKit/HashSet.js>
-@import <AppKit/Error.js>
-@import <AppKit/SymbolicWeight.js>
-@import <AppKit/Strength.js>
-@import <AppKit/Variable.js>
-@import <AppKit/Point.js>
-@import <AppKit/Expression.js>
-@import <AppKit/Constraint.js>
-@import <AppKit/EditInfo.js>
-@import <AppKit/Tableau.js>
-@import <AppKit/SimplexSolver.js>
-
-@import "Resources/cassowary/CassowaryBridge.js"
+@import "Resources/cassowary/Engine.js"
 */
 var ENGINE_SUPPORTS_WEB_WORKER,
     ENGINE_ALLOWS_WEB_WORKER,
@@ -46,13 +32,12 @@ var _CPLayoutEngineCachedEngines = {},
 {
 #if PLATFORM(DOM)
     ENGINE_SUPPORTS_WEB_WORKER = !!window.Worker;
+    ENGINE_WORKER_PATH = [[CPBundle bundleForClass:self] pathForResource:@"cassowary/Worker.js"];
 #else
     ENGINE_SUPPORTS_WEB_WORKER = NO;
 #endif
 
     ENGINE_ALLOWS_WEB_WORKER = YES;
-
-    ENGINE_WORKER_PATH = [[CPBundle bundleForClass:self] pathForResource:@"cassowary/Worker.js"];
 }
 
 + (void)setAllowsWebWorker:(BOOL)flag
@@ -70,14 +55,13 @@ var _CPLayoutEngineCachedEngines = {},
     self = [super init];
 
     _constraints = [];
-    //_stayVariables = [];
     _CPEngineRegisteredItems = @{};
     _solverBachingModeLevel = 0;
     _workerMessagesQueue = [];
 
     if ([[self class] shouldEnableWebWorker])
     {
-        // A webworker is created and the JavaScript file CassowaryBridge.js
+        // A webworker is created and the JavaScript file Worker.js
         // is loaded into its context.
 
         _worker = new Worker(ENGINE_WORKER_PATH);
@@ -86,8 +70,7 @@ var _CPLayoutEngineCachedEngines = {},
         {
             var engineUID = [self UID];
             _CPLayoutEngineCachedEngines[engineUID] = self;
-            // Register an event handler that will receive messages from our
-            // web worker
+            // Register an event handler that will receive messages from our web worker
             _worker.addEventListener('message', function(e)
             {
                 onWorkerMessage(e.data, onSolvedFunction, engineUID);
@@ -95,7 +78,7 @@ var _CPLayoutEngineCachedEngines = {},
 
             _worker.addEventListener('error', function(e)
             {
-                CPLog.error("Worker error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+                console.error("%c Worker error: Line " + e.lineno + " in " + e.filename + ": " + e.message, 'color:darkred; font-weight:bold');
             }, false);
 
             [self beginUpdates];
@@ -239,15 +222,6 @@ var _CPLayoutEngineCachedEngines = {},
     [self sendCommand:"suggestValues" withArguments:args];
 }
 
-/*
-- (void)setEditVariables:(CPArray)tags priority:(CPInteger)aPriority fromItem:(id)anItem
-{
-    var prefix = [anItem identifier] || [anItem className],
-        args = {identifier:[anItem UID], prefix:prefix, tags:tags, priority:aPriority};
-
-    [self sendCommand:"registerEditVariables" withArguments:args];
-}
-*/
 - (void)stopEditing
 {
     [self sendCommand:"stopEditing" withArguments:null];
@@ -433,7 +407,11 @@ var onWorkerMessage = function(aMessage, aSolvedFunction, anEngineUID)
     }
     else if (type === 'warn')
     {
-       console.warn('%c [worker]: ' + result.toUpperCase(), 'color:darkblue; font-weight:bold');
+       console.warn('%c [worker]: ' + result, 'color:brown; font-weight:bold');
+    }
+    else if (type === 'error')
+    {
+       console.error('%c [worker]: ' + result, 'color:darkred; font-weight:bold');
     }
     else if (type === 'callback')
     {
