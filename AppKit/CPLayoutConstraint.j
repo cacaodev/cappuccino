@@ -61,6 +61,7 @@ var CPLayoutItemIsNull = 1 << 1,
     CPString _symbolicConstant;
     BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
     CPString _uuid;
+    BOOL     _addedToEngine    @accessors(property=addedToEngine);
 }
 
 + (CPSet)keyPathsForValuesAffectingValueForKey:(CPString)key
@@ -109,6 +110,7 @@ var CPLayoutItemIsNull = 1 << 1,
     _container = nil;
     _contraintFlags = 0;
     _active = NO;
+    _addedToEngine = NO;
     _uuid = uuidgen();
 }
 
@@ -210,18 +212,12 @@ var CPLayoutItemIsNull = 1 << 1,
     return anItem;
 }
 
-- (void)setConstant:(float)aConstant
+- (void)setConstant:(double)aConstant
 {
     if (aConstant !== _constant)
     {
         _constant = aConstant;
-
-        if (_container)
-        {
-            _uuid = uuidgen();
-            [_container setNeedsUpdateConstraints:YES];
-            [[_container window] setNeedsLayout];
-        }
+        [self _forceLayoutIfAlreadyInEngine];
     }
 }
 
@@ -230,13 +226,17 @@ var CPLayoutItemIsNull = 1 << 1,
     if (aPriority !== _priority)
     {
         _priority = aPriority;
+        [self _forceLayoutIfAlreadyInEngine];
+    }
+}
 
-        if (_container)
-        {
-            _uuid = uuidgen();
-            [_container setNeedsUpdateConstraints:YES];
-            [[_container window] setNeedsLayout];
-        }
+- (void)_forceLayoutIfAlreadyInEngine
+{
+    if (_container)
+    {
+        _uuid = uuidgen();
+        [_container setNeedsUpdateConstraints:YES];
+        [[_container window] setNeedsLayout];
     }
 }
 
@@ -262,7 +262,7 @@ var CPLayoutItemIsNull = 1 << 1,
     var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
         secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
 
-    return {
+    return [{
        type           : "Constraint",
        uuid           : _uuid,
        container      : [_container UID],
@@ -273,7 +273,7 @@ var CPLayoutItemIsNull = 1 << 1,
        constant       : (_constant + secondOffset * _coefficient - firstOffset),
        priority       : _priority,
        flags          : _contraintFlags
-    };
+    }];
 }
 
 - (CPString)description

@@ -243,13 +243,13 @@ var _CPLayoutEngineCachedEngines = {},
         prefix = [anItem debugID],
         count = tags.length,
         json_constraints = [];
-    
+
     while (count--)
     {
         var tag = tags[count],
             value = [anItem valueForVariable:tag],
             hash = (container + "_" + tag + "_" + value + "_" + aPriority);
-            
+
         var json = {uuid:hash, prefix:prefix, value:value, tag:tag, priority:aPriority};
         json_constraints.push(json);
     }
@@ -262,73 +262,26 @@ var _CPLayoutEngineCachedEngines = {},
 
 - (void)solver_replaceConstraints:(CPDictionary)constraintsByView
 {
-    CPLog.debug("Registered Items = \n " + [self registeredItems]);
     CPLog.debug("Constraints to replace = \n");
 
-    var toJSON = function(constraint)
+    [constraintsByView enumerateKeysAndObjectsUsingBlock:function(container, constraintsByType, stop)
     {
-        return [constraint toJSON];
-    };
-        
-    [constraintsByView enumerateKeysAndObjectsUsingBlock:function(containerUID, constraintsDict, stop)
-    {
-        CPLog.debug([[self registeredItemForIdentifier:containerUID] debugID] + "=" + [constraintsDict description]);
+        CPLog.debug([[self registeredItemForIdentifier:container] debugID] + "=" + [constraintsByType description]);
 
-        var json_constraints = [constraintsDict objectForKey:@"Constraint"],
-            json_size_constraints = [constraintsDict objectForKey:@"SizeConstraint"];
-
-        if (json_size_constraints)
+        [constraintsByType enumerateKeysAndObjectsUsingBlock:function(type, constraints, stop)
         {
-            var constraints = [];
-            [json_size_constraints enumerateObjectsUsingBlock:function(cst, idx, stop)
+            var json_constraints = @[];
+
+            [constraints enumerateObjectsUsingBlock:function(constraint, idx, stop)
             {
-                var json = [cst toJSON];
-                constraints.push.apply(constraints, json);
+                [constraint setAddedToEngine:YES];
+                [json_constraints addObjectsFromArray:[constraint toJSON]];
             }];
 
-            var args = {type:@"SizeConstraint", container:containerUID, constraints:constraints};
+            var args = {type:type, container:container, constraints:json_constraints};
             [self sendCommand:"replaceConstraints" withArguments:args];
-        }
-
-        if (json_constraints)
-        {
-            var constraints = [json_constraints mapUsingFunction:toJSON];
-            var args = {type:@"Constraint", container:containerUID, constraints:constraints};
-            [self sendCommand:"replaceConstraints" withArguments:args];
-        }
+        }];
     }];
-}
-
-- (void)solver_updateSizeConstraints:(CPArray)sizeConstraints forView:(CPView)aView
-{
-    var containerUID = [aView UID],
-        json_constraints = [];
-
-    [sizeConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
-    {
-        [[aConstraint firstItem] resisterInEngineIfNeeded];
-        json_constraints.push([aConstraint toJSON]);
-    }];
-
-    var args = {container:containerUID, constraints:json_constraints};
-    [self sendCommand:"updateSizeConstraints" withArguments:args];
-}
-
-- (void)solver_addConstraint:(CPLayoutConstraint)aConstraint
-{
-    var json = [aConstraint toJSON];
-    [self sendCommand:"addConstraint" withArguments:json];
-}
-
-- (void)solver_addConstraints:(CPArray)constraints
-{
-    var args = [];
-    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
-    {
-        [args addObject:[aConstraint toJSON]];
-    }];
-
-    [self sendCommand:"addConstraints" withArguments:args];
 }
 
 - (void)solver_removeConstraints:(CPArray)constraints
@@ -340,14 +293,6 @@ var _CPLayoutEngineCachedEngines = {},
     }];
 
     [self sendCommand:"removeConstraints" withArguments:args];
-}
-
-- (void)solver_removeConstraint:(CPLayoutConstraint)aConstraint
-{
-    var uuid = [aConstraint UID],
-        args = {uuid:uuid};
-
-    [self sendCommand:"removeConstraint" withArguments:args];
 }
 
 - (void)getInfo

@@ -66,8 +66,8 @@ CPLog.debug(_cmd);
     // You can implement this method on any object instantiated from a Cib.
     // It's a useful hook for setting up current UI values, and other things.
 
-    var cst = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationLessThanOrEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:300];
-    [cst setPriority:1000];
+    var cst = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationLessThanOrEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:400];
+    [cst setPriority:CPLayoutPriorityRequired];
 
     [self setConstraint:cst];
     // In this case, we want the window from Cib to become our full browser window
