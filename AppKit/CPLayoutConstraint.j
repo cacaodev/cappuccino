@@ -3,8 +3,6 @@
 
 @import "CPLayoutConstraintEngine.j"
 
-@class _CPCibCustomView;
-
 CPLayoutRelationLessThanOrEqual = -1;
 CPLayoutRelationEqual = 0;
 CPLayoutRelationGreaterThanOrEqual = 1;
@@ -37,11 +35,22 @@ CPLayoutPriorityDragThatCannotResizeWindow = 490; // This is the priority level 
 CPLayoutPriorityDefaultLow = 250; // this is the priority level at which a button hugs its contents horizontally.
 CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingSize], the smallest size that is large enough for the view's contents is computed.  This is the priority level with which the view wants to be as small as possible in that computation.  It's quite low.  It is generally not appropriate to make a constraint at exactly this priority.  You want to be higher or lower.
 
-var CPLayoutAttributeLabels = ["NotAnAttribute", "left", "right", "top", "bottom", "left", "right", "width",  "height", "centerX", "centerY", "baseline"];
+var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
+                               "left",
+                               "right",
+                               "top",
+                               "bottom",
+                               "left",
+                               "right",
+                               "width",
+                               "height",
+                               "centerX",
+                               "centerY",
+                               "baseline"];
 
-var CPLayoutItemIsNull = 1 << 1,
-    CPLayoutItemIsContainer = 1 << 2,
-    CPLayoutItemIsNotContainer = 1 << 3;
+var CPLayoutItemIsNull          = 1 << 1,
+    CPLayoutItemIsContainer     = 1 << 2,
+    CPLayoutItemIsNotContainer  = 1 << 3;
 
 @implementation CPLayoutConstraint : CPObject
 {
@@ -217,7 +226,8 @@ var CPLayoutItemIsNull = 1 << 1,
     if (aConstant !== _constant)
     {
         _constant = aConstant;
-        [self _forceLayoutIfAlreadyInEngine];
+        [_container setNeedsUpdateConstraints:YES];
+        [self _generateUUIDIfNeeded];
     }
 }
 
@@ -226,17 +236,16 @@ var CPLayoutItemIsNull = 1 << 1,
     if (aPriority !== _priority)
     {
         _priority = aPriority;
-        [self _forceLayoutIfAlreadyInEngine];
+        [_container setNeedsUpdateConstraints:YES];
+        [self _generateUUIDIfNeeded];
     }
 }
 
-- (void)_forceLayoutIfAlreadyInEngine
+- (void)_generateUUIDIfNeeded
 {
-    if (_container)
+    if (_addedToEngine)
     {
         _uuid = uuidgen();
-        [_container setNeedsUpdateConstraints:YES];
-        [[_container window] setNeedsLayout];
     }
 }
 
