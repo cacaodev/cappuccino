@@ -70,9 +70,9 @@ Engine.prototype.description = function()
     WorkerLog(str + "\n" + this.solver.rows.toString());
 };
 
-Engine.prototype.Variable = function(containerUUID, containerName, name, tag, value)
+Engine.prototype.Variable = function(uuid, prefix, name, tag, value)
 {
-    return new c.Variable({identifier:containerUUID, prefix:containerName, name:name, tag:tag, value:value});
+    return new c.Variable({identifier:uuid, prefix:prefix, name:name, tag:tag, value:value});
 };
 
 Engine.prototype.replaceConstraints = function(args)
@@ -192,7 +192,7 @@ Engine.prototype.StrengthAndWeight = function(p)
 //        n = p - 100*c - 10*d;
 //    (new c.Strength("", h, d, n))
     if (p > 1000)
-        return {strength:c.Strength.required, weight:p-1000};
+        return {strength:c.Strength.strong, weight:p};
 
     return {strength:c.Strength.medium, weight:p};
 };
@@ -353,7 +353,7 @@ var LayoutConstraint = function(uuid, container, type, casso_constraint)
 
     this.toString = function()
     {
-        return (this.type + " " + this.uuid.substring(0,4) + " " + this.constraint.toString());
+        return (this.type + " " + this.uuid + " " + this.constraint.toString());
     };
 
     this.addToSolver = function(aSolver)
