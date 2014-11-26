@@ -112,6 +112,9 @@
     [pconstraint _setContainer:superItem];
     [sconstraint _setContainer:superItem];
 
+    [pconstraint setPriority:1001];
+    [sconstraint setPriority:1001];
+
     return @[pconstraint, sconstraint];
 }
 

@@ -244,6 +244,7 @@ var CPWindowActionMessageKeys = [
     BOOL _autolayoutEnabled      @accessors(getter=isAutolayoutEnabled);
     BOOL _needsUpdateConstraints @accessors(property=needsUpdateConstraints);
     BOOL _needsLayout;
+    BOOL _layoutLock;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -379,6 +380,7 @@ CPTexturedBackgroundWindowMask
         _autolayoutEnabled = NO;
         _needsUpdateConstraints = YES;
         _needsLayout = NO;
+        _layoutLock = NO;
         _layoutEngine = nil;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
@@ -3753,19 +3755,17 @@ var interpolate = function(fromValue, toValue, progress)
 
 @implementation CPWindow (CPLayoutConstraint)
 
-- (id)_layoutEngineIfExists
+- (CPLayoutConstraintEngine)_layoutEngineIfExists
 {
     return _layoutEngine;
 }
 
-- (id)_layoutEngine
+- (CPLayoutConstraintEngine)_layoutEngine
 {
     if (!_layoutEngine)
     {
-        var onSolverReady = new _EngineOnSolverReadyFunctionCreate(self);
-        var onViewsSolved = new _EngineOnSolvedFunctionCreate(self);
-
-        _layoutEngine = [[CPLayoutConstraintEngine alloc] initWithSolverCreatedCallback:onSolverReady onSolvedCallback:onViewsSolved];
+        _layoutEngine = [[CPLayoutConstraintEngine alloc] init];
+        [self _updateWindowStayConstraintsInEngine:_layoutEngine];
     }
 
     return _layoutEngine;
@@ -3783,24 +3783,20 @@ var interpolate = function(fromValue, toValue, progress)
 
 - (void)updateConstraintsAtWindowLevel
 {
-    //[_windowView _setContentSizeConstraints:nil];
-    //[_windowView _setNeedsUpdateSizeConstraints:YES];
     [_windowView setAutolayoutEnabled:YES];
     [_contentView setAutolayoutEnabled:YES];
 
-    var constraintsByView = [_windowView updateConstraintsForSubtree];
-    [[self _layoutEngine] solver_replaceConstraints:constraintsByView];
+    [_windowView updateConstraintsForSubtreeIfNeeded];
 }
 
 - (void)_suggestFrameSize:(CGSize)newSize
 {
     var engine = [self _layoutEngine];
 
-    [engine beginUpdates];
     [self updateConstraintsAtWindowLevelIfNeeded];
-    [engine suggestSize:[newSize.width, newSize.height] forItem:_windowView];
-    [engine endUpdates];
-}
+    [engine suggestSize:newSize forItem:_windowView priority:CPLayoutPriorityRequired];
+    _CPViewUpdateEngineFrame(_windowView);
+  }
 
 - (void)_sizeToFitWindowViewSize:(CGSize)newSize
 {
@@ -3844,40 +3840,28 @@ var interpolate = function(fromValue, toValue, progress)
 
 - (void)layout
 {
-    var uuid = uuidgen();
-
-    CPLog.debug("BEGIN LAYOUT " + uuid);
-    [_CPDisplayServer lock];
-
-    [self layoutWithCallback:function()
+    if (!_layoutLock)
     {
-        CPLog.debug("END LAYOUT " + uuid);
-    }];
+        CPLog.debug(_cmd);
+        _layoutLock = YES;
+        [_CPDisplayServer lock];
 
-    [_CPDisplayServer unlock];
-}
+        var engine = [self _layoutEngine];
 
-- (void)layoutWithCallback:(Function)postLayoutCallback
-{
-    var engine = [self _layoutEngine];
+        [engine stopEditing];
+        [self _updateWindowStayConstraintsInEngine:engine];
 
-    [engine beginUpdates];
+        [self updateConstraintsAtWindowLevelIfNeeded];
+        [engine solve];
 
-    [engine stopEditing];
-    [self _updateWindowStayConstraintsInEngine:engine];
-
-    [self updateConstraintsAtWindowLevelIfNeeded];
-
-    [engine sendCommand:@"solve" withArguments:null callback:function()
-    {
+        _CPViewUpdateEngineFrame(_windowView);
         [self _updateFrameFromCurrentWindowViewFrame];
+
+        [_CPDisplayServer unlock];
         [[CPRunLoop mainRunLoop] performSelectors];
 
-        if (postLayoutCallback)
-            postLayoutCallback();
-    }];
-
-    [engine endUpdates];
+        _layoutLock = NO;
+    }
 }
 
 - (void)_updateFrameFromCurrentWindowViewFrame
@@ -3895,11 +3879,11 @@ var interpolate = function(fromValue, toValue, progress)
 - (void)_updateWindowStayConstraintsInEngine:(id)anEngine
 {
     var newSize = [_windowView frameSize],
-        oldSize = [_windowView storedIntrinsicContentSize];        
-    
+        oldSize = [_windowView storedIntrinsicContentSize];
+
     if (!CGSizeEqualToSize(newSize, oldSize))
     {
-        [anEngine addStayConstraintForItem:_windowView tags:[8,16] priority:CPLayoutPriorityWindowSizeStayPut];
+        [anEngine addStayConstraintsForItem:_windowView priority:CPLayoutPriorityWindowSizeStayPut];
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
 }
@@ -3910,73 +3894,6 @@ function _CPWindowFullPlatformWindowSessionMake(aWindowView, aContentRect, hasSh
 {
     return { windowView:aWindowView, contentRect:aContentRect, hasShadow:hasShadow, level:aLevel };
 }
-
-var _EngineOnSolverReadyFunctionCreate = function(aWindow)
-{
-    return function(anEngine)
-    {
-        [aWindow _updateWindowStayConstraintsInEngine:anEngine];
-    };
-};
-
-var _EngineOnSolvedFunctionCreate = function(aWindow)
-{
-    return function(anEngine, records)
-    {
-        for (var anIdentifier in records)
-        {
-            var target = [anEngine registeredItemForIdentifier:anIdentifier];
-
-            if (target)
-            {
-                var record = records[anIdentifier];
-                CPWindowChangeFrameFromEngine(target, record.changeMask, record.changeValues);
-            }
-            else
-            {
-                CPLog.warn("NO TARGET FOUND IN " + anEngine + ", ID=" + anIdentifier);
-            }
-        }
-    };
-};
-
-var CPWindowChangeFrameFromEngine = function(target, mask, values)
-{
-    //CPLog.debug("Updated view " + [target debugID] + " mask " + mask + " values " + values);
-
-    var frame = [target frame];
-
-    var pmask = mask & 6,
-        smask = mask & 24;
-
-    if (pmask === 6)
-    {
-        [target setFrameOrigin:CGPointMake(values[2], values[4])];
-    }
-    else if (pmask === 4)
-    {
-        [target setFrameOrigin:CGPointMake(CGRectGetMinX(frame), values[4])];
-    }
-    else if (pmask === 2)
-    {
-        [target setFrameOrigin:CGPointMake(values[2], CGRectGetMinY(frame))];
-    }
-
-    if (smask === 24)
-    {
-        [target setFrameSize:CGSizeMake(values[8], values[16])];
-    }
-    else if (smask === 16)
-    {
-        [target setFrameSize:CGSizeMake(CGRectGetWidth(frame), values[16])];
-    }
-    else if (smask === 8)
-    {
-        [target setFrameSize:CGSizeMake(values[8], CGRectGetHeight(frame))];
-    }
-
-    //[target setNeedsDisplay:YES];
-};
 
 uuidgen = function () {
     return Math.random().toString(36).substring(2, 15) +

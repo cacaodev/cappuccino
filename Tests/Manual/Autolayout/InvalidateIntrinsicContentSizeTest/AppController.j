@@ -52,7 +52,7 @@ CPLogRegister(CPLogConsole);
 
     if (flags & CPShiftKeyMask)
     {
-        CPLog.debug([[[self window] _layoutEngine] sendCommand:"getconstraints" withArguments:null]);
+        CPLog.debug([[[self window] _layoutEngine] description]);
     }
 }
 
@@ -69,7 +69,6 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     //CPTrace("CPWindow", "setFrameSize:");
-    [CPLayoutConstraintEngine setAllowsWebWorker:YES];
 
     [compressionWindow     setAutolayoutEnabled:YES];
     [huggingWindow         setAutolayoutEnabled:YES];

@@ -11,107 +11,43 @@
 @import <AppKit/c.js>
 @import "Resources/cassowary/Engine.js"
 */
-var ENGINE_SUPPORTS_WEB_WORKER,
-    ENGINE_ALLOWS_WEB_WORKER,
-    ENGINE_WORKER_PATH;
-
-var _CPLayoutEngineCachedEngines = {},
-    _CPEngineCallbacks = {};
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
-    CPArray         _constraints @accessors(getter=constraints);
-
-    Object          _worker;
-    CPInteger       _solverBachingModeLevel;
-    CPArray         _workerMessagesQueue;
-    CPDictionary    _CPEngineRegisteredItems;
+    SimplexSolver   _engine;
+    Object          _CPEngineRegisteredItems;
 }
 
-+ (void)initialize
-{
-#if PLATFORM(DOM)
-    ENGINE_SUPPORTS_WEB_WORKER = !!window.Worker;
-    ENGINE_WORKER_PATH = [[CPBundle bundleForClass:self] pathForResource:@"cassowary/Worker.js"];
-#else
-    ENGINE_SUPPORTS_WEB_WORKER = NO;
-#endif
-
-    ENGINE_ALLOWS_WEB_WORKER = YES;
-}
-
-+ (void)setAllowsWebWorker:(BOOL)flag
-{
-    ENGINE_ALLOWS_WEB_WORKER = flag;
-}
-
-+ (BOOL)shouldEnableWebWorker
-{
-    return (ENGINE_SUPPORTS_WEB_WORKER && ENGINE_ALLOWS_WEB_WORKER);
-}
-
-- (id)initWithSolverCreatedCallback:(Function)solverReadyFunction onSolvedCallback:(Function)onSolvedFunction
+- (id)init
 {
     self = [super init];
 
-    _constraints = [];
     _CPEngineRegisteredItems = @{};
-    _solverBachingModeLevel = 0;
-    _workerMessagesQueue = [];
 
-    if ([[self class] shouldEnableWebWorker])
+    var onvaluechange = function(v, records)
     {
-        // A webworker is created and the JavaScript file Worker.js
-        // is loaded into its context.
+        //console.log(v._identifier + " " + v.toString());
+        var uid = v._identifier;
+        records[uid] = (records[uid] || 0) | v._tag;
+    };
 
-        _worker = new Worker(ENGINE_WORKER_PATH);
-
-        if (_worker)
+    var onsolved = function(records)
+    {
+        for (var uuid in records)
         {
-            var engineUID = [self UID];
-            _CPLayoutEngineCachedEngines[engineUID] = self;
-            // Register an event handler that will receive messages from our web worker
-            _worker.addEventListener('message', function(e)
-            {
-                onWorkerMessage(e.data, onSolvedFunction, engineUID);
-            }, false);
+            var item = _CPEngineRegisteredItems[uuid],
+                mask = records[uuid];
 
-            _worker.addEventListener('error', function(e)
+            if (mask !== 0)
             {
-                console.error("%c Worker error: Line " + e.lineno + " in " + e.filename + ": " + e.message, 'color:darkred; font-weight:bold');
-            }, false);
-
-            [self beginUpdates];
-            [self sendCommand:"createSolver" withArguments:null];
-            solverReadyFunction(self);
-            [self endUpdates];
+                [item _setConstraintBasedNeedsLayoutMask:mask];
+                [[item superview] setNeedsLayout];
+            }
+            //console.log(item + " = " + records[uuid]);
         }
-    }
-    else
-    {
-        _worker = new Object();
+    };
 
-        InitCassowaryFunctions(_worker);
-
-        _worker.postMessage = function(messages)
-        {
-            messages.forEach(function(message)
-            {
-                var command = _worker[message.command];
-                command(message.args);
-
-                //if (message.callback)
-                //    returnMessage("callback", message.callback);
-            });
-        };
-
-        var s = _worker.createSolver();
-        s.onsolved = new NoWorkerOnSlovedFunctionCreate(onSolvedFunction, self);
-
-        solverReadyFunction(self);
-    }
-
-    //CPLog.warn("Web Worker mode is " + [[self class] shouldEnableWebWorker] + "; worker=" + _worker.toString());
+    _engine = new Engine(false, onvaluechange, onsolved);
 
     return self;
 }
@@ -121,14 +57,14 @@ var _CPLayoutEngineCachedEngines = {},
     if (anItem && anIdentifier)
     {
         //CPLog.debug("Register " + ([anItem identifier] || [anItem className]) + " for ID " + anIdentifier);
-        [_CPEngineRegisteredItems setObject:anItem forKey:anIdentifier];
+        _CPEngineRegisteredItems[anIdentifier] = anItem;
     }
 }
 
 - (id)registeredItemForIdentifier:(CPString)anIdentifier
 {
     if (anIdentifier !== nil)
-        return [_CPEngineRegisteredItems objectForKey:anIdentifier];
+        return _CPEngineRegisteredItems[anIdentifier];
 
     return nil;
 }
@@ -136,10 +72,12 @@ var _CPLayoutEngineCachedEngines = {},
 - (CPString)registeredItems
 {
     var str = "";
-    [_CPEngineRegisteredItems enumerateKeysAndObjectsUsingBlock:function(key,obj,stop)
+
+    for (var key in _CPEngineRegisteredItems)
     {
+        var obj = _CPEngineRegisteredItems[key];
         str += (key + " = " + [obj debugID] + "\n");
-    }];
+    }
 
     return str;
 }
@@ -147,117 +85,89 @@ var _CPLayoutEngineCachedEngines = {},
 - (void)unregisterItemWithIdentifier:(CPString)anIdentifier
 {
     if (anIdentifier !== nil)
-        [_CPEngineRegisteredItems removeObjectForKey:anIdentifier];
-}
-
-// ===================================
-// Working with remote or local solver
-// ===================================
-- (void)beginUpdates
-{
-    _solverBachingModeLevel++;
-}
-
-- (void)endUpdates
-{
-    _solverBachingModeLevel--;
-
-    if (_solverBachingModeLevel === 0)
-    {
-        _worker.postMessage(_workerMessagesQueue);
-        _workerMessagesQueue = [];
-    }
-}
-
-- (id)sendCommand:(CPString)aCommand withArguments:(Object)args
-{
-    if ([[self class] shouldEnableWebWorker])
-        [self sendMessage:{command:aCommand, args:args}];
-    else
-        return _worker[aCommand](args);
-}
-
-- (id)sendCommand:(CPString)aCommand withArguments:(Object)args callback:(Function)aCallBack
-{
-    var callbackUUID = uuidgen();
-
-    _CPEngineCallbacks[callbackUUID] = aCallBack;
-
-    [self sendMessage:{command:aCommand, args:args, callback:callbackUUID}];
-}
-
-- (void)sendMessage:(CPString)aMessage
-{
-    if (_solverBachingModeLevel > 0)
-        [_workerMessagesQueue addObject:aMessage];
-    else
-        _worker.postMessage([aMessage]);
+        delete _CPEngineRegisteredItems[anIdentifier];
 }
 
 - (void)setDisableOnSolvedNotification:(BOOL)shouldDisable
 {
-    [self sendCommand:"setDisableOnSolvedNotification" withArguments:shouldDisable];
+    _engine.setDisableOnSolvedNotification();
 }
 
-- (void)suggestValue:(float)aValue forVariable:(CPInteger)aTag priority:(CPInteger)aPriority fromItem:(id)anItem
+- (Variable)variableForItem:(id)anItem tag:(CPInteger)tag
 {
-    var args = {tag:aTag, value:aValue, identifier:[anItem UID], priority:aPriority};
+    var uuid = [anItem UID],
+        prefix = [anItem debugID],
+        frame = [anItem frame],
+        name, value;
 
-    [self sendCommand:"suggestValue" withArguments:args];
+    switch(tag)
+    {
+        case 2 : name = "minX";
+                 value = CGRectGetMinX(frame);
+        break;
+        case 4 : name = "minY";
+                 value = CGRectGetMinY(frame);
+        break;
+        case 8 : name = "width";
+                 value = CGRectGetWidth(frame);
+        break;
+        case 16 : name = "height";
+                  value = CGRectGetHeight(frame);
+        break;
+        default : name = "unknown";
+                  value = 0;
+    }
+
+    return _engine.Variable(uuid, prefix, name, tag, value);
 }
 
-- (void)suggestSize:(CPArray)values forItem:(id)anItem
+- (void)suggestSize:(CGSize)aSize forItem:(id)anItem priority:(CPInteger)priority
 {
-// TODO: in no-worker mode, call the target function directly for perf.
-    var args = {values:values, uuid:[anItem UID], prefix:[anItem debugID], tags:[8, 16], priority:1000};
+    var variables = [[anItem _variableWidth], [anItem _variableHeight]],
+        values = [aSize.width, aSize.height];
 
-    [self sendCommand:"suggestValues" withArguments:args];
+    _engine.suggestValues(variables, values, priority);
 }
 
-- (void)suggestOrigin:(CPArray)values forItem:(id)anItem
+- (void)suggestOrigin:(CGPoint)aPoint forItem:(id)anItem priority:(CPInteger)priority
 {
-// TODO: in no-worker mode, call the target function directly for perf.
-    var args = {values:values, uuid:[anItem UID], prefix:[anItem debugID], tags:[2, 4], priority:1000};
+    var variables = [[anItem _variableMinX], [anItem _variableMinY]],
+        values = [aPoint.x, aPoint.y];
 
-    [self sendCommand:"suggestValues" withArguments:args];
+    _engine.suggestValues(variables, values, priority);
 }
 
 - (void)stopEditing
 {
-    [self sendCommand:"stopEditing" withArguments:null];
+    _engine.stopEditing();
 }
 
 - (void)solve
 {
-    [self sendCommand:"solve" withArguments:null];
+    _engine.solve();
 }
 
 - (void)resolve
 {
-    [self sendCommand:"resolve" withArguments:null];
+    _engine.resolve();
 }
 
-- (void)addStayConstraintForItem:(id)anItem tags:(CPArray)tags priority:(CPInteger)aPriority
+- (void)addStayConstraintsForItem:(id)anItem priority:(CPInteger)aPriority
 {
     var container = [anItem UID],
-        prefix = [anItem debugID],
-        count = tags.length,
+        variables = [[anItem _variableWidth], [anItem _variableHeight]],
         json_constraints = [];
 
-    while (count--)
+    for (var i = 0; i < variables.length; i++)
     {
-        var tag = tags[count],
-            value = [anItem valueForVariable:tag],
-            hash = (container + "_" + tag + "_" + value + "_" + aPriority);
+        var variable = variables[i];
 
-        var json = {uuid:hash, prefix:prefix, value:value, tag:tag, priority:aPriority};
-        json_constraints.push(json);
+        var hash = (container + "_" + variable.name + "_" + variable.valueOf());
+        json_constraints.push({uuid:hash, variable:variable, priority:aPriority});
     }
 
     var args = {type:@"StayConstraint", container:container, constraints:json_constraints};
-    [self sendCommand:"replaceConstraints" withArguments:args];
-
-    //CPLog.debug([self class] + " addStay " + anItem + " tag:" + tag + " priority:" + aPriority);
+    _engine.replaceConstraints(args);
 }
 
 - (void)solver_replaceConstraints:(CPDictionary)constraintsByView
@@ -266,7 +176,7 @@ var _CPLayoutEngineCachedEngines = {},
 
     [constraintsByView enumerateKeysAndObjectsUsingBlock:function(container, constraintsByType, stop)
     {
-        CPLog.debug([[self registeredItemForIdentifier:container] debugID] + "=" + [constraintsByType description]);
+        CPLog.debug(container + " =" + [constraintsByType description]);
 
         [constraintsByType enumerateKeysAndObjectsUsingBlock:function(type, constraints, stop)
         {
@@ -279,7 +189,7 @@ var _CPLayoutEngineCachedEngines = {},
             }];
 
             var args = {type:type, container:container, constraints:json_constraints};
-            [self sendCommand:"replaceConstraints" withArguments:args];
+            _engine.replaceConstraints(args);
         }];
     }];
 }
@@ -287,88 +197,18 @@ var _CPLayoutEngineCachedEngines = {},
 - (void)solver_removeConstraints:(CPArray)constraints
 {
     var args = [];
+
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
         [args addObject:[aConstraint toJSON]];
     }];
 
-    [self sendCommand:"removeConstraints" withArguments:args];
+    _engine.removeConstraints(args);
 }
 
 - (void)getInfo
 {
-    [self sendCommand:"info" withArguments:null];
+    _engine.description();
 }
 
 @end
-
-@implementation CPArray (CPLayoutConstraint)
-
-- (CPArray)mapUsingFunction:(Function)aFunction
-{
-    var result = @[];
-
-    [self enumerateObjectsUsingBlock:function(obj, idx, stop)
-    {
-        var r;
-        if (r = aFunction(obj))
-            [result addObject:r];
-    }];
-
-    return result;
-}
-
-@end
-
-// No worker version
-function returnMessage(type, result)
-{
- //  Send a message back to the main thread with the result
-    onWorkerMessage({type:type, result:result});
-};
-
-var NoWorkerOnSlovedFunctionCreate = function(onsolvedFunction, engine)
-{
-    return function(records)
-    {
-        onsolvedFunction(engine, records);
-    };
-};
-
-var onWorkerMessage = function(aMessage, aSolvedFunction, anEngineUID)
-{
-    var type = aMessage.type,
-        result = aMessage.result;
-
-    if (type === 'solved')
-    {
-        var anEngine = _CPLayoutEngineCachedEngines[anEngineUID];
-        aSolvedFunction(anEngine, result);
-        [[CPRunLoop mainRunLoop] performSelectors];
-    }
-    else if (type === 'log')
-    {
-       console.log('%c [worker]: ' + result, 'color:darkblue; font-weight:bold');
-    }
-    else if (type === 'warn')
-    {
-       console.warn('%c [worker]: ' + result, 'color:brown; font-weight:bold');
-    }
-    else if (type === 'error')
-    {
-       console.error('%c [worker]: ' + result, 'color:darkred; font-weight:bold');
-    }
-    else if (type === 'callback')
-    {
-        var callbackUUID = aMessage.uuid,
-            callback = _CPEngineCallbacks[callbackUUID];
-
-        if (callback)
-        {
-            callback(result);
-            delete (_CPEngineCallbacks[callbackUUID]);
-
-            [[CPRunLoop mainRunLoop] performSelectors];
-        }
-    }
-};

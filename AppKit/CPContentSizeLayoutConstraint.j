@@ -55,11 +55,12 @@ CPLayoutConstraintOrientationVertical  = 1;
 {
     var frame = [_firstItem frame],
         value = _orientation ? CGRectGetHeight(frame) : CGRectGetWidth(frame),
+        variable = _orientation ? [_firstItem _variableHeight] : [_firstItem _variableWidth],
         //inset = [_firstItem alignmentRectInsets],
         //offset = _orientation ? (inset.top + inset.bottom) : (inset.left + inset.right),
         constant = _constant, //+ offset,
         containerUID = [_firstItem UID],
-        containerName = [_firstItem debugID];        
+        containerName = [_firstItem debugID];
 
     return [{uuid           : _uuid + "_HUG",
        relation             : CPLayoutRelationLessThanOrEqual,
@@ -69,8 +70,9 @@ CPLayoutConstraintOrientationVertical  = 1;
        containerName        : containerName,
        value                : value,
        constant             : constant,
+       variable             : variable,
        orientation          : _orientation},
-       
+
        {uuid                : _uuid + "_COMPR",
        relation             : CPLayoutRelationGreaterThanOrEqual,
        priority             : _compressPriority,
@@ -79,6 +81,7 @@ CPLayoutConstraintOrientationVertical  = 1;
        containerName        : containerName,
        value                : value,
        constant             : constant,
+       variable             : variable,
        orientation          : _orientation}];
 }
 

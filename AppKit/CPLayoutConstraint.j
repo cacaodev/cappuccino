@@ -233,9 +233,12 @@ var CPLayoutItemIsNull          = 1 << 1,
 
 - (void)setPriority:(float)aPriority
 {
-    if (aPriority !== _priority)
+    var priority = MAX(aPriority, CPLayoutPriorityRequired);
+
+    if (priority !== _priority)
     {
-        _priority = aPriority;
+        _priority = priority;
+
         [_container setNeedsUpdateConstraints:YES];
         [self _generateUUIDIfNeeded];
     }
@@ -447,7 +450,10 @@ var JSONForItem = function(aContainer, anItem, anAttribute)
     return {
         uuid        : [anItem UID],
         name        : [anItem debugID],
-        rect        : [anItem frame],
+        left        : [anItem _variableMinX],
+        top         : [anItem _variableMinY],
+        width       : [anItem _variableWidth],
+        height      : [anItem _variableHeight],
         attribute   : anAttribute,
         flags       : CPLayoutConstraintFlags(aContainer, anItem)
     };

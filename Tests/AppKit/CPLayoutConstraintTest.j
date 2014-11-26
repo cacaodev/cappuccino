@@ -1,4 +1,5 @@
 @import <AppKit/AppKit.j>
+@import <AppKit/CPLayoutConstraintEngine.j>
 @import <Foundation/Foundation.j>
 
 [CPApplication sharedApplication];
@@ -13,21 +14,24 @@
 
 - (void)testConstraintBasedLayoutPerf
 {
-    var r = 0,
-        ms = 0,
-        me = 63,
+
+    var min = 18,
+        max = 18,
         autolayout = 0,
         autosize = 0;
 
-
-    for (var m = ms; m < me; m++)
+    for (var m = min; m <= max; m++)
     {
         var res = [self _testConstraintBasedLayoutPerfWithMask:m];
         autolayout += res[0];
         autosize += res[1];
     }
 
-    CPLog.warn("Autolayout=" + autolayout + " ms. Autosize=" + autosize + " ms. AVG = x" + ROUND(1000*autolayout/autosize)/1000 + " times slower");
+    var r = autolayout/autosize;
+    var faster = (r < 1);
+    var ratio = ROUND(1000*(faster ? 1/r : r))/1000;
+
+    CPLog.warn("Autolayout=" + autolayout + " ms. Autosize=" + autosize + " ms. AVG = x" + ratio + " times " + (faster ? "faster":"slower"));
 
 /*
     [self _testConstraintBasedLayoutPerfWithMask:CPViewNotSizable];
@@ -44,38 +48,22 @@
 
 - (CPInteger)_testConstraintBasedLayoutPerfWithMask:(CPInteger)aMask
 {
-    var windowRect = CGRectMake(0, 0, 500, 500);
+    var windowRect = CGRectMake(0, 0, 1000, 1000);
+    var RESIZES_COUNT = 500;
+
     var _autoSizeWindow = [[CPWindow alloc] initWithContentRect:windowRect styleMask:CPResizableWindowMask];
     var _constraintsWindow = [[CPWindow alloc] initWithContentRect:windowRect styleMask:CPResizableWindowMask];
     [_constraintsWindow setAutolayoutEnabled:YES];
     var autosizeContentView = [_autoSizeWindow contentView];
     var constraintContentView = [_constraintsWindow contentView];
+    [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
+
     var autoSizeSubviews = [];
     var constraintSubviews = [];
-    
+
     [constraintContentView setIdentifier:@"ContentView"];
-    
-    var NUMBER_OF_VIEWS = 100,
-        RESIZES_COUNT = 500;
 
-    for (var i = 0; i < NUMBER_OF_VIEWS; i++)
-    {
-        var x = (i % 10) * 50,
-            y = FLOOR(i / 10) * 50,
-            rect = CGRectMake(x, y, 50, 50);
-
-        var autosizeView = [[CPView alloc] initWithFrame:rect];
-        [autosizeView setAutoresizingMask:aMask];
-        [autosizeContentView addSubview:autosizeView];
-        autoSizeSubviews.push(autosizeView);
-
-        var constraintView = [[CPView alloc] initWithFrame:rect];
-        [constraintView setAutoresizingMask:aMask];
-        [constraintView setTranslatesAutoresizingMaskIntoConstraints:YES];
-        [constraintView setIdentifier:@"View"];
-        [constraintContentView addSubview:constraintView];
-        constraintSubviews.push(constraintView);
-    }
+    [self addsubviewsTo:autosizeContentView to:constraintContentView mask:aMask asv:autoSizeSubviews alv:constraintSubviews maxDepthLevel:4];
 
     var start = new Date();
 
@@ -89,6 +77,7 @@
     {
         var size = 600 + k;
         [_autoSizeWindow setFrame:CGRectMake(0, 0, size, size)];
+        [[CPRunLoop mainRunLoop] performSelectors];
     }
 
     var end = new Date();
@@ -107,6 +96,7 @@
     {
         var size = 600 + k;
         [_constraintsWindow setFrame:CGRectMake(0, 0, size, size)];
+        [[CPRunLoop mainRunLoop] performSelectors];
     }
 
     end = new Date();
@@ -114,7 +104,6 @@
     var r = total2/total1;
     var isSlower = (r > 1);
     CPLog.warn("Auto-layout setFrame: " + ((end - dd)/ RESIZES_COUNT) + " ms. Total " + total2 + " ms (" + ROUND(100* (isSlower ? r : 1/r))/100 + "x times " + (isSlower ? "slower":"faster") + ").");
-
 
 // Check constraints/autoresizingmask equivalence correctness based on resulting frames.
 
@@ -124,7 +113,7 @@
             constViewFrame = [constraintSubviews[n] frame];
 
         // CGRectEqualToRect rounding 2 digits after decimal
-        var equalRects = CGRectEqualToRectRounding(autoViewFrame, constViewFrame, 0);
+        var equalRects = CGRectEqualToRectRounding(autoViewFrame, constViewFrame, 2);
 
         [self assertTrue:equalRects message:"View " + n + ": constraint Rect should be " + CPStringFromRect(autoViewFrame) + " but was " + CPStringFromRect(constViewFrame)];
     }
@@ -132,6 +121,36 @@
     CPLog.warn("\n");
 
     return [total2, total1];
+}
+
+- (void)addsubviewsTo:(CPView)autosizeView to:(CPView)autolayoutView mask:(unsigned)aMask asv:(CPArray)asv alv:(CPArray)alv maxDepthLevel:(CPInteger)level
+{
+    if (level == 0)
+        return;
+
+    var num = 3;
+    var size = CGRectGetWidth([autosizeView frame]) / num;
+
+    for (var i = 0; i < (num*num); i++)
+    {
+        var x = (i % num) * size,
+            y = FLOOR(i / num) * size,
+            rect = CGRectMake(x, y, size, size);
+
+        var as_subview = [[CPView alloc] initWithFrame:rect];
+        [as_subview setAutoresizingMask:aMask];
+        [autosizeView addSubview:as_subview];
+        asv.push(as_subview);
+
+        var al_view = [[CPView alloc] initWithFrame:rect];
+        [al_view setAutoresizingMask:aMask];
+        [al_view setTranslatesAutoresizingMaskIntoConstraints:YES];
+        [al_view setIdentifier:@"view_" + i];
+        [autolayoutView addSubview:al_view];
+        alv.push(al_view);
+
+        [self addsubviewsTo:as_subview to:al_view mask:aMask asv:asv alv:alv maxDepthLevel:(level-1)];
+    }
 }
 
 @end

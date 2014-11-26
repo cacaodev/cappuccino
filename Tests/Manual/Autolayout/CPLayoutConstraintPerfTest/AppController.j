@@ -47,12 +47,12 @@ CPLogRegister(CPLogConsole);
 {
 }
 
-- (void)_setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
+- (void)_setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(BOOL)width constrainHeight:(BOOL)height
 {
     [self __setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
 }
 
-- (void)__setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
+- (void)__setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(BOOL)width constrainHeight:(BOOL)height
 {
     [super _setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
 }
@@ -63,12 +63,12 @@ CPLogRegister(CPLogConsole);
 {
 }
 
-- (void)_setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
+- (void)_setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(BOOL)width constrainHeight:(BOOL)height
 {
     [self __setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
 }
 
-- (void)__setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(float)width constrainHeight:(float)height
+- (void)__setFrame:(CGRect)aRect display:(BOOL)display animate:(BOOL)animate constrainWidth:(BOOL)width constrainHeight:(BOOL)height
 {
     [super _setFrame:aRect display:display animate:animate constrainWidth:width constrainHeight:height];
 }
@@ -87,10 +87,6 @@ CPLogRegister(CPLogConsole);
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    // With the web worker ON, logged speed results are not very relevant !!
-    // But visually they may ...
-    [CPLayoutConstraintEngine setAllowsWebWorker:NO];
-
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
         contentView = [theWindow contentView];
 
@@ -104,12 +100,12 @@ CPLogRegister(CPLogConsole);
 
     CPTrace("ConstraintWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
     {
-        console.log("%c Autolayout: setFrame: in " + duration + " average(20) in " + avg(duration), 'color:green');
+        console.log("%c Autolayout: setFrame: = " + duration + "(ms), average(20) =" + avg(duration) + "(ms)", 'color:green; font-weight:bold');
     });
 
     CPTrace("NoConstraintWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
     {
-        console.log("Autosize: setFrame: in " + duration + " average(20) in " + avg2(duration));
+        console.log("%c Autosize: setFrame: = " + duration + " average(20) =" + avg2(duration) + "(ms)", 'color:gray; font-weight:bold');
     });
 }
 
@@ -121,9 +117,8 @@ CPLogRegister(CPLogConsole);
 
     var window = [currentController window];
     [window setTitle:aWindowCibName];
-    
-    if (aWindowCibName == @"Constraints")
-        [window setAutolayoutEnabled:YES];
+
+    [window setAutolayoutEnabled:(aWindowCibName == @"Constraints")];
 }
 
 @end
