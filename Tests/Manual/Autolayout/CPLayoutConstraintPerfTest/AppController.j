@@ -37,13 +37,7 @@ CPLogRegister(CPLogConsole);
 
 @end
 
-@implementation ConstraintView : ColorView
-{
-}
-
-@end
-
-@implementation NoConstraintView : ColorView
+@implementation NoConstraintWindow : CPWindow
 {
 }
 
@@ -75,12 +69,6 @@ CPLogRegister(CPLogConsole);
 
 @end
 
-@implementation NoConstraintWindow : CPWindow
-{
-}
-
-@end
-
 @implementation AppController : CPObject
 {
 }
@@ -92,10 +80,52 @@ CPLogRegister(CPLogConsole);
 
     [theWindow orderFront:self];
 
-    [self _showWindowCibName:@"Constraints"];
-    [self _showWindowCibName:@"NoConstraints"];
+    var autoSizeWindow = [[NoConstraintWindow alloc] initWithContentRect:CGRectMake(0, 20, 600, 600) styleMask:CPResizableWindowMask],
+        autosizeContentView = [autoSizeWindow contentView];
 
-    var avg = moving_averager(20),
+    var constraintsWindow = [[ConstraintWindow alloc] initWithContentRect:CGRectMake(610, 20, 600, 600) styleMask:CPResizableWindowMask],
+        constraintContentView = [constraintsWindow contentView];
+    [constraintsWindow setAutolayoutEnabled:YES];
+    [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
+    [constraintContentView setIdentifier:@"ContentView"];
+
+    var xmasks = [CPViewMaxXMargin, CPViewMinXMargin | CPViewMaxXMargin, CPViewMinXMargin],
+        ymasks = [CPViewMaxYMargin, CPViewMinYMargin | CPViewMaxYMargin, CPViewMinYMargin],
+        maxDepth = 3,
+        num = 3;
+
+    var autoSizeBlock = function(num, rect, level, idx)
+    {
+        var xmask = xmasks[(idx % num)],
+            ymask = ymasks[FLOOR(idx/num)];
+
+        var mask = xmask | ymask | CPViewWidthSizable | CPViewHeightSizable;
+
+        var view = [[ColorView alloc] initWithFrame:rect];
+        [view setAutoresizingMask:mask];
+        [view setIdentifier:[CPString stringWithFormat:@"view_%d_%d" , (maxDepth - level), idx]];
+
+        return view;
+    };
+
+    var autoSizeSubviews = [self recursivelyAddNumViews:num toSuperview:autosizeContentView maxDepth:maxDepth withBlock:autoSizeBlock];
+
+    var constraintSubviews = [self recursivelyAddNumViews:num toSuperview:constraintContentView maxDepth:maxDepth withBlock:function(num, rect, level, idx)
+    {
+        var view = autoSizeBlock(num, rect, level, idx);
+        // The default is currently NO, but YES in cocoa.
+        [view setTranslatesAutoresizingMaskIntoConstraints:YES];
+
+        return view;
+    }];
+
+    [autoSizeWindow setTitle:"Autosize"];
+    [constraintsWindow setTitle:"Autolayout"];
+
+    [autoSizeWindow orderFront:self];
+    [constraintsWindow orderFront:self];
+/*
+    var avg = moving_averager(10),
         avg2 = moving_averager(10);
 
     CPTrace("ConstraintWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
@@ -107,18 +137,28 @@ CPLogRegister(CPLogConsole);
     {
         console.log("%c Autosize: setFrame: = " + duration + " average(20) =" + avg2(duration) + "(ms)", 'color:gray; font-weight:bold');
     });
+*/
 }
 
-- (void)_showWindowCibName:(CPString)aWindowCibName
+- (void)recursivelyAddNumViews:(CPInteger)num toSuperview:(CPView)aSuperview maxDepth:(int)maxDepth withBlock:(Function)aBlock
 {
-    var currentController = [[CPWindowController alloc] initWithWindowCibName:aWindowCibName];
+    if (maxDepth == 0)
+        return;
 
-    [currentController showWindow:nil];
+    var size = CGRectGetWidth([aSuperview frame]) / num;
 
-    var window = [currentController window];
-    [window setTitle:aWindowCibName];
+    for (var i = 0; i < (num*num); i++)
+    {
+        var x = (i % num) * size,
+            y = FLOOR(i / num) * size,
+            rect = CGRectMake(x, y, size, size);
 
-    [window setAutolayoutEnabled:(aWindowCibName == @"Constraints")];
+        var subview = aBlock(num, rect, maxDepth, i);
+
+        [aSuperview addSubview:subview];
+
+        [self recursivelyAddNumViews:num toSuperview:subview maxDepth:(maxDepth-1) withBlock:aBlock];
+    }
 }
 
 @end

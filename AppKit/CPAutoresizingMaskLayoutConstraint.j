@@ -56,7 +56,7 @@
         if ((aMask & CPViewMinMargin) && (aMask & CPViewMaxMargin))
         {
             var m = min / (ssize - size),
-                k = - m * size;
+                k = - min * size / (ssize - size);
 
             pconstraint = [CPAutoresizingMaskLayoutConstraint constraintWithItem:subItem attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:superItem attribute:CPLayoutAttributeSize multiplier:m constant:k];
         }
@@ -64,7 +64,7 @@
         {
             pconstraint = [CPAutoresizingMaskLayoutConstraint constraintWithItem:subItem attribute:CPLayoutAttributeMax relatedBy:CPLayoutRelationEqual toItem:superItem attribute:CPLayoutAttributeMax multiplier:1 constant:(max - ssize)];
         }
-        else // CPViewMaxMargin or no H aMask
+        else // CPViewMaxMargin or 0
         {
             pconstraint = [CPAutoresizingMaskLayoutConstraint constraintWithItem:subItem attribute:CPLayoutAttributeMin relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:0 constant:min];
         }
