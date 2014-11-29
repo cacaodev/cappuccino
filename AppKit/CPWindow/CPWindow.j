@@ -3795,7 +3795,7 @@ var interpolate = function(fromValue, toValue, progress)
 
     [self updateConstraintsAtWindowLevelIfNeeded];
     [engine suggestSize:newSize forItem:_windowView priority:CPLayoutPriorityRequired];
-    _CPViewUpdateEngineFrame(_windowView);
+    [_windowView updateEngineFrame];
   }
 
 - (void)_sizeToFitWindowViewSize:(CGSize)newSize
@@ -3854,7 +3854,7 @@ var interpolate = function(fromValue, toValue, progress)
         [self updateConstraintsAtWindowLevelIfNeeded];
         [engine solve];
 
-        _CPViewUpdateEngineFrame(_windowView);
+        [_windowView updateEngineFrame];
         [self _updateFrameFromCurrentWindowViewFrame];
 
         [_CPDisplayServer unlock];

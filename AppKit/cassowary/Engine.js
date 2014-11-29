@@ -60,14 +60,14 @@ Engine.prototype.resolve = function()
 
 Engine.prototype.description = function()
 {
-    var str = "";
+    var str = "Engine Constraints:\n";
 
     this.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.forEach(function(w)
     {
         str += w.toString() + "\n";
     });
 
-    WorkerLog(str + "\n" + this.solver.rows.toString());
+    WorkerLog(str + "\nInternalInfo:\n" + this.solver.getInternalInfo());
 };
 
 Engine.prototype.Variable = function(uuid, prefix, name, tag, value)

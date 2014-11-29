@@ -4406,6 +4406,11 @@ Subclasses should not override this method.
     [[self _layoutEngine] solver_replaceConstraints:constraintsByView];
 }
 
+- (void)updateEngineFrame
+{
+    _CPViewUpdateEngineFrame(self);
+}
+
 @end
 
 @implementation CPArray (CPView)
@@ -4427,7 +4432,7 @@ Subclasses should not override this method.
 
 @end
 
-_CPViewUpdateEngineFrame = function(aView)
+var _CPViewUpdateEngineFrame = function(aView)
 {
     //CPLog.debug("Updated view " + [self debugID] + " mask=" + _constraintBasedNeedsLayoutMask);
 
