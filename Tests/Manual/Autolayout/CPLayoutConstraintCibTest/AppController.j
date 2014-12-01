@@ -41,17 +41,12 @@ CPLogRegister(CPLogConsole);
 {
     if ([anEvent type] !== CPLeftMouseDown)
         return;
-    var flags = [anEvent modifierFlags];
 
-    if (flags & CPCommandKeyMask)
-    {
-        CPLog.debug([self identifier] + " " + CPStringFromRect([self frame]));
-        CPLog.debug([[[self window] _layoutEngine] getInfo]);
-    }
+    var flags = [anEvent modifierFlags];
 
     if (flags & CPShiftKeyMask)
     {
-        CPLog.debug([[[self window] _layoutEngine] sendCommand:"getconstraints" withArguments:null]);
+        CPLog.debug([[[self window] _layoutEngine] description]);
     }
 }
 
@@ -65,10 +60,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
-    [CPLayoutConstraintEngine setAllowsWebWorker:NO];
     [theWindow setAutolayoutEnabled:YES];
-    //[theWindow layout];
-    //CPTrace("CPWindow", "setFrameSize:");
 }
 
 - (IBAction)changeText:(id)sender

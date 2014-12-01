@@ -7,7 +7,7 @@
  */
 @import <AppKit/CPView.j>
 @import <Foundation/CPObject.j>
-@import "../../CPTrace.j"
+//@import "../../CPTrace.j"
 
 CPLogRegister(CPLogConsole);
 
@@ -33,6 +33,14 @@ CPLogRegister(CPLogConsole);
     [color set];
 
     CGContextFillRect(ctx, [self bounds]);
+}
+
+- (void)mouseDown:(CPEvent)anEvent
+{
+    if ([anEvent type] !== CPLeftMouseDown)
+        return;
+
+    CPLog.debug([[[self window] _layoutEngine] description]);
 }
 
 @end

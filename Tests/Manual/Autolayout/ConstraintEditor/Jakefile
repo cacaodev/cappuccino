@@ -1,6 +1,6 @@
 /*
  * Jakefile
- * CPLayoutConstraintTest
+ * ConstraintEditor
  *
  * Created by You on January 23, 2013.
  * Copyright 2013, Your Company All rights reserved.
@@ -15,17 +15,17 @@ var ENV = require("system").env,
     configuration = ENV["CONFIG"] || ENV["CONFIGURATION"] || ENV["c"] || "Debug",
     OS = require("os");
 
-app ("CPLayoutConstraintTest", function(task)
+app ("ConstraintEditor", function(task)
 {
-    task.setBuildIntermediatesPath(FILE.join("Build", "CPLayoutConstraintTest.build", configuration));
+    task.setBuildIntermediatesPath(FILE.join("Build", "ConstraintEditor.build", configuration));
     task.setBuildPath(FILE.join("Build", configuration));
 
-    task.setProductName("CPLayoutConstraintTest");
-    task.setIdentifier("com.yourcompany.CPLayoutConstraintTest");
+    task.setProductName("ConstraintEditor");
+    task.setIdentifier("com.yourcompany.ConstraintEditor");
     task.setVersion("1.0");
     task.setAuthor("Your Company");
     task.setEmail("feedback @nospam@ yourcompany.com");
-    task.setSummary("CPLayoutConstraintTest");
+    task.setSummary("ConstraintEditor");
     task.setSources((new FileList("**/*.j")).exclude(FILE.join("Build", "**")));
     task.setResources(new FileList("Resources/**"));
     task.setIndexFilePath("index.html");
@@ -37,7 +37,7 @@ app ("CPLayoutConstraintTest", function(task)
         task.setCompilerFlags("-O");
 });
 
-task ("default", ["CPLayoutConstraintTest"], function()
+task ("default", ["ConstraintEditor"], function()
 {
     printResults(configuration);
 });
@@ -58,36 +58,36 @@ task ("release", function()
 
 task ("run", ["debug"], function()
 {
-    OS.system(["open", FILE.join("Build", "Debug", "CPLayoutConstraintTest", "index.html")]);
+    OS.system(["open", FILE.join("Build", "Debug", "ConstraintEditor", "index.html")]);
 });
 
 task ("run-release", ["release"], function()
 {
-    OS.system(["open", FILE.join("Build", "Release", "CPLayoutConstraintTest", "index.html")]);
+    OS.system(["open", FILE.join("Build", "Release", "ConstraintEditor", "index.html")]);
 });
 
 task ("deploy", ["release"], function()
 {
-    FILE.mkdirs(FILE.join("Build", "Deployment", "CPLayoutConstraintTest"));
-    OS.system(["press", "-f", FILE.join("Build", "Release", "CPLayoutConstraintTest"), FILE.join("Build", "Deployment", "CPLayoutConstraintTest")]);
+    FILE.mkdirs(FILE.join("Build", "Deployment", "ConstraintEditor"));
+    OS.system(["press", "-f", FILE.join("Build", "Release", "ConstraintEditor"), FILE.join("Build", "Deployment", "ConstraintEditor")]);
     printResults("Deployment")
 });
 
 task ("desktop", ["release"], function()
 {
-    FILE.mkdirs(FILE.join("Build", "Desktop", "CPLayoutConstraintTest"));
-    require("cappuccino/nativehost").buildNativeHost(FILE.join("Build", "Release", "CPLayoutConstraintTest"), FILE.join("Build", "Desktop", "CPLayoutConstraintTest", "CPLayoutConstraintTest.app"));
+    FILE.mkdirs(FILE.join("Build", "Desktop", "ConstraintEditor"));
+    require("cappuccino/nativehost").buildNativeHost(FILE.join("Build", "Release", "ConstraintEditor"), FILE.join("Build", "Desktop", "ConstraintEditor", "ConstraintEditor.app"));
     printResults("Desktop")
 });
 
 task ("run-desktop", ["desktop"], function()
 {
-    OS.system([FILE.join("Build", "Desktop", "CPLayoutConstraintTest", "CPLayoutConstraintTest.app", "Contents", "MacOS", "NativeHost"), "-i"]);
+    OS.system([FILE.join("Build", "Desktop", "ConstraintEditor", "ConstraintEditor.app", "Contents", "MacOS", "NativeHost"), "-i"]);
 });
 
 function printResults(configuration)
 {
     print("----------------------------");
-    print(configuration+" app built at path: "+FILE.join("Build", configuration, "CPLayoutConstraintTest"));
+    print(configuration+" app built at path: "+FILE.join("Build", configuration, "ConstraintEditor"));
     print("----------------------------");
 }
