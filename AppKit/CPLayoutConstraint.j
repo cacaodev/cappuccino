@@ -233,7 +233,7 @@ var CPLayoutItemIsNull          = 1 << 1,
 
 - (void)setPriority:(float)aPriority
 {
-    var priority = MAX(aPriority, CPLayoutPriorityRequired);
+    var priority = MAX(MIN(aPriority, CPLayoutPriorityRequired), 0);
 
     if (priority !== _priority)
     {
