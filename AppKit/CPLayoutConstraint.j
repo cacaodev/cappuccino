@@ -69,7 +69,6 @@ var CPLayoutItemIsNull          = 1 << 1,
 
     CPString _symbolicConstant;
     BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
-    CPString _uuid;
     BOOL     _addedToEngine    @accessors(property=addedToEngine);
 }
 
@@ -120,7 +119,6 @@ var CPLayoutItemIsNull          = 1 << 1,
     _contraintFlags = 0;
     _active = NO;
     _addedToEngine = NO;
-    _uuid = uuidgen();
 }
 
 - (id)_findCommonAncestorForItem:(id)firstItem andItem:(id)secondItem
@@ -227,7 +225,6 @@ var CPLayoutItemIsNull          = 1 << 1,
     {
         _constant = aConstant;
         [_container setNeedsUpdateConstraints:YES];
-        [self _generateUUIDIfNeeded];
     }
 }
 
@@ -240,16 +237,12 @@ var CPLayoutItemIsNull          = 1 << 1,
         _priority = priority;
 
         [_container setNeedsUpdateConstraints:YES];
-        [self _generateUUIDIfNeeded];
     }
 }
 
-- (void)_generateUUIDIfNeeded
+- (CPString)hash
 {
-    if (_addedToEngine)
-    {
-        _uuid = uuidgen();
-    }
+    return [CPString stringWithFormat:@"%d%d%d%d%d%d%d%d", [_firstItem UID], [_secondItem UID], _firstAttribute, _secondAttribute, _relation, _constant, _coefficient, _priority];
 }
 
 - (BOOL)isEqual:(id)anObject
@@ -272,17 +265,18 @@ var CPLayoutItemIsNull          = 1 << 1,
         secondItemJSON = JSONForItem(_container, _secondItem, _secondAttribute);
 
     var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
-        secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
+        secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute),
+        constant = _constant + secondOffset * _coefficient - firstOffset;
 
     return [{
        type           : "Constraint",
-       uuid           : _uuid,
+       uuid           : [self hash],
        container      : [_container UID],
        firstItem      : firstItemJSON,
        secondItem     : secondItemJSON,
        relation       : _relation,
        multiplier     : _coefficient,
-       constant       : (_constant + secondOffset * _coefficient - firstOffset),
+       constant       : constant,
        priority       : _priority,
        flags          : _contraintFlags
     }];
@@ -293,7 +287,7 @@ var CPLayoutItemIsNull          = 1 << 1,
     var term1 = (_firstItem && _firstAttribute) ? [CPString stringWithFormat:@"%@.%@", [_firstItem debugID], CPStringFromAttribute(_firstAttribute)] : "",
         term2 = (_secondItem && _secondAttribute && _coefficient) ? [CPString stringWithFormat:@"%@.%@ x%@", [_secondItem debugID], CPStringFromAttribute(_secondAttribute), _coefficient] : "",
         identifier = (_identifier) ? [CPString stringWithFormat:@" [%@]"] : "",
-        plusMinus = (_constant < 0) ? "-" : "+";
+        plusMinus = (_constant < 0) ? "" : "+";
 
     return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier];
 }

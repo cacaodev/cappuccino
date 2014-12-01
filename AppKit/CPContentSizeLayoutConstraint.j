@@ -24,7 +24,6 @@ CPLayoutConstraintOrientationVertical  = 1;
         _constant = value;
         _firstItem = anItem;
         _secondItem = nil;
-        _uuid = uuidgen();
     }
 
     return self;
@@ -51,6 +50,16 @@ CPLayoutConstraintOrientationVertical  = 1;
     return YES;
 }
 
+- (CPString)huggingHash
+{
+    return [CPString stringWithFormat:@"%@%d%d%d%d", @"HUG", [_firstItem UID], _orientation, _constant, _huggingPriority];
+}
+
+- (CPString)compressHash
+{
+    return [CPString stringWithFormat:@"%@%d%d%d%d", @"COMPR", [_firstItem UID], _orientation, _constant, _compressPriority];
+}
+
 - (Object)toJSON
 {
     var frame = [_firstItem frame],
@@ -62,7 +71,7 @@ CPLayoutConstraintOrientationVertical  = 1;
         containerUID = [_firstItem UID],
         containerName = [_firstItem debugID];
 
-    return [{uuid           : _uuid + "_HUG",
+    return [{uuid           : [self huggingHash],
        relation             : CPLayoutRelationLessThanOrEqual,
        priority             : _huggingPriority,
        type                 : "SizeConstraint",
@@ -73,7 +82,7 @@ CPLayoutConstraintOrientationVertical  = 1;
        variable             : variable,
        orientation          : _orientation},
 
-       {uuid                : _uuid + "_COMPR",
+       {uuid                : [self compressHash],
        relation             : CPLayoutRelationGreaterThanOrEqual,
        priority             : _compressPriority,
        type                 : "SizeConstraint",
@@ -87,7 +96,7 @@ CPLayoutConstraintOrientationVertical  = 1;
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@", [self _orientationDescription], ([_firstItem debugID]), _constant, _huggingPriority, _compressPriority];
+    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@", [self _orientationDescription], [_firstItem debugID], _constant, _huggingPriority, _compressPriority];
 }
 
 - (CPString)_orientationDescription

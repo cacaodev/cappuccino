@@ -3894,8 +3894,3 @@ function _CPWindowFullPlatformWindowSessionMake(aWindowView, aContentRect, hasSh
 {
     return { windowView:aWindowView, contentRect:aContentRect, hasShadow:hasShadow, level:aLevel };
 }
-
-uuidgen = function () {
-    return Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-};
