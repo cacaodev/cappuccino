@@ -4055,34 +4055,34 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 {
     var huggingPriorities = [self _contentHuggingPriorities];
 
-    orientation ? huggingPriorities.height : huggingPriorities.width = aPriority;
+    SetSizeValue(huggingPriorities, aPriority, orientation);
     // update contentSize constraints here. Cocoa allows mutation when constraints are installed ?
     var constr = [self _contentSizeConstraintForOrientation:orientation];
-    [constr setCompressPriority:aPriority];
+    [constr setHuggingPriority:aPriority];
 }
 
 - (CPInteger)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var huggingPriorities = [self _contentHuggingPriorities];
 
-    return orientation ? huggingPriorities.height : huggingPriorities.width;
+    return (orientation == 0) ? huggingPriorities.width : huggingPriorities.height;
 }
 
 - (void)setContentCompressionResistancePriority:(CPInteger)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
-    orientation ? compressionResistancePriorities.height : compressionResistancePriorities.width = aPriority;
+    SetSizeValue(compressionResistancePriorities, aPriority, orientation);
     // update contentSize constraints here. Cocoa allows mutation when constraints are installed ?
     var constr = [self _contentSizeConstraintForOrientation:orientation];
-    [constr setHuggingPriority:aPriority];
+    [constr setCompressPriority:aPriority];
 }
 
 - (CPInteger)contentCompressionResistancePriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
-    return orientation ? compressionResistancePriorities.height : compressionResistancePriorities.width;
+    return (orientation == 0) ? compressionResistancePriorities.width : compressionResistancePriorities.height;
 }
 
 - (CPLayoutConstraint)_contentSizeConstraintForOrientation:(CPInteger)orientation
@@ -4469,6 +4469,17 @@ var _CPViewUpdateEngineFrame = function(aView)
     }
 
     [aView _setConstraintBasedNeedsLayoutMask:0];
+};
+
+var SetSizeValue = function(size, value, idx)
+{
+    switch (idx)
+    {
+        case 0 : size.width = value;
+        break;
+        case 1 : size.height = value;
+        break;
+    }
 };
 
 var _CPViewFullScreenModeStateMake = function(aView)
