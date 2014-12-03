@@ -4137,7 +4137,13 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)addConstraints:(CPArray)constraints
 {
+    if ([constraints count] == 0)
+        return;
+
+    [self willChangeValueForKey:@"constraints"];
     [self _addConstraints:constraints];
+    [self didChangeValueForKey:@"constraints"];
+
     [self _setNeedsUpdateConstraints:YES];
 }
 
@@ -4167,12 +4173,19 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)removeConstraints:(CPArray)constraints
 {
+    if ([constraints count] == 0)
+        return;
+
+    [self willChangeValueForKey:@"constraints"];
+
     [_constraintsArray removeObjectsInArray:constraints];
 
     [constraints enumerateObjectsUsingBlock:function(cst, idx, stop)
     {
        [cst _setActive:NO];
     }];
+
+    [self didChangeValueForKey:@"constraints"];
 
     [self _setNeedsUpdateConstraints:YES];
 }
