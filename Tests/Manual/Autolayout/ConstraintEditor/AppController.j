@@ -78,13 +78,6 @@ CPLogRegister(CPLogConsole);
 {
 }
 
-- (id)newObject
-{
-    var delegate = [CPApp delegate];
-
-    return LayoutConstraint([delegate view1], CPLayoutAttributeLeft, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, 50, 1000);
-}
-
 @end
 
 @implementation CPNonKeyWindow : CPWindow
@@ -100,41 +93,72 @@ CPLogRegister(CPLogConsole);
 
 @implementation AppController : CPObject
 {
-    @outlet CPWindow theWindow;
-    @outlet CPPopover popover;
+    @outlet CPWindow  theWindow;
+    @outlet CPPopover priorityPopover;
+    @outlet CPPopover addPopover;
 
-    @outlet CPWindow       constraintWindow @accessors;
-    @outlet ConstraintView mainView         @accessors;
-    @outlet ConstraintView view1            @accessors;
-    @outlet ConstraintView view2            @accessors;
+    @outlet CPWindow  constraintWindow @accessors;
 
-    BOOL windowLoaded;
-    ConstraintView selectedView @accessors;
+    BOOL    windowLoaded;
+    CPArray _selectedViews;
+}
+
++ (CPSet)keyPathsForValuesAffectingIsMultiSelection
+{
+    return [CPSet setWithObjects:@"selectedViews"];
+}
+
++ (CPSet)keyPathsForValuesAffectingSelectedView
+{
+    return [CPSet setWithObjects:@"selectedViews"];
 }
 
 - (id)init
 {
     self = [super init];
 
-    selectedView = nil;
+    _selectedViews = @[];
     windowLoaded = NO;
 
     return self;
 }
 
+- (void)tableViewDeleteKeyPressed:(CPTableView)aTableView
+{
+    var row = [aTableView selectedRow];
+
+    if (row !== CPNotFound)
+    {
+        var view = [self selectedView];
+
+        if (view)
+        {
+            var constraint = [[view constraints] objectAtIndex:row];
+            [constraint setActive:NO];
+        }
+    }
+}
+
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
+    [theWindow setFullPlatformWindow:YES];
+
     [CPBundle loadCibNamed:@"Autolayout" owner:self];
 
     [constraintWindow setAutolayoutEnabled:YES];
-    [self setSelectedView:mainView];
-
     [constraintWindow orderFront:nil];
 }
 
 - (void)awakeFromCib
 {
-    [theWindow setFullPlatformWindow:YES];
+
+}
+
+- (IBAction)constantAction:(id)sender
+{
+CPLog.debug(_cmd);
+    [constraintWindow setNeedsLayout];
+    [[self selectedView] setNeedsDisplay:YES];
 }
 
 - (IBAction)priorityAction:(id)sender
@@ -142,8 +166,8 @@ CPLogRegister(CPLogConsole);
     var text = "",
         priority = [sender intValue];
 
-    if (![popover isShown])
-        [popover showRelativeToRect:nil ofView:sender preferredEdge:CPMaxYEdge];
+    if (![priorityPopover isShown])
+        [priorityPopover showRelativeToRect:nil ofView:sender preferredEdge:CPMaxYEdge];
 
     if (priority < CPLayoutPriorityDefaultLow)
         text = "Weaker than default weak priority at witch a control holds to its intrinsic content size.";
@@ -160,17 +184,145 @@ CPLogRegister(CPLogConsole);
     else if (priority == CPLayoutPriorityRequired)
         text = "Required";
 
-    var view = [[popover contentViewController] view],
+    var view = [[priorityPopover contentViewController] view],
         valueField = [view viewWithTag:1001],
         summaryField = [view viewWithTag:1000];
 
     [valueField setStringValue:priority];
     [summaryField setStringValue:text];
+
+    if (![sender hasThemeState:CPThemeStateHighlighted])
+    {
+        [priorityPopover performClose:sender];
+        [constraintWindow setNeedsLayout];
+        [[self selectedView] setNeedsDisplay:YES];
+    }
 }
 
 - (void)popoverShouldClose:(CPPopover)aPopover
 {
     return YES;
+}
+
+- (IBAction)showConstraintsPopover:(id)sender
+{
+    if (![addPopover isShown])
+        [addPopover showRelativeToRect:nil ofView:sender preferredEdge:CPMaxYEdge];
+
+    var selectedView = [self selectedView];
+
+    if (selectedView == nil)
+        return;
+
+    var rect = [selectedView frame],
+        srect = [[selectedView superview] frame],
+        popView = [[addPopover contentViewController] view];
+
+    [[popView viewWithTag:1000] setStringValue:CGRectGetWidth(rect)];
+    [[popView viewWithTag:1001] setStringValue:CGRectGetHeight(rect)];
+    [[popView viewWithTag:1203] setStringValue:CGRectGetMinY(rect)];
+    [[popView viewWithTag:1201] setStringValue:CGRectGetMinX(rect)];
+    [[popView viewWithTag:1204] setStringValue:CGRectGetHeight(srect) - CGRectGetMaxY(rect)];
+    [[popView viewWithTag:1202] setStringValue:CGRectGetWidth(srect) - CGRectGetMaxX(rect)];
+}
+
+- (IBAction)addConstraints:(id)sender
+{
+    var selectedView = [self selectedView],
+        selectedSuperview = [selectedView superview];
+
+    var popView = [[addPopover contentViewController] view],
+        widthCheck = [popView viewWithTag:100],
+        heightCheck = [popView viewWithTag:101],
+        equalWidthsCheck = [popView viewWithTag:102],
+        equalHeightsCheck = [popView viewWithTag:103],
+        ratioCheck = [popView viewWithTag:104],
+        alignCheck = [popView viewWithTag:105];
+
+    if ([widthCheck state])
+    {
+        var width = [[popView viewWithTag:1000] floatValue];
+
+        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, width, CPLayoutPriorityRequired);
+
+        [widthCheck setState:CPOffState];
+        [constraint setActive:YES];
+    }
+
+    if ([heightCheck state])
+    {
+        var height = [[popView viewWithTag:1001] floatValue];
+
+        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeHeight, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, height, CPLayoutPriorityRequired);
+
+        [heightCheck setState:CPOffState];
+        [constraint setActive:YES];
+    }
+
+    if ([equalWidthsCheck state])
+    {
+        var view1 = [_selectedViews objectAtIndex:0],
+            view2 = [_selectedViews objectAtIndex:1];
+
+        var constraint = LayoutConstraint(view1, CPLayoutAttributeWidth, CPLayoutRelationEqual, view2, CPLayoutAttributeWidth, 1, 0, CPLayoutPriorityRequired);
+
+        [equalWidthsCheck setState:CPOffState];
+        [constraint setActive:YES];
+    }
+
+    if ([equalHeightsCheck state])
+    {
+        var view1 = [_selectedViews objectAtIndex:0],
+            view2 = [_selectedViews objectAtIndex:1];
+
+        var constraint = LayoutConstraint(view1, CPLayoutAttributeHeight, CPLayoutRelationEqual, view2, CPLayoutAttributeHeight, 1, 0, CPLayoutPriorityRequired);
+
+        [equalHeightsCheck setState:CPOffState];
+        [constraint setActive:YES];
+    }
+
+    if ([ratioCheck state])
+    {
+        var rect = [selectedView frame],
+            ratio = CGRectGetWidth(rect) / CGRectGetHeight(rect);
+
+        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, nil, CPLayoutAttributeHeight, ratio, 0, CPLayoutPriorityRequired);
+
+        [ratioCheck setState:CPOffState];
+        [constraint setActive:YES];
+    }
+
+    if ([alignCheck state])
+    {
+        var view1 = [_selectedViews objectAtIndex:0],
+            view2 = [_selectedViews objectAtIndex:1],
+            attr  = [[[popView viewWithTag:106] selectedItem] tag];
+
+        var constraint = LayoutConstraint(view1, attr, CPLayoutRelationEqual, view2, attr, 1, 0, CPLayoutPriorityRequired);
+
+        [alignCheck setState:CPOffState];
+        [constraint setActive:YES];
+    }
+
+    for (var attribute = 1; attribute <= 4; attribute++)
+    {
+        var check = [popView viewWithTag:(200 + attribute)];
+
+        if ([check state])
+        {
+            var constant = [[popView viewWithTag:(1200 + attribute)] floatValue];
+
+            if (attribute == CPLayoutAttributeBottom || attribute == CPLayoutAttributeRight)
+                constant = -constant;
+
+            var constraint = LayoutConstraint(selectedView, attribute, CPLayoutRelationEqual, selectedSuperview, attribute, 1, constant, CPLayoutPriorityRequired);
+
+            [check setState:CPOffState];
+            [constraint setActive:YES];
+        }
+    }
+
+    [addPopover performClose:sender];
 }
 
 - (void)tableViewSelectionDidChange:(CPNotification)aNotification
@@ -205,22 +357,47 @@ CPLogRegister(CPLogConsole);
 
 - (IBAction)visualizeConstraints:(id)sender
 {
-    [mainView setShowConstraints:[sender state]];
 }
 
-- (void)logMetrics:(id)sender
+- (void)_selectView:(id)aView byExtendingSelection:(BOOL)extend
 {
-    CPLog.debug("mainView " + CGStringFromRect([mainView frame]) + "\nleftView " + CGStringFromRect([view1 frame]) + "\nrightView " + CGStringFromRect([view2 frame]));
+    var current_selection = [CPArray arrayWithArray:_selectedViews];
+
+    if (extend)
+    {
+        if ([current_selection containsObjectIdenticalTo:aView])
+            [current_selection removeObject:aView];
+        else
+            [current_selection addObject:aView];
+    }
+    else
+    {
+        current_selection = @[aView];
+    }
+
+    [self setSelectedViews:current_selection];
 }
 
-- (void)selectView:(id)aView
+- (CPView)selectedView
 {
-    [mainView setSelected:NO];
-    [view1 setSelected:NO];
-    [view2 setSelected:NO];
-    [aView setSelected:YES];
+    return [_selectedViews lastObject];
+}
 
-    [self setSelectedView:aView];
+- (void)setSelectedViews:(CPArray)theSelectedViews
+{
+    if (![theSelectedViews isEqual:_selectedViews])
+    {
+        [_selectedViews makeObjectsPerformSelector:@selector(setSelected:) withObject:NO];
+
+        _selectedViews = theSelectedViews;
+
+        [_selectedViews makeObjectsPerformSelector:@selector(setSelected:) withObject:YES];
+    }
+}
+
+- (BOOL)isMultiSelection
+{
+    return [_selectedViews count] > 1;
 }
 
 @end
@@ -233,14 +410,20 @@ CPLogRegister(CPLogConsole);
     CGSize intrinsicContentSize;
 }
 
-+ (CPSet)keyPathsForValuesAffectingNeedsDisplay
-{
-    return [CPSet setWithObjects:@"constraints"];
-}
-
 + (CPSet)keyPathsForValuesAffectingConstraints
 {
-    return [CPSet setWithObjects:@"constraints.constant", @"constraints.priority", @"intrinsicContentWidth", @"intrinsicContentHeight", @"horizontalContentHuggingPriority", @"verticalContentHuggingPriority", @"horizontalContentCompressionResistancePriority", @"verticalContentCompressionResistancePriority"];
+    return [CPSet setWithObjects:@"intrinsicContentWidth", @"intrinsicContentHeight", @"horizontalContentHuggingPriority", @"verticalContentHuggingPriority", @"horizontalContentCompressionResistancePriority", @"verticalContentCompressionResistancePriority"];
+}
+
+- (void)observeValueForKeyPath:(CPString)keyPath
+                      ofObject:(id)object
+                        change:(CPDictionary)change
+                       context:(void)context
+{
+    if (keyPath == @"constraints")
+    {
+        [self setNeedsDisplay:YES];
+    }
 }
 
 - (BOOL)acceptsFirstMouse:(CPEvent)anEvent
@@ -251,6 +434,8 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     CPLog.debug([self class] + _cmd);
+
+    [self addObserver:self forKeyPath:@"constraints" options:CPKeyValueObservingOptionNew context:nil];
 
     _selected  = NO;
     _showConstraints = YES;
@@ -263,7 +448,9 @@ CPLogRegister(CPLogConsole);
     if ([anEvent type] !== CPLeftMouseDown)
         return;
 
-    [[CPApp delegate] selectView:self];
+    var extend = [anEvent modifierFlags] & CPCommandKeyMask;
+
+    [[CPApp delegate] _selectView:self byExtendingSelection:extend];
 }
 
 - (void)setSelected:(BOOL)flag
@@ -271,7 +458,7 @@ CPLogRegister(CPLogConsole);
     if (_selected !== flag)
     {
         _selected = flag;
-        showConstraints = YES;
+        _showConstraints = YES;
         [self setNeedsDisplay:YES];
     }
 }
@@ -310,7 +497,7 @@ CPLogRegister(CPLogConsole);
         multiplier      = [aConstraint multiplier],
         constant        = [aConstraint constant],
         priority        = [aConstraint priority],
-        angle = 0;
+        flags           = [aConstraint contraintFlags];
 
     if (secondAttribute === CPLayoutAttributeNotAnAttribute && firstAttribute !== CPLayoutAttributeWidth && firstAttribute !== CPLayoutAttributeHeight)
         secondAttribute = firstAttribute;
@@ -320,27 +507,23 @@ CPLogRegister(CPLogConsole);
 
     if (firstAttribute == CPLayoutAttributeLeft || firstAttribute == CPLayoutAttributeLeading)
     {
-        startPoint.x = (firstItem !== container) ? CGRectGetMinX([firstItem frame]) : 0;
-        startPoint.y = (firstItem !== container) ? CGRectGetMidY([firstItem frame]) : CGRectGetMidY([secondItem frame]);
-        angle = 0;
+        startPoint.x = (flags & 8) ? CGRectGetMinX([firstItem frame]) : 0;
+        startPoint.y = (flags & 8) ? CGRectGetMidY([firstItem frame]) : CGRectGetMidY([secondItem frame]);
     }
-    else if (firstAttribute == CPLayoutAttributeRight  || firstAttribute == CPLayoutAttributeTrailing)
+    else if (firstAttribute == CPLayoutAttributeRight || firstAttribute == CPLayoutAttributeTrailing)
     {
-        startPoint.x = (firstItem !== container) ? CGRectGetMaxX([firstItem frame]) : CGRectGetWidth([container frame]);
-        startPoint.y = (firstItem !== container) ? CGRectGetMidY([firstItem frame]) : CGRectGetMidY([secondItem frame]);
-        angle = 180;
+        startPoint.x = (flags & 8) ? CGRectGetMaxX([firstItem frame]) : CGRectGetWidth([container frame]);
+        startPoint.y = (flags & 8) ? CGRectGetMidY([firstItem frame]) : CGRectGetMidY([secondItem frame]);
     }
     else if (firstAttribute == CPLayoutAttributeTop)
     {
-        startPoint.y = (firstItem !== container) ? CGRectGetMinY([firstItem frame]) : 0;
-        startPoint.x = (firstItem !== container) ? CGRectGetMidX([firstItem frame]) : CGRectGetMidX([secondItem frame]);
-        angle = 90;
+        startPoint.y = (flags & 8) ? CGRectGetMinY([firstItem frame]) : 0;
+        startPoint.x = (flags & 8) ? CGRectGetMidX([firstItem frame]) : CGRectGetMidX([secondItem frame]);
     }
     else if (firstAttribute == CPLayoutAttributeBottom)
     {
-        startPoint.y = (firstItem !== container) ? CGRectGetMaxY([firstItem frame]) : CGRectGetHeight([container frame]);
-        startPoint.x = (firstItem !== container) ? CGRectGetMidX([firstItem frame]) : CGRectGetMidX([secondItem frame]);
-        angle = -90;
+        startPoint.y = (flags & 8) ? CGRectGetMaxY([firstItem frame]) : CGRectGetHeight([container frame]);
+        startPoint.x = (flags & 8) ? CGRectGetMidX([firstItem frame]) : CGRectGetMidX([secondItem frame]);
     }
     else if (firstAttribute == CPLayoutAttributeWidth && secondAttribute == 0)
     {
@@ -348,7 +531,6 @@ CPLogRegister(CPLogConsole);
         startPoint.y = CGRectGetHeight([firstItem frame]) - 10;
         endPoint.x   = CGRectGetWidth([firstItem frame]);
         endPoint.y   = CGRectGetHeight([firstItem frame]) - 10;
-        angle = -180;
     }
     else if (firstAttribute == CPLayoutAttributeHeight && secondAttribute == 0)
     {
@@ -356,28 +538,27 @@ CPLogRegister(CPLogConsole);
         startPoint.y = 0;
         endPoint.x   = 10;
         endPoint.y   = CGRectGetHeight([firstItem frame]);
-        angle = -90;
     }
 
     if (secondAttribute == CPLayoutAttributeLeft || secondAttribute == CPLayoutAttributeLeading)
     {
-        endPoint.x = (secondItem !== container) ? CGRectGetMinX([secondItem frame]) : 0;
+        endPoint.x = (flags & 64) ? CGRectGetMinX([secondItem frame]) : 0;
         endPoint.y = startPoint.y;
     }
     else if (secondAttribute == CPLayoutAttributeRight || secondAttribute == CPLayoutAttributeTrailing)
     {
-        endPoint.x = (secondItem !== container) ? CGRectGetMaxX([secondItem frame]) : CGRectGetWidth([container frame]);
+        endPoint.x = (flags & 64) ? CGRectGetMaxX([secondItem frame]) : CGRectGetWidth([container frame]);
         endPoint.y = startPoint.y;
     }
     else if (secondAttribute == CPLayoutAttributeTop)
     {
-        endPoint.y = (secondItem !== container) ? CGRectGetMinY([secondItem frame]) : 0;
-        endPoint.x = (secondItem !== container) ? CGRectGetMidX([secondItem frame]) : startPoint.x;
+        endPoint.y = (flags & 64) ? CGRectGetMinY([secondItem frame]) : 0;
+        endPoint.x = (flags & 64) ? CGRectGetMidX([secondItem frame]) : startPoint.x;
     }
     else if (secondAttribute == CPLayoutAttributeBottom)
     {
-        endPoint.y = (secondItem !== container) ? CGRectGetMaxY([secondItem frame]) : CGRectGetHeight([container frame]);
-        endPoint.x = (secondItem !== container) ? CGRectGetMidX([secondItem frame]) : CGRectGetHeight([container frame]);
+        endPoint.y = (flags & 64) ? CGRectGetMaxY([secondItem frame]) : CGRectGetHeight([container frame]);
+        endPoint.x = (flags & 64) ? CGRectGetMidX([secondItem frame]) : startPoint.x;
     }
 
     var path = [CPBezierPath bezierPath];
@@ -423,8 +604,6 @@ CPLogRegister(CPLogConsole);
         [color setStroke];
         [path stroke];
     }];
-
-    _showConstraints = NO;
 }
 
 - (CGSize)intrinsicContentSize

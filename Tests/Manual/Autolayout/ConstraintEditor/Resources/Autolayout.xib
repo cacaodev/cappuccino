@@ -16,21 +16,21 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" animationBehavior="default" id="QvC-M9-y7g">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="704" y="319" width="783" height="396"/>
+            <windowPositionMask key="initialPositionMask" rightStrut="YES" topStrut="YES"/>
+            <rect key="contentRect" x="743" y="478" width="883" height="512"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
             <view key="contentView" identifier="contentView" id="EiT-Mj-1SZ" customClass="ConstraintView">
-                <rect key="frame" x="0.0" y="0.0" width="783" height="396"/>
+                <rect key="frame" x="0.0" y="0.0" width="883" height="512"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <customView identifier="leftView" translatesAutoresizingMaskIntoConstraints="NO" id="HTm-LO-smS" customClass="ConstraintView">
-                        <rect key="frame" x="69" y="103" width="420" height="166"/>
+                        <rect key="frame" x="69" y="127" width="520" height="258"/>
                         <constraints>
                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="tHT-Wp-div"/>
                         </constraints>
                     </customView>
                     <customView identifier="rightView" translatesAutoresizingMaskIntoConstraints="NO" id="8j6-Gv-UL4" customClass="ConstraintView">
-                        <rect key="frame" x="533" y="103" width="167" height="166"/>
+                        <rect key="frame" x="633" y="127" width="167" height="258"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="167" id="sYT-IT-kB0"/>
                         </constraints>
@@ -38,7 +38,7 @@
                 </subviews>
                 <constraints>
                     <constraint firstItem="HTm-LO-smS" firstAttribute="leading" secondItem="EiT-Mj-1SZ" secondAttribute="leading" constant="69" id="2ij-DR-ZjD"/>
-                    <constraint firstAttribute="bottom" secondItem="HTm-LO-smS" secondAttribute="bottom" constant="103" id="KOn-41-6za"/>
+                    <constraint firstAttribute="bottom" secondItem="HTm-LO-smS" secondAttribute="bottom" constant="127" id="JmP-zr-ltE"/>
                     <constraint firstItem="HTm-LO-smS" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="127" id="KQe-Sc-jZd"/>
                     <constraint firstItem="8j6-Gv-UL4" firstAttribute="bottom" secondItem="HTm-LO-smS" secondAttribute="bottom" id="Mgb-e1-a4N"/>
                     <constraint firstItem="8j6-Gv-UL4" firstAttribute="top" secondItem="HTm-LO-smS" secondAttribute="top" id="P7O-Bm-lIs"/>
@@ -46,7 +46,7 @@
                     <constraint firstItem="8j6-Gv-UL4" firstAttribute="leading" secondItem="HTm-LO-smS" secondAttribute="trailing" constant="44" id="v3N-0n-7Kf"/>
                 </constraints>
             </view>
-            <point key="canvasLocation" x="537.5" y="412"/>
+            <point key="canvasLocation" x="587.5" y="470"/>
         </window>
     </objects>
 </document>
