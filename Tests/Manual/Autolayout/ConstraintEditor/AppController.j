@@ -286,7 +286,7 @@ CPLog.debug(_cmd);
         var rect = [selectedView frame],
             ratio = CGRectGetWidth(rect) / CGRectGetHeight(rect);
 
-        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, nil, CPLayoutAttributeHeight, ratio, 0, CPLayoutPriorityRequired);
+        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, selectedView, CPLayoutAttributeHeight, ratio, 0, CPLayoutPriorityRequired);
 
         [ratioCheck setState:CPOffState];
         [constraint setActive:YES];
