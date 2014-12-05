@@ -191,7 +191,7 @@ CPLog.debug(_cmd);
     [valueField setStringValue:priority];
     [summaryField setStringValue:text];
 
-    if (![sender hasThemeState:CPThemeStateHighlighted])
+    if (![sender isHighlighted])
     {
         [priorityPopover performClose:sender];
         [constraintWindow setNeedsLayout];
@@ -573,14 +573,46 @@ CPLog.debug(_cmd);
 
 - (void)drawRect:(CGRect)aRect
 {
-    var color = _selected ? [CPColor orangeColor] : [CPColor grayColor];
-    [color setStroke];
-    [CPBezierPath strokeRect:[self bounds]];
+    [self drawBackgroundInRect:aRect];
+    [self drawConstraintsInRect:aRect];
+}
 
+- (void)drawBackgroundInRect:(CGRect)aRect
+{
+    var identifier = [self identifier];
+
+    if (identifier !== @"contentView")
+    {
+        var fillColor = [CPColor colorWithRed:159/255 green:180/255 blue:210/255 alpha:1],
+            bounds = [self bounds];
+
+        [fillColor setFill];
+        [CPBezierPath fillRect:bounds];
+
+        [self drawString:identifier inBounds:bounds];
+    }
+
+    if (_selected)
+    {
+        [CPBezierPath setDefaultLineWidth:3];
+        [[CPColor orangeColor] setStroke];
+        [CPBezierPath strokeRect:[self bounds]];
+    }
+}
+
+- (void)drawString:(CPString)aString inBounds:(CGRect)bounds
+{
+    var ctx = [[CPGraphicsContext currentContext] graphicsPort];
+    ctx.font = [[CPFont boldSystemFontOfSize:20] cssString];
+    [[CPColor whiteColor] setFill];
+    var metrics = ctx.measureText(aString);
+    ctx.fillText(aString, (CGRectGetWidth(bounds) - metrics.width)/2, CGRectGetHeight(bounds)/2);
+}
+
+- (void)drawConstraintsInRect:(CGRect)aRect
+{
     if (!_showConstraints)
         return;
-
-    [[CPColor blueColor] setStroke];
 
     [[self constraints] enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
