@@ -4,21 +4,21 @@
 [Original Cassowary from Badros and Borning](http://www.cs.washington.edu/research/constraints/cassowary/)
 
 **Online demos:**
-[Constraints Editor](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/CPLayoutConstraintTest/), 
-[Intrinsic Content Size](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/InvalidateIntrinsicContentSizeTest/), 
-[CPAlert with constraints](http://cacaodev.pagesperso-orange.fr/Tests/Manual/CPLayoutConstraint/CPLayoutConstraintCibTest/)
+[Constraints Editor](http://cacaodev.pagesperso-orange.fr/Tests/Manual/Autolayout/ConstraintEditor/) 
 
-**Other visual tests are at Tests/Manual/Autolayout/ in the repo** 
+**Other visual tests are at Tests/Manual/Autolayout/ in the repo**
+
 *TODO:*
 
 - [x] Call CPWindow -layout at appropriate time in the FMW.
 - [x] -layout should be `-layoutIfNeeded` : figure out what "ifNeeded" means: constraints update, frames out of sync.
-- [ ] Implement `-baselineOffsetFromBottom` in controls where relevant.
-- [ ] Implement `-alignmentRectInsets` in controls where relevant. Note: what about nib2cib conversion ? when we adjust frames in nib2cib we will need to also adjust constraints constants.
+- [ ] Rounding errors (multiplier) and integralization.
+- [ ] Implement `-baselineOffsetFromBottom` in all controls.
+- [ ] Implement `-alignmentRectInsets` in controls where relevant. Use theme attribute. Note: what about nib2cib conversion ? when we adjust frames in nib2cib we will need to also adjust constraints constants.
 - [ ] call `-invalidateIntrinsicContentSize` in controls when appropriate (the content changes). Currently done in CPButton & subclasses.
 - [ ] Decide how autosize and autolayout can live together. Apple: on a view basis, certainly to make adoption easier. On a CPWindow basis is enough for us but ... we still need to handle private views with masks (created by the FMW  or in IB). <- Currently this is done by searching if a view is involved in a constraint. If not, then autolayout is NOT enabled for this particular subview. TODO: declare CPView subclass in the fmw to require autosize.
-- [ ] -layoutSubviews is not tested. It should continue to work.
-- [x] Default constraints when a view is added to its superview ? currently none.
+- [ ] -CPView -layout and layoutSubtree : do we update constraints and frames for the descendants only or all constraints affecting the receiver ?
+- [x] translateAutoresizingMask default is NO currently. Should be YES for initWithFrame: views.
 - [ ] Handle removeSubview: , when a view moves from a window to another (different engines) and in general situations where the engine frames and the local frame are out of sync.
 - [ ] compute -fittingSize in controls. The computation should take care of constraints and CPLayoutPriorityFittingSize
 - [x] ojtest comparing autosize and autolayout.
@@ -26,6 +26,7 @@
 - [ ] Rewrite CPSplitView with constraints ! CPSplitview drag = user input with a given priority.
 - [ ] Write a Quadrilatere demo in capp. currently i don't think it can be done with the cocoa API where a constraint can link no more than 2 items. Maybe by abstracting constraint items with a protocol ?
 - [ ] Handle ambiguous layout and solver failures. The Apple way is to lower the priority on a constraint and try to resolve.
+- [ ] CPLayoutPriorityRequired should be a c.Strength.required. Currently medium with weight 1000. required causes problems when they are stay constraints and edit constraints and you try to remove them.
 - [ ] Visual debug support
 - [ ] Parser API. Visual language with PEGJS grammar like Angular.js ?
 
