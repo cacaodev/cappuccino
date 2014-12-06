@@ -3794,7 +3794,7 @@ var interpolate = function(fromValue, toValue, progress)
     var engine = [self _layoutEngine];
 
     [self updateConstraintsAtWindowLevelIfNeeded];
-    [engine suggestSize:newSize forItem:_windowView priority:CPLayoutPriorityRequired];
+    [engine suggestSize:newSize forItem:_windowView priority:CPLayoutPriorityDragThatCanResizeWindow];
     [_windowView updateEngineFrame];
   }
 

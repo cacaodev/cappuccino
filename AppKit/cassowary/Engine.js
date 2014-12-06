@@ -191,8 +191,8 @@ Engine.prototype.StrengthAndWeight = function(p)
 //        d = Math.floor((p - 100*c) / 10),
 //        n = p - 100*c - 10*d;
 //    (new c.Strength("", h, d, n))
-    if (p > 1000)
-        return {strength:c.Strength.strong, weight:p};
+    if (p >= 1000)
+        return {strength:c.Strength.required, weight:p};
 
     return {strength:c.Strength.medium, weight:p};
 };
