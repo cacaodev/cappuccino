@@ -1,4 +1,5 @@
 (function(){
+
 CPLayoutRelationLessThanOrEqual = -1;
 CPLayoutRelationEqual = 0;
 CPLayoutRelationGreaterThanOrEqual = 1;
@@ -67,7 +68,7 @@ Engine.prototype.description = function()
         str += w.toString() + "\n";
     });
 
-    WorkerLog(str + "\nInternalInfo:\n" + this.solver.getInternalInfo());
+    EngineLog(str + "\nInternalInfo:\n" + this.solver.getInternalInfo());
 };
 
 Engine.prototype.Variable = function(uuid, prefix, name, tag, value)
@@ -91,20 +92,22 @@ Engine.prototype.replaceConstraints = function(args)
         removed = mutation.removed,
         added = mutation.added;
 
-    WorkerLog(type + ": should add " + added.length + " and remove " + removed.length);
+    EngineLog(type + ": should add " + added.length + " and remove " + removed.length);
 
     removed.forEach(function(cst)
     {
-        self.removeConstraintWithUUID(cst.uuid, type);
+        var error = new SolverError();
+        self.removeConstraintWithUUID(cst.uuid, type, error);
     });
 
     added.forEach(function(json)
     {
-        self.addConstraintFromJSON(container, type, json);
+        var error = new SolverError();
+        self.addConstraintFromJSON(container, type, json, error);
     });
 };
 
-Engine.prototype.addConstraintFromJSON = function(container, type, json)
+Engine.prototype.addConstraintFromJSON = function(container, type, json, solverError)
 {
     var casso_constraint = null;
 
@@ -122,42 +125,64 @@ Engine.prototype.addConstraintFromJSON = function(container, type, json)
     if (casso_constraint)
     {
         var layoutConstraint = new LayoutConstraint(json.uuid, container, type, casso_constraint);
-        if (layoutConstraint.addToSolver(this.solver))
+        layoutConstraint.addToSolver(this.solver, solverError);
+
+        if (solverError.error == null)
+        {
             this.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(layoutConstraint);
+            EngineLog("Added " + layoutConstraint.toString());
+        }
+        else
+            solverError.raise();
     }
 };
 
-Engine.prototype.removeConstraintWithUUID = function(uuid, type)
+Engine.prototype.removeConstraintWithUUID = function(uuid, type, solverError)
 {
     var constraints_list = this.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP,
-        count = constraints_list.length,
-        removed = false;
+        count = constraints_list.length;
 
     while(count--)
     {
-        var w = constraints_list[count];
+        var layoutConstraint = constraints_list[count];
 
-        if ((type == null || w.type == type) && w.uuid == uuid)
+        if ((type == null || layoutConstraint.type == type) && layoutConstraint.uuid == uuid)
         {
-            removed = w.removeFromSolver(this.solver);
+            layoutConstraint.removeFromSolver(this.solver, solverError);
 
-            if (removed)
+            if (solverError.error == null)
+            {
                 constraints_list.splice(count, 1);
+                EngineLog("Removed " + layoutConstraint.toString());
+            }
+            else
+                solverError.raise();
 
             break;
         }
     }
-
-    return removed;
 };
 
 Engine.prototype.stopEditing = function()
 {
     if (this.EDIT_VARIABLES !== null)
     {
-        this.solver.removeAllEditVars();
-        this.EDIT_VARIABLES = null;
-        WorkerLog("removeAllEditVars");
+        var error = null;
+
+        try {
+            this.solver.removeAllEditVars();
+            this.EDIT_VARIABLES = null;
+            EngineLog("removedAllEditVars");
+        }
+        catch (e)
+        {
+            error = e;
+        }
+        finally
+        {
+            if (error !== null)
+                EngineError(error + " EDIT_VARIABLES were " + this.EDIT_VARIABLES);
+        }
     }
 };
 
@@ -199,7 +224,7 @@ Engine.prototype.StrengthAndWeight = function(p)
 
 Engine.prototype.CreateConstraint = function(args)
 {
-// WorkerLog("firstItem " + args.firstItem.uuid + " secondItem " + args.secondItem.uuid + " containerUUID " + args.containerUUID + " flags " + args.flags);
+// EngineLog("firstItem " + args.firstItem.uuid + " secondItem " + args.secondItem.uuid + " containerUUID " + args.containerUUID + " flags " + args.flags);
 
     var first           = args.firstItem,
         second          = args.secondItem,
@@ -356,69 +381,65 @@ var LayoutConstraint = function(uuid, container, type, casso_constraint)
         return (this.type + " " + this.uuid + " " + this.constraint.toString());
     };
 
-    this.addToSolver = function(aSolver)
+    this.addToSolver = function(aSolver, solverError)
     {
-        var error = null;
-
         try
         {
             aSolver.addConstraint(this.constraint);
         }
         catch (e)
         {
-            error = e;
-        }
-        finally
-        {
-            var success = (error == null);
-
-            if (success)
-                WorkerLog("Added " + this.toString());
-            else
-                WorkerError(error.toString());
-
-            return success;
+            solverError.error = e;
+            solverError.userInfo = this;
         }
     };
 
-    this.removeFromSolver = function(aSolver)
+    this.removeFromSolver = function(aSolver, solverError)
     {
-        var error = null;
-
         try
         {
             aSolver.removeConstraint(this.constraint);
         }
         catch (e)
         {
-            error = e;
-        }
-        finally
-        {
-            var success = (error == null);
-
-            if (success)
-                WorkerLog("Removed " + this.toString());
-            else
-                WorkerError(error.toString());
-
-            return success;
+            solverError.error = e;
+            solverError.userInfo = this;
         }
     };
-
 };
 
-var WorkerLog = function(str)
+var SolverError = function ()
+{
+    this.error = null;
+    this.userInfo = null;
+
+    this.toString = function ()
+    {
+        var desc = this.error ? this.error.toString() : "No Error";
+
+        if (this.userInfo)
+            desc += " : " + this.userInfo.toString();
+
+        return desc;
+    };
+
+    this.raise = function ()
+    {
+        EngineWarn(this.toString());
+    }
+};
+
+var EngineLog = function(str)
 {
     console.log('%c [Engine]: ' + str, 'color:darkblue; font-weight:bold');
 };
 
-var WorkerWarn = function(str)
+var EngineWarn = function(str)
 {
     console.warn('%c [Engine]: ' + str, 'color:brown; font-weight:bold');
 };
 
-var WorkerError = function(str)
+var EngineError = function(str)
 {
     console.error('%c [Engine]: ' + str, 'color:darkred; font-weight:bold');
 };
