@@ -4411,12 +4411,12 @@ Updates the constraints for the receiving view and its subviews.
 
 Subclasses should not override this method.
 */
-- (void)updateConstraintsForSubtreeIfNeeded
+- (BOOL)updateConstraintsForSubtreeIfNeeded
 {
     var constraintsByView = [CPDictionary dictionary];
 
     [self _updateConstraintsForSubtree:constraintsByView];
-    [[self _layoutEngine] solver_replaceConstraints:constraintsByView];
+    return ([[self _layoutEngine] solver_replaceConstraints:constraintsByView]);
 }
 
 - (void)updateEngineFrame

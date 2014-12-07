@@ -142,11 +142,12 @@
     _engine.replaceConstraints(args);
 }
 
-- (void)solver_replaceConstraints:(CPDictionary)constraintsByView
+- (BOOL)solver_replaceConstraints:(CPDictionary)constraintsByView
 {
     CPLog.debug("Constraints to replace = \n");
 
-    var errors = @[];
+    var errors = @[],
+        result = NO;
 
     [constraintsByView enumerateKeysAndObjectsUsingBlock:function(container, constraintsByType, stop)
     {
@@ -163,17 +164,27 @@
             }];
 
             var args = {type:type, container:container, constraints:json_constraints};
-            _engine.replaceConstraints(args, errors);
+            var mutation = _engine.replaceConstraints(args, errors);
+
+            result |= mutation;
         }];
     }];
 
     if ([errors count])
     {
-        [errors enumerateObjectsUsingBlock:function(error, idx, stop)
+        [errors enumerateObjectsUsingBlock:function(solverError, idx, stop)
         {
-           CPLog.warn(error.toString());
+            var type = solverError.error.type,
+                description = solverError.toString();
+
+            if (type = c.RequiredFailure)
+                CPLog.warn(description);
+            else
+                CPLog.error(description);
         }];
     }
+
+    return result;
 }
 
 - (void)solver_removeConstraints:(CPArray)constraints

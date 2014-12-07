@@ -113,8 +113,7 @@ Engine.prototype.replaceConstraints = function(args, errors)
             errors.push(solverError);
     });
 
-    if (removed.length || added.length)
-        this.solve();
+    return (removed.length > 0 || added.length > 0);
 };
 
 Engine.prototype.addConstraintFromJSON = function(container, type, json, solverError)

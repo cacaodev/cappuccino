@@ -3771,22 +3771,26 @@ var interpolate = function(fromValue, toValue, progress)
     return _layoutEngine;
 }
 
-- (void)updateConstraintsAtWindowLevelIfNeeded
+- (BOOL)updateConstraintsAtWindowLevelIfNeeded
 {
+    var result = NO;
+
     if (_needsUpdateConstraints)
     {
         //CPLog.debug([self className] + " Needs updateConstraintsAtWindowLevel");
-        [self updateConstraintsAtWindowLevel];
+        result = [self updateConstraintsAtWindowLevel];
         _needsUpdateConstraints = NO;
     }
+
+    return result;
 }
 
-- (void)updateConstraintsAtWindowLevel
+- (BOOL)updateConstraintsAtWindowLevel
 {
     [_windowView setAutolayoutEnabled:YES];
     [_contentView setAutolayoutEnabled:YES];
 
-    [_windowView updateConstraintsForSubtreeIfNeeded];
+    return ([_windowView updateConstraintsForSubtreeIfNeeded]);
 }
 
 - (void)_suggestFrameSize:(CGSize)newSize
@@ -3851,8 +3855,8 @@ var interpolate = function(fromValue, toValue, progress)
         [engine stopEditing];
         [self _updateWindowStayConstraintsInEngine:engine];
 
-        [self updateConstraintsAtWindowLevelIfNeeded];
-        [engine solve];
+        if ([self updateConstraintsAtWindowLevelIfNeeded])
+            [engine solve];
 
         [_windowView updateEngineFrame];
         [self _updateFrameFromCurrentWindowViewFrame];
