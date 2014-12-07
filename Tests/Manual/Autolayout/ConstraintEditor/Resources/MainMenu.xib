@@ -475,7 +475,7 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" tag="1000" id="1026">
-                    <rect key="frame" x="8" y="6.0000006949109199" width="259" height="52"/>
+                    <rect key="frame" x="8" y="6" width="259" height="52.000001208462955"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" heightSizable="YES"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Label" id="1027">
                         <font key="font" metaFont="system"/>
@@ -689,12 +689,12 @@
                 <popUpButton verticalHuggingPriority="750" tag="106" id="BMO-PR-F2i">
                     <rect key="frame" x="104" y="63" width="169" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <popUpButtonCell key="cell" type="roundRect" title="Leading Edges" bezelStyle="roundedRect" alignment="center" controlSize="small" lineBreakMode="truncatingTail" borderStyle="border" tag="5" imageScaling="proportionallyDown" inset="2" selectedItem="MWM-fe-dx6" id="JL0-zw-7WG">
+                    <popUpButtonCell key="cell" type="roundRect" title="Leading Edges" bezelStyle="roundedRect" alignment="center" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="border" tag="5" imageScaling="proportionallyDown" inset="2" selectedItem="MWM-fe-dx6" id="JL0-zw-7WG">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="smallSystem"/>
                         <menu key="menu" id="pDA-wn-wQl">
                             <items>
-                                <menuItem title="Leading Edges" tag="5" id="MWM-fe-dx6"/>
+                                <menuItem title="Leading Edges" state="on" tag="5" id="MWM-fe-dx6"/>
                                 <menuItem title="Trailing Edges" tag="6" id="MgS-8M-wR6"/>
                                 <menuItem title="Top Edges" tag="3" id="mRa-6f-aql"/>
                                 <menuItem title="Bottom Edges" tag="4" id="bnk-qd-kjE"/>

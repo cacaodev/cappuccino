@@ -39,7 +39,7 @@ Engine = function(autoSolve, onvaluechange, onsolved)
     this.solver = simplexSolver;
 };
 
-Engine.prototype.setDisableOnSolvedNotification = function()
+Engine.prototype.disableOnSolvedNotification = function()
 {
     this.solver.onvaluechange = this.noop();
     this.solver.onSolved = this.noop();
@@ -52,6 +52,7 @@ Engine.prototype.noop = function()
 Engine.prototype.solve = function()
 {
     this.solver.solve();
+    EngineLog("solve");
 };
 
 Engine.prototype.resolve = function()
@@ -76,7 +77,7 @@ Engine.prototype.Variable = function(uuid, prefix, name, tag, value)
     return new c.Variable({identifier:uuid, prefix:prefix, name:name, tag:tag, value:value});
 };
 
-Engine.prototype.replaceConstraints = function(args)
+Engine.prototype.replaceConstraints = function(args, errors)
 {
     var final_constraints = args.constraints,
         container = args.container,
@@ -96,15 +97,24 @@ Engine.prototype.replaceConstraints = function(args)
 
     removed.forEach(function(cst)
     {
-        var error = new SolverError();
-        self.removeConstraintWithUUID(cst.uuid, type, error);
+        var solverError = new SolverError();
+        self.removeConstraintWithUUID(cst.uuid, type, solverError);
+
+        if (solverError.error !== null)
+            errors.push(solverError);
     });
 
     added.forEach(function(json)
     {
-        var error = new SolverError();
-        self.addConstraintFromJSON(container, type, json, error);
+        var solverError = new SolverError();
+        self.addConstraintFromJSON(container, type, json, solverError);
+
+        if (solverError.error !== null)
+            errors.push(solverError);
     });
+
+    if (removed.length || added.length)
+        this.solve();
 };
 
 Engine.prototype.addConstraintFromJSON = function(container, type, json, solverError)
@@ -132,8 +142,6 @@ Engine.prototype.addConstraintFromJSON = function(container, type, json, solverE
             this.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP.push(layoutConstraint);
             EngineLog("Added " + layoutConstraint.toString());
         }
-        else
-            solverError.raise();
     }
 };
 
@@ -155,8 +163,6 @@ Engine.prototype.removeConstraintWithUUID = function(uuid, type, solverError)
                 constraints_list.splice(count, 1);
                 EngineLog("Removed " + layoutConstraint.toString());
             }
-            else
-                solverError.raise();
 
             break;
         }
@@ -192,7 +198,7 @@ Engine.prototype.suggestValues = function(variables, values, priority)
 
     if (this.EDIT_VARIABLES == null)
     {
-        var sw = this.StrengthAndWeight(priority);
+        var sw = this.StrengthForPriority(priority);
 
         variables.forEach(function(variable)
         {
@@ -207,19 +213,20 @@ Engine.prototype.suggestValues = function(variables, values, priority)
         solver.suggestValue(variable, values[idx]);
     });
 
-    solver.resolve();
+    // Perf: call the solver directly ?
+    this.resolve();
 };
 
-Engine.prototype.StrengthAndWeight = function(p)
+Engine.prototype.StrengthForPriority = function(p)
 {
 //    var h = Math.floor(p / 100),
 //        d = Math.floor((p - 100*c) / 10),
 //        n = p - 100*c - 10*d;
 //    (new c.Strength("", h, d, n))
     if (p >= 1000)
-        return {strength:c.Strength.required, weight:p};
+        return {strength:c.Strength.required, weight:1};
 
-    return {strength:c.Strength.medium, weight:p};
+    return {strength:c.Strength.weak, weight:p};
 };
 
 Engine.prototype.CreateConstraint = function(args)
@@ -232,7 +239,7 @@ Engine.prototype.CreateConstraint = function(args)
         multiplier      = args.multiplier,
         constant        = args.constant,
         priority        = args.priority,
-        sw              = this.StrengthAndWeight(priority),
+        sw              = this.StrengthForPriority(priority),
         constraint,
         rhs_term;
 
@@ -264,14 +271,14 @@ Engine.prototype.CreateSizeConstraint = function(args)
     var variableExp = new c.Expression.fromVariable(args.variable),
         constantExp = new c.Expression.fromConstant(args.constant),
         inequality = (args.relation === CPLayoutRelationGreaterThanOrEqual) ? c.GEQ : c.LEQ,
-        sw = this.StrengthAndWeight(args.priority);
+        sw = this.StrengthForPriority(args.priority);
 
     return new c.Inequality(variableExp, inequality, constantExp, sw.strength, sw.weight);
 };
 
 Engine.prototype.CreateStayConstraint = function(args)
 {
-    var sw = this.StrengthAndWeight(args.priority);
+    var sw = this.StrengthForPriority(args.priority);
 
     return new c.StayConstraint(args.variable, sw.strength, sw.weight);
 };

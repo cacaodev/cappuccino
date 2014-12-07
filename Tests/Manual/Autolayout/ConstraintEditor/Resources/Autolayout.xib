@@ -26,7 +26,7 @@
                     <customView identifier="leftView" translatesAutoresizingMaskIntoConstraints="NO" id="HTm-LO-smS" customClass="ConstraintView">
                         <rect key="frame" x="69" y="127" width="520" height="258"/>
                         <constraints>
-                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="tHT-Wp-div"/>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" priority="250" constant="200" id="tHT-Wp-div"/>
                         </constraints>
                     </customView>
                     <customView identifier="rightView" translatesAutoresizingMaskIntoConstraints="NO" id="8j6-Gv-UL4" customClass="ConstraintView">

@@ -88,37 +88,9 @@
         delete _CPEngineRegisteredItems[anIdentifier];
 }
 
-- (void)setDisableOnSolvedNotification:(BOOL)shouldDisable
+- (void)disableOnSolvedNotification
 {
-    _engine.setDisableOnSolvedNotification();
-}
-
-- (Variable)variableForItem:(id)anItem tag:(CPInteger)tag
-{
-    var uuid = [anItem UID],
-        prefix = [anItem debugID],
-        frame = [anItem frame],
-        name, value;
-
-    switch(tag)
-    {
-        case 2 : name = "minX";
-                 value = CGRectGetMinX(frame);
-        break;
-        case 4 : name = "minY";
-                 value = CGRectGetMinY(frame);
-        break;
-        case 8 : name = "width";
-                 value = CGRectGetWidth(frame);
-        break;
-        case 16 : name = "height";
-                  value = CGRectGetHeight(frame);
-        break;
-        default : name = "unknown";
-                  value = 0;
-    }
-
-    return _engine.Variable(uuid, prefix, name, tag, value);
+    _engine.disableOnSolvedNotification();
 }
 
 - (void)suggestSize:(CGSize)aSize forItem:(id)anItem priority:(CPInteger)priority
@@ -174,9 +146,11 @@
 {
     CPLog.debug("Constraints to replace = \n");
 
+    var errors = @[];
+
     [constraintsByView enumerateKeysAndObjectsUsingBlock:function(container, constraintsByType, stop)
     {
-        CPLog.debug(container + " =" + [constraintsByType description]);
+        CPLog.debug([_CPEngineRegisteredItems[container] debugID] + " = " + [constraintsByType description]);
 
         [constraintsByType enumerateKeysAndObjectsUsingBlock:function(type, constraints, stop)
         {
@@ -189,9 +163,17 @@
             }];
 
             var args = {type:type, container:container, constraints:json_constraints};
-            _engine.replaceConstraints(args);
+            _engine.replaceConstraints(args, errors);
         }];
     }];
+
+    if ([errors count])
+    {
+        [errors enumerateObjectsUsingBlock:function(error, idx, stop)
+        {
+           CPLog.warn(error.toString());
+        }];
+    }
 }
 
 - (void)solver_removeConstraints:(CPArray)constraints
@@ -206,9 +188,37 @@
     _engine.removeConstraints(args);
 }
 
-- (void)getInfo
+- (CPString)description
 {
-    _engine.description();
+    return _engine.description();
+}
+
+- (Variable)variableForItem:(id)anItem tag:(CPInteger)tag
+{
+    var uuid = [anItem UID],
+        prefix = [anItem debugID],
+        frame = [anItem frame],
+        name, value;
+
+    switch(tag)
+    {
+        case 2 : name = "minX";
+                 value = CGRectGetMinX(frame);
+        break;
+        case 4 : name = "minY";
+                 value = CGRectGetMinY(frame);
+        break;
+        case 8 : name = "width";
+                 value = CGRectGetWidth(frame);
+        break;
+        case 16 : name = "height";
+                  value = CGRectGetHeight(frame);
+        break;
+        default : name = "unknown";
+                  value = 0;
+    }
+
+    return _engine.Variable(uuid, prefix, name, tag, value);
 }
 
 @end

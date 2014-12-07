@@ -448,9 +448,15 @@ CPLog.debug(_cmd);
     if ([anEvent type] !== CPLeftMouseDown)
         return;
 
-    var extend = [anEvent modifierFlags] & CPCommandKeyMask;
-
-    [[CPApp delegate] _selectView:self byExtendingSelection:extend];
+    if ([anEvent modifierFlags] & CPShiftKeyMask)
+        [[self _layoutEngine] resolve];
+    else if ([anEvent modifierFlags] & CPAlternateKeyMask)
+        [[self window] layout];
+    else
+    {
+        var extend = [anEvent modifierFlags] & CPCommandKeyMask;
+        [[CPApp delegate] _selectView:self byExtendingSelection:extend];
+    }
 }
 
 - (void)setSelected:(BOOL)flag

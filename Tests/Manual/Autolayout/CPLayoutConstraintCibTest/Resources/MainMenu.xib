@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="13F34" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="14B25" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6250"/>
     </dependencies>
@@ -13,17 +13,14 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" showsToolbarButton="NO" animationBehavior="default" id="572">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <rect key="contentRect" x="552" y="411" width="540" height="428"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
+            <rect key="contentRect" x="552" y="411" width="492" height="398"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
             <view key="contentView" identifier="mainView" autoresizesSubviews="NO" id="573" customClass="ColorView">
-                <rect key="frame" x="0.0" y="0.0" width="540" height="428"/>
+                <rect key="frame" x="0.0" y="0.0" width="492" height="398"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <button identifier="cancel" autoresizesSubviews="NO" horizontalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1273">
+                    <button identifier="cancel" autoresizesSubviews="NO" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1273">
                         <rect key="frame" x="14" y="14" width="82" height="32"/>
-                        <constraints>
-                            <constraint firstAttribute="width" constant="70" id="gEA-ee-Z7d"/>
-                        </constraints>
                         <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" lineBreakMode="charWrapping" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1274">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
@@ -33,7 +30,7 @@ Gw
                         </buttonCell>
                     </button>
                     <button identifier="ok" autoresizesSubviews="NO" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1375">
-                        <rect key="frame" x="467" y="14" width="59" height="32"/>
+                        <rect key="frame" x="419" y="14" width="59" height="32"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="47" id="mMS-NH-miB"/>
                         </constraints>
@@ -46,9 +43,9 @@ DQ
                         </buttonCell>
                     </button>
                     <button identifier="middle" autoresizesSubviews="NO" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1379">
-                        <rect key="frame" x="220" y="14" width="249" height="32"/>
+                        <rect key="frame" x="179" y="14" width="242" height="32"/>
                         <constraints>
-                            <constraint firstAttribute="width" priority="450" constant="237" id="KYu-PT-SEQ"/>
+                            <constraint firstAttribute="width" priority="400" constant="230" id="Jx5-4G-uAr"/>
                         </constraints>
                         <buttonCell key="cell" type="push" title="Middle Button" bezelStyle="rounded" alignment="center" lineBreakMode="truncatingTail" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1380">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -56,10 +53,10 @@ DQ
                         </buttonCell>
                     </button>
                     <customView identifier="colorView" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1445" customClass="ColorView">
-                        <rect key="frame" x="20" y="62" width="500" height="316"/>
+                        <rect key="frame" x="20" y="62" width="452" height="286"/>
                     </customView>
                     <textField identifier="textField" autoresizesSubviews="NO" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="1476">
-                        <rect key="frame" x="20" y="386" width="500" height="22"/>
+                        <rect key="frame" x="20" y="356" width="452" height="22"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="Change Middle Button Text" drawsBackground="YES" id="1477">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -89,7 +86,7 @@ DQ
                     <constraint firstItem="1476" firstAttribute="leading" secondItem="1445" secondAttribute="leading" id="y02-c2-2eD"/>
                 </constraints>
             </view>
-            <point key="canvasLocation" x="390" y="410"/>
+            <point key="canvasLocation" x="366" y="395"/>
         </window>
         <customObject id="450" customClass="AppController">
             <connections>
