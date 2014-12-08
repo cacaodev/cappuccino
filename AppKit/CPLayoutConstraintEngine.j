@@ -147,6 +147,7 @@
     CPLog.debug("Constraints to replace = \n");
 
     var errors = @[],
+        constraintByHash = @{},
         result = NO;
 
     [constraintsByView enumerateKeysAndObjectsUsingBlock:function(container, constraintsByType, stop)
@@ -160,13 +161,13 @@
             [constraints enumerateObjectsUsingBlock:function(constraint, idx, stop)
             {
                 [constraint setAddedToEngine:YES];
+                [constraintByHash setObject:constraint forKey:[constraint hash]];
                 [json_constraints addObjectsFromArray:[constraint toJSON]];
             }];
 
             var args = {type:type, container:container, constraints:json_constraints};
-            var mutation = _engine.replaceConstraints(args, errors);
 
-            result |= mutation;
+            result |= _engine.replaceConstraints(args, errors);
         }];
     }];
 
@@ -174,13 +175,19 @@
     {
         [errors enumerateObjectsUsingBlock:function(solverError, idx, stop)
         {
-            var type = solverError.error.type,
-                description = solverError.toString();
+            var type = solverError.type,
+                reason = solverError.reason();
 
-            if (type = c.RequiredFailure)
-                CPLog.warn(description);
+            if (type == "c.RequiredFailure")
+            {
+                var hash = solverError.userInfo.uuid,
+                    constraint = [constraintByHash objectForKey:hash];
+
+                [constraint setAddedToEngine:NO];
+                CPLog.warn(reason + " : " + [constraint description]);
+            }
             else
-                CPLog.error(description);
+                CPLog.error(reason);
         }];
     }
 

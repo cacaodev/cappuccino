@@ -398,8 +398,7 @@ var LayoutConstraint = function(uuid, container, type, casso_constraint)
         }
         catch (e)
         {
-            solverError.error = e;
-            solverError.userInfo = this;
+            solverError.setError(e, this);
         }
     };
 
@@ -411,20 +410,32 @@ var LayoutConstraint = function(uuid, container, type, casso_constraint)
         }
         catch (e)
         {
-            solverError.error = e;
-            solverError.userInfo = this;
+            solverError.setError(e, this);
         }
     };
 };
 
-var SolverError = function ()
+var SolverError = function()
 {
     this.error = null;
+    this.type = null;
     this.userInfo = null;
 
-    this.toString = function ()
+    this.setError = function(error, info)
     {
-        var desc = this.error ? this.error.toString() : "No Error";
+        this.error = error;
+        this.type = error._name;
+        this.userInfo = info;
+    };
+
+    this.reason = function()
+    {
+        return this.error.toString();
+    };
+
+    this.toString = function()
+    {
+        var desc = this.error ? this.reason() : "No Error";
 
         if (this.userInfo)
             desc += " : " + this.userInfo.toString();
@@ -432,7 +443,7 @@ var SolverError = function ()
         return desc;
     };
 
-    this.raise = function ()
+    this.raise = function()
     {
         EngineWarn(this.toString());
     }
