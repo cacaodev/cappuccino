@@ -31,6 +31,8 @@ Engine = function(autoSolve, onvaluechange, onsolved)
 
     this.EDIT_VARIABLES = null;
 
+    this.DEFAULT_EDIT_STRENGTH = c.Strength.strong;
+
     var simplexSolver = new c.SimplexSolver();
     simplexSolver.autoSolve = autoSolve;
     simplexSolver.onvaluechange = onvaluechange ? onvaluechange : this.noop();
@@ -69,7 +71,7 @@ Engine.prototype.description = function()
         str += w.toString() + "\n";
     });
 
-    EngineLog(str + "\nInternalInfo:\n" + this.solver.getInternalInfo());
+    return (str + "\nInternalInfo:\n" + this.solver.getInternalInfo());
 };
 
 Engine.prototype.Variable = function(uuid, prefix, name, tag, value)
@@ -197,11 +199,12 @@ Engine.prototype.suggestValues = function(variables, values, priority)
 
     if (this.EDIT_VARIABLES == null)
     {
-        var sw = this.StrengthForPriority(priority);
+        //var sw = this.StrengthForPriority(priority);
+        var strength = this.DEFAULT_EDIT_STRENGTH;
 
         variables.forEach(function(variable)
         {
-           solver.addEditVar(variable, sw.strength, sw.weight);
+           solver.addEditVar(variable, strength, 1);
         });
 
         this.EDIT_VARIABLES = variables;
@@ -223,9 +226,9 @@ Engine.prototype.StrengthForPriority = function(p)
 //        n = p - 100*c - 10*d;
 //    (new c.Strength("", h, d, n))
     if (p >= 1000)
-        return {strength:c.Strength.required, weight:1};
+        return {strength:c.Strength.required, weight:p};
 
-    return {strength:c.Strength.weak, weight:p};
+    return {strength:c.Strength.medium, weight:p};
 };
 
 Engine.prototype.CreateConstraint = function(args)

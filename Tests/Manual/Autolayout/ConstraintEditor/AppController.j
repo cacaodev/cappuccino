@@ -449,7 +449,7 @@ CPLog.debug(_cmd);
         return;
 
     if ([anEvent modifierFlags] & CPShiftKeyMask)
-        [[self _layoutEngine] resolve];
+        CPLog.debug([[self _layoutEngine] description]);
     else if ([anEvent modifierFlags] & CPAlternateKeyMask)
         [[self window] layout];
     else
