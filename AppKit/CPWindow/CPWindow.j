@@ -51,8 +51,14 @@
 
 @class CPMenu
 @class CPProgressIndicator
+@class CPToolbar
+@class CPWindowController
+@class _CPWindowFrameAnimation
 
 @global CPApp
+
+@typedef _CPWindowFullPlatformWindowSession
+
 
 @protocol CPWindowDelegate <CPObject>
 
