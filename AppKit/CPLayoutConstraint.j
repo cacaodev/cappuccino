@@ -3,13 +3,16 @@
 
 @import "CPLayoutConstraintEngine.j"
 
+@typedef CPLayoutRelation
 CPLayoutRelationLessThanOrEqual = -1;
 CPLayoutRelationEqual = 0;
 CPLayoutRelationGreaterThanOrEqual = 1;
 
+@typedef CPLayoutConstraintOrientation
 CPLayoutConstraintOrientationHorizontal = 0;
 CPLayoutConstraintOrientationVertical = 1;
 
+@typedef CPLayoutAttribute
 CPLayoutAttributeLeft       = 1;
 CPLayoutAttributeRight      = 2;
 CPLayoutAttributeTop        = 3;
@@ -25,8 +28,9 @@ CPLayoutAttributeBaseline   = 11;
 CPLayoutAttributeNotAnAttribute = 0;
 
 /* Where AppKit's use of priority levels interacts with the user's use, we must define the priority levels involved.  Note that most of the time there is no interaction.  The use of priority levels is likely to be local to one sub-area of the window that is under the control of one author.
- */
+*/
 
+@typedef CPLayoutPriority
 CPLayoutPriorityRequired = 1000; // a required constraint.  Do not exceed this.
 CPLayoutPriorityDefaultHigh = 750; // this is the priority level with which a button resists compressing its content.  Note that it is higher than NSLayoutPriorityWindowSizeStayPut.  Thus dragging to resize a window will not make buttons clip.  Rather the window frame is constrained.
 CPLayoutPriorityDragThatCanResizeWindow = 510; // This is the appropriate priority level for a drag that may end up resizing the window.  This needn't be a drag whose explicit purpose is to resize the window. The user might be dragging around window contents, and it might be desirable that the window get bigger to accommodate.
@@ -57,12 +61,12 @@ var CPLayoutItemIsNull          = 1 << 1,
     id       _container        @accessors(getter=container);
     id       _firstItem        @accessors(getter=firstItem, setter=_setFirstItem:);
     id       _secondItem       @accessors(getter=secondItem, setter=_setSecondItem:);
-    unsigned _firstAttribute   @accessors(getter=firstAttribute);
-    unsigned _secondAttribute  @accessors(getter=secondAttribute);
-    unsigned _relation         @accessors(getter=relation);
+    CPLayoutAttribute _firstAttribute   @accessors(getter=firstAttribute);
+    CPLayoutAttribute _secondAttribute  @accessors(getter=secondAttribute);
+    CPLayoutRelation  _relation         @accessors(getter=relation);
     double   _constant         @accessors(property=constant);
     float    _coefficient      @accessors(getter=multiplier);
-    float    _priority         @accessors(property=priority);
+    CPLayoutPriority _priority @accessors(property=priority);
     BOOL     _active           @accessors(getter=isActive);
     CPString _identifier       @accessors(getter=identifier);
     unsigned _contraintFlags   @accessors(getter=contraintFlags);
@@ -82,12 +86,12 @@ var CPLayoutItemIsNull          = 1 << 1,
     return [CPSet set];
 }
 
-+ (id)constraintWithItem:(id)item1 attribute:(CPInteger)att1 relatedBy:(CPInteger)relation toItem:(id)item2 attribute:(CPInteger)att2 multiplier:(double)multiplier constant:(double)constant
++ (id)constraintWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
 {
     return [[[self class] alloc] initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
 }
 
-- (id)initWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
+- (id)initWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
 {
     self = [super init];
 
@@ -228,14 +232,14 @@ var CPLayoutItemIsNull          = 1 << 1,
     }
 }
 
-- (void)setPriority:(float)aPriority
+- (void)setPriority:(CPLayoutPriority)aPriority
 {
     var priority = MAX(MIN(aPriority, CPLayoutPriorityRequired), 0);
 
     [self _setPriority:priority];
 }
 
-- (void)_setPriority:(float)aPriority
+- (void)_setPriority:(CPLayoutPriority)aPriority
 {
     if (aPriority !== _priority)
     {

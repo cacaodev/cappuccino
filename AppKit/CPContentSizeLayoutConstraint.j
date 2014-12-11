@@ -1,17 +1,14 @@
-@import <AppKit/CGGeometry.j>
+@import <Foundation/_CGGeometry.j>
 @import "CPLayoutConstraint.j"
-
-CPLayoutConstraintOrientationHorizontal  = 0;
-CPLayoutConstraintOrientationVertical  = 1;
 
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
 {
-    double _huggingPriority  @accessors(property=huggingPriority);
-    double _compressPriority @accessors(property=compressPriority);
-    int    _orientation      @accessors(getter=orientation);
+    CPLayoutPriority _huggingPriority          @accessors(property=huggingPriority);
+    CPLayoutPriority _compressPriority         @accessors(property=compressPriority);
+    CPLayoutConstraintOrientation _orientation @accessors(getter=orientation);
 }
 
-- (id)initWithLayoutItem:(id)anItem value:(float)value huggingPriority:(double)huggingPriority compressionResistancePriority:(double)compressionResistancePriority orientation:(int)orientation
+- (id)initWithLayoutItem:(id)anItem value:(float)value huggingPriority:(CPLayoutPriority)huggingPriority compressionResistancePriority:(CPLayoutPriority)compressionResistancePriority orientation:(CPLayoutConstraintOrientation)orientation
 {
     self = [super init];
 

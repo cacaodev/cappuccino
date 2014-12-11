@@ -4,7 +4,7 @@
 {
 }
 
-- (id)initWithItem:(id)item1 attribute:(int)att1 relatedBy:(int)relation toItem:(id)item2 attribute:(int)att2 multiplier:(double)multiplier constant:(double)constant
+- (id)initWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
 {
     self = [super initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
 
@@ -23,14 +23,14 @@
 
 + (CPArray)constraintsWithAutoresizingMask:(unsigned)aMask subitem:(id)subItem frame:(CGRect)aFrame superitem:(id)superItem bounds:(CGRect)bounds
 {
-    var hconstraints = [CPAutoresizingMaskLayoutConstraint _constraintsWithAutoresizingMask:aMask subitem:subItem frame:aFrame superitem:superItem bounds:bounds orientation:0];
+    var hconstraints = [CPAutoresizingMaskLayoutConstraint _constraintsWithAutoresizingMask:aMask subitem:subItem frame:aFrame superitem:superItem bounds:bounds orientation:CPLayoutConstraintOrientationHorizontal];
 
-    var vconstraints = [CPAutoresizingMaskLayoutConstraint _constraintsWithAutoresizingMask:aMask subitem:subItem frame:aFrame superitem:superItem bounds:bounds orientation:1];
+    var vconstraints = [CPAutoresizingMaskLayoutConstraint _constraintsWithAutoresizingMask:aMask subitem:subItem frame:aFrame superitem:superItem bounds:bounds orientation:CPLayoutConstraintOrientationVertical];
 
     return [hconstraints arrayByAddingObjectsFromArray:vconstraints];
 }
 
-+ (CPArray)_constraintsWithAutoresizingMask:(unsigned)aMask subitem:(id)subItem frame:(CGRect)aFrame superitem:(id)superItem bounds:(CGRect)bounds orientation:(CPInteger)orientation
++ (CPArray)_constraintsWithAutoresizingMask:(unsigned)aMask subitem:(id)subItem frame:(CGRect)aFrame superitem:(id)superItem bounds:(CGRect)bounds orientation:(CPLayoutConstraintOrientation)orientation
 {
     if (!superItem)
         return [CPArray array];

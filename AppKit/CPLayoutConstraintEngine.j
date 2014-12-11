@@ -7,15 +7,12 @@
 @import "Engine.js"
 @import "c.js"
 
-/*
-@import <AppKit/c.js>
-@import "Resources/cassowary/Engine.js"
-*/
+@typedef Engine
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
-    SimplexSolver   _engine;
-    Object          _CPEngineRegisteredItems;
+    Engine _engine;
+    Object _CPEngineRegisteredItems;
 }
 
 - (id)init
@@ -93,7 +90,7 @@
     _engine.disableOnSolvedNotification();
 }
 
-- (void)suggestSize:(CGSize)aSize forItem:(id)anItem priority:(CPInteger)priority
+- (void)suggestSize:(CGSize)aSize forItem:(id)anItem priority:(CPLayoutPriority)priority
 {
     var variables = [[anItem _variableWidth], [anItem _variableHeight]],
         values = [aSize.width, aSize.height];
@@ -101,7 +98,7 @@
     _engine.suggestValues(variables, values, priority);
 }
 
-- (void)suggestOrigin:(CGPoint)aPoint forItem:(id)anItem priority:(CPInteger)priority
+- (void)suggestOrigin:(CGPoint)aPoint forItem:(id)anItem priority:(CPLayoutPriority)priority
 {
     var variables = [[anItem _variableMinX], [anItem _variableMinY]],
         values = [aPoint.x, aPoint.y];
@@ -124,7 +121,7 @@
     _engine.resolve();
 }
 
-- (void)addStayConstraintsForItem:(id)anItem priority:(CPInteger)aPriority
+- (void)addStayConstraintsForItem:(id)anItem priority:(CPLayoutPriority)aPriority
 {
     var container = [anItem UID],
         variables = [[anItem _variableWidth], [anItem _variableHeight]],
@@ -132,9 +129,9 @@
 
     for (var i = 0; i < variables.length; i++)
     {
-        var variable = variables[i];
+        var variable = variables[i],
+            hash = (container + "_" + variable.name + "_" + variable.valueOf());
 
-        var hash = (container + "_" + variable.name + "_" + variable.valueOf());
         json_constraints.push({uuid:hash, variable:variable, priority:aPriority});
     }
 
@@ -216,9 +213,10 @@
     var uuid = [anItem UID],
         prefix = [anItem debugID],
         frame = [anItem frame],
-        name, value;
+        name,
+        value;
 
-    switch(tag)
+    switch (tag)
     {
         case 2 : name = "minX";
                  value = CGRectGetMinX(frame);

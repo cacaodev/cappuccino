@@ -50,6 +50,7 @@
 @global appkit_tag_dom_elements
 
 @typedef _CPViewFullScreenModeState
+@typedef Variable
 
 #if PLATFORM(DOM)
 
@@ -255,9 +256,9 @@ CPViewNoInstrinsicMetric = -1;
     BOOL _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
     BOOL _isRegistredInEngine;
 
-    Variable _variableMinX  ;
-    Variable _variableMinY  ;
-    Variable _variableWidth ;
+    Variable _variableMinX;
+    Variable _variableMinY;
+    Variable _variableWidth;
     Variable _variableHeight;
 
     unsigned _constraintBasedNeedsLayoutMask @accessors(getter=_constraintBasedNeedsLayoutMask , setter=_setConstraintBasedNeedsLayoutMask:);
@@ -1659,13 +1660,13 @@ CPViewNoInstrinsicMetric = -1;
 */
 - (CPView)ancestorSharedWithView:(CPView)aView
 {
-    if (self == aView)			// Are they the same view?
+    if (self == aView)                  // Are they the same view?
       return self;
 
-    if ([self isDescendantOf:aView])	// Is self a descendant of view?
+    if ([self isDescendantOf:aView])    // Is self a descendant of view?
       return aView;
 
-    if ([aView isDescendantOf:self])	// Is view a descendant of self?
+    if ([aView isDescendantOf:self])    // Is view a descendant of self?
       return self;
 
     // If neither are descendants of each other and either does not have a
@@ -3717,9 +3718,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [aCoder encodeBool:_isScaled forKey:CPViewIsScaledKey];
 
     var constraints = [_constraintsArray arrayWithObjectsPassingTest:function(obj, idx)
-    {
-        return [obj shouldBeArchived];
-    }];
+                      {
+                          return [obj shouldBeArchived];
+                      }];
 
     if ([constraints count])
         [aCoder encodeObject:constraints forKey:CPViewConstraints];
@@ -4054,7 +4055,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return constraints;
 }
 
-- (void)setContentHuggingPriority:(CPInteger)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
+- (void)setContentHuggingPriority:(CPLayoutPriority)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var huggingPriorities = [self _contentHuggingPriorities];
 
@@ -4064,14 +4065,14 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [constr setHuggingPriority:aPriority];
 }
 
-- (CPInteger)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
+- (CPLayoutPriority)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var huggingPriorities = [self _contentHuggingPriorities];
 
     return (orientation == 0) ? huggingPriorities.width : huggingPriorities.height;
 }
 
-- (void)setContentCompressionResistancePriority:(CPInteger)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
+- (void)setContentCompressionResistancePriority:(CPLayoutPriority)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
@@ -4081,23 +4082,23 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [constr setCompressPriority:aPriority];
 }
 
-- (CPInteger)contentCompressionResistancePriorityForOrientation:(CPLayoutConstraintOrientation)orientation
+- (CPLayoutPriority)contentCompressionResistancePriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
     return (orientation == 0) ? compressionResistancePriorities.width : compressionResistancePriorities.height;
 }
 
-- (CPLayoutConstraint)_contentSizeConstraintForOrientation:(CPInteger)orientation
+- (CPLayoutConstraint)_contentSizeConstraintForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     [self _updateContentSizeConstraints];
 
     var contentSizeConstraints = [self _contentSizeConstraints];
 
     var idx = [contentSizeConstraints indexOfObjectPassingTest:function(aConstraint, idx, stop)
-    {
-       return ([aConstraint orientation] == orientation);
-    }];
+              {
+                  return ([aConstraint orientation] == orientation);
+              }];
 
     if (idx !== CPNotFound)
         return [contentSizeConstraints objectAtIndex:idx];
@@ -4126,9 +4127,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     var constraints = [self constraints];
 
     var indexes = [constraints indexesOfObjectsPassingTest:function(aConstraint, idx, stop)
-    {
-        return ([aConstraint _constraintType] !== @"SizeConstraint");
-    }];
+                  {
+                      return ([aConstraint _constraintType] !== @"SizeConstraint");
+                  }];
 
     return [constraints objectsAtIndexes:indexes];
 }
