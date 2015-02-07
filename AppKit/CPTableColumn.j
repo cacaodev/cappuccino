@@ -28,8 +28,6 @@
 
 @import "CPTextField.j"
 
-@global CPTableViewColumnDidResizeNotification
-
 @class _CPTableColumnHeaderView
 @class CPTableView
 
@@ -182,11 +180,11 @@ CPTableColumnUserResizingMask   = 1 << 1;
             columns = [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(index, [tableView._exposedColumns lastIndex] - index + 1)];
 
         // FIXME: Would be faster with some sort of -setNeedsDisplayInColumns: that updates a dirtyTableColumnForDisplay cache; then marked columns would relayout their data views at display time.
-        [tableView _layoutDataViewsInRows:rows columns:columns];
+        [tableView _layoutViewsForRowIndexes:rows columnIndexes:columns];
         [tableView tile];
 
         if (!_disableResizingPosting)
-            [self _postDidResizeNotificationWithOldWidth:oldWidth];
+            [[self tableView] _didResizeTableColumn:self oldWidth:oldWidth];
     }
 }
 
@@ -395,8 +393,8 @@ CPTableColumnUserResizingMask   = 1 << 1;
 */
 - (void)setDataView:(CPView)aView
 {
-    if (_dataView)
-        _dataViewData = nil;
+    if (_dataView === aView)
+        return;
 
     [aView setThemeState:CPThemeStateTableDataView];
 
@@ -539,19 +537,6 @@ CPTableColumnUserResizingMask   = 1 << 1;
     return _headerToolTip;
 }
 
-/*!
-    @ignore
-*/
-- (void)_postDidResizeNotificationWithOldWidth:(float)oldWidth
-{
-    [[self tableView] _didResizeTableColumn:self];
-
-    [[CPNotificationCenter defaultCenter]
-    postNotificationName:CPTableViewColumnDidResizeNotification
-                  object:[self tableView]
-                userInfo:@{ @"CPTableColumn": self, @"CPOldWidth": oldWidth }];
-}
-
 @end
 
 @implementation CPTableColumnValueBinder : CPBinder
@@ -565,7 +550,9 @@ CPTableColumnUserResizingMask   = 1 << 1;
         rowIndexes = [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, [tableView numberOfRows])],
         columnIndexes = [CPIndexSet indexSetWithIndex:column];
 
-    [tableView reloadDataForRowIndexes:rowIndexes columnIndexes:columnIndexes];
+    // Reloads objectValues only, not the views.
+    // FIXME: reload data for all rows or just exposed rows ?
+    [tableView _reloadDataForRowIndexes:rowIndexes columnIndexes:columnIndexes];
 }
 
 - (CPSortDescriptor)_defaultSortDescriptorPrototype
