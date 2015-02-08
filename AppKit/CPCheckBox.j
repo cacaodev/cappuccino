@@ -113,18 +113,6 @@ CPCheckBoxImageOffset = 4.0;
 
 @end
 
-@implementation CPCheckBox (ConstraintBasedLayout)
-
-- (CGSize)intrinsicContentSize
-{
-    var width = [self _minimumFrameSize].width + [[self image] size].width + CPCheckBoxImageOffset,
-        height = [self currentValueForThemeAttribute:@"min-size"].height;
-        
-    return CGSizeMake(width, height);
-}
-
-@end
-
 @implementation _CPCheckBoxValueBinder : CPBinder
 {
 }
