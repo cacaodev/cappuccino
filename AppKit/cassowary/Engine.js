@@ -469,50 +469,58 @@ var compareUUID = function(a, b)
     var uuida = a.uuid,
         uuidb = b.uuid;
 
-    if (uuida == uuidb)
+    if (uuida > uuidb)
+        return 1;
+    else if (uuida < uuidb)
+        return -1;
+    else
         return 0;
-
-    return (uuida > uuidb) ? 1 : -1;
 };
 
-var compareArrays = function (o, n, sortFunction)
+var compareArrays = function(o, n, sortFunction)
 {
-  // sort both arrays (or this won't work)
-    o.sort(sortFunction); n.sort(sortFunction);
+    // sort both arrays (or this won't work)
+    o.sort(sortFunction);
+    n.sort(sortFunction);
 
-  // don't compare if either list is empty
-  if (o.length == 0 || n.length == 0) return {added: n, removed: o};
+    // don't compare if either list is empty
+    if (o.length === 0 || n.length === 0)
+        return {added:n, removed:o};
 
-  // declare temporary variables
-  var op = 0; var np = 0;
-  var a = []; var r = [];
+    // declare temporary variables
+    var op = 0, np = 0,
+        a = [], r = [];
 
-  // compare arrays and add to add or remove lists
-  while (op < o.length && np < n.length) {
-      var compare = sortFunction(o[op], n[np]);
+    // compare arrays and add to add or remove lists
+    while (op < o.length && np < n.length)
+    {
+        var compare = sortFunction(o[op], n[np]);
 
-      if (compare == -1) {
-          // push to diff?
-          r.push(o[op]);
-          op++;
-      }
-      else if (compare == 1) {
-          // push to diff?
-          a.push(n[np]);
-          np++;
-      }
-      else {
-          op++;np++;
-      }
-  }
+        if (compare === -1)
+        {
+            // push to diff?
+            r.push(o[op]);
+            op++;
+        }
+        else if (compare === 1)
+        {
+            // push to diff?
+            a.push(n[np]);
+            np++;
+        }
+        else
+        {
+            op++;np++;
+        }
+    }
 
-  // add remaining items
-  if( np < n.length )
-    a = a.concat(n.slice(np, n.length));
-  if( op < o.length )
-    r = r.concat(o.slice(op, o.length));
+    // add remaining items
+    if (np < n.length)
+        a = a.concat(n.slice(np, n.length));
 
-  return {added: a, removed: r};
+    if (op < o.length)
+        r = r.concat(o.slice(op, o.length));
+
+    return {added:a, removed:r};
 };
-
 })();
