@@ -4,7 +4,7 @@
 [Original Cassowary from Badros and Borning](http://www.cs.washington.edu/research/constraints/cassowary/)
 
 **Online demos:**
-[Constraints Editor](http://cacaodev.pagesperso-orange.fr/Tests/Manual/Autolayout/ConstraintEditor/) 
+[Constraints Editor](http://cacaodev.github.io/Autolayout/ConstraintEditor/)
 
 **Other visual tests are at Tests/Manual/Autolayout/ in the repo**
 
