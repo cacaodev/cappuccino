@@ -147,6 +147,29 @@
     }
 }
 
+- (void)testAddOrRemoveConstraint
+{
+    var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+
+    var constraint1 = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:100];
+    [view addConstraint:constraint1];
+
+    [self assert:1 equals:[[view constraints] count]];
+
+    var constraint2 = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:100];
+
+    // Add a new constraint object equal to an installed constraint.
+    [view addConstraint:constraint2];
+
+    [self assert:2 equals:[[view constraints] count]];
+
+    [view removeConstraint:constraint1];
+
+    [self assert:1 equals:[[view constraints] count]];
+
+    [self assert:constraint2 equals:[[view constraints] firstObject]];
+}
+
 @end
 
 var CGRectEqualToRectRounding = function(aRect, otherRect, rounding)

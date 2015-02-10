@@ -4177,7 +4177,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 //CPLog.debug([self debugID] + _cmd + " " + [constraints description]);
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        if ([_constraintsArray containsObject:aConstraint])
+        if ([_constraintsArray indexOfObjectIdenticalTo:aConstraint] !== CPNotFound)
             return;
 
         [aConstraint _setContainer:self];
@@ -4201,15 +4201,22 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if ([constraints count] == 0)
         return;
 
-    [self willChangeValueForKey:@"constraints"];
+    var removeIndexes = [CPIndexSet indexSet];
 
-    [_constraintsArray removeObjectsInArray:constraints];
-
-    [constraints enumerateObjectsUsingBlock:function(cst, idx, stop)
+    [_constraintsArray enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-       [cst _setActive:NO];
+        if ([constraints indexOfObjectIdenticalTo:aConstraint] !== CPNotFound)
+        {
+            [removeIndexes addIndex:idx];
+            [aConstraint _setActive:NO];
+        }
     }];
 
+    if ([removeIndexes count] == 0)
+        return;
+
+    [self willChangeValueForKey:@"constraints"];
+    [_constraintsArray removeObjectsAtIndexes:removeIndexes];
     [self didChangeValueForKey:@"constraints"];
 
     [self _setNeedsUpdateConstraints:YES];
