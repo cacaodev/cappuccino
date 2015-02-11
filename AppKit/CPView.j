@@ -324,6 +324,14 @@ CPViewNoInstrinsicMetric = -1;
     _toolTipFunctionOut = function(e) { [_CPToolTip invalidateCurrentToolTipIfNeeded]; };
 }
 
++ (BOOL)automaticallyNotifiesObserversForKey:(CPString)theKey
+{
+    if ([theKey isEqualToString:@"constraints"])
+        return NO;
+
+    return [super automaticallyNotifiesObserversForKey:theKey];
+}
+
 + (CPSet)keyPathsForValuesAffectingFrame
 {
     return [CPSet setWithObjects:@"frameOrigin", @"frameSize"];
@@ -4165,16 +4173,15 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if ([constraints count] == 0)
         return;
 
-    [self willChangeValueForKey:@"constraints"];
     [self _addConstraints:constraints];
-    [self didChangeValueForKey:@"constraints"];
-
     [self _setNeedsUpdateConstraints:YES];
 }
 
 - (void)_addConstraints:(CPArray)constraints
 {
 //CPLog.debug([self debugID] + _cmd + " " + [constraints description]);
+    var externalIndexes = [CPIndexSet indexSet];
+
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
         if ([_constraintsArray indexOfObjectIdenticalTo:aConstraint] !== CPNotFound)
@@ -4187,8 +4194,17 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [[aConstraint firstItem] setAutolayoutEnabled:YES];
         [[aConstraint secondItem] setAutolayoutEnabled:YES];
 
-        [_constraintsArray addObject:aConstraint];
+        [externalIndexes addIndex:idx];
     }];
+
+    if ([externalIndexes count] == 0)
+        return;
+
+    var newIndexes = [CPIndexSet indexSetWithIndexesInRange:CPMakeRange([_constraintsArray count], [externalIndexes count])];
+
+    [self willChange:CPKeyValueChangeInsertion valuesAtIndexes:newIndexes forKey:@"constraints"];
+    [_constraintsArray addObjectsFromArray:[constraints objectsAtIndexes:externalIndexes]];
+    [self didChange:CPKeyValueChangeInsertion valuesAtIndexes:newIndexes forKey:@"constraints"];
 }
 
 - (void)removeConstraint:(CPLayoutConstraint)aConstraint
@@ -4215,9 +4231,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if ([removeIndexes count] == 0)
         return;
 
-    [self willChangeValueForKey:@"constraints"];
+    [self willChange:CPKeyValueChangeRemoval valuesAtIndexes:removeIndexes forKey:@"constraints"];
     [_constraintsArray removeObjectsAtIndexes:removeIndexes];
-    [self didChangeValueForKey:@"constraints"];
+    [self didChange:CPKeyValueChangeRemoval valuesAtIndexes:removeIndexes forKey:@"constraints"];
 
     [self _setNeedsUpdateConstraints:YES];
 }
