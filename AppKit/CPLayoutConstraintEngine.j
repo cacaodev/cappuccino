@@ -37,8 +37,7 @@
 
             if (mask !== 0)
             {
-                [item _setConstraintBasedNeedsLayoutMask:mask];
-                [[item superview] setNeedsLayout];
+                [item item:item variablesDidChange:mask];
             }
             //console.log(item + " = " + records[uuid]);
         }
@@ -105,7 +104,21 @@
 
     _engine.suggestValues(variables, values, priority);
 }
+/*
+PROTOCOL
+- (void)suggestValues:(CPArray)values forVariables:(CPArray)tags ofItem:(id)anItem priority:(CPLayoutPriority)priority
+{
+    var variables = @[];
 
+    for (var i = 0; i < tags.length; i++)
+    {
+        var v = [anItem item:anItem variableForTag:tags[i]];
+        [variables addObject:v];
+    }
+
+    _engine.suggestValues(variables, values, priority);
+}
+*/
 - (void)stopEditing
 {
     _engine.stopEditing();
@@ -208,33 +221,9 @@
     return _engine.description();
 }
 
-- (Variable)variableForItem:(id)anItem tag:(CPInteger)tag
+- (Variable)newVariableWithProperties:(Object)props
 {
-    var uuid = [anItem UID],
-        prefix = [anItem debugID],
-        frame = [anItem frame],
-        name,
-        value;
-
-    switch (tag)
-    {
-        case 2 : name = "minX";
-                 value = CGRectGetMinX(frame);
-        break;
-        case 4 : name = "minY";
-                 value = CGRectGetMinY(frame);
-        break;
-        case 8 : name = "width";
-                 value = CGRectGetWidth(frame);
-        break;
-        case 16 : name = "height";
-                  value = CGRectGetHeight(frame);
-        break;
-        default : name = "unknown";
-                  value = 0;
-    }
-
-    return _engine.Variable(uuid, prefix, name, tag, value);
+    return _engine.Variable(props.uuid, props.prefix, props.name, props.tag, props.value);
 }
 
 @end

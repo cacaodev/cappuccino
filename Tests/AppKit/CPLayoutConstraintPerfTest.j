@@ -26,6 +26,8 @@
 
     var constraintsWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 600, 600) styleMask:CPResizableWindowMask],
         constraintContentView = [constraintsWindow contentView];
+
+    [autoSizeWindow setAutolayoutEnabled:NO];
     [constraintsWindow setAutolayoutEnabled:YES];
     [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [constraintContentView setIdentifier:@"ContentView"];

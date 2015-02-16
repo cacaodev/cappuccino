@@ -3772,38 +3772,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return NO;
 }
 
-- (Variable)_variableMinX
-{
-    if (!_variableMinX)
-        _variableMinX = [[self _layoutEngine] variableForItem:self tag:2];
-
-    return _variableMinX;
-}
-
-- (Variable)_variableMinY
-{
-    if (!_variableMinY)
-        _variableMinY = [[self _layoutEngine] variableForItem:self tag:4];
-
-    return _variableMinY;
-}
-
-- (Variable)_variableWidth
-{
-    if (!_variableWidth)
-        _variableWidth = [[self _layoutEngine] variableForItem:self tag:8];
-
-    return _variableWidth;
-}
-
-- (Variable)_variableHeight
-{
-    if (!_variableHeight)
-        _variableHeight = [[self _layoutEngine] variableForItem:self tag:16];
-
-    return _variableHeight;
-}
-
 - (void)_initConstraintsIvars
 {
     _autolayoutEnabled = NO;
@@ -3842,23 +3810,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [[self window] updateConstraintsAtWindowLevelIfNeeded];
     [engine suggesOrigin:[aPoint.x, aPoint.y] forItem:self];
     [engine endUpdates];
-}
-
-- (id)valueForVariable:(int)aTag
-{
-    var frame = [self frame];
-
-    switch (aTag)
-    {
-        case 2  : return CGRectGetMinX(frame);
-        break;
-        case 4  : return CGRectGetMinY(frame);
-        break;
-        case 8  : return CGRectGetWidth(frame);
-        break;
-        case 16 : return CGRectGetHeight(frame);
-        break;
-    }
 }
 
 // DEBUG
@@ -4465,6 +4416,92 @@ Subclasses should not override this method.
 
     [self _updateConstraintsForSubtree:constraintsByView];
     return ([[self _layoutEngine] solver_replaceConstraints:constraintsByView]);
+}
+
+// CPLayoutEngine protocol
+/*
+- (id)valueForVariable:(int)aTag
+{
+    var frame = [self frame];
+
+    switch (aTag)
+    {
+        case 2  : return CGRectGetMinX(frame);
+        break;
+        case 4  : return CGRectGetMinY(frame);
+        break;
+        case 8  : return CGRectGetWidth(frame);
+        break;
+        case 16 : return CGRectGetHeight(frame);
+        break;
+    }
+}
+*/
+
+- (Variable)_variableMinX
+{
+    if (!_variableMinX)
+        _variableMinX = [self newVariableForTag:2 name:"minX" value:CGRectGetMinX([self frame])];
+
+    return _variableMinX;
+}
+
+- (Variable)_variableMinY
+{
+    if (!_variableMinY)
+        _variableMinY = [self newVariableForTag:4 name:"minY" value:CGRectGetMinY([self frame])];
+
+    return _variableMinY;
+}
+
+- (Variable)_variableWidth
+{
+    if (!_variableWidth)
+        _variableWidth = [self newVariableForTag:8 name:"width" value:CGRectGetWidth([self frame])];
+
+    return _variableWidth;
+}
+
+- (Variable)_variableHeight
+{
+    if (!_variableHeight)
+        _variableHeight = [self newVariableForTag:16 name:"height" value:CGRectGetHeight([self frame])];
+
+    return _variableHeight;
+}
+
+- (Variable)newVariableForTag:(CPInteger)tag name:(CPString)name value:(float)value
+{
+    var uuid = [self UID],
+        prefix = [self debugID];
+
+    return [[self _layoutEngine] newVariableWithProperties:{uuid:uuid, prefix:prefix, name:name, tag:tag, value:value}];
+}
+
+- (Variable)item:(CPObject)anItem variableForTag:(CPInteger)tag
+{
+    var variable;
+
+    switch (tag)
+    {
+        case 2  : variable = [anItem _variableMinX];
+        break;
+        case 4  : variable = [anItem _variableMinY];
+        break;
+        case 8  : variable = [anItem _variableWidth];
+        break;
+        case 16 : variable = [anItem _variableHeight];
+        break;
+        default : variable = null;
+    }
+
+    return variable;
+}
+
+- (void)item:(CPObject)anItem variablesDidChange:(unsigned)updateMask
+{
+    [anItem _setConstraintBasedNeedsLayoutMask:updateMask];
+    [[anItem superview] setNeedsLayout];
 }
 
 - (void)updateEngineFrame
