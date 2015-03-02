@@ -711,7 +711,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
     if (endIndex === CPNotFound)
         endIndex = [_content count] - 1;
 
-    return [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(startIndex, MIN(endIndex - startIndex + 1, [_content count] - 1))];
+    return [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(startIndex,(endIndex - startIndex + 1))];
 }
 
 - (void)displayItemsAtIndexes:(CPIndexSet)itemIndexes frameSize:(CGSize)aFrameSize itemSize:(CGSize)anItemSize columns:(CPInteger)numberOfColumns rows:(CPInteger)numberOfRows count:(CPInteger)displayCount
