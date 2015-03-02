@@ -103,6 +103,9 @@ GLOBAL(CFHTTPRequest) = function()
     this._eventDispatcher = new EventDispatcher(this);
     this._nativeRequest = new NativeRequest();
 
+    // by default, all requests will assume that credentials should not be sent.
+    this._nativeRequest.withCredentials = false;
+
     var self = this;
     this._stateChangeHandler = function()
     {
@@ -272,6 +275,16 @@ CFHTTPRequest.prototype.addEventListener = function(/*String*/ anEventName, /*Fu
 CFHTTPRequest.prototype.removeEventListener = function(/*String*/ anEventName, /*Function*/ anEventListener)
 {
     this._eventDispatcher.removeEventListener(anEventName, anEventListener);
+};
+
+CFHTTPRequest.prototype.setWithCredentials = function(/*Boolean*/ willSendWithCredentials) 
+{
+    this._nativeRequest.withCredentials = willSendWithCredentials;
+};
+
+CFHTTPRequest.prototype.withCredentials = function() 
+{
+    return this._nativeRequest.withCredentials;
 };
 
 function determineAndDispatchHTTPRequestEvents(/*CFHTTPRequest*/ aRequest)

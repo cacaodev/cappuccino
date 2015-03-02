@@ -6,6 +6,7 @@ var FILENAMES = [
         "Class/root-class",
         "Class/root-class-one-ivar",
         "Class/root-class-multiple-ivars",
+        "Class/accessors",
 
         "Messages/no-parameters",
         "Messages/one-parameter",
@@ -13,12 +14,15 @@ var FILENAMES = [
         "Messages/ternary-operator-argument",
         "Messages/keyword-in-selector",
         "Messages/colon-selector",
+        "Messages/self-as-receiver",
+        "Messages/complex-receiver",
 
         "Misc/parenthesis-return",
         "Misc/preprocess-if-directives",
         "Misc/regex-simple-char-classes",
         "Misc/empty-loops",
         "Misc/empty-statements",
+        "Misc/ref-self",
 ];
 
 @implementation OutputTest : OJTestCase

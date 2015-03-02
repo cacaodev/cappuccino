@@ -1,3 +1,4 @@
+@import <OJUnit/OJTestCase.j>
 
 @implementation CPURLConnectionTest : OJTestCase
 {
@@ -20,7 +21,7 @@
 
 - (void)testSynchronousRequestSuccess
 {
-    var req = [CPURLRequest requestWithURL:@"Tests/Foundation/CPURLConnectionTest.j"],    
+    var req = [CPURLRequest requestWithURL:@"Tests/Foundation/CPURLConnectionTest.j"],
         data = [CPURLConnection sendSynchronousRequest:req returningResponse:nil];
 
     [self assert:CPData equals:[data class]];
@@ -30,10 +31,46 @@
 
 - (void)testSynchronousRequestNotFound
 {
-    var req = [CPURLRequest requestWithURL:@"NotFound"],    
+    var req = [CPURLRequest requestWithURL:@"NotFound"],
         data = [CPURLConnection sendSynchronousRequest:req returningResponse:nil];
 
     [self assertNull:data];
+}
+
+- (void)testClassMethodConnectionWithCredentials
+{
+    var req = [CPURLRequest requestWithURL:[CPURL URLWithString:@"Tests/Foundation/CPURLConnectionTest.j"]];
+    [req setWithCredentials:YES];
+    var data = [CPURLConnection sendSynchronousRequest:req returningResponse:nil];
+
+    [self assertNotNull:data];
+}
+
+- (void)testInstanceMethodConnectionWithCredentials
+{
+    var req = [CPURLRequest requestWithURL:[CPURL URLWithString:@"Tests/Foundation/CPURLConnectionTest.j"]];
+    [req setWithCredentials:YES];
+
+    var conn = [[CPURLConnection alloc] initWithRequest:req delegate:nil startImmediately:NO];
+
+    [self assertTrue:conn._HTTPRequest.withCredentials];
+
+    [req setWithCredentials:NO];
+    [self assertTrue:conn._HTTPRequest.withCredentials];
+}
+
+- (void)testRequestGetters
+{
+    var req = [CPURLRequest requestWithURL:[CPURL URLWithString:@"Tests/Foundation/CPURLConnectionTest.j"]],
+        conn = [[CPURLConnection alloc] initWithRequest:req delegate:nil startImmediately:NO];
+    
+    var originalRequest = [conn originalRequest],
+        currentRequest = [conn currentRequest];
+
+    [self assert:originalRequest._UID notEqual:currentRequest._UID];
+
+    [[conn currentRequest] setWithCredentials:YES];
+    [self assert:[originalRequest withCredentials] notEqual:[currentRequest withCredentials]];
 }
 
 @end

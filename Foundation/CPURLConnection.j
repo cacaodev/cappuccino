@@ -26,6 +26,8 @@
 @import "CPURLRequest.j"
 @import "CPURLResponse.j"
 
+@typedef HTTPRequest
+
 var CPURLConnectionDelegate = nil;
 
 /*!
@@ -74,7 +76,8 @@ var CPURLConnectionDelegate = nil;
 */
 @implementation CPURLConnection : CPObject
 {
-    CPURLRequest    _request;
+    CPURLRequest    _originalRequest        @accessors(readonly, getter=originalRequest);
+    CPURLRequest    _request                @accessors(readonly, getter=currentRequest);
     id              _delegate;
     BOOL            _isCanceled;
     BOOL            _isLocalFileConnection;
@@ -98,23 +101,24 @@ var CPURLConnectionDelegate = nil;
 {
     try
     {
-        var request = new CFHTTPRequest();
+        var aCFHTTPRequest = new CFHTTPRequest();
+        aCFHTTPRequest.setWithCredentials([aRequest withCredentials]);
 
-        request.open([aRequest HTTPMethod], [[aRequest URL] absoluteString], NO);
+        aCFHTTPRequest.open([aRequest HTTPMethod], [[aRequest URL] absoluteString], NO);
 
         var fields = [aRequest allHTTPHeaderFields],
             key = nil,
             keys = [fields keyEnumerator];
 
         while ((key = [keys nextObject]) !== nil)
-            request.setRequestHeader(key, [fields objectForKey:key]);
+            aCFHTTPRequest.setRequestHeader(key, [fields objectForKey:key]);
 
-        request.send([aRequest HTTPBody]);
+        aCFHTTPRequest.send([aRequest HTTPBody]);
 
-        if (!request.success())
+        if (!aCFHTTPRequest.success())
             return nil;
 
-        return [CPData dataWithRawString:request.responseText()];
+        return [CPData dataWithRawString:aCFHTTPRequest.responseText()];
     }
     catch (anException)
     {
@@ -148,6 +152,7 @@ var CPURLConnectionDelegate = nil;
     if (self)
     {
         _request = aRequest;
+        _originalRequest = [aRequest copy];
         _delegate = aDelegate;
         _isCanceled = NO;
 
@@ -161,6 +166,7 @@ var CPURLConnectionDelegate = nil;
                                      (window.location.protocol === "file:" || window.location.protocol === "app:"));
 
         _HTTPRequest = new CFHTTPRequest();
+        _HTTPRequest.setWithCredentials([aRequest withCredentials]);
 
         if (shouldStartImmediately)
             [self start];
