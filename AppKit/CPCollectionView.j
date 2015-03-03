@@ -612,7 +612,7 @@ var HORIZONTAL_MARGIN = 2;
         !CGSizeEqualToSize(_itemSize, oldItemSize))
     {
         var indexes = [self _indexesToDisplay];
-CPLog.debug(_cmd + indexes);
+//CPLog.debug(_cmd + indexes);
         if (_needsFullDisplay)
         {
             [indexes addIndexes:_displayedIndexes];
@@ -677,25 +677,25 @@ CPLog.debug(_cmd + indexes);
 
 - (void)superviewFrameChanged:(CPNotification)aNotification
 {
-    CPLog.debug(_cmd);
+    //CPLog.debug(_cmd);
 }
 
 - (void)superviewBoundsChanged:(CPNotification)aNotification
 {
 
-    CPLogConsole(CPStringFromRect([[aNotification object] bounds]));
-    CPLogConsole(CPStringFromSize(_storedFrameSize));
+    //CPLogConsole(CPStringFromRect([[aNotification object] bounds]));
+    //CPLogConsole(CPStringFromSize(_storedFrameSize));
 
 //    CPLog.debug(_cmd);
-var d = new Date();
+//var d = new Date();
     var indexes = [self _indexesToDisplay];
     [indexes removeIndexes:_displayedIndexes];
-CPLog.debug("_indexesToDisplay in " + (new Date() - d));
+//CPLog.debug("_indexesToDisplay in " + (new Date() - d));
     if (![indexes count])
         return;
-var dd = new Date();
+//var dd = new Date();
     [self displayItemsAtIndexes:indexes frameSize:_storedFrameSize itemSize:_itemSize columns:_numberOfColumns rows:_numberOfRows count:[_content count]];
-CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
+//CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
 }
 
 - (CPIndexSet)_indexesToDisplay
@@ -716,7 +716,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
 
 - (void)displayItemsAtIndexes:(CPIndexSet)itemIndexes frameSize:(CGSize)aFrameSize itemSize:(CGSize)anItemSize columns:(CPInteger)numberOfColumns rows:(CPInteger)numberOfRows count:(CPInteger)displayCount
 {
-    CPLog.debug("DISPLAY ITEMS " + itemIndexes);
+    //CPLog.debug("DISPLAY ITEMS " + itemIndexes);
     _horizontalMargin = _uniformSubviewsResizing ? FLOOR((aFrameSize.width - numberOfColumns * anItemSize.width) / (numberOfColumns + 1)) : HORIZONTAL_MARGIN;
 
     var xOffset = anItemSize.width + _horizontalMargin,
@@ -724,7 +724,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
 
     [itemIndexes enumerateIndexesUsingBlock:function(idx, stop)
     {
-        CPLog.debug("Display Item " + idx);
+        //CPLog.debug("Display Item " + idx);
         var item = [self itemAtIndex:idx],
             view = [item view];
 
@@ -745,7 +745,7 @@ CPLog.debug("displayItemsAtIndexes in " + (new Date() - dd));
 
         if (![view superview])
         {
-            CPLog.debug("Add Item view " + idx);
+            //CPLog.debug("Add Item view " + idx);
             [self addSubview:view];
             [_displayedIndexes addIndex:idx];
         }

@@ -8,7 +8,6 @@
 
 @import <Foundation/CPObject.j>
 //@import "CPCollectionView.j"
-@import "../CPTrace.j"
 
 CPLogRegister(CPLogConsole);
 
@@ -25,7 +24,6 @@ CPLogRegister(CPLogConsole);
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     // This is called when the application is done loading.
-    CPTrace("CPCollectionView", "superviewBoundsChanged:");
 }
 
 - (void)awakeFromCib
@@ -45,14 +43,6 @@ CPLogRegister(CPLogConsole);
     [collectionView registerForDraggedTypes:[@"DragType"]];
     [emptyCollectionView registerForDraggedTypes:[@"DragType"]];
     //[theWindow setFullPlatformWindow:YES];
-
-    [collectionView setMaxNumberOfRows:0];
-    var v=[];
-    for(var i=0;i<100;i++)
-    {
-        v[i]= @{"value":(""+i), "color":[CPColor randomColor]};
-    }
-    [collectionView setContent:v];
 }
 
 - (IBAction)setPrototypeItem:(id)sender
@@ -110,28 +100,6 @@ CPLogRegister(CPLogConsole);
     return [collectionView maxItemSize].height;
 }
 
-/*
-    Indexed accessors
-*/
-
-- (CPInteger)countOfValues
-{
-    CPLog.debug(_cmd);
-    return 100;
-}
-
-- (id)objectInValuesAtIndex:(CPInteger)anIndex
-{
-    CPLog.debug(_cmd+anIndex);
-    return @{"value":(""+anIndex), "color":[CPColor randomColor]};
-}
-/*
-- (CPArray)valuesAtIndexes:(CPIndexSet)indexes
-{
-    CPLog.debug(_cmd);
-    return [content objectsAtIndexes:indexes];
-}
-*/
 /*
     DELEGATE METHODS
 */

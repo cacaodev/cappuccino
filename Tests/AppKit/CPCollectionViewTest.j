@@ -80,20 +80,20 @@
 	    content = [];
 
 	[sv setDocumentView:cv];
-	
+
 	for(var i = 0; i < 100; i++)
 	{
 		content.push("" + i);
 	}
-	
+
 	[cv setMinItemSize:CGSizeMake(50, 50)];
 	[cv setMaxItemSize:CGSizeMake(50, 50)];
 	[cv setMaxNumberOfRows:0];
 	[cv setMaxNumberOfColumns:4];
 
     [cv setItemPrototype:itemPrototype];
-	[cv setContent:content];
-	
+    [cv setContent:content];
+
 	[self assert:12 equals:[[cv subviews] count] message:" The collection view should contain 12 item views among a total of 100"];
 }
 
