@@ -1,11 +1,43 @@
 
 @import "_CPObjectAnimator.j"
 @import "CPView.j"
+@import "CPSegmentedControl.j"
+@import "_CPImageAndTextView.j"
 
 @class CPAnimationContext
 
 @implementation CPViewAnimator : _CPObjectAnimator
 {
+}
+
+- (void)viewWillMoveToSuperview:(CPView)aSuperview
+{
+    var orderInAnim = [self animationForKey:@"CPAnimationTriggerOrderIn"];
+
+    if (orderInAnim && [orderInAnim isKindOfClass:[CAPropertyAnimation class]])
+    {
+        [_target setValue:[orderInAnim fromValue] forKeyPath:[orderInAnim keyPath]];
+    }
+
+    [_target viewWillMoveToSuperview:aSuperview];
+}
+
+- (void)viewDidMoveToSuperview
+{
+    var orderInAnim = [self animationForKey:@"CPAnimationTriggerOrderIn"];
+
+    if (orderInAnim && [orderInAnim isKindOfClass:[CAPropertyAnimation class]])
+    {
+        [self _setTargetValue:YES withKeyPath:@"CPAnimationTriggerOrderIn" fallback:nil completion:function()
+        {
+            [_target setValue:[orderInAnim toValue] forKeyPath:[orderInAnim keyPath]];
+        }];
+    }
+    else
+    {
+        [_target viewDidMoveToSuperview];
+    }
+
 }
 
 - (void)removeFromSuperview
@@ -168,6 +200,113 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
 - (void)setAnimations:(CPDictionary)animationsDict
 {
     _animationsDictionary = [animationsDict copy];
+}
+
+@end
+
+@implementation CPSegmentedControlAnimator : CPViewAnimator
+{
+}
+
+- (void)setSelected:(BOOL)selected forSegment:(CPInteger)aSegment
+{
+    [self _setSelected:!selected forSegment:[_target selectedSegment] withCompletion:NO];
+    [self _setSelected:selected forSegment:aSegment withCompletion:YES];
+}
+
+- (void)_setSelected:(BOOL)selected forSegment:(CPInteger)aSegment withCompletion:(BOOL)isLast
+{
+    if (aSegment == -1)
+        return;
+
+    var completion = nil;
+    var state = selected ? CPThemeStateSelected : CPThemeStateNormal;
+
+    if (aSegment == 0)
+    {
+        var leftColor = [_target valueForThemeAttribute:@"left-segment-bezel-color" inState:state];
+        var leftBezel = [_target ephemeralSubviewNamed:@"left-segment-bezel"];
+
+        [[leftBezel animator] _setTargetValue:leftColor withKeyPath:@"backgroundColor" fallback:nil completion:completion];
+    }
+
+    if (aSegment == [self segmentCount] - 1)
+    {
+        var rightColor = [_target valueForThemeAttribute:@"right-segment-bezel-color" inState:state];
+        var rightBezel = [_target ephemeralSubviewNamed:@"right-segment-bezel"];
+
+        [[rightBezel animator] _setTargetValue:rightColor withKeyPath:@"backgroundColor" fallback:nil completion:completion];
+    }
+
+    var centerColor = [_target valueForThemeAttribute:@"center-segment-bezel-color" inState:state];
+    var centerBezel = [_target ephemeralSubviewNamed:@"segment-bezel-" + aSegment];
+
+    if (isLast)
+    {
+        completion = function()
+        {
+            [_target setSelected:YES forSegment:aSegment];
+            [[CPRunLoop currentRunLoop] performSelectors];
+        };
+    }
+
+    [[centerBezel animator] _setTargetValue:centerColor withKeyPath:@"backgroundColor" fallback:nil completion:completion];
+
+    var contentView = [_target ephemeralSubviewNamed:@"segment-content-" + aSegment],
+        color = [_target valueForThemeAttribute:@"text-color" inState:state];
+
+    [[contentView animator] setTextColor:color];
+}
+
+@end
+
+@implementation CPSegmentedControl (CPAnimatablePropertyContainer)
+
+- (id)animator
+{
+    if (!_animator)
+        _animator = [[CPSegmentedControlAnimator alloc] initWithTarget:self];
+
+    return _animator;
+}
+
+@end
+
+@implementation _CPImageAndTextViewAnimator : CPViewAnimator
+{
+}
+
+- (void)setTextColor:(CPColor)aColor
+{
+    [self _setTargetValue:aColor withKeyPath:@"textColor" setter:_cmd];
+}
+
+@end
+
+@implementation _CPImageAndTextView (CPAnimatablePropertyContainer)
+
++ (CPArray)cssPropertiesForKeyPath:(CPString)aKeyPath
+{
+    if (aKeyPath == @"textColor")
+        return @[@{"property":"color", "value":function(s,v){return [v cssString];}}];
+
+    return [super cssPropertiesForKeyPath:aKeyPath];
+}
+
+- (id)DOMElementForKeyPath:(CPString)aKeyPath
+{
+    if (aKeyPath == @"textColor")
+        return _DOMElement;
+
+    return nil;
+}
+
+- (id)animator
+{
+    if (!_animator)
+        _animator = [[_CPImageAndTextViewAnimator alloc] initWithTarget:self];
+
+    return _animator;
 }
 
 @end

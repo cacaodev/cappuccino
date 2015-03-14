@@ -153,7 +153,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 {
     CPWindow            _window;
 
-    CPView              _superview;
+    CPView              _superview @accessors(setter=_setSuperview:);
     CPArray             _subviews;
 
     CPGraphicsContext   _graphicsContext;
@@ -180,7 +180,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL                _isSuperviewAClipView;
 
 #if PLATFORM(DOM)
-    DOMElement          _DOMElement;
+    DOMElement          _DOMElement @accessors(getter=_DOMElement);
     DOMElement          _DOMContentsElement;
 
     CPArray             _DOMImageParts;
@@ -540,7 +540,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (aSubview === self)
         [CPException raise:CPInvalidArgumentException reason:"can't add a view as a subview of itself"];
 #if DEBUG
-    if (!aSubview._superview && _subviews.indexOf(aSubview) !== CPNotFound)
+    if (![aSubview superview] && _subviews.indexOf(aSubview) !== CPNotFound)
         [CPException raise:CPInvalidArgumentException reason:"can't insert a subview in duplicate (probably partially decoded)"];
 #endif
 
@@ -555,7 +555,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     [[self window] _dirtyKeyViewLoop];
 
     // If this is already one of our subviews, remove it.
-    if (aSubview._superview == self)
+    if ([aSubview superview] == self)
     {
         var index = [_subviews indexOfObjectIdenticalTo:aSubview];
 
@@ -566,7 +566,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [_subviews removeObjectAtIndex:index];
 
 #if PLATFORM(DOM)
-        CPDOMDisplayServerRemoveChild(_DOMElement, aSubview._DOMElement);
+        CPDOMDisplayServerRemoveChild(_DOMElement, [aSubview _DOMElement]);
 #endif
 
         if (anIndex > index)
@@ -577,7 +577,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     }
     else
     {
-        var superview = aSubview._superview;
+        var superview = [aSubview superview];
 
         lastWindow = [superview window];
 
@@ -585,7 +585,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [aSubview _removeFromSuperview];
 
         // Set ourselves as the superview.
-        aSubview._superview = self;
+        [aSubview _setSuperview:self];
     }
 
     if (anIndex === CPNotFound || anIndex >= count)
@@ -594,7 +594,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
 #if PLATFORM(DOM)
         // Attach the actual node.
-        CPDOMDisplayServerAppendChild(_DOMElement, aSubview._DOMElement);
+        CPDOMDisplayServerAppendChild(_DOMElement, [aSubview _DOMElement]);
 #endif
     }
     else
@@ -603,7 +603,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
 #if PLATFORM(DOM)
         // Attach the actual node.
-        CPDOMDisplayServerInsertBefore(_DOMElement, aSubview._DOMElement, _subviews[anIndex + 1]._DOMElement);
+        CPDOMDisplayServerInsertBefore(_DOMElement, [aSubview _DOMElement], [_subviews[anIndex + 1] _DOMElement]);
 #endif
     }
 
