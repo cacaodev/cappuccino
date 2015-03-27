@@ -340,13 +340,6 @@ var CPViewHighDPIDrawingEnabled = YES;
     _viewClassFlags = CPViewFlags[classUID];
 }
 
-- (void)_setupToolTipHandlers
-{
-    _toolTipInstalled = NO;
-    _toolTipFunctionIn = function(e) { [_CPToolTip scheduleToolTipForView:self]; }
-    _toolTipFunctionOut = function(e) { [_CPToolTip invalidateCurrentToolTipIfNeeded]; };
-}
-
 + (BOOL)automaticallyNotifiesObserversForKey:(CPString)theKey
 {
     if ([theKey isEqualToString:@"constraints"])
@@ -423,7 +416,6 @@ var CPViewHighDPIDrawingEnabled = YES;
         _DOMImageSizes = [];
 #endif
 
-        [self _setupToolTipHandlers];
         [self _setupViewFlags];
 
         [self _loadThemeAttributes];
@@ -451,12 +443,16 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     _toolTip = aToolTip;
 
-    if (_toolTip)
+    [self _manageToolTipInstallation];
+}
+
+- (void)_manageToolTipInstallation
+{
+    if ([self window] && _toolTip)
         [self _installToolTipEventHandlers];
     else
         [self _uninstallToolTipEventHandlers];
 }
-
 /*! @ignore
 
     Install the handlers for the tooltip
@@ -465,6 +461,12 @@ var CPViewHighDPIDrawingEnabled = YES;
 {
     if (_toolTipInstalled)
         return;
+
+    if (!_toolTipFunctionIn)
+        _toolTipFunctionIn = function(e) { [_CPToolTip scheduleToolTipForView:self]; }
+
+    if (!_toolTipFunctionOut)
+        _toolTipFunctionOut = function(e) { [_CPToolTip invalidateCurrentToolTipIfNeeded]; };
 
 #if PLATFORM(DOM)
     if (_DOMElement.addEventListener)
@@ -507,6 +509,9 @@ var CPViewHighDPIDrawingEnabled = YES;
         _DOMElement.detachEvent("onmouseout", _toolTipFunctionOut);
     }
 #endif
+
+    _toolTipFunctionIn = nil;
+    _toolTipFunctionOut = nil;
 
     _toolTipInstalled = NO;
 }
@@ -846,6 +851,8 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     [self viewDidMoveToWindow];
 
+    [self _manageToolTipInstallation];
+
     [[self window] _dirtyKeyViewLoop];
 }
 
@@ -873,6 +880,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 {
 //    if (_graphicsContext)
         [self setNeedsDisplay:YES];
+
 }
 
 /*!
@@ -1452,7 +1460,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         var subview = _subviews[count];
         if (![subview isAutolayoutEnabled])
             [subview resizeWithOldSuperviewSize:aSize];
-    }
+}
 }
 
 /*!
@@ -2687,8 +2695,8 @@ setBoundsOrigin:
         _needsLayout = needsLayout;
 
         if (needsLayout)
-            _CPDisplayServerAddLayoutObject(self);
-    }
+    _CPDisplayServerAddLayoutObject(self);
+}
 }
 
 - (BOOL)needsLayout
@@ -3632,7 +3640,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         _hitTests = ![aCoder containsValueForKey:CPViewHitTestsKey] || [aCoder decodeBoolForKey:CPViewHitTestsKey];
 
-        [self _setupToolTipHandlers];
         _toolTip = [aCoder decodeObjectForKey:CPViewToolTipKey];
 
         if (_toolTip)
