@@ -622,7 +622,6 @@ NOT YET IMPLEMENTED
 - (void)reloadData
 {
     [self _reloadDataViews];
-    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
 }
 
 /*!
@@ -1146,6 +1145,7 @@ NOT YET IMPLEMENTED
         _dirtyTableColumnRangeIndex = MIN(index, _dirtyTableColumnRangeIndex);
 
     [self reloadData];
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
 }
 
 /*!
@@ -3834,6 +3834,9 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 - (void)enumerateAvailableViewsUsingBlock:(Function/*CPView *dataView, CPInteger row, CPInteger column*, @ref stop*/)handler
 {
     [self reloadData];
+
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+
     [self _enumerateViewsInRows:_exposedRows columns:_exposedColumns usingBlock:handler];
 }
 
@@ -3843,6 +3846,8 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 
 - (void)_enumerateViewsInRows:(CPIndexSet)rowIndexes columns:(CPIndexSet)columnIndexes usingBlock:(Function/*CPView dataView, CPInteger row, CPInteger column, @ref stop*/)handler
 {
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+
     [rowIndexes enumerateIndexesUsingBlock:function(rowIndex, stopRow)
     {
         var dataViewsForRow = _dataViewsForRows[rowIndex];
@@ -3868,6 +3873,8 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 
 - (void)_enumerateViewsInRows:(CPIndexSet)rowIndexes tableColumns:(CPArray)tableColumns usingBlock:(Function/*CPView dataView, CPInteger row, CPtableColumn tableColumn, CPInteger column, @ref stop*/)handler
 {
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+
     [rowIndexes enumerateIndexesUsingBlock:function(rowIndex, stopRow)
     {
         var dataViewsForRow = _dataViewsForRows[rowIndex];
@@ -4458,6 +4465,9 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 
     var row = [self rowAtPoint:aPoint];
 
+    _clickedRow = row;
+    _clickedColumn = [self columnAtPoint:aPoint];
+
     // If the user clicks outside a row then deselect everything.
     if (row < 0 && _allowsEmptySelection)
     {
@@ -4520,6 +4530,12 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
     }
     else
         [CPApp sendEvent:anEvent];
+
+    if ([anEvent type] == CPLeftMouseUp)
+    {
+        _clickedRow = CPNotFound;
+        _clickedColumn = CPNotFound;
+    }
 }
 
 /*
@@ -4528,6 +4544,9 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 - (BOOL)continueTracking:(CGPoint)lastPoint at:(CGPoint)aPoint
 {
     var row = [self rowAtPoint:aPoint];
+
+    _clickedRow = row;
+    _clickedColumn = [self columnAtPoint:aPoint];
 
     // begin the drag is the datasource lets us, we've move at least +-3px vertical or horizontal,
     // or we're dragging from selected rows and we haven't begun a drag session
@@ -4617,9 +4636,12 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
         rowIndex,
         shouldEdit = YES;
 
+    _clickedRow = [self rowAtPoint:aPoint];
+    _clickedColumn = [self columnAtPoint:aPoint];
+
     if ([self _dataSourceRespondsToWriteRowsWithIndexesToPasteboard])
     {
-        rowIndex = [self rowAtPoint:aPoint];
+        rowIndex = _clickedRow;
 
         if (rowIndex !== -1)
         {
@@ -4641,7 +4663,7 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
         && ([self _dataSourceRespondsToSetObjectValueForTableColumnRow]
             || [self infoForBinding:@"content"]))
     {
-        columnIndex = [self columnAtPoint:lastPoint];
+        columnIndex = _clickedColumn;
 
         if (columnIndex !== -1)
         {
@@ -4666,11 +4688,7 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 
     //double click actions
     if ([[CPApp currentEvent] clickCount] === 2 && _doubleAction)
-    {
-        _clickedRow = [self rowAtPoint:aPoint];
-        _clickedColumn = [self columnAtPoint:lastPoint];
         [self sendAction:_doubleAction to:_target];
-    }
 }
 
 /*
@@ -5297,6 +5315,9 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
         [[CPException exceptionWithName:@"Error" reason:@"Attempt to edit row " + rowIndex + " when not selected." userInfo:nil] raise];
 
     [self reloadData];
+
+    // Process all events immediately to make sure table data views are reloaded.
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
 
     [self scrollRowToVisible:rowIndex];
     [self scrollColumnToVisible:columnIndex];
