@@ -211,7 +211,7 @@ CPSegmentSwitchTrackingMomentary = 2;
 - (void)setSelectedSegment:(unsigned)aSegment
 {
     // setSelected:forSegment throws the exception for us (if necessary)
-    if (_selectedSegment == aSegment)
+    if ([self selectedSegment] == aSegment)
         return;
 
     if (aSegment == -1)
@@ -221,7 +221,7 @@ CPSegmentSwitchTrackingMomentary = 2;
         while (count--)
             [self setSelected:NO forSegment:count];
 
-        _selectedSegment = -1;
+        [self _setSelectedSegment:-1];
     }
     else
         [self setSelected:YES forSegment:aSegment];
@@ -233,6 +233,11 @@ CPSegmentSwitchTrackingMomentary = 2;
 - (unsigned)selectedSegment
 {
     return _selectedSegment;
+}
+
+- (void)_setSelectedSegment:(unsigned)aSegment
+{
+    _selectedSegment = aSegment;
 }
 
 /*!

@@ -384,7 +384,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 #endif
 
         _animator = nil;
-        _animationsDictionary = [CPDictionary dictionary];
+        _animationsDictionary = @{};
 
         [self _setupViewFlags];
 
@@ -705,7 +705,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (void)replaceSubview:(CPView)aSubview with:(CPView)aView
 {
-    if (aSubview._superview !== self || aSubview === aView)
+    if ([aSubview superview] !== self || aSubview === aView)
         return;
 
     var index = [_subviews indexOfObjectIdenticalTo:aSubview];
@@ -3622,6 +3622,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
             _themeAttributes[attributeName] = CPThemeAttributeDecode(aCoder, attributeName, attributes[count], _theme, themeClass);
         }
+
+        _animator = nil;
+        _animationsDictionary = @{};
 
         [self setNeedsDisplay:YES];
         [self setNeedsLayout];

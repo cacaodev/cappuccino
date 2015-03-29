@@ -2,6 +2,7 @@
 @import "_CPObjectAnimator.j"
 @import "CPView.j"
 @import "CPSegmentedControl.j"
+@import "CPTabView.j"
 @import "_CPImageAndTextView.j"
 
 @class CPAnimationContext
@@ -92,7 +93,7 @@
     [self _setTargetValue:aTargetValue withKeyPath:aKeyPath fallback:handler completion:handler];
 }
 
-- (void)_setTargetValue:(id)aTargetValue withKeyPath:(CPString)aKeyPath fallback:(Function)fallback  completion:(Function)completion
+- (void)_setTargetValue:(id)aTargetValue withKeyPath:(CPString)aKeyPath fallback:(Function)fallback completion:(Function)completion
 {
     var animation = [_target animationForKey:aKeyPath],
         context = [CPAnimationContext currentContext];
@@ -158,22 +159,32 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
     return [CPVIEW_PROPERTIES_DESCRIPTOR objectForKey:aKeyPath];
 }
 
-- (id)DOMElementForKeyPath:(CPString)aKeyPath
++ (Class)animatorClass
 {
-    return _DOMElement;
+    var anim_class = CPClassFromString(CPStringFromClass(self) + "Animator");
+
+    if (anim_class)
+        return anim_class;
+
+    return [super animatorClass];
 }
 
 - (id)animator
 {
     if (!_animator)
-        _animator = [[CPViewAnimator alloc] initWithTarget:self];
+        _animator = [[[[self class] animatorClass] alloc] initWithTarget:self];
 
     return _animator;
 }
 
+- (id)DOMElementForKeyPath:(CPString)aKeyPath
+{
+    return _DOMElement;
+}
+
 + (CAAnimation)defaultAnimationForKey:(CPString)aKey
 {
-    if ([[self class] cssPropertiesForKeyPath:aKey] !== nil)
+    if ([self cssPropertiesForKeyPath:aKey] !== nil)
         return [CAAnimation animation];
 
     return nil;
@@ -204,8 +215,67 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
 
 @end
 
+@implementation CPButtonAnimator : CPViewAnimator
+{
+}
+
+- (void)setTextColor:(CPColor)aColor
+{
+    var contentView = [_target ephemeralSubviewNamed:@"content-view"];
+
+    [[contentView animator] _setTargetValue:aColor withKeyPath:@"textColor" fallback:nil completion:function()
+    {
+        [_target setTextColor:aColor];
+        [[CPRunLoop currentRunLoop] performSelectors];
+    }];
+}
+
+- (void)setFont:(CPFont)aFont
+{
+    var contentView = [_target ephemeralSubviewNamed:@"content-view"];
+
+    [[contentView animator] _setTargetValue:aFont withKeyPath:@"font" fallback:nil completion:function()
+    {
+        [_target setFont:aFont];
+        [[CPRunLoop currentRunLoop] performSelectors];
+    }];
+}
+
+- (void)setFontSize:(CPInteger)aFontSize
+{
+    var contentView = [_target ephemeralSubviewNamed:@"content-view"],
+        font = [[_target font] fontOfSize:aFontSize];
+
+    [[contentView animator] _setTargetValue:aFontSize withKeyPath:@"fontSize" fallback:nil completion:function()
+    {
+        [_target setFont:font];
+        [[CPRunLoop currentRunLoop] performSelectors];
+    }];
+}
+
+@end
+
 @implementation CPSegmentedControlAnimator : CPViewAnimator
 {
+}
+
+- (void)setSelectedSegment:(unsigned)aSegment
+{
+    // setSelected:forSegment throws the exception for us (if necessary)
+    if ([_target selectedSegment] == aSegment)
+        return;
+
+    if (aSegment == -1)
+    {
+        var count = [_target segmentCount];
+
+        while (count--)
+            [self setSelected:NO forSegment:count];
+
+        [_target _setSelectedSegment:-1];
+    }
+    else
+        [self setSelected:YES forSegment:aSegment];
 }
 
 - (void)setSelected:(BOOL)selected forSegment:(CPInteger)aSegment
@@ -262,13 +332,38 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
 
 @implementation CPSegmentedControl (CPAnimatablePropertyContainer)
 
-- (id)animator
-{
-    if (!_animator)
-        _animator = [[CPSegmentedControlAnimator alloc] initWithTarget:self];
+@end
 
-    return _animator;
+@implementation CPTabViewAnimator : CPViewAnimator
+{
 }
+
+- (BOOL)selectTabViewItemAtIndex:(CPUInteger)anIndex
+{
+    var aTabViewItem = [self tabViewItemAtIndex:anIndex];
+
+    if (aTabViewItem == [self selectedTabViewItem])
+        return NO;
+
+    if (![self _delegateShouldSelectTabViewItem:aTabViewItem])
+        return NO;
+
+    [self _sendDelegateWillSelectTabViewItem:aTabViewItem];
+
+    [[[_target _tabs] animator] setSelectedSegment:anIndex];
+
+    [self _setSelectedTabViewItem:aTabViewItem];
+
+    [self _displayItemView:[[aTabViewItem view] animator]];
+
+    [self _sendDelegateDidSelectTabViewItem:aTabViewItem];
+
+    return YES;
+}
+
+@end
+
+@implementation CPTabView (CPAnimatablePropertyContainer)
 
 @end
 
@@ -278,7 +373,20 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
 
 - (void)setTextColor:(CPColor)aColor
 {
-    [self _setTargetValue:aColor withKeyPath:@"textColor" setter:_cmd];
+    [self _setTargetValue:aColor withKeyPath:@"textColor" fallback:nil completion:function()
+    {
+        [_target setTextColor:aColor];
+        [[CPRunLoop currentRunLoop] performSelectors];
+    }];
+}
+
+- (void)setFont:(CPFont)aFont
+{
+    [self _setTargetValue:aFont withKeyPath:@"font" fallback:nil completion:function()
+    {
+        [_target setFont:aFont];
+        [[CPRunLoop currentRunLoop] performSelectors];
+    }];
 }
 
 @end
@@ -289,24 +397,34 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
 {
     if (aKeyPath == @"textColor")
         return @[@{"property":"color", "value":function(s,v){return [v cssString];}}];
+    else if (aKeyPath == @"font")
+        return @[@{"property":"font", "value":function(s,v){return [v cssString];}}];
+    else if (aKeyPath == @"fontSize")
+        return @[@{"property":"font-size", "value":function(s,v){return v + "px";}}];
 
     return [super cssPropertiesForKeyPath:aKeyPath];
 }
 
 - (id)DOMElementForKeyPath:(CPString)aKeyPath
 {
-    if (aKeyPath == @"textColor")
-        return _DOMElement;
+    if (aKeyPath == @"textColor" || aKeyPath == @"font" || aKeyPath == @"fontSize")
+        return _DOMTextElement;
 
     return nil;
 }
 
-- (id)animator
+- (float)fontSize
 {
-    if (!_animator)
-        _animator = [[_CPImageAndTextViewAnimator alloc] initWithTarget:self];
+    return [[self font] size];
+}
 
-    return _animator;
+@end
+
+@implementation CPFont (CPViewAnimator)
+
+- (CPFont)fontOfSize:(CPInteger)aSize
+{
+    return [CPFont _fontWithName:_name size:aSize bold:_isBold italic:_isItalic];
 }
 
 @end

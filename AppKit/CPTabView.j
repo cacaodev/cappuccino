@@ -63,11 +63,11 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
 {
     CPArray                 _items;
 
-    CPSegmentedControl      _tabs;
-    CPBox                   _box;
+    CPSegmentedControl      _tabs @accessors(getter=_tabs);
+    CPBox                   _box @accessors(getter=_box);
     CPView                  _placeHolderView;
 
-    CPTabViewItem           _selectedTabViewItem;
+    CPTabViewItem           _selectedTabViewItem @accessors;
 
     CPTabViewType           _type;
     CPFont                  _font;
@@ -325,16 +325,17 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
     if (aTabViewItem == _selectedTabViewItem)
         return NO;
 
-    if ((_delegateSelectors & CPTabViewShouldSelectTabViewItemSelector) && ![_delegate tabView:self shouldSelectTabViewItem:aTabViewItem])
+    if (![self _delegateShouldSelectTabViewItem:aTabViewItem])
         return NO;
 
-    if (_delegateSelectors & CPTabViewWillSelectTabViewItemSelector)
-        [_delegate tabView:self willSelectTabViewItem:aTabViewItem];
+    [self _sendDelegateWillSelectTabViewItem:aTabViewItem];
 
     [_tabs setSelectedSegment:anIndex];
+
     _selectedTabViewItem = aTabViewItem;
 
     [self _displayItemView:[aTabViewItem view]];
+
     [self _sendDelegateDidSelectTabViewItem:aTabViewItem];
 
     return YES;
@@ -515,6 +516,20 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
 }
 
 // DELEGATE METHODS
+
+- (void)_delegateShouldSelectTabViewItem:(CPTabViewItem)aTabViewItem
+{
+    if (_delegateSelectors & CPTabViewShouldSelectTabViewItemSelector)
+        return [_delegate tabView:self shouldSelectTabViewItem:aTabViewItem];
+
+    return YES;
+}
+
+- (void)_sendDelegateWillSelectTabViewItem:(CPTabViewItem)aTabViewItem
+{
+    if (_delegateSelectors & CPTabViewWillSelectTabViewItemSelector)
+        [_delegate tabView:self willSelectTabViewItem:aTabViewItem];
+}
 
 - (void)_sendDelegateDidSelectTabViewItem:(CPTabViewItem)aTabViewItem
 {
