@@ -29,6 +29,7 @@
 @import "CPControl.j"
 @import "CPPlatform.j"
 
+@typedef ImageContainer
 
 var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
     _CPImageAndTextViewImageChangedFlag             = 1 << 1,
@@ -69,8 +70,8 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 
     unsigned                _flags;
 
+    ImageContainer          _imageContainer;
 #if PLATFORM(DOM)
-    DOMElement              _DOMImageElement;
     DOMElement              _DOMTextElement;
     DOMElement              _DOMTextShadowElement;
 #endif
@@ -106,6 +107,7 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
             [self setImageScaling:CPImageScaleNone];
         }
 
+        _image = nil;
         _textSize = nil;
         [self setHitTests:NO];
     }
@@ -116,6 +118,14 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 - (id)initWithFrame:(CGRect)aFrame
 {
     return [self initWithFrame:aFrame control:nil];
+}
+
+- (ImageContainer)_imageContainer
+{
+    if (!_imageContainer)
+        _imageContainer = new ImageContainer(self);
+
+    return _imageContainer;
 }
 
 - (void)setAlignment:(CPTextAlignment)anAlignment
@@ -193,10 +203,8 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
     if (_imagePosition == anImagePosition)
         return;
 
-    // If the position was CPNoImage, there is an image now,
-    // so mark the flags accordingly so that the image will load.
-    if (_imagePosition == CPNoImage)
-        _flags |= _CPImageAndTextViewImageChangedFlag;
+    var container = [self _imageContainer];
+    container.setImagePosition(anImagePosition);
 
     _imagePosition = anImagePosition;
     _flags |= _CPImageAndTextViewImagePositionChangedFlag;
@@ -213,6 +221,9 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 {
     if (_imageScaling == anImageScaling)
         return;
+
+    var container = [self _imageContainer];
+    container.setImageScaling(anImageScaling);
 
     _imageScaling = anImageScaling;
     _flags |= _CPImageAndTextViewImageScalingChangedFlag;
@@ -231,6 +242,9 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 
     if (_shouldDimImage !== shouldDimImage)
     {
+        var container = [self _imageContainer];
+        container._shouldDimImage = shouldDimImage;
+
         _shouldDimImage = shouldDimImage;
         [self setNeedsLayout];
     }
@@ -343,14 +357,13 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 
 - (void)setImage:(CPImage)anImage
 {
-    if (_image == anImage)
-        return;
+    [self setImage:anImage forIdentifier:@"main"];
+}
 
-    _image = anImage;
-    _flags |= _CPImageAndTextViewImageChangedFlag;
-
-    if ([_image loadStatus] !== CPImageLoadStatusCompleted)
-        [[CPNotificationCenter defaultCenter] addObserver:self selector:@selector(imageDidLoad:) name:CPImageDidLoadNotification object:_image];
+- (void)setImage:(CPImage)anImage forIdentifier:(CPString)anIdentifier
+{
+    var imageContainer = [self _imageContainer];
+    imageContainer.setImage(anImage, anIdentifier);
 
     [self setNeedsLayout];
 }
@@ -369,16 +382,12 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
     return _imageOffset;
 }
 
-- (void)imageDidLoad:(CPNotification)aNotification
-{
-    [[CPNotificationCenter defaultCenter] removeObserver:self name:CPImageDidLoadNotification object:_image];
-    _flags |= _CPImageAndTextViewImageChangedFlag;
-    [self setNeedsLayout];
-}
-
 - (CPImage)image
 {
-    return _image;
+    if (!_imageContainer)
+        return nil;
+
+    return _imageContainer.imageForIdentifier("main");
 }
 
 - (void)setText:(CPString)text
@@ -585,123 +594,44 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
         }
     }
 
-    var needsDOMImageElement = _image !== nil && _imagePosition !== CPNoImage,
-        hasDOMImageElement = !!_DOMImageElement;
+    var size = [self bounds].size,
+        container = [self _imageContainer];
 
-    // Create or destroy DOM Image element
-    if (needsDOMImageElement !== hasDOMImageElement)
+    if (container._needsBoundsUpdate)
     {
-        if (hasDOMImageElement)
-        {
-            _DOMElement.removeChild(_DOMImageElement);
-
-            _DOMImageElement = nil;
-
-            hasDOMImageElement = NO;
-        }
-
-        else
-        {
-            _DOMImageElement = document.createElement("img");
-
-            if ([CPPlatform supportsDragAndDrop])
-            {
-                _DOMImageElement.setAttribute("draggable", "true");
-                _DOMImageElement.style["-khtml-user-drag"] = "element";
-            }
-
-            var imageStyle = _DOMImageElement.style;
-
-            imageStyle.top = "0px";
-            imageStyle.left = "0px";
-            imageStyle.position = "absolute";
-            imageStyle.zIndex = 100;
-
-            _DOMElement.appendChild(_DOMImageElement);
-
-            hasDOMImageElement = YES;
-        }
+        container.setSuperViewSize(size);
+        container.updateDOM();
+        container.updateBoundsIfNeeded();
+        container.updateDOMproperties();
     }
 
-    var size = [self bounds].size,
-        textRect = CGRectMake(0.0, 0.0, size.width, size.height);
-
-    if (hasDOMImageElement)
+    if (hasDOMTextElement)
     {
-        if (!imageStyle)
-            var imageStyle = _DOMImageElement.style;
+        var textRect = CGRectMake(0.0, 0.0, size.width, size.height);
 
-        if (_flags & _CPImageAndTextViewImageChangedFlag)
-            _DOMImageElement.src = [_image filename];
-
-        var centerX = size.width / 2.0,
-            centerY = size.height / 2.0,
-            imageSize = [_image size],
+        var imageSize = container.size(),
             imageWidth = imageSize.width,
             imageHeight = imageSize.height;
 
-        if (_imageScaling === CPImageScaleAxesIndependently)
-        {
-            imageWidth = size.width;
-            imageHeight = size.height;
-        }
-        else if (_imageScaling === CPImageScaleProportionallyDown)
-        {
-            var scale = MIN(MIN(size.width, imageWidth) / imageWidth, MIN(size.height, imageHeight) / imageHeight);
-
-            imageWidth *= scale;
-            imageHeight *= scale;
-        }
-
-        if (CPFeatureIsCompatible(CPOpacityRequiresFilterFeature))
-            imageStyle.filter = @"alpha(opacity=" + _shouldDimImage ? 50 : 100 + ")";
-        else
-            imageStyle.opacity = _shouldDimImage ? 0.5 : 1.0;
-
-        _DOMImageElement.width = imageWidth;
-        _DOMImageElement.height = imageHeight;
-        imageStyle.width = MAX(imageWidth, 0) + "px";
-        imageStyle.height = MAX(imageHeight, 0) + "px";
-
         if (_imagePosition === CPImageBelow)
         {
-            imageStyle.left = FLOOR(centerX - imageWidth / 2.0) + "px";
-            imageStyle.top = FLOOR(size.height - imageHeight) + "px";
-
             textRect.size.height = size.height - imageHeight - _imageOffset;
         }
         else if (_imagePosition === CPImageAbove)
         {
-            imageStyle.left = FLOOR(centerX - imageWidth / 2.0) + "px";
-            imageStyle.top = 0 + "px";
-
             textRect.origin.y += imageHeight + _imageOffset;
             textRect.size.height = size.height - imageHeight - _imageOffset;
         }
         else if (_imagePosition === CPImageLeft)
         {
-            imageStyle.top = FLOOR(centerY - imageHeight / 2.0) + "px";
-            imageStyle.left = "0px";
-
             textRect.origin.x = imageWidth + _imageOffset;
             textRect.size.width -= imageWidth + _imageOffset;
         }
         else if (_imagePosition === CPImageRight)
         {
-            imageStyle.top = FLOOR(centerY - imageHeight / 2.0) + "px";
-            imageStyle.left = FLOOR(size.width - imageWidth) + "px";
-
             textRect.size.width -= imageWidth + _imageOffset;
         }
-        else if (_imagePosition === CPImageOnly || _imagePosition == CPImageOverlaps)
-        {
-            imageStyle.top = FLOOR(centerY - imageHeight / 2.0) + "px";
-            imageStyle.left = FLOOR(centerX - imageWidth / 2.0) + "px";
-        }
-    }
 
-    if (hasDOMTextElement)
-    {
         var textRectX = CGRectGetMinX(textRect),
             textRectY = CGRectGetMinY(textRect),
             textRectWidth = CGRectGetWidth(textRect),
@@ -832,4 +762,335 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 #endif
 }
 
+- (void)addImageElement:(Object)anImageElement
+{
+#if PLATFORM(DOM)
+    _DOMElement.appendChild(anImageElement);
+#endif
+}
+
+- (void)removeImageElement:(Object)anImageElement
+{
+#if PLATFORM(DOM)
+    _DOMElement.removeChild(anImageElement);
+#endif
+}
+
 @end
+
+var ImageContainerOperationAdded = 0,
+    ImageContainerOperationShouldAdd = 1,
+    ImageContainerOperationShouldRemove = 2,
+    ImageContainerOperationShouldHide = 3;
+
+var ImageContainer = function (parentView)
+{
+    this._needsDOMUpdate = false;
+    this._needsBoundsUpdate = false;
+    this._parentView = parentView;
+    this._items = [];
+    this._rect = CGRectMakeZero();
+    this._superviewSize = CGSizeMakeZero();
+    this._shouldDimImage = false;
+    this._scaling = CPImageScaleNone;
+    this._imagePosition = CPImageOnly;
+};
+
+ImageContainer.prototype.addImage = function(image, anIdentifier)
+{
+    if (image == nil || this.containsImage(anIdentifier))
+        return;
+
+    var container = this;
+
+    if ([image loadStatus] !== CPImageLoadStatusCompleted)
+    {
+        [[CPNotificationCenter defaultCenter] addObserverForName:CPImageDidLoadNotification object:image queue:nil usingBlock:function(aNotif)
+        {
+            if ([image size].width > CGRectGetWidth(container._rect))
+            {
+                container._needsBoundsUpdate = true;
+                container.updateBoundsIfNeeded();
+            }
+        }];
+    }
+
+    var el = document.createElement("img"),
+        imageStyle = el.style;
+
+    if ([CPPlatform supportsDragAndDrop])
+    {
+        el.setAttribute("draggable", "true");
+        imageStyle["-khtml-user-drag"] = "element";
+    }
+
+    imageStyle.position = "absolute";
+    imageStyle.zIndex = 100 + container._items.length;
+    el.src = [image filename];
+
+    container._items.push({"image":image, "element":el, "identifier":anIdentifier,  operation:ImageContainerOperationShouldAdd});
+
+    this._needsBoundsUpdate = true;
+    this._needsDOMUpdate = true;
+};
+
+ImageContainer.prototype.removeImageWithIdentifier = function(anIdentifier)
+{
+    var count = this._items.length;
+
+    while (count--)
+    {
+        var item = this._items[count];
+
+        if (item.identifier == anIdentifier)
+        {
+            if (item.operation == ImageContainerOperationShouldAdd)
+                this._items.splice(count, 1);
+            else if (item.operation == ImageContainerOperationAdded)
+                item.operation = ImageContainerOperationShouldRemove;
+
+            this._needsBoundsUpdate = true;
+            this._needsDOMUpdate = true;
+            break;
+        }
+    }
+};
+
+ImageContainer.prototype.setImage = function(anImage, anIdentifier)
+{
+    this.removeImageWithIdentifier(anIdentifier);
+    this.addImage(anImage, anIdentifier);
+};
+
+ImageContainer.prototype.imageForIdentifier = function(anIdentifier)
+{
+    var count = this._items.length;
+
+    while (count--)
+    {
+        var item = this._items[count];
+
+        if (item.identifier == anIdentifier && item.operation == ImageContainerOperationAdded)
+            return item.image;
+    }
+
+    return null;
+};
+
+ImageContainer.prototype.elementForIdentifier = function(anIdentifier)
+{
+    var count = this._items.length;
+
+    while (count--)
+    {
+        var item = this._items[count];
+
+        if (item.identifier == anIdentifier && item.operation == ImageContainerOperationAdded)
+            return item.element;
+    }
+
+    return null;
+};
+
+ImageContainer.prototype.containsImage = function(anIdentifier)
+{
+    return (this.imageForIdentifier(anIdentifier) !== null);
+};
+
+ImageContainer.prototype.updateDOM = function()
+{
+    if (!this._needsDOMUpdate)
+        return;
+
+    var count = this._items.length;
+
+    while (count--)
+    {
+        var item = this._items[count],
+            operation = item.operation,
+            element = item.element;
+
+        if (this.shouldHide() == false && operation == ImageContainerOperationShouldAdd)
+        {
+            [this._parentView addImageElement:element];
+            item.operation = ImageContainerOperationAdded;
+        }
+
+        if (operation == ImageContainerOperationShouldRemove)
+        {
+            [this._parentView removeImageElement:element];
+            this._items.splice(count, 1);
+        }
+
+        if (this.shouldHide() == true && operation == ImageContainerOperationShouldHide)
+        {
+            [this._parentView removeImageElement:element];
+            item.operation = ImageContainerOperationShouldAdd;
+        }
+    }
+
+    this._needsDOMUpdate = false;
+};
+
+ImageContainer.prototype.setSuperViewSize = function(aSize)
+{
+    this._superviewSize = aSize;
+};
+
+ImageContainer.prototype.rect = function ()
+{
+    return this._rect;
+};
+
+ImageContainer.prototype.size = function()
+{
+    if (this.shouldHide() || this._items.length == 0)
+        return CGSizeMakeZero();
+
+    return CGSizeMakeCopy(this._rect.size);
+};
+
+ImageContainer.prototype.updateDOMproperties = function()
+{
+    var frame = this._rect,
+        left = CGRectGetMinX(frame),
+        top = CGRectGetMinY(frame),
+        width = CGRectGetWidth(frame),
+        height = CGRectGetHeight(frame),
+        superSize = this._superviewSize,
+        centerX = superSize.width / 2.0,
+        centerY = superSize.height / 2.0;
+
+    if (this._imageScaling === CPImageScaleAxesIndependently)
+    {
+        width = superSize.width;
+        height = superSize.height;
+    }
+    else if (this._imageScaling === CPImageScaleProportionallyDown)
+    {
+        var scale = MIN(MIN(superSize.width, width) / width, MIN(superSize.height, height) / height);
+
+        width *= scale;
+        height *= scale;
+    }
+
+    switch (this._imagePosition)
+    {
+        case CPImageBelow : left = FLOOR(centerX - width / 2.0);
+                            top = FLOOR(superSize.height - height);
+                            break;
+        case CPImageAbove : left = FLOOR(centerX - width / 2.0);
+                            top = 0;
+                            break;
+        case CPImageLeft  : left = 0;
+                            top = FLOOR(centerY - height / 2.0);
+                            break;
+        case CPImageRight : left = FLOOR(superSize.width - width);
+                            top = FLOOR(centerY - height / 2.0);
+                            break;
+        case CPImageOverlaps :
+        case CPImageOnly  : left = FLOOR(centerX - width / 2.0);
+                            top = FLOOR(centerY - height / 2.0);
+                            break;
+        case CPNoImage    : left = 0;
+                            top = 0;
+                            width = 0;
+                            height = 0;
+    }
+// CPLog.debug("pos=" + this._imagePosition + " left=" + left + " top=" + top + " super=" + CPStringFromSize(superSize));
+    for (var i = 0; i < this._items.length; i++)
+    {
+        var item = this._items[i],
+            element = item.element,
+            style = element.style,
+            size = [item.image size];
+
+        if (size.width < width)
+        {
+            left += (width - size.width) / 2;
+            top += (height - size.height) / 2;
+            width = size.width;
+            height = size.height;
+        }
+
+        style.left = left + "px";
+        style.top = top + "px";
+        style.width = width + "px";
+        style.height = height + "px";
+        element.width = width + "px";
+        element.height = height + "px";
+
+        if (CPFeatureIsCompatible(CPOpacityRequiresFilterFeature))
+            style.filter = @"alpha(opacity=" + this._shouldDimImage ? 50 : 100 + ")";
+        else
+            style.opacity = this._shouldDimImage ? 0.5 : 1.0;
+
+        if (i > 0)
+            style.mixBlendMode = "multiply";
+    }
+}
+
+ImageContainer.prototype.updateBoundsIfNeeded = function()
+{
+    if (!this._needsBoundsUpdate)
+        return;
+
+    var size = CGSizeMakeZero(),
+        count = this._items.length;
+
+    for (var i = 0; i < count; i++)
+    {
+        var item = this._items[i];
+
+        if (item.operation == ImageContainerOperationAdded)
+        {
+            var imageSize = [item.image size];
+
+            if (imageSize.width > size.width)
+                size = CGSizeMakeCopy(imageSize);
+        }
+    }
+
+    this._rect.size = size;
+    this._needsBoundsUpdate = false;
+};
+
+ImageContainer.prototype.setImagePosition = function(anImagePosition)
+{
+    if (anImagePosition == this._imagePosition)
+        return;
+
+    if (this._imagePosition == CPNoImage || anImagePosition == CPNoImage)
+        this._needsDOMUpdate = true;
+
+    this._imagePosition = anImagePosition;
+
+    if (anImagePosition == CPNoImage)
+        this.setHidden();
+
+    this._needsBoundsUpdate = true;
+};
+
+ImageContainer.prototype.setImageScaling = function(anImageScaling)
+{
+    this._imageScaling = anImageScaling;
+    this._needsBoundsUpdate = true;
+};
+
+ImageContainer.prototype.shouldHide = function()
+{
+    return (this._imagePosition == CPNoImage);
+};
+
+ImageContainer.prototype.setHidden = function()
+{
+    var count = this._items.length;
+
+    while (count--)
+    {
+        var item = this._items[count];
+
+        if (item.operation == ImageContainerOperationAdded)
+            item.operation = ImageContainerOperationShouldHide;
+    }
+};

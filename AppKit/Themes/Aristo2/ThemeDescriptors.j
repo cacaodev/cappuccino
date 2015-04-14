@@ -1505,6 +1505,8 @@ var themedButtonValues = nil,
         regularImageDisabled = PatternImage("check-box-image.png", 21.0, 21.0),
         regularImageHighlighted = PatternImage("check-box-image-highlighted.png", 21.0, 21.0),
 
+        regularImageOver = PatternImage("check-box-image-selected-over.png", 21.0, 21.0),
+
         smallImageNormal = PatternImage("check-box-image.png", 19.0, 19.0),
         smallImageSelected = PatternImage("check-box-image-selected.png", 19.0, 19.0),
         smallImageSelectedHighlighted = PatternImage("check-box-image-selected-highlighted.png", 19.0, 19.0),
@@ -1534,8 +1536,8 @@ var themedButtonValues = nil,
         // CPThemeStateControlSizeRegular
 
         [@"image",                      regularImageNormal,                                 CPThemeStateNormal],
-        [@"image",                      regularImageSelected,                               CPThemeStateSelected],
-        [@"image",                      regularImageSelectedHighlighted,                    [CPThemeStateSelected, CPThemeStateHighlighted]],
+        [@"image",                      regularImageNormal,                                 CPThemeStateSelected],
+        [@"image-composite",            regularImageOver,                                   CPThemeStateSelected],
         [@"image",                      regularImageHighlighted,                            CPThemeStateHighlighted],
         [@"image",                      regularImageDisabled,                               CPThemeStateDisabled],
         [@"image",                      regularImageSelectedDisabled,                       [CPThemeStateSelected, CPThemeStateDisabled]],

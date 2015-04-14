@@ -153,6 +153,7 @@ CPButtonImageOffset   = 3.0;
 {
     return @{
             @"image": [CPNull null],
+            @"image-composite": [CPNull null],
             @"image-offset": 0.0,
             @"bezel-inset": CGInsetMakeZero(),
             @"content-inset": CGInsetMakeZero(),
@@ -757,6 +758,7 @@ CPButtonImageOffset   = 3.0;
 
         [contentView setText:title];
         [contentView setImage:image];
+        [contentView setImage:[self currentValueForThemeAttribute:@"image-composite"] forIdentifier:@"checked"];
         [contentView setImageOffset:[self currentValueForThemeAttribute:@"image-offset"]];
 
         [contentView setFont:[self currentValueForThemeAttribute:@"font"]];
