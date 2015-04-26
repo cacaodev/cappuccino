@@ -1,11 +1,13 @@
 
-@import "_CPObjectAnimator.j"
 @import "CPView.j"
 @import "CPSegmentedControl.j"
 @import "CPTabView.j"
 @import "_CPImageAndTextView.j"
 
+@import "_CPObjectAnimator.j"
+
 @class CPAnimationContext
+@class CAPropertyAnimation
 
 @implementation CPViewAnimator : _CPObjectAnimator
 {
@@ -95,6 +97,11 @@
 
 - (void)_setTargetValue:(id)aTargetValue withKeyPath:(CPString)aKeyPath fallback:(Function)fallback completion:(Function)completion
 {
+    [self _setTargetValue:aTargetValue withKeyPath:aKeyPath fallback:fallback completion:completion context:nil];
+}
+
+- (void)_setTargetValue:(id)aTargetValue withKeyPath:(CPString)aKeyPath fallback:(Function)fallback completion:(Function)completion context:(id)aContext
+{
     var animation = [_target animationForKey:aKeyPath],
         context = [CPAnimationContext currentContext];
 
@@ -105,7 +112,7 @@
     }
     else
     {
-        [context _enqueueActionForObject:_target keyPath:aKeyPath targetValue:aTargetValue animationCompletion:completion];
+        [context _enqueueActionForObject:_target keyPath:aKeyPath targetValue:aTargetValue animationCompletion:completion context:aContext];
     }
 }
 
@@ -141,22 +148,34 @@ var transformSizeToHeight = function(start, current)
     return current.height + "px";
 };
 
-var CPVIEW_PROPERTIES_DESCRIPTOR = @{
-    "backgroundColor"  : [@{"property":"background", "value":function(sv, val){return [val cssString];}}],
-    "alphaValue"       : [@{"property":"opacity"}],
-    "frame"            : [@{"property":CPBrowserCSSProperty("transform"), "value":transformFrameToTranslate},
-                          @{"property":"width", "value":transformFrameToWidth},
-                          @{"property":"height", "value":transformFrameToHeight}],
-    "frameOrigin"      : [@{"property":CPBrowserCSSProperty("transform"), "value":transformOrigin}],
-    "frameSize"        : [@{"property":"width", "value":transformSizeToWidth},
-                          @{"property":"height", "value":transformSizeToHeight}]
-};
+var DEFAULT_CSS_PROPERTIES = nil;
 
 @implementation CPView (CPAnimatablePropertyContainer)
 
++ (CPDictionary)defaultCSSProperties
+{
+    if (DEFAULT_CSS_PROPERTIES == nil)
+    {
+        var transformProperty = CPBrowserCSSProperty("transform");
+
+        DEFAULT_CSS_PROPERTIES =  @{
+            "backgroundColor"  : [@{"property":"background", "value":function(sv, val){return [val cssString];}}],
+            "alphaValue"       : [@{"property":"opacity"}],
+            "frame"            : [@{"property":transformProperty, "value":transformFrameToTranslate},
+                                  @{"property":"width", "value":transformFrameToWidth},
+                                  @{"property":"height", "value":transformFrameToHeight}],
+            "frameOrigin"      : [@{"property":transformProperty, "value":transformOrigin}],
+            "frameSize"        : [@{"property":"width", "value":transformSizeToWidth},
+                                  @{"property":"height", "value":transformSizeToHeight}]
+        };
+    }
+
+    return DEFAULT_CSS_PROPERTIES;
+}
+
 + (CPArray)cssPropertiesForKeyPath:(CPString)aKeyPath
 {
-    return [CPVIEW_PROPERTIES_DESCRIPTOR objectForKey:aKeyPath];
+    return [[self defaultCSSProperties] objectForKey:aKeyPath];
 }
 
 + (Class)animatorClass
@@ -177,9 +196,9 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
     return _animator;
 }
 
-- (id)DOMElementForKeyPath:(CPString)aKeyPath
+- (id)DOMElementForKeyPath:(CPString)aKeyPath context:(id)aContext
 {
-    return _DOMElement;
+    return self._DOMElement;
 }
 
 + (CAAnimation)defaultAnimationForKey:(CPString)aKey
@@ -389,6 +408,42 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
     }];
 }
 
+- (void)addItem:(Object)anImageItem
+{
+    anImageItem.element.style.opacity = 0;
+    [_target addItem:anImageItem];
+    var container = [_target _imageContainer];
+    container.setAnimating(true);
+    [self _setTargetValue:1 withKeyPath:@"imageOpacity" fallback:nil completion:function ()
+    {
+        container.setAnimating(false);
+    } context:anImageItem.element];
+}
+
+- (void)removeItem:(Object)anImageItem atIndex:(CPInteger)anIndex
+{
+    var container = [_target _imageContainer];
+    container.setAnimating(true);
+
+    [self _setTargetValue:0 withKeyPath:@"imageOpacity" fallback:nil completion:function()
+    {
+        [_target removeItem:anImageItem atIndex:anIndex];
+        container.setAnimating(false);
+    } context:anImageItem.element];
+}
+
+- (void)hideItem:(Object)anImageItem
+{
+    var container = [_target _imageContainer];
+    container.setAnimating(true);
+
+    [self _setTargetValue:0 withKeyPath:@"imageOpacity" fallback:nil completion:function()
+    {
+        [_target hideItem:anImageItem];
+        container.setAnimating(false);
+    } context:anImageItem.element];
+}
+
 @end
 
 @implementation _CPImageAndTextView (CPAnimatablePropertyContainer)
@@ -401,16 +456,20 @@ var CPVIEW_PROPERTIES_DESCRIPTOR = @{
         return @[@{"property":"font", "value":function(s,v){return [v cssString];}}];
     else if (aKeyPath == @"fontSize")
         return @[@{"property":"font-size", "value":function(s,v){return v + "px";}}];
+    else if (aKeyPath == @"imageOpacity")
+        return @[@{"property":"opacity"}];
 
     return [super cssPropertiesForKeyPath:aKeyPath];
 }
 
-- (id)DOMElementForKeyPath:(CPString)aKeyPath
+- (Object)DOMElementForKeyPath:(CPString)aKeyPath context:(id)aContext
 {
     if (aKeyPath == @"textColor" || aKeyPath == @"font" || aKeyPath == @"fontSize")
-        return _DOMTextElement;
+        return self._DOMTextElement;
+    else if (aKeyPath == @"imageOpacity")
+        return aContext;
 
-    return nil;
+    return [super DOMElementForKeyPath:aKeyPath context:aContext];
 }
 
 - (float)fontSize

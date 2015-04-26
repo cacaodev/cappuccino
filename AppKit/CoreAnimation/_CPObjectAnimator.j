@@ -83,7 +83,7 @@ var _supportsCSSAnimations = null;
         [_target setValue:aTargetValue forKey:aKeyPath];
     else
     {
-        [context _enqueueActionForObject:_target keyPath:aKeyPath targetValue:aTargetValue completionHandler:function()
+        [context _enqueueActionForObject:_target keyPath:aKeyPath targetValue:aTargetValue animationCompletion:function()
         {
             [_target setValue:aTargetValue forKey:aKeyPath];
         }];

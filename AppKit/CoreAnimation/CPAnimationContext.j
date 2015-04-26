@@ -120,15 +120,15 @@ CPLog.debug(_cmd + "context stack =" + _CPAnimationContextStack);
     return YES;
 }
 
-- (void)_enqueueActionForObject:(id)anObject keyPath:(id)aKeyPath targetValue:(id)aTargetValue animationCompletion:(id)animationCompletion
+- (void)_enqueueActionForObject:(id)anObject keyPath:(id)aKeyPath targetValue:(id)aTargetValue animationCompletion:(id)animationCompletion context:(id)aContext
 {
-    var resolvedAction = [self _actionForObject:anObject keyPath:aKeyPath targetValue:aTargetValue animationCompletion:animationCompletion];
+    var resolvedAction = [self _actionForObject:anObject keyPath:aKeyPath targetValue:aTargetValue animationCompletion:animationCompletion context:aContext];
 
     if (!resolvedAction)
         return;
 
     var animByKeyPath = _animationsByObject.get(anObject);
-    
+
     if (!animByKeyPath)
     {
         var newAnimByKeyPath = @{aKeyPath:resolvedAction};
@@ -138,7 +138,7 @@ CPLog.debug(_cmd + "context stack =" + _CPAnimationContextStack);
         [animByKeyPath setObject:resolvedAction forKey:aKeyPath];
 }
 
-- (Object)_actionForObject:(id)anObject keyPath:(CPString)aKeyPath targetValue:(id)aTargetValue animationCompletion:(Function)animationCompletion
+- (Object)_actionForObject:(id)anObject keyPath:(CPString)aKeyPath targetValue:(id)aTargetValue animationCompletion:(Function)animationCompletion context:(id)aContext
 {
     var animation,
         duration,
@@ -204,7 +204,8 @@ CPLog.debug(_cmd + "context stack =" + _CPAnimationContextStack);
                 keytimes:keyTimes,
                 duration:duration,
                 timingfunctions:timingFunctions,
-                completion:completionFunction
+                completion:completionFunction,
+                context:aContext
             };
 }
 
@@ -270,6 +271,7 @@ CPLog.debug(_cmd + "context stack =" + _CPAnimationContextStack);
         var identifier = [aTargetView UID],
             duration = anAction.duration,
             timingFunctions = anAction.timingfunctions,
+            context = anAction.context,
             properties = [],
             valueFunctions = [],
             cssAnimation = nil;
@@ -285,7 +287,7 @@ CPLog.debug(_cmd + "context stack =" + _CPAnimationContextStack);
 
         if (cssAnimation == nil)
         {
-            var domElement = [aTargetView DOMElementForKeyPath:keyPath];
+            var domElement = [aTargetView DOMElementForKeyPath:keyPath context:context];
             cssAnimation = new CSSAnimation(domElement, identifier);
             cssAnimations.push(cssAnimation);
         }

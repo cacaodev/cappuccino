@@ -596,13 +596,11 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 
     var size = [self bounds].size,
         container = [self _imageContainer];
-
-    if (container._needsBoundsUpdate)
+CPLog.debug(_cmd + " _needsDOMUpdate " + container._needsDOMUpdate);
+    if (container._needsDOMUpdate)
     {
         container.setSuperViewSize(size);
         container.updateDOM();
-        container.updateBoundsIfNeeded();
-        container.updateDOMproperties();
     }
 
     if (hasDOMTextElement)
@@ -762,17 +760,33 @@ var _CPimageAndTextViewFrameSizeChangedFlag         = 1 << 0,
 #endif
 }
 
-- (void)addImageElement:(Object)anImageElement
+- (void)addItem:(Object)anImageItem
 {
 #if PLATFORM(DOM)
-    _DOMElement.appendChild(anImageElement);
+    _DOMElement.appendChild(anImageItem.element);
+    CPLog.debug("Append Child");
+    anImageItem.operation = ImageContainerOperationAdded;
+    _imageContainer.updateCSS();
 #endif
 }
 
-- (void)removeImageElement:(Object)anImageElement
+- (void)removeItem:(Object)anImageItem atIndex:(CPInteger)anIndex
 {
 #if PLATFORM(DOM)
-    _DOMElement.removeChild(anImageElement);
+    _DOMElement.removeChild(anImageItem.element);
+    CPLog.debug("Remove Child");
+    _imageContainer.removeItemAtIndex(anIndex);
+    _imageContainer.updateCSS();
+#endif
+}
+
+- (void)hideItem:(Object)anImageItem
+{
+#if PLATFORM(DOM)
+    _DOMElement.removeChild(anImageItem.element);
+    CPLog.debug("Remove Child");
+    anImageItem.operation = ImageContainerOperationShouldAdd;
+    _imageContainer.updateCSS();
 #endif
 }
 
@@ -785,8 +799,9 @@ var ImageContainerOperationAdded = 0,
 
 var ImageContainer = function (parentView)
 {
-    this._needsDOMUpdate = false;
+    this.setNeedsDOMUpdate(false);
     this._needsBoundsUpdate = false;
+    this._animating = false;
     this._parentView = parentView;
     this._items = [];
     this._rect = CGRectMakeZero();
@@ -831,7 +846,7 @@ ImageContainer.prototype.addImage = function(image, anIdentifier)
     container._items.push({"image":image, "element":el, "identifier":anIdentifier,  operation:ImageContainerOperationShouldAdd});
 
     this._needsBoundsUpdate = true;
-    this._needsDOMUpdate = true;
+    this.setNeedsDOMUpdate(true);
 };
 
 ImageContainer.prototype.removeImageWithIdentifier = function(anIdentifier)
@@ -850,7 +865,7 @@ ImageContainer.prototype.removeImageWithIdentifier = function(anIdentifier)
                 item.operation = ImageContainerOperationShouldRemove;
 
             this._needsBoundsUpdate = true;
-            this._needsDOMUpdate = true;
+            this.setNeedsDOMUpdate(true);
             break;
         }
     }
@@ -858,6 +873,9 @@ ImageContainer.prototype.removeImageWithIdentifier = function(anIdentifier)
 
 ImageContainer.prototype.setImage = function(anImage, anIdentifier)
 {
+    if (this._animating || this.imageForIdentifier(anIdentifier) == anImage)
+        return;
+
     this.removeImageWithIdentifier(anIdentifier);
     this.addImage(anImage, anIdentifier);
 };
@@ -897,39 +915,59 @@ ImageContainer.prototype.containsImage = function(anIdentifier)
     return (this.imageForIdentifier(anIdentifier) !== null);
 };
 
+ImageContainer.prototype.updateCSS = function()
+{
+    this.updateBoundsIfNeeded();
+    this.updateDOMproperties();
+};
+
 ImageContainer.prototype.updateDOM = function()
 {
-    if (!this._needsDOMUpdate)
+    if (this._needsDOMUpdate == false)
         return;
 
-    var count = this._items.length;
+    var target = [this._parentView animator],
+        count = this._items.length;
 
     while (count--)
     {
         var item = this._items[count],
-            operation = item.operation,
-            element = item.element;
+            operation = item.operation;
 
         if (this.shouldHide() == false && operation == ImageContainerOperationShouldAdd)
         {
-            [this._parentView addImageElement:element];
-            item.operation = ImageContainerOperationAdded;
+            [target addItem:item];
         }
 
         if (operation == ImageContainerOperationShouldRemove)
         {
-            [this._parentView removeImageElement:element];
-            this._items.splice(count, 1);
+            [target removeItem:item atIndex:count];
         }
 
         if (this.shouldHide() == true && operation == ImageContainerOperationShouldHide)
         {
-            [this._parentView removeImageElement:element];
-            item.operation = ImageContainerOperationShouldAdd;
+            [target hideItem:element];
         }
     }
 
-    this._needsDOMUpdate = false;
+    this.setNeedsDOMUpdate(false);
+};
+
+ImageContainer.prototype.setNeedsDOMUpdate = function (flag)
+{
+    CPLog.debug("_needsDOMUpdate =" + flag);
+    this._needsDOMUpdate = flag;
+};
+
+ImageContainer.prototype.setAnimating = function (flag)
+{
+    CPLog.debug("_animating =" + flag);
+    this._animating = flag;
+};
+
+ImageContainer.prototype.removeItemAtIndex = function(idx)
+{
+    this._items.splice(idx, 1);
 };
 
 ImageContainer.prototype.setSuperViewSize = function(aSize)
@@ -1061,7 +1099,7 @@ ImageContainer.prototype.setImagePosition = function(anImagePosition)
         return;
 
     if (this._imagePosition == CPNoImage || anImagePosition == CPNoImage)
-        this._needsDOMUpdate = true;
+        this.setNeedsDOMUpdate(true);
 
     this._imagePosition = anImagePosition;
 

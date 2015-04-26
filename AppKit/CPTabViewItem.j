@@ -23,8 +23,8 @@
 @import <Foundation/CPObject.j>
 
 @import "CPView.j"
-@class CPTabView
-@class CPViewControler
+@class CPTabView;
+@class CPViewController;
 
 /*
     The tab is currently selected.
