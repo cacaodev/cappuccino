@@ -21,19 +21,22 @@
 
     _CPEngineRegisteredItems = @{};
 
-    var onvaluechange = function(v, records)
+    var onsolved = function(changes)
     {
-        //console.log(v._identifier + " " + v.toString());
-        var uid = v._identifier;
-        records[uid] = (records[uid] || 0) | v._tag;
-    };
+        var changeMaskById = {};
 
-    var onsolved = function(records)
-    {
-        for (var uuid in records)
+        changes.forEach(function(change)
+        {
+            var variable = change.variable,
+                identifier = variable._identifier;
+
+            changeMaskById[identifier] = (changeMaskById[identifier] || 0) | variable._tag;
+        });
+
+        for (var uuid in changeMaskById)
         {
             var item = _CPEngineRegisteredItems[uuid],
-                mask = records[uuid];
+                mask = changeMaskById[uuid];
 
             if (mask !== 0)
             {
@@ -43,7 +46,7 @@
         }
     };
 
-    _engine = new Engine(false, onvaluechange, onsolved);
+    _engine = new Engine(false, onsolved);
 
     return self;
 }

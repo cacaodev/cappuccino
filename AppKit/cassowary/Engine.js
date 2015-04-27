@@ -1,3 +1,4 @@
+
 (function(){
 
 CPLayoutRelationLessThanOrEqual = -1;
@@ -21,7 +22,7 @@ CPLayoutAttributeBaseline   = 11;
 
 CPLayoutAttributeNotAnAttribute = 0;
 
-Engine = function(autoSolve, onvaluechange, onsolved)
+Engine = function(autoSolve, onsolved)
 {
     this.DISABLE_ON_SOLVED_NOTIFICATIONS = false;
 
@@ -35,7 +36,6 @@ Engine = function(autoSolve, onvaluechange, onsolved)
 
     var simplexSolver = new c.SimplexSolver();
     simplexSolver.autoSolve = autoSolve;
-    simplexSolver.onvaluechange = onvaluechange ? onvaluechange : this.noop();
     simplexSolver.onsolved = onsolved ? onsolved : this.noop();
 
     this.solver = simplexSolver;
@@ -43,7 +43,6 @@ Engine = function(autoSolve, onvaluechange, onsolved)
 
 Engine.prototype.disableOnSolvedNotification = function()
 {
-    this.solver.onvaluechange = this.noop();
     this.solver.onSolved = this.noop();
 };
 
