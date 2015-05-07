@@ -28,8 +28,6 @@ Engine = function(autoSolve, onsolved)
 
     this.CONSTRAINTS_BY_VIEW_AND_TYPE_MAP = [];
 
-    this.VARIABLES_MAP = {};
-
     this.EDIT_VARIABLES = null;
 
     this.DEFAULT_EDIT_STRENGTH = c.Strength.strong;
@@ -73,9 +71,9 @@ Engine.prototype.description = function()
     return (str + "\nInternalInfo:\n" + this.solver.getInternalInfo());
 };
 
-Engine.prototype.Variable = function(uuid, prefix, name, tag, value)
+Engine.prototype.Variable = function(args)
 {
-    return new c.Variable({identifier:uuid, prefix:prefix, name:name, tag:tag, value:value});
+    return new c.Variable(args);
 };
 
 Engine.prototype.replaceConstraints = function(args, errors)
@@ -304,6 +302,7 @@ Engine.prototype.expressionForAttribute = function(attribute, flags, left, top, 
             break;
         case CPLayoutAttributeTop       : exp = this.expressionForAttributeTop(top, isContainer);
             break;
+        case CPLayoutAttributeBaseline  :
         case CPLayoutAttributeBottom    : exp = this.expressionForAttributeBottom(top, height, isContainer);
             break;
         case CPLayoutAttributeWidth     : exp = new c.Expression.fromVariable(width);
@@ -311,8 +310,6 @@ Engine.prototype.expressionForAttribute = function(attribute, flags, left, top, 
         case CPLayoutAttributeHeight    : exp = new c.Expression.fromVariable(height);
             break;
         case CPLayoutAttributeCenterX   : exp = this.expressionForAttributeCenterX(left, width, isContainer);
-            break;
-        case CPLayoutAttributeBaseline  : exp = this.expressionForAttributeBottom(top, height, isContainer);
             break;
         case CPLayoutAttributeCenterY   : exp = this.expressionForAttributeCenterY(top, height, isContainer);
             break;

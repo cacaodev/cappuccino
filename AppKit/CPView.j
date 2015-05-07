@@ -2718,11 +2718,18 @@ setBoundsOrigin:
 {
     [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
     {
-        if ([subview _constraintBasedNeedsLayoutMask] !== 0)
-            _CPViewUpdateEngineFrame(subview);
+        [subview _updateGeometryIfNeeded];
     }];
 }
 
+- (void)_updateGeometryIfNeeded
+{
+    if (_constraintBasedNeedsLayoutMask > 0)
+    {
+        _CPViewUpdateEngineFrame(self);
+        _constraintBasedNeedsLayoutMask = 0;
+    }
+}
 /*!
     Returns whether the receiver is completely opaque. By default, returns \c NO.
 */
@@ -3876,26 +3883,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return [[self window] _layoutEngine];
 }
 
-- (void)suggestFrameSize:(CGSize)newSize
-{
-    var engine = [self _layoutEngine];
-
-    [engine beginUpdates];
-    [[self window] updateConstraintsAtWindowLevelIfNeeded];
-    [engine suggestSize:[newSize.width, newSize.height] forItem:self];
-    [engine endUpdates];
-}
-
-- (void)suggestFrameOrigin:(CGPoint)aPoint
-{
-    var engine = [self _layoutEngine];
-
-    [engine beginUpdates];
-    [[self window] updateConstraintsAtWindowLevelIfNeeded];
-    [engine suggesOrigin:[aPoint.x, aPoint.y] forItem:self];
-    [engine endUpdates];
-}
-
 // DEBUG
 - (CPString)debugID
 {
@@ -4305,8 +4292,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [constraintsByView setObject:constraintsDict forKey:[self UID]];
     }
 
-    [self registerInEngineIfNeeded];
-
     [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
     {
         CPLog.debug([aSubview debugID] + " isAutolayoutEnabled=" + [aSubview isAutolayoutEnabled]);
@@ -4317,7 +4302,12 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         }
     }];
 }
-
+/*
+- (void)_updateConstraintBasedNeedsLayoutMask:(unsigned)aMask
+{
+    _constraintBasedNeedsLayoutMask |= aMask;
+}
+*/
 - (BOOL)needsUpdateConstraints
 {
     return (_updateConstraintsFlags !== 0);
@@ -4502,30 +4492,10 @@ Subclasses should not override this method.
     return ([[self _layoutEngine] solver_replaceConstraints:constraintsByView]);
 }
 
-// CPLayoutEngine protocol
-/*
-- (id)valueForVariable:(int)aTag
-{
-    var frame = [self frame];
-
-    switch (aTag)
-    {
-        case 2  : return CGRectGetMinX(frame);
-        break;
-        case 4  : return CGRectGetMinY(frame);
-        break;
-        case 8  : return CGRectGetWidth(frame);
-        break;
-        case 16 : return CGRectGetHeight(frame);
-        break;
-    }
-}
-*/
-
 - (Variable)_variableMinX
 {
     if (!_variableMinX)
-        _variableMinX = [self newVariableForTag:2 name:"minX" value:CGRectGetMinX([self frame])];
+        _variableMinX = [self newVariableWithName:"minX" value:CGRectGetMinX([self frame])];
 
     return _variableMinX;
 }
@@ -4533,7 +4503,7 @@ Subclasses should not override this method.
 - (Variable)_variableMinY
 {
     if (!_variableMinY)
-        _variableMinY = [self newVariableForTag:4 name:"minY" value:CGRectGetMinY([self frame])];
+        _variableMinY = [self newVariableWithName:"minY" value:CGRectGetMinY([self frame])];
 
     return _variableMinY;
 }
@@ -4541,7 +4511,7 @@ Subclasses should not override this method.
 - (Variable)_variableWidth
 {
     if (!_variableWidth)
-        _variableWidth = [self newVariableForTag:8 name:"width" value:CGRectGetWidth([self frame])];
+        _variableWidth = [self newVariableWithName:"width" value:CGRectGetWidth([self frame])];
 
     return _variableWidth;
 }
@@ -4549,48 +4519,41 @@ Subclasses should not override this method.
 - (Variable)_variableHeight
 {
     if (!_variableHeight)
-        _variableHeight = [self newVariableForTag:16 name:"height" value:CGRectGetHeight([self frame])];
+        _variableHeight = [self newVariableWithName:"height" value:CGRectGetHeight([self frame])];
 
     return _variableHeight;
 }
 
-- (Variable)newVariableForTag:(CPInteger)tag name:(CPString)name value:(float)value
+- (Variable)newVariableWithName:(CPString)aName value:(float)aValue
 {
-    var uuid = [self UID],
-        prefix = [self debugID];
-
-    return [[self _layoutEngine] newVariableWithProperties:{uuid:uuid, prefix:prefix, name:name, tag:tag, value:value}];
-}
-
-- (Variable)item:(CPObject)anItem variableForTag:(CPInteger)tag
-{
-    var variable;
-
-    switch (tag)
-    {
-        case 2  : variable = [anItem _variableMinX];
-        break;
-        case 4  : variable = [anItem _variableMinY];
-        break;
-        case 8  : variable = [anItem _variableWidth];
-        break;
-        case 16 : variable = [anItem _variableHeight];
-        break;
-        default : variable = null;
-    }
-
-    return variable;
-}
-
-- (void)item:(CPObject)anItem variablesDidChange:(unsigned)updateMask
-{
-    [anItem _setConstraintBasedNeedsLayoutMask:updateMask];
-    [[anItem superview] setNeedsLayout];
+    return [[self _layoutEngine] variableWithPrefix:[self debugID] name:aName value:aValue owner:self];
 }
 
 - (void)updateEngineFrame
 {
     _CPViewUpdateEngineFrame(self);
+}
+
+// FROM ENGINE DELEGATE (the window)
+- (void)_informContainerThatVariableDidChange:(Variable)aVariable
+{
+    var name = aVariable.name,
+        mask;
+
+    switch (name)
+    {
+        case "minX" : mask = 2;
+        break;
+        case "minY" : mask = 4;
+        break;
+        case "width" : mask = 8;
+        break;
+        case "height" : mask = 16;
+        break;
+    }
+
+    _constraintBasedNeedsLayoutMask |= mask;
+    [[self superview] setNeedsLayout];
 }
 
 @end
@@ -4649,8 +4612,6 @@ var _CPViewUpdateEngineFrame = function(aView)
     {
         [aView setFrameSize:CGSizeMake([aView _variableWidth].valueOf(), CGRectGetHeight(frame))];
     }
-
-    [aView _setConstraintBasedNeedsLayoutMask:0];
 };
 
 var SetSizeValue = function(size, value, idx)

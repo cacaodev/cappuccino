@@ -59,7 +59,6 @@
 
 @typedef _CPWindowFullPlatformWindowSession
 
-
 @protocol CPWindowDelegate <CPObject>
 
 @optional
@@ -3874,7 +3873,7 @@ var interpolate = function(fromValue, toValue, progress)
 {
     if (!_layoutEngine)
     {
-        _layoutEngine = [[CPLayoutConstraintEngine alloc] init];
+        _layoutEngine = [[CPLayoutConstraintEngine alloc] initWithDelegate:self];
         [self _updateWindowStayConstraintsInEngine:_layoutEngine];
     }
 
@@ -3905,10 +3904,12 @@ var interpolate = function(fromValue, toValue, progress)
 
 - (void)_suggestFrameSize:(CGSize)newSize
 {
-    var engine = [self _layoutEngine];
+    var engine = [self _layoutEngine],
+        variables = @[[_windowView _variableWidth], [_windowView _variableHeight]],
+        values = @[newSize.width, newSize.height];
 
     [self updateConstraintsAtWindowLevelIfNeeded];
-    [engine suggestSize:newSize forItem:_windowView priority:CPLayoutPriorityDragThatCanResizeWindow];
+    [engine suggestValues:values forVariables:variables withPriority:CPLayoutPriorityDragThatCanResizeWindow];
     [_windowView updateEngineFrame];
 }
 
@@ -4000,6 +4001,15 @@ var interpolate = function(fromValue, toValue, progress)
         [anEngine addStayConstraintsForItem:_windowView priority:CPLayoutPriorityWindowSizeStayPut];
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
+}
+
+@end
+
+@implementation CPWindow (CPLayoutConstraintEngineDelegate)
+
+- (void)engine:(id)anEngine variableDidChange:(Object)aVariable withOwner:(id)anOwner
+{
+    [anOwner _informContainerThatVariableDidChange:aVariable];
 }
 
 @end

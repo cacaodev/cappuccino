@@ -8,120 +8,47 @@
 @import "c.js"
 
 @typedef Engine
+@typedef Map
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
     Engine _engine;
-    Object _CPEngineRegisteredItems;
+    Map    _ownerForVariable;
+    id     _delegate @accessors(getter=delegate);
 }
 
-- (id)init
+- (id)initWithDelegate:(id)aDelegate
 {
     self = [super init];
 
-    _CPEngineRegisteredItems = @{};
+    _ownerForVariable = new Map();
+    _delegate = aDelegate;
 
-    var onsolved = function(changes)
-    {
-        var changeMaskById = {};
+    _engine = new Engine(false, function(changes)
+              {
+                  changes.forEach(function(change)
+                  {
+                      var variable = change.variable,
+                          owner = _ownerForVariable.get(variable);
 
-        changes.forEach(function(change)
-        {
-            var variable = change.variable,
-                identifier = variable._identifier;
-
-            changeMaskById[identifier] = (changeMaskById[identifier] || 0) | variable._tag;
-        });
-
-        for (var uuid in changeMaskById)
-        {
-            var item = _CPEngineRegisteredItems[uuid],
-                mask = changeMaskById[uuid];
-
-            if (mask !== 0)
-            {
-                [item item:item variablesDidChange:mask];
-            }
-            //console.log(item + " = " + records[uuid]);
-        }
-    };
-
-    _engine = new Engine(false, onsolved);
+                      [_delegate engine:self variableDidChange:variable withOwner:owner];
+                  });
+              });
 
     return self;
 }
 
-- (void)registerItem:(id)anItem forIdentifier:(CPString)anIdentifier
-{
-    if (anItem && anIdentifier)
-    {
-        //CPLog.debug("Register " + ([anItem identifier] || [anItem className]) + " for ID " + anIdentifier);
-        _CPEngineRegisteredItems[anIdentifier] = anItem;
-    }
-}
-
-- (id)registeredItemForIdentifier:(CPString)anIdentifier
-{
-    if (anIdentifier !== nil)
-        return _CPEngineRegisteredItems[anIdentifier];
-
-    return nil;
-}
-
-- (CPString)registeredItems
-{
-    var str = "";
-
-    for (var key in _CPEngineRegisteredItems)
-    {
-        var obj = _CPEngineRegisteredItems[key];
-        str += (key + " = " + [obj debugID] + "\n");
-    }
-
-    return str;
-}
-
-- (void)unregisterItemWithIdentifier:(CPString)anIdentifier
-{
-    if (anIdentifier !== nil)
-        delete _CPEngineRegisteredItems[anIdentifier];
-}
 
 - (void)disableOnSolvedNotification
 {
     _engine.disableOnSolvedNotification();
 }
 
-- (void)suggestSize:(CGSize)aSize forItem:(id)anItem priority:(CPLayoutPriority)priority
+- (void)suggestValues:(CPArray)values forVariables:(CPArray)variables withPriority:(CPLayoutPriority)priority
 {
-    var variables = [[anItem _variableWidth], [anItem _variableHeight]],
-        values = [aSize.width, aSize.height];
-
     _engine.suggestValues(variables, values, priority);
 }
 
-- (void)suggestOrigin:(CGPoint)aPoint forItem:(id)anItem priority:(CPLayoutPriority)priority
-{
-    var variables = [[anItem _variableMinX], [anItem _variableMinY]],
-        values = [aPoint.x, aPoint.y];
-
-    _engine.suggestValues(variables, values, priority);
-}
-/*
-PROTOCOL
-- (void)suggestValues:(CPArray)values forVariables:(CPArray)tags ofItem:(id)anItem priority:(CPLayoutPriority)priority
-{
-    var variables = @[];
-
-    for (var i = 0; i < tags.length; i++)
-    {
-        var v = [anItem item:anItem variableForTag:tags[i]];
-        [variables addObject:v];
-    }
-
-    _engine.suggestValues(variables, values, priority);
-}
-*/
 - (void)stopEditing
 {
     _engine.stopEditing();
@@ -165,8 +92,6 @@ PROTOCOL
 
     [constraintsByView enumerateKeysAndObjectsUsingBlock:function(container, constraintsByType, stop)
     {
-        CPLog.debug([_CPEngineRegisteredItems[container] debugID] + " = " + [constraintsByType description]);
-
         [constraintsByType enumerateKeysAndObjectsUsingBlock:function(type, constraints, stop)
         {
             var json_constraints = @[];
@@ -184,25 +109,22 @@ PROTOCOL
         }];
     }];
 
-    if ([errors count])
+    [errors enumerateObjectsUsingBlock:function(solverError, idx, stop)
     {
-        [errors enumerateObjectsUsingBlock:function(solverError, idx, stop)
+        var type = solverError.type,
+            reason = solverError.reason();
+
+        if (type == "c.RequiredFailure")
         {
-            var type = solverError.type,
-                reason = solverError.reason();
+            var hash = solverError.userInfo.uuid,
+                constraint = [constraintByHash objectForKey:hash];
 
-            if (type == "c.RequiredFailure")
-            {
-                var hash = solverError.userInfo.uuid,
-                    constraint = [constraintByHash objectForKey:hash];
-
-                [constraint setAddedToEngine:NO];
-                CPLog.warn(reason + " : " + [constraint description]);
-            }
-            else
-                CPLog.error(reason);
-        }];
-    }
+            [constraint setAddedToEngine:NO];
+            CPLog.warn(reason + " : " + [constraint description]);
+        }
+        else
+            CPLog.error(reason);
+    }];
 
     return result;
 }
@@ -224,9 +146,12 @@ PROTOCOL
     return _engine.description();
 }
 
-- (Variable)newVariableWithProperties:(Object)props
+- (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
 {
-    return _engine.Variable(props.uuid, props.prefix, props.name, props.tag, props.value);
+    var variable = _engine.Variable({prefix:aPrefix, name:aName, value:aValue});
+    _ownerForVariable.set(variable, anOwner);
+
+    return variable;
 }
 
 @end
