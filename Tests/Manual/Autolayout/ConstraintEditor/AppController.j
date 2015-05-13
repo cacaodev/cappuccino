@@ -123,22 +123,6 @@ CPLogRegister(CPLogConsole);
     return self;
 }
 
-- (void)tableViewDeleteKeyPressed:(CPTableView)aTableView
-{
-    var row = [aTableView selectedRow];
-
-    if (row !== CPNotFound)
-    {
-        var view = [self selectedView];
-
-        if (view)
-        {
-            var constraint = [[view constraints] objectAtIndex:row];
-            [constraint setActive:NO];
-        }
-    }
-}
-
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     [theWindow setFullPlatformWindow:YES];
@@ -147,11 +131,6 @@ CPLogRegister(CPLogConsole);
 
     [constraintWindow setAutolayoutEnabled:YES];
     [constraintWindow orderFront:nil];
-}
-
-- (void)awakeFromCib
-{
-
 }
 
 - (IBAction)constantAction:(id)sender
@@ -348,6 +327,31 @@ CPLog.debug(_cmd);
     }
 
     return cellView;
+}
+
+- (void)tableViewDeleteKeyPressed:(CPTableView)aTableView
+{
+    var row = [aTableView selectedRow];
+
+    if (row !== CPNotFound)
+    {
+        var view = [self selectedView];
+
+        if (view)
+        {
+            var constraint = [[view constraints] objectAtIndex:row];
+            [constraint setActive:NO];
+            [constraintWindow setNeedsLayout];
+        }
+    }
+}
+
+- (CPView)tableView:(CPTableView)tableView shouldSelectRow:(CPInteger)row
+{
+    var view = [self selectedView],
+        constraint = [[view constraints] objectAtIndex:row];
+
+    return [constraint _constraintType] == "Constraint";
 }
 
 - (IBAction)layout:(id)sender
@@ -656,8 +660,9 @@ CPLog.debug(_cmd);
 
 - (void)setHorizontalContentHuggingPriority:(float)aPriority
 {
-    return [self setContentHuggingPriority:aPriority forOrientation:CPLayoutConstraintOrientationHorizontal];
+    [self setContentHuggingPriority:aPriority forOrientation:CPLayoutConstraintOrientationHorizontal];
     [self invalidateIntrinsicContentSize];
+    [[self window] setNeedsLayout];
 }
 
 - (float)verticalContentHuggingPriority
@@ -667,8 +672,9 @@ CPLog.debug(_cmd);
 
 - (void)setVerticalContentHuggingPriority:(float)aPriority
 {
-    return [self setContentHuggingPriority:aPriority forOrientation:CPLayoutConstraintOrientationVertical];
+    [self setContentHuggingPriority:aPriority forOrientation:CPLayoutConstraintOrientationVertical];
     [self invalidateIntrinsicContentSize];
+    [[self window] setNeedsLayout];
 }
 
 - (float)horizontalContentCompressionResistancePriority
@@ -678,8 +684,9 @@ CPLog.debug(_cmd);
 
 - (void)setHorizontalContentCompressionResistancePriority:(float)aPriority
 {
-    return [self setContentCompressionResistancePriority:aPriority forOrientation:CPLayoutConstraintOrientationHorizontal];
+    [self setContentCompressionResistancePriority:aPriority forOrientation:CPLayoutConstraintOrientationHorizontal];
     [self invalidateIntrinsicContentSize];
+    [[self window] setNeedsLayout];
 }
 
 - (float)verticalContentCompressionResistancePriority
@@ -689,8 +696,9 @@ CPLog.debug(_cmd);
 
 - (void)setVerticalContentCompressionResistancePriority:(float)aPriority
 {
-    return [self setContentCompressionResistancePriority:aPriority forOrientation:CPLayoutConstraintOrientationVertical];
+    [self setContentCompressionResistancePriority:aPriority forOrientation:CPLayoutConstraintOrientationVertical];
     [self invalidateIntrinsicContentSize];
+    [[self window] setNeedsLayout];
 }
 
 - (float)intrinsicContentWidth

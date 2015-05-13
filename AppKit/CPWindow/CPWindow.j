@@ -3890,7 +3890,7 @@ var interpolate = function(fromValue, toValue, progress)
         result = [self updateConstraintsAtWindowLevel];
         _needsUpdateConstraints = NO;
     }
-
+//CPLog.debug(_cmd + "=" + result);
     return result;
 }
 
@@ -3899,7 +3899,7 @@ var interpolate = function(fromValue, toValue, progress)
     [_windowView setAutolayoutEnabled:YES];
     [_contentView setAutolayoutEnabled:YES];
 
-    return ([_windowView updateConstraintsForSubtreeIfNeeded]);
+    return [_windowView _updateConstraintsForSubtreeIfNeeded];
 }
 
 - (void)_suggestFrameSize:(CGSize)newSize
@@ -3957,7 +3957,7 @@ var interpolate = function(fromValue, toValue, progress)
 {
     if (!_layoutLock)
     {
-        CPLog.debug(_cmd);
+        //CPLog.debug(_cmd);
         _layoutLock = YES;
         [_CPDisplayServer lock];
 
@@ -3998,7 +3998,7 @@ var interpolate = function(fromValue, toValue, progress)
 
     if (!CGSizeEqualToSize(newSize, oldSize))
     {
-        [anEngine addStayConstraintsForItem:_windowView priority:CPLayoutPriorityWindowSizeStayPut];
+        [anEngine replaceStayConstraintsForItem:_windowView priority:CPLayoutPriorityWindowSizeStayPut];
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
 }

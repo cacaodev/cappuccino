@@ -52,10 +52,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
                                "centerY",
                                "baseline"];
 
-var CPLayoutItemIsNull          = 1 << 1,
-    CPLayoutItemIsContainer     = 1 << 2,
-    CPLayoutItemIsNotContainer  = 1 << 3;
-
 @implementation CPLayoutConstraint : CPObject
 {
     id       _container        @accessors(getter=container);
@@ -73,7 +69,10 @@ var CPLayoutItemIsNull          = 1 << 1,
 
     CPString _symbolicConstant;
     BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
-    BOOL     _addedToEngine    @accessors(property=addedToEngine);
+    BOOL     _addedToEngine    @accessors(property=_addedToEngine);
+    BOOL     _needsReplace     @accessors(property=_needsReplace);
+
+    CPArray  _engineConstraints @accessors(property=_engineConstraints);
 }
 
 + (CPSet)keyPathsForValuesAffectingValueForKey:(CPString)key
@@ -120,9 +119,11 @@ var CPLayoutItemIsNull          = 1 << 1,
 - (void)_init
 {
     _container = nil;
+    _engineConstraints = nil;
     _contraintFlags = 0;
     _active = NO;
     _addedToEngine = NO;
+    _needsReplace = NO;
 }
 
 - (id)_findCommonAncestorForItem:(id)firstItem andItem:(id)secondItem
@@ -228,6 +229,7 @@ var CPLayoutItemIsNull          = 1 << 1,
     if (aConstant !== _constant)
     {
         _constant = aConstant;
+        [self setNeedsReplaceIfNeeded];
         [_container setNeedsUpdateConstraints:YES];
     }
 }
@@ -244,9 +246,15 @@ var CPLayoutItemIsNull          = 1 << 1,
     if (aPriority !== _priority)
     {
         _priority = aPriority;
-
+        [self setNeedsReplaceIfNeeded];
         [_container setNeedsUpdateConstraints:YES];
     }
+}
+
+- (void)setNeedsReplaceIfNeeded
+{
+    if (_addedToEngine)
+        _needsReplace = YES;
 }
 
 - (CPString)hash
@@ -265,40 +273,15 @@ var CPLayoutItemIsNull          = 1 << 1,
     return YES;
 }
 
-- (Object)toJSON
-{
-    if (_container == nil)
-        CPLog.warn(self + " container is nil and it should not");
-
-    var firstItemJSON = JSONForItem(_container, _firstItem, _firstAttribute),
-        secondItemJSON = JSONForItem(_container, _secondItem, _secondAttribute);
-
-    var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
-        secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute),
-        constant = _constant + secondOffset * _coefficient - firstOffset;
-
-    return [{
-       type           : "Constraint",
-       uuid           : [self hash],
-       container      : [_container UID],
-       firstItem      : firstItemJSON,
-       secondItem     : secondItemJSON,
-       relation       : _relation,
-       multiplier     : _coefficient,
-       constant       : constant,
-       priority       : _priority,
-       flags          : _contraintFlags
-    }];
-}
-
 - (CPString)description
 {
     var term1 = (_firstItem && _firstAttribute) ? [CPString stringWithFormat:@"%@.%@", [_firstItem debugID], CPStringFromAttribute(_firstAttribute)] : "",
         term2 = (_secondItem && _secondAttribute && _coefficient) ? [CPString stringWithFormat:@"%@.%@ x%@", [_secondItem debugID], CPStringFromAttribute(_secondAttribute), _coefficient] : "",
         identifier = (_identifier) ? [CPString stringWithFormat:@" [%@]"] : "",
-        plusMinus = (_constant < 0) ? "" : "+";
+        plusMinus = (_constant < 0) ? "" : "+",
+        active = _active ? "":" [inactive]";
 
-    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier];
+    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier, active];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem
@@ -306,12 +289,12 @@ var CPLayoutItemIsNull          = 1 << 1,
     if (anItem === _firstItem)
     {
         _firstItem = aNewItem;
-        CPLog.debug("In Constraint replaced " + [_firstItem UID] + " with " + [aNewItem UID]);
+        //CPLog.debug("In Constraint replaced " + [_firstItem UID] + " with " + [aNewItem UID]);
     }
     else if (anItem === _secondItem)
     {
         _secondItem = aNewItem;
-        CPLog.debug("In Constraint replaced " + [_secondItem UID] + " with " + [aNewItem UID]);
+        //CPLog.debug("In Constraint replaced " + [_secondItem UID] + " with " + [aNewItem UID]);
     }
 }
 
@@ -353,6 +336,19 @@ var CPLayoutItemIsNull          = 1 << 1,
     refConstant(constant);
 
     return result;
+}
+
+- (float)_frameBasedConstant
+{
+    var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
+        secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
+
+    return _constant + secondOffset * _coefficient - firstOffset;
+}
+
+- (BOOL)_isContainerItem:(id)anItem
+{
+    return (anItem !== nil && anItem == _container);
 }
 
 @end
@@ -445,23 +441,6 @@ var CPFirstItem         = @"CPFirstItem",
 
 @end
 
-var JSONForItem = function(aContainer, anItem, anAttribute)
-{
-    if (anItem == nil || anAttribute == CPLayoutAttributeNotAnAttribute)
-        return {attribute:CPLayoutAttributeNotAnAttribute, flags:CPLayoutItemIsNull};
-
-    return {
-        uuid        : [anItem UID],
-        name        : [anItem debugID],
-        left        : [anItem _variableMinX],
-        top         : [anItem _variableMinY],
-        width       : [anItem _variableWidth],
-        height      : [anItem _variableHeight],
-        attribute   : anAttribute,
-        flags       : CPLayoutConstraintFlags(aContainer, anItem)
-    };
-};
-
 var alignmentRectOffsetForItem = function(anItem, anAttribute)
 {
     if (anAttribute === CPLayoutAttributeNotAnAttribute || anItem == nil)
@@ -515,9 +494,9 @@ var CPStringFromRelation = function(relation)
 var CPLayoutConstraintFlags = function(aContainer, anItem)
 {
     if (anItem == nil)
-        return CPLayoutItemIsNull;
+        return 2;
     else if (anItem == aContainer)
-        return CPLayoutItemIsContainer;
+        return 4;
     else
-        return CPLayoutItemIsNotContainer;
+        return 8;
 };

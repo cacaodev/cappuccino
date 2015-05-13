@@ -8,6 +8,8 @@
 {
     self = [super initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
 
+    _active = YES;
+
     return self;
 }
 

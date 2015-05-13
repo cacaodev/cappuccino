@@ -9,9 +9,6 @@
 @import <Foundation/CPObject.j>
 @import <AppKit/CPView.j>
 
-//@import "CPLayoutConstraintEngine.j"
-//@import "../CPTrace.j"
-
 CPLogRegister(CPLogConsole);
 
 @implementation ColorView : CPView

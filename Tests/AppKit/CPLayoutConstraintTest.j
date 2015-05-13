@@ -6,11 +6,14 @@
 
 @implementation CPLayoutConstraintTest : OJTestCase
 {
+    BOOL _didReceiveKVONotification;
 }
 
 - (void)setUp
 {
+    _didReceiveKVONotification = NO;
 }
+
 - (void)testAddConstraint
 {
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
@@ -29,6 +32,7 @@
 
     [self assert:2 equals:[[view constraints] count]];
 
+    [self assertTrue:_didReceiveKVONotification];
     [view removeObserver:self forKeyPath:@"constraints"];
 }
 
@@ -56,11 +60,7 @@
 {
     [self assert:@"constraints" equals:keyPath];
 
-    if (context == @"add")
-        [self assert:CPKeyValueChangeInsertion equals:[change objectForKey:CPKeyValueChangeKindKey]];
-
-    if (context == @"remove")
-        [self assert:CPKeyValueChangeRemoval equals:[change objectForKey:CPKeyValueChangeKindKey]];
+    _didReceiveKVONotification = YES;
 }
 
 @end
