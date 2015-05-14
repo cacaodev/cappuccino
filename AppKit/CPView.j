@@ -4475,7 +4475,9 @@ Subclasses should not override this method.
 */
 - (void)layoutSubtreeIfNeeded
 {
-    [self updateConstraintsForSubtreeIfNeeded];
+    if ([self _updateConstraintsForSubtreeIfNeeded])
+        [[self _layoutEngine] solve];
+
     [self _layoutSubtreeIfNeeded];
 }
 
