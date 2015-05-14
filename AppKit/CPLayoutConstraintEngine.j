@@ -8,6 +8,7 @@
 
 @typedef SimplexSolver
 @typedef Map
+
 /*
 var CPLayoutItemIsNull          = 2,
     CPLayoutItemIsContainer     = 4,
@@ -220,7 +221,8 @@ var CPLayoutItemIsNull          = 2,
             stop(YES);
     }];
 
-    [aConstraint _setAddedToEngine:YES];
+    [aConstraint _setAddedToEngine:result];
+    [aConstraint _setActive:result];
 //CPLog.debug(_cmd + "=" + result);
     return result;
 }
@@ -255,7 +257,8 @@ var CPLayoutItemIsNull          = 2,
             stop(YES);
     }];
 
-    [aConstraint _setAddedToEngine:NO];
+    [aConstraint _setAddedToEngine:!result];
+    [aConstraint _setActive:!result];
 //CPLog.debug(_cmd + "=" + result);
     return result;
 }
