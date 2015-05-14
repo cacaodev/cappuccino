@@ -1,7 +1,7 @@
 @import <Foundation/CPObject.j>
 @import <Foundation/CPString.j>
 
-@import "CPLayoutConstraintEngine.j"
+@class CPArray
 
 @typedef CPLayoutRelation
 CPLayoutRelationLessThanOrEqual = -1;

@@ -36,7 +36,6 @@
 @import "CPLayoutConstraint.j"
 @import "CPContentSizeLayoutConstraint.j"
 @import "CPAutoresizingMaskLayoutConstraint.j"
-@import "CPLayoutConstraintEngine.j"
 
 @class _CPToolTip
 @class CPWindow
@@ -46,6 +45,7 @@
 @class CPClipView
 @class CPScrollView
 @class CALayer
+@class CPLayoutConstraintEngine
 
 @global appkit_tag_dom_elements
 
@@ -4115,7 +4115,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return (orientation == 0) ? compressionResistancePriorities.width : compressionResistancePriorities.height;
 }
 
-- (CPLayoutConstraint)_contentSizeConstraintForOrientation:(CPLayoutConstraintOrientation)orientation
+- (CPContentSizeLayoutConstraint)_contentSizeConstraintForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     [self _updateContentSizeConstraints];
 
