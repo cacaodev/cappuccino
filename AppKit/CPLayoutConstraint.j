@@ -343,7 +343,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
         secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
 
-    return _constant + secondOffset * _coefficient - firstOffset;
+    return _constant + firstOffset - secondOffset * _coefficient;
 }
 
 - (BOOL)_isContainerItem:(id)anItem
@@ -452,24 +452,24 @@ var alignmentRectOffsetForItem = function(anItem, anAttribute)
     switch (anAttribute)
     {
         case CPLayoutAttributeLeading :
-        case CPLayoutAttributeLeft     : offset = inset.left;
+        case CPLayoutAttributeLeft     : offset = -inset.left;
         break;
         case CPLayoutAttributeTrailing :
-        case CPLayoutAttributeRight    : offset = - inset.right;
+        case CPLayoutAttributeRight    : offset = inset.right;
         break;
-        case CPLayoutAttributeTop      : offset = inset.top;
+        case CPLayoutAttributeTop      : offset = -inset.top;
         break;
-        case CPLayoutAttributeBottom   : offset = - inset.bottom;
+        case CPLayoutAttributeBottom   : offset = inset.bottom;
         break;
-        case CPLayoutAttributeBaseline : offset = - inset.bottom - [anItem baselineOffsetFromBottom];
+        case CPLayoutAttributeBaseline : offset = inset.bottom + [anItem baselineOffsetFromBottom];
         break;
-        case CPLayoutAttributeWidth    : offset = - inset.left - inset.right;
+        case CPLayoutAttributeWidth    : offset = inset.left + inset.right;
         break;
-        case CPLayoutAttributeHeight   : offset = - inset.top - inset.bottom;
+        case CPLayoutAttributeHeight   : offset = inset.top + inset.bottom;
         break;
-        case CPLayoutAttributeCenterX  : offset = - inset.right + inset.left;
+        case CPLayoutAttributeCenterX  : offset = inset.right - inset.left;
         break;
-        case CPLayoutAttributeCenterY  : offset = - inset.bottom + inset.top;
+        case CPLayoutAttributeCenterY  : offset = inset.bottom - inset.top;
         break;
     }
 
