@@ -126,6 +126,16 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _needsReplace = NO;
 }
 
+- (CPLayoutConstraint)copy
+{
+    var copy = [CPLayoutConstraint constraintWithItem:_firstItem attribute:_firstAttribute relatedBy:_relation toItem:_secondItem attribute:_secondAttribute multiplier:_coefficient constant:_constant];
+    [copy setPriority:_priority];
+    [copy setActive:_active];
+    [copy _setContainer:_container];
+
+    return copy;
+}
+
 - (id)_findCommonAncestorForItem:(id)firstItem andItem:(id)secondItem
 {
     var ancestor = nil;
@@ -253,6 +263,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (void)setNeedsReplaceIfNeeded
 {
+    // See https://github.com/slightlyoff/cassowary.js/issues/66
     if (_addedToEngine)
         _needsReplace = YES;
 }
