@@ -4460,8 +4460,7 @@ You must call [super layout] as part of your implementation.
 */
 - (void)layout
 {
-    // Not Implemented
-    // See -layoutSubviews
+    [self layoutSubviews];
 }
 
 /*
@@ -4483,14 +4482,9 @@ Subclasses should not override this method.
 
 - (void)_layoutSubtreeIfNeeded
 {
-    var iteration = 0;
-
     [_subviews enumerateObjectsUsingBlock:function(view, idx, stop)
     {
         [view _layoutSubtreeIfNeeded];
-
-        if (iteration++ > 1000)
-            stop(YES);
     }];
 
     if (_constraintBasedNeedsLayoutMask > 0)
