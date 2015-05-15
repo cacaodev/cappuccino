@@ -14,7 +14,7 @@
 
 - (CPInteger)testAutolayoutSpeed
 {
-    var RESIZES_COUNT = 500;
+    var RESIZES_COUNT = 1000;
 
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
         contentView = [theWindow contentView];
@@ -78,6 +78,7 @@
 
     var end = new Date();
     var total1 = end - start;
+    CPLog.warn("\n");
     CPLog.warn("   Autosize setFrame: " + (total1/ RESIZES_COUNT) + " ms. Total " + total1 + " ms.");
 
     start = new Date();
@@ -113,8 +114,6 @@
             [self assertTrue:equalRects message:mess];
         }
     }
-
-    CPLog.warn("\n");
 
     return [total2, total1];
 }
