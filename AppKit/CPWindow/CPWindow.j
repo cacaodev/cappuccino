@@ -253,7 +253,7 @@ var CPWindowActionMessageKeys = [
 
     CPLayoutConstraintEngine            _layoutEngine;
     BOOL _autolayoutEnabled      @accessors(getter=isAutolayoutEnabled);
-    BOOL _needsUpdateConstraints @accessors(property=needsUpdateConstraints);
+    BOOL _needsUpdateConstraints @accessors(getter=needsUpdateConstraints);
     BOOL _needsLayout;
     BOOL _layoutLock;
 }
@@ -3880,26 +3880,46 @@ var interpolate = function(fromValue, toValue, progress)
     return _layoutEngine;
 }
 
-- (BOOL)updateConstraintsAtWindowLevelIfNeeded
+/*
+Updates the constraints based on changes to views in the window since the last layout.
+
+- (void)updateConstraintsIfNeeded
+
+@discussion Whenever a new layout pass is triggered for a window, the system invokes this method to ensure that any constraints for views in the window are updated with information from the current view hierarchy and its constraints. This method is called automatically by the system, but may be invoked manually if you need to examine the most up to date constraints.
+
+Subclasses should not override this method.
+*/
+- (BOOL)updateConstraintsIfNeeded
 {
     var result = NO;
 
     if (_needsUpdateConstraints)
     {
         //CPLog.debug([self className] + " Needs updateConstraintsAtWindowLevel");
-        result = [self updateConstraintsAtWindowLevel];
+        result = [self _updateConstraintsAtWindowLevel];
         _needsUpdateConstraints = NO;
     }
 //CPLog.debug(_cmd + "=" + result);
     return result;
 }
 
-- (BOOL)updateConstraintsAtWindowLevel
+- (void)setNeedsUpdateConstraints:(BOOL)flag
+{
+    if (flag !== _needsUpdateConstraints)
+    {
+        _needsUpdateConstraints = flag;
+
+        if (flag)
+            [self setNeedsLayout];
+    }
+}
+
+- (BOOL)_updateConstraintsAtWindowLevel
 {
     [_windowView setAutolayoutEnabled:YES];
     [_contentView setAutolayoutEnabled:YES];
 
-    return [_windowView _updateConstraintsForSubtreeIfNeeded];
+    return [_windowView updateConstraintsForSubtreeIfNeeded];
 }
 
 - (void)_suggestFrameSize:(CGSize)newSize
@@ -3908,7 +3928,7 @@ var interpolate = function(fromValue, toValue, progress)
         variables = @[[_windowView _variableWidth], [_windowView _variableHeight]],
         values = @[newSize.width, newSize.height];
 
-    [self updateConstraintsAtWindowLevelIfNeeded];
+    [self updateConstraintsIfNeeded];
     [engine suggestValues:values forVariables:variables withPriority:CPLayoutPriorityDragThatCanResizeWindow];
     [_windowView updateEngineFrame];
 }
@@ -3944,6 +3964,15 @@ var interpolate = function(fromValue, toValue, progress)
     _CPDisplayServerAddLayoutObject(self);
 }
 
+/*
+Updates the layout of views in the window based on the current views and constraints.
+
+- (void)layoutIfNeeded
+
+@discussion Before displaying a window that uses constraints-based layout the system invokes this method to ensure that the layout of all views is up to date. This method updates the layout if needed, first invoking updateConstraintsIfNeeded to ensure that all constraints are up to date. This method is called automatically by the system, but may be invoked manually if you need to examine the most up to date layout.
+
+Subclasses should not override this method.
+*/
 - (void)layoutIfNeeded
 {
     if (_needsLayout)
@@ -3966,7 +3995,7 @@ var interpolate = function(fromValue, toValue, progress)
         [engine stopEditing];
         [self _updateWindowStayConstraintsInEngine:engine];
 
-        if ([self updateConstraintsAtWindowLevelIfNeeded])
+        if ([self updateConstraintsIfNeeded])
             [engine solve];
 
         [_windowView updateEngineFrame];
