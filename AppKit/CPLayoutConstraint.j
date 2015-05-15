@@ -126,11 +126,11 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _needsReplace = NO;
 }
 
-- (CPLayoutConstraint)copy
+- (id)copy
 {
     var copy = [CPLayoutConstraint constraintWithItem:_firstItem attribute:_firstAttribute relatedBy:_relation toItem:_secondItem attribute:_secondAttribute multiplier:_coefficient constant:_constant];
     [copy setPriority:_priority];
-    [copy setActive:_active];
+    [copy _setActive:_active];
     [copy _setContainer:_container];
 
     return copy;

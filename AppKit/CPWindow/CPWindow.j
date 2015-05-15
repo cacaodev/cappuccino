@@ -3908,9 +3908,7 @@ Subclasses should not override this method.
     if (flag !== _needsUpdateConstraints)
     {
         _needsUpdateConstraints = flag;
-
-        if (flag)
-            [self setNeedsLayout];
+        // TODO: check cocoa to see if setNeedsLayout call here.
     }
 }
 

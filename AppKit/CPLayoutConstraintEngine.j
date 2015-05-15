@@ -155,33 +155,27 @@ var CPLayoutItemIsNull          = 2,
     AddConstraint(_simplexSolver, heightStay, onAdd, onAddError);
 }
 
-- (BOOL)_addOrRemoveConstraintsIfNeeded:(CPArray)constraints
+- (void)addConstraints:(CPArray)constraints
 {
-    var result = NO;
+    var result = YES;
 
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
-        var isInEngine = [aConstraint _addedToEngine],
-            isActive = [aConstraint isActive],
-            needsReplace = [aConstraint _needsReplace];
-//CPLog.debug(_cmd + "=" + aConstraint + " inEngine=" + isInEngine + " active=" + isActive);
-        if (needsReplace)
-        {
-            result |= [self removeConstraint:aConstraint];
-            [aConstraint _setEngineConstraints:nil];
-            result |= [self addConstraint:aConstraint];
-            [aConstraint _setNeedsReplace:NO];
-        }
-        else
-        {
-            if (isActive && !isInEngine)
-                result |= [self addConstraint:aConstraint];
-
-            if (!isActive && isInEngine)
-                result |= [self removeConstraint:aConstraint];
-        }
+        result &= [self addConstraint:aConstraint];
     }];
-//CPLog.debug(_cmd + "=" + result);
+
+    return result;
+}
+
+- (void)removeConstraints:(CPArray)constraints
+{
+    var result = YES;
+
+    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+        result &= [self removeConstraint:aConstraint];
+    }];
+
     return result;
 }
 
@@ -190,19 +184,17 @@ var CPLayoutItemIsNull          = 2,
     var type = [aConstraint _constraintType],
         container = [aConstraint container],
         containerId = [container debugID],
-        result = NO;
+        result = YES;
 
     var onsuccess = function(constraint)
     {
         _constraintContainerMap.set(constraint, {"Type":type, "Container":container});
         EngineLog("Added " + type + " in " + containerId + " : " + constraint.toString());
-        result = YES;
     };
 
     var onerror = function(error, constraint)
     {
         EngineWarn(containerId + ": could not add " + type + " " + constraint.toString() + " with error " + error);
-        result = NO;
     };
 
     var engine_constraints = [aConstraint _engineConstraints];
@@ -215,7 +207,7 @@ var CPLayoutItemIsNull          = 2,
 
     [engine_constraints enumerateObjectsUsingBlock:function(engine_constraint, idx, stop)
     {
-        AddConstraint(_simplexSolver, engine_constraint, onsuccess, onerror);
+        result = AddConstraint(_simplexSolver, engine_constraint, onsuccess, onerror);
 
         if (!result)
             stop(YES);
@@ -232,7 +224,7 @@ var CPLayoutItemIsNull          = 2,
     var type = [aConstraint _constraintType],
         container = [aConstraint container],
         containerId = [container debugID],
-        result = NO;
+        result = YES;
 
     var engine_constraints = [aConstraint _engineConstraints];
 
@@ -240,18 +232,16 @@ var CPLayoutItemIsNull          = 2,
     {
         _constraintContainerMap.delete(constraint);
         EngineLog("Removed " + type + " in " + containerId + " : " + constraint.toString());
-        result = YES;
     };
 
     var onerror = function(error, constraint)
     {
         EngineWarn(containerId + ": could not remove " + type + " " + constraint.toString() + " with error " + error);
-        result = NO;
     };
 
     [engine_constraints enumerateObjectsUsingBlock:function(engine_constraint, idx, stop)
     {
-        RemoveConstraint(_simplexSolver, engine_constraint, onsuccess, onerror);
+        result = RemoveConstraint(_simplexSolver, engine_constraint, onsuccess, onerror);
 
         if (!result)
             stop(YES);
@@ -275,9 +265,9 @@ var CPLayoutItemIsNull          = 2,
 {
     var str = "Engine Constraints:\n";
 
-    _constraintContainerMap.forEach(function(engine_constraint, TypeAndContainer)
+    _constraintContainerMap.forEach(function(TypeAndContainer, engine_constraint)
     {
-        str += [TypeAndContainer.Container debugID] + " " + TypeAndContainer.Type + " " + engine_constraint.toString() + "\n";
+        str += [TypeAndContainer.Container debugID] + " (" + TypeAndContainer.Type + ") " + engine_constraint.toString() + "\n";
     });
 
     return (str + "\nInternalInfo:\n" + _simplexSolver.getInternalInfo());
@@ -462,7 +452,7 @@ var expressionForAttributeCenterY = function(topVariable, heightVariable, isCont
 
 var AddConstraint = function(solver, constraint, onsuccess, onerror)
 {
-    var didError = false;
+    var result = true;
 
     try {
         solver.addConstraint(constraint);
@@ -470,18 +460,20 @@ var AddConstraint = function(solver, constraint, onsuccess, onerror)
     catch (e)
     {
         onerror(e, constraint);
-        didError = true;
+        result = false;
     }
     finally
     {
-        if (!didError)
+        if (result)
             onsuccess(constraint);
+
+        return result;
     }
 };
 
 var RemoveConstraint = function(solver, constraint, onsuccess, onerror)
 {
-    var didError = false;
+    var result = true;
 
     try {
         solver.removeConstraint(constraint);
@@ -489,12 +481,14 @@ var RemoveConstraint = function(solver, constraint, onsuccess, onerror)
     catch (e)
     {
         onerror(e, constraint);
-        didError = true;
+        result = false;
     }
     finally
     {
-        if (!didError)
+        if (result)
             onsuccess(constraint);
+
+        return result;
     }
 };
 

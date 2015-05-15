@@ -4188,7 +4188,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 - (void)_addConstraints:(CPArray)constraints
 {
 //CPLog.debug([self debugID] + _cmd + " " + [constraints description]);
-    [self willChangeValueForKey:@"constraints"];
 
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
@@ -4204,8 +4203,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         [_constraintsArray addObject:aConstraint];
     }];
-
-    [self didChangeValueForKey:@"constraints"];
 }
 
 - (void)removeConstraint:(CPLayoutConstraint)aConstraint
@@ -4215,8 +4212,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)removeConstraints:(CPArray)constraints
 {
-    [self willChangeValueForKey:@"constraints"];
-
     [_constraintsArray enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
         if ([constraints indexOfObjectIdenticalTo:aConstraint] !== CPNotFound)
@@ -4227,8 +4222,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     }];
 
     [self _setNeedsUpdateConstraints:YES];
-
-    [self didChangeValueForKey:@"constraints"];
 }
 /*
 Updates the constraints for the receiving view and its subviews.
@@ -4239,12 +4232,34 @@ Updates the constraints for the receiving view and its subviews.
 
 Subclasses should not override this method.
 */
-- (void)updateConstraintsForSubtreeIfNeeded
+- (BOOL)updateConstraintsForSubtreeIfNeeded
 {
-    [self _updateConstraintsForSubtreeIfNeeded];
+    var constraintsToAdd = @[],
+        constraintsToRemove = @[],
+        viewsToClear = [CPSet set],
+        engine = [self _layoutEngine];
+
+    [self getAdd:constraintsToAdd getRemove:constraintsToRemove getViews:viewsToClear];
+
+//CPLog.debug(_cmd + engine + " ADD = " + [constraintsToAdd description] + "\nREMOVE=" + [constraintsToRemove description] + "\nVIEWS=" +viewsToClear);
+
+    [engine removeConstraints:constraintsToRemove];
+    [engine addConstraints:constraintsToAdd];
+
+    [viewsToClear enumerateObjectsUsingBlock:function(aView)
+    {
+        [aView willChangeValueForKey:@"constraints"];
+
+        [aView _clearInactiveConstraints];
+        [aView _clearInactiveContentSizeConstraints];
+
+        [aView didChangeValueForKey:@"constraints"];
+    }];
+
+    return ([viewsToClear count] > 0);
 }
 
-- (BOOL)_updateConstraintsForSubtreeIfNeeded
+- (BOOL)getAdd:(CPArray)toAdd getRemove:(CPArray)toRemove getViews:(CPSet)views
 {
     //CPLog.warn(_cmd + [self debugID]);
     var result = NO;
@@ -4258,8 +4273,8 @@ Subclasses should not override this method.
         if (_updateConstraintsFlags & 2)
         {
             var constraints = [self _constraintsExcludingContentSizeConstraints];
-            result |= [engine _addOrRemoveConstraintsIfNeeded:constraints];
-            [self _clearInactiveConstraints];
+
+            result |= [self getAdd:toAdd getRemove:toRemove getViews:views forConstraints:constraints];
             [self _setNeedsUpdateConstraints:NO];
         }
 
@@ -4269,8 +4284,7 @@ Subclasses should not override this method.
 
             if (contentSizeConstraints)
             {
-                result |= [engine _addOrRemoveConstraintsIfNeeded:contentSizeConstraints];
-                [self _clearInactiveContentSizeConstraints];
+                result |= [self getAdd:toAdd getRemove:toRemove getViews:views forConstraints:contentSizeConstraints];
                 [self _setNeedsUpdateSizeConstraints:NO];
             }
         }
@@ -4282,11 +4296,59 @@ Subclasses should not override this method.
 
         if ([aSubview isAutolayoutEnabled])
         {
-            result |= [aSubview _updateConstraintsForSubtreeIfNeeded];
+            result |= [aSubview getAdd:toAdd getRemove:toRemove getViews:views];
         }
     }];
 //CPLog.debug([self debugID] + _cmd + "=" + result);
+
     return result;
+}
+
+- (BOOL)getAdd:(CPArray)toAdd getRemove:(CPArray)toRemove getViews:(CPSet)views forConstraints:(CPArray)constraints
+{
+    var isViewInvolved = NO;
+
+    [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+    {
+//CPLog.debug(_cmd + "=" + aConstraint + " inEngine=" + isInEngine + " active=" + isActive);
+
+        if ([aConstraint _needsReplace])
+        {
+            // TODO: Remove this hack when cassowary.js constraints with mutable properties.
+            // // See https://github.com/slightlyoff/cassowary.js/issues/66
+            var copy = [aConstraint copy];
+            [toAdd addObject:copy];
+            [toRemove addObject:aConstraint];
+
+            var ridx = [_constraintsArray indexOfObjectIdenticalTo:aConstraint];
+            [_constraintsArray replaceObjectAtIndex:ridx withObject:copy];
+
+            isViewInvolved = YES;
+        }
+        else
+        {
+            var isInEngine = [aConstraint _addedToEngine],
+                isActive = [aConstraint isActive];
+
+            if (isActive && !isInEngine)
+            {
+                [toAdd addObject:aConstraint];
+                isViewInvolved = YES;
+            }
+            else if (!isActive && isInEngine)
+            {
+                [toRemove addObject:aConstraint];
+                isViewInvolved = YES;
+            }
+        }
+    }];
+
+    if (isViewInvolved)
+        [views addObject:self];
+
+CPLog.debug(_cmd + "ADD = " + [toAdd description] + "\nREMOVE=" + [toRemove description] + "\nVIEWS=" +views);
+
+    return isViewInvolved;
 }
 
 /*
@@ -4394,8 +4456,6 @@ Subclasses should not override this method.
         if ([newContentSizeConstraints isEqualToArray:contentSizeConstraints])
             return;
 
-        [self willChangeValueForKey:@"constraints"];
-
         if (contentSizeConstraints) // ivar is initially nil.
         {
             [contentSizeConstraints makeObjectsPerformSelector:@selector(_setActive:) withObject:NO];
@@ -4405,8 +4465,6 @@ Subclasses should not override this method.
             [self _setContentSizeConstraints:newContentSizeConstraints];
 
         [_constraintsArray addObjectsFromArray:newContentSizeConstraints];
-
-        [self didChangeValueForKey:@"constraints"];
     }
 }
 
@@ -4474,7 +4532,7 @@ Subclasses should not override this method.
 */
 - (void)layoutSubtreeIfNeeded
 {
-    if ([self _updateConstraintsForSubtreeIfNeeded])
+    if ([self updateConstraintsForSubtreeIfNeeded])
         [[self _layoutEngine] solve];
 
     [self _layoutSubtreeIfNeeded];
