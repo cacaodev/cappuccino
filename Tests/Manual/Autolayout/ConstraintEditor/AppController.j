@@ -302,6 +302,7 @@ CPLog.debug(_cmd);
     }
 
     [addPopover performClose:sender];
+    [constraintWindow setNeedsLayout];
 }
 
 - (void)tableViewSelectionDidChange:(CPNotification)aNotification
