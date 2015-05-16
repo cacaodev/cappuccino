@@ -3896,7 +3896,7 @@ Subclasses should not override this method.
     if (_needsUpdateConstraints)
     {
         //CPLog.debug([self className] + " Needs updateConstraintsAtWindowLevel");
-        result = [self _updateConstraintsAtWindowLevel];
+        result = [self _updateConstraints];
         _needsUpdateConstraints = NO;
     }
 //CPLog.debug(_cmd + "=" + result);
@@ -3912,7 +3912,7 @@ Subclasses should not override this method.
     }
 }
 
-- (BOOL)_updateConstraintsAtWindowLevel
+- (BOOL)_updateConstraints
 {
     [_windowView setAutolayoutEnabled:YES];
     [_contentView setAutolayoutEnabled:YES];
