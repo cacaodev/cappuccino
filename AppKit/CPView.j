@@ -2695,8 +2695,8 @@ setBoundsOrigin:
         _needsLayout = needsLayout;
 
         if (needsLayout)
-    _CPDisplayServerAddLayoutObject(self);
-}
+            _CPDisplayServerAddLayoutObject(self);
+    }
 }
 
 - (BOOL)needsLayout
@@ -4266,8 +4266,6 @@ Subclasses should not override this method.
 
     if (_updateConstraintsFlags !== 0)
     {
-        var engine = [self _layoutEngine];
-
         [self updateConstraints];
 
         if (_updateConstraintsFlags & 2)
