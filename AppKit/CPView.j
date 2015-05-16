@@ -4533,18 +4533,21 @@ Subclasses should not override this method.
     if ([self updateConstraintsForSubtreeIfNeeded])
         [[self _layoutEngine] solve];
 
-    [self _layoutSubtreeIfNeeded];
+    [self _updateSubtreeGeometryIfNeeded];
 }
 
-- (void)_layoutSubtreeIfNeeded
+- (void)_updateSubtreeGeometryIfNeeded
 {
     [_subviews enumerateObjectsUsingBlock:function(view, idx, stop)
     {
-        [view _layoutSubtreeIfNeeded];
+        [view _updateSubtreeGeometryIfNeeded];
     }];
 
     if (_constraintBasedNeedsLayoutMask > 0)
-        [self layoutSubviews];
+    {
+        _CPViewUpdateEngineFrame(self);
+        _constraintBasedNeedsLayoutMask = 0;
+    }
 }
 
 - (Variable)_variableMinX
