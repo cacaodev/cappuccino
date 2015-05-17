@@ -281,12 +281,11 @@ var _CPCibObjectDataNamesKeysKey                = @"_CPCibObjectDataNamesKeysKey
             object = instantiatedObject;
 
         // Don't use _fileOwner, by this point its been replaced with anOwner.
-        if (object !== anOwner && [object respondsToSelector:@selector(awakeFromCib)])
+        if (object !== anOwner)
             [object awakeFromCib];
     }
 
-    if ([anOwner respondsToSelector:@selector(awakeFromCib)])
-        [anOwner awakeFromCib];
+    [anOwner awakeFromCib];
 }
 
 @end
