@@ -282,9 +282,13 @@ var _CPCibObjectDataNamesKeysKey                = @"_CPCibObjectDataNamesKeysKey
 
         // Don't use _fileOwner, by this point its been replaced with anOwner.
         if (object !== anOwner)
+        {
+            [object _cibDidFinishLoadingWithOwner:anOwner];
             [object awakeFromCib];
+        }
     }
 
+    [anOwner _cibDidFinishLoadingWithOwner:anOwner];
     [anOwner awakeFromCib];
 }
 

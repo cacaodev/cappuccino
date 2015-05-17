@@ -30,6 +30,10 @@ var CPCibOwner = @"CPCibOwner";
 
 @implementation CPObject (CPCibLoading)
 
+- (void)_cibDidFinishLoadingWithOwner:(id)anOwner
+{
+}
+
 - (void)awakeFromCib
 {
 }
