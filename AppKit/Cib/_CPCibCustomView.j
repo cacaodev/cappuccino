@@ -151,7 +151,7 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
                 }
             }];
 
-            [view addConstraints:[self constraints]];
+            [view addConstraints:constraints];
         }
     }
 

@@ -421,7 +421,6 @@ var CPViewHighDPIDrawingEnabled = YES;
         [self _loadThemeAttributes];
 
         [self _initConstraintsIvars];
-        _identifier = nil;
     }
 
     return self;
@@ -3647,7 +3646,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         _identifier = [aCoder decodeObjectForKey:CPReuseIdentifierKey];
 
         _window = [aCoder decodeObjectForKey:CPViewWindowKey];
-        _subviews = [aCoder decodeObjectForKey:CPViewSubviewsKey] || [];
         _superview = [aCoder decodeObjectForKey:CPViewSuperviewKey];
 
         // We have to manually add the subviews so that they will receive
@@ -4343,8 +4341,6 @@ Subclasses should not override this method.
 
     if (isViewInvolved)
         [views addObject:self];
-
-CPLog.debug(_cmd + "ADD = " + [toAdd description] + "\nREMOVE=" + [toRemove description] + "\nVIEWS=" +views);
 
     return isViewInvolved;
 }
