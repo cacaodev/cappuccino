@@ -122,7 +122,7 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
         [view setAlphaValue:[self alphaValue]];
         [view setIdentifier:[self identifier]];
         [view setAutolayoutEnabled:[self isAutolayoutEnabled]];
-        [view _setNeedsUpdateConstraints:[self _needsUpdateConstraints]];
+        [view setTranslatesAutoresizingMaskIntoConstraints:[self translatesAutoresizingMaskIntoConstraints]];
 
         [_superview replaceSubview:self with:view];
 
@@ -130,7 +130,7 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
 
         _replacementView = view;
 
-        var constraints = [self constraints];
+        var constraints = [self _internalConstraints];
 
         if ([constraints count])
         {
@@ -151,8 +151,14 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
                 }
             }];
 
-            [view addConstraints:[self constraints]];
+            [view _setInternalConstraints:constraints];
         }
+
+        [view setContentHuggingPriority:[self contentHuggingPriorityForOrientation:0] forOrientation:0];
+        [view setContentHuggingPriority:[self contentHuggingPriorityForOrientation:1] forOrientation:1];
+
+        [view setContentCompressionResistancePriority:[self contentCompressionResistancePriorityForOrientation:0] forOrientation:0];
+        [view setContentCompressionResistancePriority:[self contentCompressionResistancePriorityForOrientation:1] forOrientation:1];
     }
 
     return view;

@@ -190,6 +190,7 @@ var CPLayoutItemIsNull          = 2,
     {
         _constraintContainerMap.set(constraint, {"Type":type, "Container":container});
         EngineLog("Added " + type + " in " + containerId + " : " + constraint.toString());
+        [_delegate constraintsDidChangeInEngine:self];
     };
 
     var onerror = function(error, constraint)
@@ -213,9 +214,6 @@ var CPLayoutItemIsNull          = 2,
             stop(YES);
     }];
 
-    [aConstraint _setAddedToEngine:result];
-    [aConstraint _setActive:result];
-//CPLog.debug(_cmd + "=" + result);
     return result;
 }
 
@@ -232,6 +230,7 @@ var CPLayoutItemIsNull          = 2,
     {
         _constraintContainerMap.delete(constraint);
         EngineLog("Removed " + type + " in " + containerId + " : " + constraint.toString());
+        [_delegate constraintsDidChangeInEngine:self];
     };
 
     var onerror = function(error, constraint)
@@ -247,8 +246,6 @@ var CPLayoutItemIsNull          = 2,
             stop(YES);
     }];
 
-    [aConstraint _setAddedToEngine:!result];
-    [aConstraint _setActive:!result];
 //CPLog.debug(_cmd + "=" + result);
     return result;
 }

@@ -205,13 +205,6 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
     return self;
 }
 
-- (void)setFrameSize:(CGSize)aSize
-{
-    [[self window] _sizeToFitWindowViewSize:aSize];
-
-    [super setFrameSize:aSize];
-}
-
 - (void)viewDidMoveToWindow
 {
     [_closeButton setTarget:[self window]];
@@ -420,4 +413,21 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
     return [_bodyView frame].origin.y;
 }
 
+@end
+
+@implementation _CPStandardWindowView (CPLayoutConstraint)
+
+- (void)setFrameSize:(CGSize)aSize
+{
+    [[self window] _sizeToFitWindowViewSize:aSize];
+
+    [super setFrameSize:aSize];
+}
+
+- (CGSize)intrinsicContentSize
+{
+    // We don't want content size constraints for the window view.
+    // This is taken care of by addind/removing stay constraints.
+    return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
+}
 @end

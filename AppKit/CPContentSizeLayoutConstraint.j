@@ -44,10 +44,14 @@
     if (anObject === self)
         return YES;
 
-    if (!anObject || anObject.isa !== self.isa || [anObject firstItem] !== _firstItem || [anObject orientation] !== _orientation || [anObject constant] !== _constant || [anObject huggingPriority] !== _huggingPriority || [anObject compressPriority] !== _compressPriority)
+    if (!anObject || [anObject class] !== [self class] || [anObject firstItem] !== _firstItem || [anObject orientation] !== _orientation || [anObject constant] !== _constant || [anObject huggingPriority] !== _huggingPriority || [anObject compressPriority] !== _compressPriority)
         return NO;
 
     return YES;
+}
+
+- (void)resolveConstant
+{
 }
 
 - (Variable)variableForOrientation
