@@ -18,8 +18,8 @@
         <customObject id="450" customClass="AppController">
             <connections>
                 <outlet property="addPopover" destination="W81-Pd-PKb" id="bgc-LD-nTe"/>
-                <outlet property="constraintWindow" destination="371" id="v2Y-6z-14Q"/>
                 <outlet property="priorityPopover" destination="1023" id="pjK-8y-Eco"/>
+                <outlet property="tableView" destination="461" id="FK1-VR-LBx"/>
                 <outlet property="theWindow" destination="371" id="459"/>
             </connections>
         </customObject>
@@ -40,7 +40,7 @@
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="58" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="461">
-                                    <rect key="frame" x="0.0" y="0.0" width="349" height="249"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="349" height="0.0"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <size key="intercellSpacing" width="3" height="2"/>
                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -59,79 +59,6 @@
                                             </textFieldCell>
                                             <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                             <prototypeCellViews>
-                                                <tableCellView identifier="Constraint" id="Ygr-oT-pbG">
-                                                    <rect key="frame" x="1" y="1" width="346" height="58"/>
-                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                    <subviews>
-                                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="KTj-1t-44F">
-                                                            <rect key="frame" x="12" y="9" width="60" height="17"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Constant" id="vvz-ka-Gt4">
-                                                                <font key="font" metaFont="system"/>
-                                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                            </textFieldCell>
-                                                        </textField>
-                                                        <textField verticalHuggingPriority="750" id="2rL-Z3-sxc">
-                                                            <rect key="frame" x="78" y="5" width="48" height="22"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="fsD-Ie-hl1">
-                                                                <font key="font" metaFont="system"/>
-                                                                <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
-                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                            </textFieldCell>
-                                                            <connections>
-                                                                <action selector="constantAction:" target="-2" id="hDP-Kp-Uze"/>
-                                                                <binding destination="Ygr-oT-pbG" name="value" keyPath="objectValue.constant" id="68P-mF-Q22">
-                                                                    <dictionary key="options">
-                                                                        <string key="NSValueTransformerName">CPStringToFloatTransformer</string>
-                                                                    </dictionary>
-                                                                </binding>
-                                                            </connections>
-                                                        </textField>
-                                                        <textField verticalHuggingPriority="750" id="909">
-                                                            <rect key="frame" x="170" y="9" width="53" height="17"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Priority:" id="910">
-                                                                <font key="font" metaFont="system"/>
-                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                            </textFieldCell>
-                                                        </textField>
-                                                        <slider verticalHuggingPriority="750" id="917">
-                                                            <rect key="frame" x="227" y="7" width="102" height="21"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                            <sliderCell key="cell" continuous="YES" state="on" alignment="left" maxValue="1000" doubleValue="500" tickMarkPosition="above" sliderType="linear" id="918"/>
-                                                            <connections>
-                                                                <action selector="priorityAction:" target="-2" id="92U-R1-ScR"/>
-                                                                <binding destination="Ygr-oT-pbG" name="value" keyPath="objectValue.priority" id="Ltb-y5-vcU">
-                                                                    <dictionary key="options">
-                                                                        <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
-                                                                        <bool key="NSConditionallySetsEnabled" value="NO"/>
-                                                                        <bool key="NSRaisesForNotApplicableKeys" value="NO"/>
-                                                                        <bool key="NSValidatesImmediately" value="YES"/>
-                                                                        <string key="NSValueTransformerName">CPFloatToIntegerTransformer</string>
-                                                                    </dictionary>
-                                                                </binding>
-                                                            </connections>
-                                                        </slider>
-                                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" setsMaxLayoutWidthAtFirstLayout="YES" id="U7C-f0-qs8">
-                                                            <rect key="frame" x="10" y="29" width="335" height="29"/>
-                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                                                            <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="justified" title="Constraint" id="3UR-9Y-ELR">
-                                                                <font key="font" size="13" name="HelveticaNeue-Bold"/>
-                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                            </textFieldCell>
-                                                            <connections>
-                                                                <binding destination="Ygr-oT-pbG" name="value" keyPath="objectValue.description" id="OOB-vN-CKk"/>
-                                                            </connections>
-                                                        </textField>
-                                                    </subviews>
-                                                    <connections>
-                                                        <outlet property="textField" destination="U7C-f0-qs8" id="zXE-3y-F2I"/>
-                                                    </connections>
-                                                </tableCellView>
                                                 <tableCellView identifier="SizeConstraint" id="yTZ-1F-TLT">
                                                     <rect key="frame" x="1" y="61" width="346" height="57"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -490,7 +417,7 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" tag="1000" id="1026">
-                    <rect key="frame" x="8" y="6" width="259" height="52.000001208462955"/>
+                    <rect key="frame" x="8" y="6.00000127606988" width="259" height="52"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" heightSizable="YES"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Label" id="1027">
                         <font key="font" metaFont="system"/>
