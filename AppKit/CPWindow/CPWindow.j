@@ -254,9 +254,7 @@ var CPWindowActionMessageKeys = [
     CPLayoutConstraintEngine            _layoutEngine;
     BOOL                                _autolayoutEnabled             @accessors(getter=isAutolayoutEnabled);
     // An autoresize or contentSize contraint needs update in one or more subviews of this window.
-    BOOL                                _subviewsNeedUpdateConstraints @accessors(setter=_setSubviewsNeedUpdateConstraints:);
-    // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
-    BOOL                                _subviewsContraintsDidChange;
+    BOOL                                _subviewsNeedUpdateConstraints;
     BOOL                                _needsLayout;
     BOOL                                _layoutLock;
 }
@@ -390,9 +388,11 @@ CPTexturedBackgroundWindowMask
         _keyViewLoopIsDirty = NO;
         _hasBecomeKeyWindow = NO;
 
+        //ConstraintBasedLayout
         _autolayoutEnabled = NO;
-        _subviewsNeedUpdateConstraints = YES; // Force inital autoresize/content size update during layout.
-        _subviewsContraintsDidChange = NO;
+        // Force inital updateContraintForSubtree because unarchived view may not be able to
+        // propagate the information up to the window.
+        _subviewsNeedUpdateConstraints = YES;
         _needsLayout = NO;
         _layoutLock = NO;
         _layoutEngine = nil;
@@ -4025,6 +4025,11 @@ Subclasses should not override this method.
     }
 }
 
+- (void)_setSubviewsNeedUpdateConstraints
+{
+    _subviewsNeedUpdateConstraints = YES;
+}
+
 @end
 
 @implementation CPWindow (CPLayoutConstraintEngineDelegate)
@@ -4034,9 +4039,9 @@ Subclasses should not override this method.
     [anOwner _informContainerThatVariableDidChange:aVariable];
 }
 
-- (void)constraintsDidChangeInEngine:(id)anEngine
+- (void)engine:(id)anEngine constraintDidChangeInContainer:(id)aContainer
 {
-    _subviewsContraintsDidChange = YES;
+    [aContainer _informSuperviewThatSubviewsDidUpdateConstraints];
 }
 
 @end

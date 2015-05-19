@@ -264,8 +264,12 @@ var CPViewHighDPIDrawingEnabled = YES;
     CGSize   _compressionPriorities;
     CGSize   _storedIntrinsicContentSize @accessors(property=storedIntrinsicContentSize);
 
+    //ConstraintBasedLayout
     BOOL     _needsUpdateConstraints    @accessors(property=needsUpdateConstraints);
-    BOOL     _subviewsNeedUpdateConstraints @accessors(setter=_setSubviewsNeedUpdateConstraints:);
+    // An autoresize or contentSize contraint needs update in one or more subviews of this window.
+    BOOL     _subviewsNeedUpdateConstraints;
+    // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
+    BOOL     _subviewsDidUpdateConstraints;
     BOOL     _autolayoutEnabled         @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
     BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 
@@ -3856,6 +3860,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 {
     _needsUpdateConstraints = NO;
     _subviewsNeedUpdateConstraints = YES;
+    _subviewsDidUpdateConstraints = NO;
     _autolayoutEnabled = NO;
     _constraintBasedNeedsLayoutMask = 0;
     _autoresizingConstraints = nil;
@@ -4239,13 +4244,33 @@ CPLog.debug([self debugID] + " " +  _cmd);
 CPLog.debug([self debugID] + " " +  _cmd);
     if (_superview)
     {
-        [_superview _setSubviewsNeedUpdateConstraints:YES];
+        [_superview _setSubviewsNeedUpdateConstraints];
         [_superview _informSuperviewThatSubviewsNeedUpdateConstraints];
     }
     else
     {
-        [[self window] _setSubviewsNeedUpdateConstraints:YES];
+        [[self window] _setSubviewsNeedUpdateConstraints];
     }
+}
+
+- (void)_informSuperviewThatSubviewsDidUpdateConstraints
+{
+CPLog.debug([self debugID] + " " +  _cmd);
+    if (_superview)
+    {
+        [_superview _setSubviewsDidUpdateConstraints];
+        [_superview _informSuperviewThatSubviewsDidUpdateConstraints];
+    }
+}
+
+- (void)_setSubviewsNeedUpdateConstraints
+{
+    _subviewsNeedUpdateConstraints = YES;
+}
+
+- (void)_setSubviewsDidUpdateConstraints
+{
+    _subviewsDidUpdateConstraints = YES;
 }
 
 - (void)setNeedsUpdateConstraints:(BOOL)flag
@@ -4438,7 +4463,7 @@ Subclasses should not override this method.
 */
 - (void)layoutSubtreeIfNeeded
 {
-    if ([self updateConstraintsForSubtreeIfNeeded])
+    if ([self updateConstraintsForSubtreeIfNeeded] || _subviewsDidUpdateConstraints)
         [[self _layoutEngine] solve];
 
     [self _updateSubtreeGeometryIfNeeded];
@@ -4456,6 +4481,8 @@ Subclasses should not override this method.
         _CPViewUpdateEngineFrame(self);
         _constraintBasedNeedsLayoutMask = 0;
     }
+
+    _subviewsDidUpdateConstraints = NO;
 }
 
 - (Variable)_variableMinX
