@@ -415,7 +415,7 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
 
 @end
 
-@implementation _CPStandardWindowView (CPLayoutConstraint)
+@implementation _CPStandardWindowView (ConstraintBasedLayout)
 
 - (void)setFrameSize:(CGSize)aSize
 {

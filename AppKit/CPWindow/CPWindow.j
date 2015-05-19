@@ -3865,7 +3865,7 @@ var interpolate = function(fromValue, toValue, progress)
 
 @end
 
-@implementation CPWindow (CPLayoutConstraint)
+@implementation CPWindow (ConstraintBasedLayout)
 
 - (CPLayoutConstraintEngine)_layoutEngineIfExists
 {

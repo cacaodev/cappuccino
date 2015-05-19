@@ -350,7 +350,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (float)_frameBasedConstant
 {
-    var firstOffset = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
+    var firstOffset  = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
         secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
 
     return _constant + firstOffset - secondOffset * _coefficient;

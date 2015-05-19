@@ -16,10 +16,9 @@
     {
         [super _init];
 
-        _huggingPriority = huggingPriority;
+        _huggingPriority  = huggingPriority;
         _compressPriority = compressionResistancePriority;
         _orientation = orientation;
-
         _constant = value;
         _container = anItem;
         _firstItem = anItem;

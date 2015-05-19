@@ -41,7 +41,7 @@ var CPLayoutItemIsNull          = 2,
         changes.forEach(function(change)
         {
             var variable = change.variable,
-                owner = _variableOwnerMap.get(variable);
+                   owner = _variableOwnerMap.get(variable);
 
             [_delegate engine:self variableDidChange:variable withOwner:owner];
         });
@@ -110,11 +110,11 @@ var CPLayoutItemIsNull          = 2,
 
 - (void)replaceStayConstraintsForItem:(id)anItem priority:(CPLayoutPriority)aPriority
 {
-    var widthStay = CreateStayConstraint([anItem _variableWidth], aPriority),
-        heightStay = CreateStayConstraint([anItem _variableHeight], aPriority),
+    var widthStay   = CreateStayConstraint([anItem _variableWidth], aPriority),
+        heightStay  = CreateStayConstraint([anItem _variableHeight], aPriority),
         containerId = [anItem debugID],
-        type = "StayConstraint",
-        toRemove = [];
+        type        = "StayConstraint",
+        toRemove    = [];
 
     var onAdd = function(constraint)
     {
@@ -181,10 +181,10 @@ var CPLayoutItemIsNull          = 2,
 
 - (BOOL)addConstraint:(CPLayoutConstraint)aConstraint
 {
-    var type = [aConstraint _constraintType],
-        container = [aConstraint container],
+    var type        = [aConstraint _constraintType],
+        container   = [aConstraint container],
         containerId = [container debugID],
-        result = YES;
+        result      = YES;
 
     var onsuccess = function(constraint)
     {
@@ -288,17 +288,17 @@ var CreateConstraint = function(aConstraint)
 {
 // EngineLog("firstItem " + args.firstItem.uuid + " secondItem " + args.secondItem.uuid + " containerUUID " + args.containerUUID + " flags " + args.flags);
 
-    var firstAttribute  = [aConstraint firstAttribute],
-        secondAttribute = [aConstraint secondAttribute],
-        firstItem       = [aConstraint firstItem],
-        secondItem      = [aConstraint secondItem],
+    var firstAttribute    = [aConstraint firstAttribute],
+        secondAttribute   = [aConstraint secondAttribute],
+        firstItem         = [aConstraint firstItem],
+        secondItem        = [aConstraint secondItem],
         firstIsContainer  = [aConstraint _isContainerItem:firstItem],
         secondIsContainer = [aConstraint _isContainerItem:secondItem],
-        relation        = [aConstraint relation],
-        multiplier      = [aConstraint multiplier],
-        constant        = [aConstraint _frameBasedConstant],
-        priority        = [aConstraint priority],
-        sw              = StrengthForPriority(priority),
+        relation          = [aConstraint relation],
+        multiplier        = [aConstraint multiplier],
+        constant          = [aConstraint _frameBasedConstant],
+        priority          = [aConstraint priority],
+        sw                = StrengthForPriority(priority),
         constraint,
         rhs_term;
 
@@ -327,12 +327,12 @@ var CreateConstraint = function(aConstraint)
 
 var CreateSizeConstraints = function(aConstraint)
 {
-    var variable = [aConstraint variableForOrientation],
-        huggingPriority = [aConstraint huggingPriority],
+    var variable         = [aConstraint variableForOrientation],
+        huggingPriority  = [aConstraint huggingPriority],
         compressPriority = [aConstraint compressPriority],
-        constant = [aConstraint constant],
-        hugg = CreateInequality(variable, 0, constant, huggingPriority),
-        anticompr = CreateInequality(variable, 1, constant, compressPriority);
+        constant         = [aConstraint constant],
+        hugg             = CreateInequality(variable, 0, constant, huggingPriority),
+        anticompr        = CreateInequality(variable, 1, constant, compressPriority);
 
     return [hugg, anticompr];
 };

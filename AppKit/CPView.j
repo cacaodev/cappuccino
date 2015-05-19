@@ -3845,7 +3845,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 @end
 
-@implementation CPView (CPLayoutConstraint)
+@implementation CPView (ConstraintBasedLayout)
 
 + (BOOL)requiresConstraintBasedLayout
 {
