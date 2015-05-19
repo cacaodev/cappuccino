@@ -3988,8 +3988,9 @@ Subclasses should not override this method.
         [engine stopEditing];
         [self _updateWindowStayConstraintsInEngine:engine];
 
-        if ([self updateConstraintsIfNeeded] || _subviewsContraintsDidChange)
-            [engine solve];
+        [_windowView layoutSubtreeIfNeeded];
+        //if ([self updateConstraintsIfNeeded] || _subviewsDidUpdateConstraints)
+        //    [engine solve];
 
         [_windowView updateEngineFrame];
         [self _updateFrameFromCurrentWindowViewFrame];
