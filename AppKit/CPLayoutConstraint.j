@@ -54,25 +54,22 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @implementation CPLayoutConstraint : CPObject
 {
-    id       _container        @accessors(getter=container);
-    id       _firstItem        @accessors(getter=firstItem, setter=_setFirstItem:);
-    id       _secondItem       @accessors(getter=secondItem, setter=_setSecondItem:);
-    CPLayoutAttribute _firstAttribute   @accessors(getter=firstAttribute);
-    CPLayoutAttribute _secondAttribute  @accessors(getter=secondAttribute);
-    CPLayoutRelation  _relation         @accessors(getter=relation);
-    double   _constant         @accessors(property=constant);
-    float    _coefficient      @accessors(getter=multiplier);
-    CPLayoutPriority _priority @accessors(property=priority);
-    BOOL     _active           @accessors(getter=isActive);
-    CPString _identifier       @accessors(getter=identifier);
-    unsigned _contraintFlags   @accessors(getter=contraintFlags);
+    id                  _container        @accessors(getter=container);
+    id                  _firstItem        @accessors(getter=firstItem, setter=_setFirstItem:);
+    id                  _secondItem       @accessors(getter=secondItem, setter=_setSecondItem:);
+    CPLayoutAttribute   _firstAttribute   @accessors(getter=firstAttribute);
+    CPLayoutAttribute   _secondAttribute  @accessors(getter=secondAttribute);
+    CPLayoutRelation    _relation         @accessors(getter=relation);
+    double              _constant         @accessors(getter=constant);
+    float               _coefficient      @accessors(getter=multiplier);
+    CPLayoutPriority    _priority         @accessors(getter=priority);
+    BOOL                _active           @accessors(getter=isActive);
+    CPString            _identifier       @accessors(getter=identifier);
+    BOOL                _shouldBeArchived @accessors(property=shouldBeArchived);
 
-    CPString _symbolicConstant;
-    BOOL     _shouldBeArchived @accessors(property=shouldBeArchived);
-    BOOL     _addedToEngine    @accessors(property=_addedToEngine);
-    BOOL     _needsReplace     @accessors(property=_needsReplace);
-
-    CPArray  _engineConstraints @accessors(property=_engineConstraints);
+    unsigned            _contraintFlags   @accessors(getter=contraintFlags);
+    CPString            _symbolicConstant;
+    CPArray             _engineConstraints @accessors(property=_engineConstraints);
 }
 
 + (CPSet)keyPathsForValuesAffectingValueForKey:(CPString)key
@@ -122,8 +119,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _engineConstraints = nil;
     _contraintFlags = 0;
     _active = NO;
-    _addedToEngine = NO;
-    _needsReplace = NO;
 }
 
 - (id)copy
@@ -238,34 +233,38 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     if (aConstant !== _constant)
     {
-        _constant = aConstant;
-        [self setNeedsReplaceIfNeeded];
-        [_container setNeedsUpdateConstraints:YES];
+        if (_active)
+        {
+            [_container _updateConstraint:self withConstant:aConstant];
+        }
+        else
+            [self _setConstant:aConstant];
     }
+}
+
+- (void)_setConstant:(float)aConstant
+{
+    _constant = aConstant;
 }
 
 - (void)setPriority:(CPLayoutPriority)aPriority
 {
     var priority = MAX(MIN(aPriority, CPLayoutPriorityRequired), 0);
 
-    [self _setPriority:priority];
+    if (priority !== _priority)
+    {
+        if (_active)
+        {
+            [_container _updateConstraint:self withPriority:priority];
+        }
+        else
+            [self _setPriority:priority];
+    }
 }
 
 - (void)_setPriority:(CPLayoutPriority)aPriority
 {
-    if (aPriority !== _priority)
-    {
-        _priority = aPriority;
-        [self setNeedsReplaceIfNeeded];
-        [_container setNeedsUpdateConstraints:YES];
-    }
-}
-
-- (void)setNeedsReplaceIfNeeded
-{
-    // See https://github.com/slightlyoff/cassowary.js/issues/66
-    if (_addedToEngine)
-        _needsReplace = YES;
+    _priority = aPriority;
 }
 
 - (CPString)hash
@@ -278,7 +277,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (anObject === self)
         return YES;
 
-    if (!anObject || anObject.isa !== self.isa || [anObject firstItem] !== _firstItem || [anObject secondItem] !== _secondItem || [anObject firstAttribute] !== _firstAttribute || [anObject secondAttribute] !== _secondAttribute || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
+    if (!anObject || [anObject class] !== [self class] || [anObject firstItem] !== _firstItem || [anObject secondItem] !== _secondItem || [anObject firstAttribute] !== _firstAttribute || [anObject secondAttribute] !== _secondAttribute || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
         return NO;
 
     return YES;

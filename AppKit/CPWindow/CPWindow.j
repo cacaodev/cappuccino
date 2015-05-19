@@ -252,10 +252,13 @@ var CPWindowActionMessageKeys = [
     _CPWindowFrameAnimation             _frameAnimation;
 
     CPLayoutConstraintEngine            _layoutEngine;
-    BOOL _autolayoutEnabled      @accessors(getter=isAutolayoutEnabled);
-    BOOL _needsUpdateConstraints @accessors(getter=needsUpdateConstraints);
-    BOOL _needsLayout;
-    BOOL _layoutLock;
+    BOOL                                _autolayoutEnabled             @accessors(getter=isAutolayoutEnabled);
+    // An autoresize or contentSize contraint needs update in one or more subviews of this window.
+    BOOL                                _subviewsNeedUpdateConstraints @accessors(setter=_setSubviewsNeedUpdateConstraints:);
+    // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
+    BOOL                                _subviewsContraintsDidChange;
+    BOOL                                _needsLayout;
+    BOOL                                _layoutLock;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -342,12 +345,11 @@ CPTexturedBackgroundWindowMask
 
         // Create our border view which is the actual root of our view hierarchy.
         _windowView = [[windowViewClass alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(_frame), CGRectGetHeight(_frame)) styleMask:aStyleMask];
-        // DEBUG
-        [_windowView setIdentifier:@"windowView"];
-        [_windowView _setNeedsUpdateConstraints:YES];
-        [_windowView _setNeedsUpdateSizeConstraints:NO];
         [_windowView _setWindow:self];
         [_windowView setNextResponder:self];
+
+        // DEBUG - CAN BE REMOVED
+        [_windowView setIdentifier:@"windowView"];
 
         // Size calculation needs _windowView
         _minSize = [self _calculateMinSizeForProposedSize:CGSizeMake(0.0, 0.0)];
@@ -389,7 +391,8 @@ CPTexturedBackgroundWindowMask
         _hasBecomeKeyWindow = NO;
 
         _autolayoutEnabled = NO;
-        _needsUpdateConstraints = YES;
+        _subviewsNeedUpdateConstraints = YES; // Force inital autoresize/content size update during layout.
+        _subviewsContraintsDidChange = NO;
         _needsLayout = NO;
         _layoutLock = NO;
         _layoutEngine = nil;
@@ -3892,28 +3895,20 @@ Subclasses should not override this method.
 - (BOOL)updateConstraintsIfNeeded
 {
     var result = NO;
-
-    if (_needsUpdateConstraints)
+    //CPLog.debug([self className] + " " + _cmd + " " + _subviewsNeedUpdateConstraints);
+    if (_subviewsNeedUpdateConstraints)
     {
-        //CPLog.debug([self className] + " Needs updateConstraintsAtWindowLevel");
-        result = [self _updateConstraints];
-        _needsUpdateConstraints = NO;
+        result = [self updateConstraints];
+        _subviewsNeedUpdateConstraints = NO;
     }
-//CPLog.debug(_cmd + "=" + result);
+
     return result;
 }
 
-- (void)setNeedsUpdateConstraints:(BOOL)flag
+- (BOOL)updateConstraints
 {
-    if (flag !== _needsUpdateConstraints)
-    {
-        _needsUpdateConstraints = flag;
-        // TODO: check cocoa to see if setNeedsLayout call here.
-    }
-}
+    CPLog.debug([self className] + " " + _cmd);
 
-- (BOOL)_updateConstraints
-{
     [_windowView setAutolayoutEnabled:YES];
     [_contentView setAutolayoutEnabled:YES];
 
@@ -3993,7 +3988,7 @@ Subclasses should not override this method.
         [engine stopEditing];
         [self _updateWindowStayConstraintsInEngine:engine];
 
-        if ([self updateConstraintsIfNeeded])
+        if ([self updateConstraintsIfNeeded] || _subviewsContraintsDidChange)
             [engine solve];
 
         [_windowView updateEngineFrame];
@@ -4037,6 +4032,11 @@ Subclasses should not override this method.
 - (void)engine:(id)anEngine variableDidChange:(Object)aVariable withOwner:(id)anOwner
 {
     [anOwner _informContainerThatVariableDidChange:aVariable];
+}
+
+- (void)constraintsDidChangeInEngine:(id)anEngine
+{
+    _subviewsContraintsDidChange = YES;
 }
 
 @end

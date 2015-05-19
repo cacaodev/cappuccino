@@ -78,7 +78,7 @@ var NSViewAutoresizingMask = 0x3F,
             _identifier = [aCoder decodeObjectForKey:@"NSReuseIdentifierKey"];
 
         if ([aCoder containsValueForKey:@"NSViewConstraints"])
-            _constraintsArray = [aCoder decodeObjectForKey:@"NSViewConstraints"];
+            _internalConstraints = [aCoder decodeObjectForKey:@"NSViewConstraints"];
 
         _translatesAutoresizingMaskIntoConstraints = ![aCoder decodeBoolForKey:@"NSDoNotTranslateAutoresizingMask"];
 
