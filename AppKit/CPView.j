@@ -427,6 +427,11 @@ var CPViewHighDPIDrawingEnabled = YES;
         [self _loadThemeAttributes];
 
         [self _initConstraintsIvars];
+
+        _needsUpdateConstraints = NO;
+        _translatesAutoresizingMaskIntoConstraints = NO;
+        _huggingPriorities = nil;
+        _compressionPriorities = nil;
     }
 
     return self;
@@ -3731,7 +3736,11 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
             _themeAttributes[attributeName] = CPThemeAttributeDecode(aCoder, attributeName, attributes[count], _theme, themeClass);
         }
 
+        //ConstraintBasedLayout
         [self _initConstraintsIvars];
+
+        if ([aCoder containsValueForKey:CPViewConstraints])
+            _internalConstraints = [aCoder decodeObjectForKey:CPViewConstraints];
 
         [self setTranslatesAutoresizingMaskIntoConstraints:![aCoder decodeBoolForKey:CPDoNotTranslateAutoresizingMask]];
 
@@ -3740,9 +3749,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         if ([aCoder containsValueForKey:CPAntiCompressionPriority])
             _compressionPriorities = [aCoder decodeSizeForKey:CPAntiCompressionPriority];
-
-        if ([aCoder containsValueForKey:CPViewConstraints])
-            _internalConstraints = [aCoder decodeObjectForKey:CPViewConstraints];
 
         [self setNeedsDisplay:YES];
         [self setNeedsLayout];
@@ -3858,18 +3864,13 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 - (void)_initConstraintsIvars
 {
-    _needsUpdateConstraints = NO;
     _subviewsNeedUpdateConstraints = YES;
     _subviewsDidUpdateConstraints = NO;
     _autolayoutEnabled = NO;
     _constraintBasedNeedsLayoutMask = 0;
     _autoresizingConstraints = nil;
-    _translatesAutoresizingMaskIntoConstraints = NO;
     _contentSizeConstraints = @[];
     _constraintsArray = @[];
-    _internalConstraints = nil;
-    _huggingPriorities = nil;
-    _compressionPriorities = nil;
     _storedIntrinsicContentSize = CGSizeMake(-1, -1);
 }
 
@@ -3988,7 +3989,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 {
     if (![[self window] isAutolayoutEnabled])
         return;
-CPLog.debug([self debugID] + " " +  _cmd);
+//CPLog.debug([self debugID] + " " +  _cmd);
     [self setNeedsUpdateConstraints:YES];
     [[self window] setNeedsLayout];
 }
@@ -4063,7 +4064,6 @@ CPLog.debug([self debugID] + " " +  _cmd);
         var huggingPriorities = [self _contentHuggingPriorities];
 
         SetSizeValue(huggingPriorities, aPriority, orientation);
-        // update contentSize constraints here. Cocoa allows mutation when constraints are installed ?
     }
 }
 
@@ -4081,7 +4081,6 @@ CPLog.debug([self debugID] + " " +  _cmd);
         var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
 
         SetSizeValue(compressionResistancePriorities, aPriority, orientation);
-        // update contentSize constraints here. Cocoa allows mutation when constraints are installed ?
     }
 }
 
@@ -4231,7 +4230,7 @@ CPLog.debug([self debugID] + " " +  _cmd);
 {
     if (translate !== _translatesAutoresizingMaskIntoConstraints)
     {
-        CPLog.debug([self debugID] + " " +  _cmd);
+//        CPLog.debug([self debugID] + " " +  _cmd);
         _translatesAutoresizingMaskIntoConstraints = translate;
 
         if (translate)
@@ -4241,7 +4240,7 @@ CPLog.debug([self debugID] + " " +  _cmd);
 
 - (void)_informSuperviewThatSubviewsNeedUpdateConstraints
 {
-CPLog.debug([self debugID] + " " +  _cmd);
+//CPLog.debug([self debugID] + " " +  _cmd);
     if (_superview)
     {
         [_superview _setSubviewsNeedUpdateConstraints];
@@ -4255,7 +4254,7 @@ CPLog.debug([self debugID] + " " +  _cmd);
 
 - (void)_informSuperviewThatSubviewsDidUpdateConstraints
 {
-CPLog.debug([self debugID] + " " +  _cmd);
+//CPLog.debug([self debugID] + " " +  _cmd);
     if (_superview)
     {
         [_superview _setSubviewsDidUpdateConstraints];
@@ -4277,7 +4276,7 @@ CPLog.debug([self debugID] + " " +  _cmd);
 {
     if (flag !== _needsUpdateConstraints)
     {
-CPLog.debug([self debugID] + " " +  _cmd + " " + flag);
+//CPLog.debug([self debugID] + " " +  _cmd + " " + flag);
         _needsUpdateConstraints = flag;
 
         if (flag && [self window])
@@ -4296,6 +4295,7 @@ Subclasses should not override this method.
 */
 - (BOOL)updateConstraintsForSubtreeIfNeeded
 {
+CPLog.debug([self debugID] + " " +  _cmd);
     var result = _needsUpdateConstraints;
 
     if (_subviewsNeedUpdateConstraints)
@@ -4320,7 +4320,7 @@ Subclasses should not override this method.
 
 - (void)updateConstraintsIfNeeded
 {
-CPLog.debug([self debugID] + " " +  _cmd + " " + _needsUpdateConstraints);
+CPLog.debug([self debugID] + " " +  _cmd + "_needsUpdateConstraints=" + _needsUpdateConstraints);
     if (_needsUpdateConstraints)
     {
         [self updateConstraints];
@@ -4566,6 +4566,13 @@ Subclasses should not override this method.
 
     if ([_secondItem isKindOfClass:[_CPCibCustomView class]])
         _secondItem = [_secondItem replacementView];
+
+    if ([_container isKindOfClass:[_CPCibCustomView class]])
+        _container = [_container replacementView];
+}
+
+@end
+
 @implementation CPArray (CPView)
 
 - (CPArray)filteredArrayUsingBlock:(Function)aFunction
