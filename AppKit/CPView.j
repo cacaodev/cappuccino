@@ -4342,6 +4342,9 @@ CPLog.debug([self debugID] + " " + _cmd + " translate=" + translate);
 
 - (void)awakeFromCib
 {
+    _needsUpdateConstraints = _translatesAutoresizingMaskIntoConstraints ||
+                              !CGSizeEqualToSize([self intrinsicContentSize], CGSizeMake(-1, -1));
+
     if (_internalConstraints)
     {
         [_internalConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)

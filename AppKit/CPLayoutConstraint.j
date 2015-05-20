@@ -242,7 +242,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     }
 }
 
-- (void)_setConstant:(float)aConstant
+- (void)_setConstant:(double)aConstant
 {
     _constant = aConstant;
 }
