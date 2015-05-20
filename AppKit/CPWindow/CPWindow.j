@@ -3907,7 +3907,7 @@ Subclasses should not override this method.
 
 - (BOOL)updateConstraints
 {
-    CPLog.debug([self className] + " " + _cmd);
+//([self className] + " " + _cmd);
 
     [_windowView setAutolayoutEnabled:YES];
     [_contentView setAutolayoutEnabled:YES];

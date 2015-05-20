@@ -14,7 +14,7 @@
 
 - (CPInteger)testAutolayoutSpeed
 {
-    var RESIZES_COUNT = 1000;
+    var RESIZES_COUNT = 500;
 
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
         contentView = [theWindow contentView];
@@ -29,12 +29,13 @@
 
     [autoSizeWindow setAutolayoutEnabled:NO];
     [constraintsWindow setAutolayoutEnabled:YES];
+    [constraintContentView setAutolayoutEnabled:YES];
     [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [constraintContentView setIdentifier:@"ContentView"];
 
     var xmasks = [CPViewMaxXMargin, CPViewMinXMargin | CPViewMaxXMargin, CPViewMinXMargin],
         ymasks = [CPViewMaxYMargin, CPViewMinYMargin | CPViewMaxYMargin, CPViewMinYMargin],
-        maxDepth = 3,
+        maxDepth = 2,
         num = 3;
 
     var autoSizeBlock = function(num, rect, level, idx)
@@ -57,6 +58,7 @@
     {
         var view = autoSizeBlock(num, rect, level, idx);
         // The default is currently NO, but YES in cocoa.
+        [view setAutolayoutEnabled:YES];
         [view setTranslatesAutoresizingMaskIntoConstraints:YES];
 
         return view;
@@ -64,6 +66,8 @@
 
     [autoSizeWindow orderFront:self];
     [constraintsWindow orderFront:self];
+    [constraintsWindow setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     var start = new Date();
 
@@ -81,7 +85,7 @@
     CPLog.warn("\n");
     CPLog.warn("   Autosize setFrame: " + (total1/ RESIZES_COUNT) + " ms. Total " + total1 + " ms.");
 
-    start = new Date();
+    var start2 = new Date();
 
     k = 1;
 
@@ -92,8 +96,8 @@
         [[CPRunLoop mainRunLoop] performSelectors];
     }
 
-    end = new Date();
-    var total2 = end - start;
+    var end2 = new Date();
+    var total2 = end2 - start2;
     var r = total2/total1;
     var isSlower = (r > 1);
     CPLog.warn("Auto-layout setFrame: " + (total2/ RESIZES_COUNT) + " ms. Total " + total2 + " ms (" + ROUND(100* (isSlower ? r : 1/r))/100 + "x times " + (isSlower ? "slower":"faster") + ").");
@@ -110,7 +114,7 @@
 
         if (!equalRects)
         {
-            var mess = "View " + [autoLayoutView identifier] + ": constraint Rect should be " + CPStringFromRect([autoSizeView frame]) + " but was " + CPStringFromRect([autoLayoutView frame]) + "\nConstraints:" + [[[autoLayoutView superview] constraints] description];
+            var mess = "View " + [autoLayoutView identifier] + ": constraint Rect should be " + CPStringFromRect([autoSizeView frame]) + " but was " + CPStringFromRect([autoLayoutView frame]) + " superview size was "+ CPStringFromRect([[autoSizeView superview] frame])+ "\nConstraints:" + [[[autoLayoutView superview] constraints] description];
             [self assertTrue:equalRects message:mess];
         }
     }

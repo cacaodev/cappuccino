@@ -7,7 +7,7 @@
  */
 @import <AppKit/CPView.j>
 @import <Foundation/CPObject.j>
-//@import "../../CPTrace.j"
+@import "../../CPTrace.j"
 
 CPLogRegister(CPLogConsole);
 
@@ -99,7 +99,7 @@ CPLogRegister(CPLogConsole);
 
     var xmasks = [CPViewMaxXMargin, CPViewMinXMargin | CPViewMaxXMargin, CPViewMinXMargin],
         ymasks = [CPViewMaxYMargin, CPViewMinYMargin | CPViewMaxYMargin, CPViewMinYMargin],
-        maxDepth = 3,
+        maxDepth = 2,
         num = 3;
 
     var autoSizeBlock = function(num, rect, level, idx)
@@ -123,6 +123,7 @@ CPLogRegister(CPLogConsole);
         var view = autoSizeBlock(num, rect, level, idx);
         // The default is currently NO, but YES in cocoa.
         [view setTranslatesAutoresizingMaskIntoConstraints:YES];
+        [view setAutolayoutEnabled:YES];
 
         return view;
     }];
@@ -132,7 +133,7 @@ CPLogRegister(CPLogConsole);
 
     [autoSizeWindow orderFront:self];
     [constraintsWindow orderFront:self];
-/*
+
     var avg = moving_averager(10),
         avg2 = moving_averager(10);
 
@@ -145,7 +146,7 @@ CPLogRegister(CPLogConsole);
     {
         console.log("%c Autosize: setFrame: = " + duration + " average(20) =" + avg2(duration) + "(ms)", 'color:gray; font-weight:bold');
     });
-*/
+
 }
 
 - (void)recursivelyAddNumViews:(CPInteger)num toSuperview:(CPView)aSuperview maxDepth:(int)maxDepth withBlock:(Function)aBlock

@@ -4279,7 +4279,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 //CPLog.debug([self debugID] + " " +  _cmd + " " + flag);
         _needsUpdateConstraints = flag;
 
-        if (flag && [self window])
+        if (flag && _superview)
             [self _informSuperviewThatSubviewsNeedUpdateConstraints];
     }
 }
@@ -4295,7 +4295,7 @@ Subclasses should not override this method.
 */
 - (BOOL)updateConstraintsForSubtreeIfNeeded
 {
-CPLog.debug([self debugID] + " " +  _cmd);
+//CPLog.debug([self debugID] + " " +  _cmd + " _subviewsNeedUpdateConstraints=" + _subviewsNeedUpdateConstraints);
     var result = _needsUpdateConstraints;
 
     if (_subviewsNeedUpdateConstraints)
@@ -4320,7 +4320,7 @@ CPLog.debug([self debugID] + " " +  _cmd);
 
 - (void)updateConstraintsIfNeeded
 {
-CPLog.debug([self debugID] + " " +  _cmd + "_needsUpdateConstraints=" + _needsUpdateConstraints);
+//CPLog.debug([self debugID] + " " +  _cmd + "_needsUpdateConstraints=" + _needsUpdateConstraints);
     if (_needsUpdateConstraints)
     {
         [self updateConstraints];
@@ -4332,7 +4332,7 @@ CPLog.debug([self debugID] + " " +  _cmd + "_needsUpdateConstraints=" + _needsUp
 - (void)updateConstraints
 {
     var translate = [self translatesAutoresizingMaskIntoConstraints];
-CPLog.debug([self debugID] + " " + _cmd + " translate=" + translate);
+//CPLog.debug([self debugID] + " " + _cmd + " translate=" + translate);
 
     if (translate)
         return [self _updateAutoresizingConstraints];
@@ -4484,13 +4484,15 @@ Subclasses should not override this method.
         [view _updateSubtreeGeometryIfNeeded];
     }];
 
-    if (_constraintBasedNeedsLayoutMask > 0)
-    {
-        _CPViewUpdateEngineFrame(self);
-        _constraintBasedNeedsLayoutMask = 0;
-    }
+    [self _updateGeometryIfNeeded];
 
     _subviewsDidUpdateConstraints = NO;
+}
+
+
+- (void)updateEngineFrame
+{
+    _CPViewUpdateEngineFrame(self);
 }
 
 - (Variable)_variableMinX
@@ -4528,11 +4530,6 @@ Subclasses should not override this method.
 - (Variable)newVariableWithName:(CPString)aName value:(float)aValue
 {
     return [[self _layoutEngine] variableWithPrefix:[self debugID] name:aName value:aValue owner:self];
-}
-
-- (void)updateEngineFrame
-{
-    _CPViewUpdateEngineFrame(self);
 }
 
 // FROM ENGINE DELEGATE (the window)

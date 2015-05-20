@@ -77,12 +77,14 @@ CPLog.debug(_cmd);
 - (@action)activate:(id)sender
 {
     [constraint setActive:[sender state]];
+    [theWindow setNeedsLayout];
 }
 
 - (@action)setConstant:(id)sender
 {
     var constant = [sender intValue];
     [constraint setConstant:constant];
+    [theWindow setNeedsLayout];
 }
 
 - (@action)layout:(id)sender
