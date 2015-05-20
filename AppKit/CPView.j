@@ -4344,6 +4344,11 @@ CPLog.debug([self debugID] + " " + _cmd + " translate=" + translate);
 {
     if (_internalConstraints)
     {
+        [_internalConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+        {
+            [aConstraint _replaceCustomViewsIfNeeded];
+        }];
+
         [self addConstraints:_internalConstraints];
         _internalConstraints = nil;
     }
@@ -4551,6 +4556,16 @@ Subclasses should not override this method.
 
 @end
 
+@implementation CPLayoutConstraint (CPView)
+
+
+- (void)_replaceCustomViewsIfNeeded
+{
+    if ([_firstItem isKindOfClass:[_CPCibCustomView class]])
+        _firstItem = [_firstItem replacementView];
+
+    if ([_secondItem isKindOfClass:[_CPCibCustomView class]])
+        _secondItem = [_secondItem replacementView];
 @implementation CPArray (CPView)
 
 - (CPArray)filteredArrayUsingBlock:(Function)aFunction

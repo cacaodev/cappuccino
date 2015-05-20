@@ -121,38 +121,15 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
         [view setHidden:[self isHidden]];
         [view setAlphaValue:[self alphaValue]];
         [view setIdentifier:[self identifier]];
+
         [view setAutolayoutEnabled:[self isAutolayoutEnabled]];
         [view setTranslatesAutoresizingMaskIntoConstraints:[self translatesAutoresizingMaskIntoConstraints]];
 
         [_superview replaceSubview:self with:view];
-
-        [view setBackgroundColor:[self backgroundColor]];
-
         _replacementView = view;
 
-        var constraints = [self _internalConstraints];
-
-        if ([constraints count])
-        {
-            [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
-            {
-                var firstItem = [aConstraint firstItem];
-                if (firstItem && [firstItem isKindOfClass:[_CPCibCustomView class]])
-                {
-                    [aConstraint _setFirstItem:[firstItem replacementView]];
-                    [firstItem setAutolayoutEnabled:YES];
-                }
-
-                var secondItem = [aConstraint secondItem];
-                if (secondItem && [secondItem isKindOfClass:[_CPCibCustomView class]])
-                {
-                    [aConstraint _setSecondItem:[secondItem replacementView]];
-                    [firstItem setAutolayoutEnabled:YES];
-                }
-            }];
-
-            [view _setInternalConstraints:constraints];
-        }
+        [view setBackgroundColor:[self backgroundColor]];
+        [view _setInternalConstraints:[self _internalConstraints]];
 
         [view setContentHuggingPriority:[self contentHuggingPriorityForOrientation:0] forOrientation:0];
         [view setContentHuggingPriority:[self contentHuggingPriorityForOrientation:1] forOrientation:1];
