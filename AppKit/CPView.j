@@ -4340,7 +4340,7 @@ CPLog.debug([self debugID] + " " + _cmd + " translate=" + translate);
         return [self _updateContentSizeConstraints];
 }
 
-- (void)awakeFromCib
+- (void)_cibDidFinishLoadingWithOwner:(id)anOwner
 {
     _needsUpdateConstraints = _translatesAutoresizingMaskIntoConstraints ||
                               !CGSizeEqualToSize([self intrinsicContentSize], CGSizeMake(-1, -1));
