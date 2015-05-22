@@ -286,8 +286,6 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 + (void)initialize
 {
-    GlobalProfiler = new Profiler();
-
     if (self !== [CPView class])
         return;
 

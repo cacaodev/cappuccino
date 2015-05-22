@@ -29,7 +29,6 @@
 
     [autoSizeWindow setAutolayoutEnabled:NO];
     [constraintsWindow setAutolayoutEnabled:YES];
-    [constraintContentView setAutolayoutEnabled:YES];
     [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [constraintContentView setIdentifier:@"ContentView"];
 
@@ -58,7 +57,6 @@
     {
         var view = autoSizeBlock(num, rect, level, idx);
         // The default is currently NO, but YES in cocoa.
-        [view setAutolayoutEnabled:YES];
         [view setTranslatesAutoresizingMaskIntoConstraints:YES];
 
         return view;
