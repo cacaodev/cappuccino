@@ -780,8 +780,8 @@ CPTexturedBackgroundWindowMask
 
             [_windowView setFrameSize:size];
 
-                if (_hasShadow)
-                    [_shadowView setNeedsLayout];
+            if (_hasShadow)
+                [_shadowView setNeedsLayout];
             }
 
             if (!_isAnimating)
@@ -3908,10 +3908,6 @@ Subclasses should not override this method.
 - (BOOL)updateConstraints
 {
 //([self className] + " " + _cmd);
-
-    [_windowView setAutolayoutEnabled:YES];
-    [_contentView setAutolayoutEnabled:YES];
-
     return [_windowView updateConstraintsForSubtreeIfNeeded];
 }
 
@@ -3923,7 +3919,7 @@ Subclasses should not override this method.
 
     [self updateConstraintsIfNeeded];
     [engine suggestValues:values forVariables:variables withPriority:CPLayoutPriorityDragThatCanResizeWindow];
-    [_windowView updateEngineFrame];
+    [_windowView _updateGeometry];
 }
 
 - (void)_sizeToFitWindowViewSize:(CGSize)newSize
@@ -3942,8 +3938,6 @@ Subclasses should not override this method.
     if (_autolayoutEnabled !== enable)
     {
         _autolayoutEnabled = enable;
-
-        [self setNeedsLayout];
     }
 }
 
@@ -3989,10 +3983,8 @@ Subclasses should not override this method.
         [self _updateWindowStayConstraintsInEngine:engine];
 
         [_windowView layoutSubtreeIfNeeded];
-        //if ([self updateConstraintsIfNeeded] || _subviewsDidUpdateConstraints)
-        //    [engine solve];
 
-        [_windowView updateEngineFrame];
+        [_windowView _updateGeometry];
         [self _updateFrameFromCurrentWindowViewFrame];
 
         [_CPDisplayServer unlock];
@@ -4035,14 +4027,27 @@ Subclasses should not override this method.
 
 @implementation CPWindow (CPLayoutConstraintEngineDelegate)
 
-- (void)engine:(id)anEngine variableDidChange:(Object)aVariable withOwner:(id)anOwner
+- (void)engine:(id)anEngine variableDidChange:(Object)aVariable inContainer:(id)anOwner
 {
     [anOwner _informContainerThatVariableDidChange:aVariable];
 }
 
+- (void)engine:(id)anEngine didChangeVariablesInContainers:(CPSet)containers
+{
+    // Very important if we want a layout pass for the dirty views:
+    // the CPDisplayServer will be flushed at the end of this method.
+    // We need to feed it with ALL views that need a display after a solve.
+    [containers enumerateObjectsUsingBlock:function(aContainer)
+    {
+        // Disable the layout pass for performance reasons. TODO: profile and see the difference.
+        //[[aContainer superview] setNeedsLayout];
+        [aContainer _updateGeometry];
+    }];
+}
+
 - (void)engine:(id)anEngine constraintDidChangeInContainer:(id)aContainer
 {
-    [aContainer _informSuperviewThatSubviewsDidUpdateConstraints];
+    [aContainer _informSuperviewThatSubviewsNeedGeometryUpdate];
 }
 
 @end

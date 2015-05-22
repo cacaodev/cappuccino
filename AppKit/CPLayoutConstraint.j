@@ -67,7 +67,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     CPString            _identifier       @accessors(getter=identifier);
     BOOL                _shouldBeArchived @accessors(property=shouldBeArchived);
 
-    unsigned            _contraintFlags   @accessors(getter=contraintFlags);
+    unsigned            _constraintFlags   @accessors(getter=constraintFlags);
     CPString            _symbolicConstant;
     CPArray             _engineConstraints @accessors(property=_engineConstraints);
 }
@@ -117,7 +117,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     _container = nil;
     _engineConstraints = nil;
-    _contraintFlags = 0;
+    _constraintFlags = 0;
     _active = NO;
 }
 
@@ -147,7 +147,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (BOOL)_isSubtreeRelationship
 {
-    return ((_contraintFlags & 8) || (_contraintFlags & 64)) > 0;
+    return (_constraintFlags & 8) || (_constraintFlags & 64);
 }
 
 - (void)setActive:(BOOL)shouldActivate
@@ -201,24 +201,18 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     _container = aContainer;
 
-    _contraintFlags = (CPLayoutConstraintFlags(_container, _firstItem)) |
+    _constraintFlags = (CPLayoutConstraintFlags(_container, _firstItem)) |
                       (CPLayoutConstraintFlags(_container, _secondItem) << 3);
 }
 
 - (void)_setFirstItem:(id)anItem
 {
-    var item = [self _validateItem:anItem];
-    [item setAutolayoutEnabled:YES];
-
-    _firstItem = item;
+    _firstItem = [self _validateItem:anItem];
 }
 
 - (void)_setSecondItem:(id)anItem
 {
-    var item = [self _validateItem:anItem];
-    [item setAutolayoutEnabled:YES];
-
-    _secondItem = item;
+    _secondItem = [self _validateItem:anItem];
 }
 
 - (id)_validateItem:(id)anItem
@@ -291,7 +285,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         plusMinus = (_constant < 0) ? "" : "+",
         active = _active ? "":" [inactive]";
 
-    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier, active];
+    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@ %d", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier, active, _constraintFlags];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem
@@ -299,12 +293,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (anItem === _firstItem)
     {
         _firstItem = aNewItem;
-        //CPLog.debug("In Constraint replaced " + [_firstItem UID] + " with " + [aNewItem UID]);
     }
     else if (anItem === _secondItem)
     {
         _secondItem = aNewItem;
-        //CPLog.debug("In Constraint replaced " + [_secondItem UID] + " with " + [aNewItem UID]);
     }
 }
 
@@ -376,17 +368,6 @@ var CPFirstItem         = @"CPFirstItem",
     CPLayoutIdentifier  = @"CPLayoutIdentifier";
 
 @implementation CPLayoutConstraint (CPCoding)
-
-- (void)awakeFromCib
-{
-    [self _enableAutoLayoutIfNeeded];
-}
-
-- (void)_enableAutoLayoutIfNeeded
-{
-    [_firstItem setAutolayoutEnabled:YES];
-    [_secondItem setAutolayoutEnabled:YES];
-}
 
 - (void)encodeWithCoder:(CPCoder)aCoder
 {

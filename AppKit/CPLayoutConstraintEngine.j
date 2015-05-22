@@ -38,13 +38,19 @@ var CPLayoutItemIsNull          = 2,
     _simplexSolver.autoSolve = false;
     _simplexSolver.onsolved = function(changes)
     {
+        var updatedContainers = [CPSet set];
+
         changes.forEach(function(change)
         {
             var variable = change.variable,
-                   owner = _variableOwnerMap.get(variable);
+                   container = _variableOwnerMap.get(variable);
 
-            [_delegate engine:self variableDidChange:variable withOwner:owner];
+            [_delegate engine:self variableDidChange:variable inContainer:container];
+
+            [updatedContainers addObject:container];
         });
+
+        [_delegate engine:self didChangeVariablesInContainers:updatedContainers];
     };
 
     return self;

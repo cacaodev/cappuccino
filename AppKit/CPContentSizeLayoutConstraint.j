@@ -67,7 +67,7 @@
 
 - (CPString)description
 {
-    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@%@", _orientation ? "V" : "H", [_firstItem debugID], _constant, _huggingPriority, _compressPriority, _active ? "" : " [inactive]"];
+    return [CPString stringWithFormat:@"%@:[%@(%@)] hug=%@ compressionResistance=%@%@ %d", _orientation ? "V" : "H", [_firstItem debugID], _constant, _huggingPriority, _compressPriority, _active ? "" : " [inactive]", _constraintFlags];
 }
 
 @end

@@ -122,7 +122,6 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
         [view setAlphaValue:[self alphaValue]];
         [view setIdentifier:[self identifier]];
 
-        [view setAutolayoutEnabled:[self isAutolayoutEnabled]];
         [view setTranslatesAutoresizingMaskIntoConstraints:[self translatesAutoresizingMaskIntoConstraints]];
 
         [_superview replaceSubview:self with:view];
