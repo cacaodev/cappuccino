@@ -20,6 +20,7 @@ CPLogRegister(CPLogConsole);
 {
     if ([anEvent type] !== CPLeftMouseDown)
         return;
+
     var flags = [anEvent modifierFlags];
 
     if (flags & CPAlternateKeyMask)
@@ -50,8 +51,8 @@ CPLogRegister(CPLogConsole);
 - (void)viewDidMoveToSuperview
 {
     var identifier = [self identifier];
-CPLog.debug(identifier);
-    if (identifier)
+
+    if (identifier && [identifier length] > 0)
     {
         var selColor = CPSelectorFromString(identifier);
 
@@ -102,9 +103,8 @@ CPLog.debug(identifier);
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    // Uncomment to disable Web Worker
-    //[CPLayoutConstraintEngine setAllowsWebWorker:NO];
     [theWindow setAutolayoutEnabled:YES];
+    [theWindow setNeedsLayout];
 }
 
 @end

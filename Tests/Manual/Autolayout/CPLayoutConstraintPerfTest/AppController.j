@@ -123,7 +123,6 @@ CPLogRegister(CPLogConsole);
         var view = autoSizeBlock(num, rect, level, idx);
         // The default is currently NO, but YES in cocoa.
         [view setTranslatesAutoresizingMaskIntoConstraints:YES];
-        [view setAutolayoutEnabled:YES];
 
         return view;
     }];

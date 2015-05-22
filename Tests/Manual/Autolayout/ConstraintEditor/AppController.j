@@ -326,13 +326,7 @@ CPLog.debug(_cmd);
 
 - (void)tableViewSelectionDidChange:(CPNotification)aNotification
 {
-    var table = [aNotification object],
-        selectedRow = [table selectedRow];
-
-    if (selectedRow !== CPNotFound)
-    {
-        [[self selectedView] setNeedsDisplay:YES];
-    }
+    [[self selectedView] setNeedsDisplay:YES];
 }
 
 - (void)updatePrioritySlider
@@ -524,7 +518,7 @@ CPLog.debug(_cmd);
         multiplier      = [aConstraint multiplier],
         constant        = [aConstraint constant],
         priority        = [aConstraint priority],
-        flags           = [aConstraint contraintFlags];
+        flags           = [aConstraint constraintFlags];
 
     if (secondAttribute === CPLayoutAttributeNotAnAttribute && firstAttribute !== CPLayoutAttributeWidth && firstAttribute !== CPLayoutAttributeHeight)
         secondAttribute = firstAttribute;
