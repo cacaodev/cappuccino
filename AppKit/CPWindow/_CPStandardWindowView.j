@@ -36,6 +36,11 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
     CPView          _solidView;
 }
 
++ (BOOL)refusesConstraintBasedLayout
+{
+    return YES;
+}
+
 + (CPString)defaultThemeClass
 {
     return @"textured-window-head-view";
@@ -84,6 +89,11 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
 
     [_gradientView setFrameSize:CGSizeMake(CGRectGetWidth(bounds), [[CPTheme defaultTheme] valueForAttributeWithName:@"gradient-height" forClass:_CPStandardWindowView])];
     [_solidView setFrameSize:CGSizeMake(CGRectGetWidth(bounds), CGRectGetHeight(bounds) - [[CPTheme defaultTheme] valueForAttributeWithName:@"gradient-height" forClass:_CPStandardWindowView])];
+}
+
+- (BOOL)_subtreeNeedsUpdateConstraint
+{
+    return NO;
 }
 
 @end
@@ -417,6 +427,11 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
 
 @implementation _CPStandardWindowView (ConstraintBasedLayout)
 
++ (BOOL)refusesConstraintBasedLayout
+{
+    return NO;
+}
+
 - (void)setFrameSize:(CGSize)aSize
 {
     [[self window] _sizeToFitWindowViewSize:aSize];
@@ -430,4 +445,5 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
     // This is taken care of by addind/removing stay constraints.
     return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
 }
+
 @end

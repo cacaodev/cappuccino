@@ -4,13 +4,15 @@
 {
 }
 
-- (id)initWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
+- (BOOL)isEqual:(id)anObject
 {
-    self = [super initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
+    if (anObject === self)
+        return YES;
 
-    _active = YES;
+    if (!anObject || [anObject class] !== [self class] || [anObject firstAttribute] !== _firstAttribute || [anObject viewForAutoresizingMask] !== [self viewForAutoresizingMask])
+        return NO;
 
-    return self;
+    return YES;
 }
 
 - (CPView)viewForAutoresizingMask
@@ -113,9 +115,6 @@
 
     [pconstraint _setContainer:superItem];
     [sconstraint _setContainer:superItem];
-
-    [pconstraint setPriority:CPLayoutPriorityRequired];
-    [sconstraint setPriority:CPLayoutPriorityRequired];
 
     return @[pconstraint, sconstraint];
 }

@@ -136,9 +136,7 @@ var DOMElementPrototype         = nil,
 
 var CPViewFlags                     = { },
     CPViewHasCustomDrawRect         = 1 << 0,
-    CPViewHasCustomLayoutSubviews   = 1 << 1,
-    CPViewHasConstraintBasedSubviews = 1 << 2,
-    CPViewIsConstraintBased          = 1 << 3;
+    CPViewHasCustomLayoutSubviews   = 1 << 1;
 
 var CPViewHighDPIDrawingEnabled = YES;
 
@@ -273,11 +271,13 @@ var CPViewHighDPIDrawingEnabled = YES;
     // An autoresize or contentSize contraint needs update in one or more subviews of this window.
     BOOL     _subviewsNeedUpdateConstraints;
     // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
-    BOOL     _subviewsNeedGeometryUpdate;
+    BOOL     _subviewsNeedSolvingInEngine;
     // Is the view geometry dirty and does it to set its frame from the current engine variables ?
     unsigned _constraintBasedNeedsLayoutMask @accessors(property=_constraintBasedNeedsLayoutMask);
 
-    BOOL _isSettingFrameFromEngine;
+    BOOL     _isSettingFrameFromEngine;
+    BOOL     _viewIsConstraintBased;
+    BOOL     _viewHasConstraintBasedSubviews;
 }
 
 /*
@@ -352,22 +352,22 @@ var CPViewHighDPIDrawingEnabled = YES;
 
 - (void)_setNeedsConstraintBasedLayout
 {
-    _viewClassFlags |= CPViewIsConstraintBased;
+    _viewIsConstraintBased = YES;
 }
 
 - (BOOL)_needsConstraintBasedLayout
 {
-    return _viewClassFlags & CPViewIsConstraintBased;
+    return _viewIsConstraintBased;
 }
 
 - (void)_setHasConstraintBasedLayoutSubviews
 {
-    _viewClassFlags |= CPViewHasConstraintBasedSubviews;
+    _viewHasConstraintBasedSubviews = YES;
 }
 
 - (BOOL)_hasConstraintBasedLayoutSubviews
 {
-    return _viewClassFlags & CPViewHasConstraintBasedSubviews;
+    return _viewHasConstraintBasedSubviews;
 }
 
 + (BOOL)automaticallyNotifiesObserversForKey:(CPString)theKey
@@ -452,10 +452,11 @@ var CPViewHighDPIDrawingEnabled = YES;
 
         [self _initConstraintsIvars];
 
-        _needsUpdateConstraints = NO;
-        _translatesAutoresizingMaskIntoConstraints = NO;
+        _translatesAutoresizingMaskIntoConstraints = YES; // ! In cocoa, the default is YES !
         _huggingPriorities = nil;
         _compressionPriorities = nil;
+
+        [self _updateNeedsUpdateConstraintsFlag];
     }
 
     return self;
@@ -711,6 +712,11 @@ var CPViewHighDPIDrawingEnabled = YES;
     }
 
     [self didAddSubview:aSubview];
+/*
+    //ConstraintBasedLayout
+    if ([self _subtreeNeedsUpdateConstraint])
+        [self _informSuperviewThatSubviewsNeedUpdateConstraints];
+*/
 }
 
 /*!
@@ -1162,7 +1168,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     if (_layer)
         [_layer _owningViewBoundsChanged];
-    // Meens we may have an autosize view embedded in a constraint based view
+
     if (_autoresizesSubviews)
         [self resizeSubviewsWithOldSize:oldSize];
 
@@ -2724,7 +2730,7 @@ setBoundsOrigin:
 
 - (void)setNeedsLayout:(BOOL)needsLayout
 {
-    if ((_viewClassFlags & CPViewHasConstraintBasedSubviews || _viewClassFlags & CPViewHasCustomLayoutSubviews) && _needsLayout !== needsLayout)
+    if ((_viewHasConstraintBasedSubviews || _viewClassFlags & CPViewHasCustomLayoutSubviews) && _needsLayout !== needsLayout)
     {
         _needsLayout = needsLayout;
 
@@ -2746,30 +2752,6 @@ setBoundsOrigin:
 
         [self layoutSubviews];
     }
-}
-
-- (void)layoutSubviews
-{
-    [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
-    {
-        [subview _updateGeometryIfNeeded];
-    }];
-}
-
-- (void)_updateGeometryIfNeeded
-{
-    if (_constraintBasedNeedsLayoutMask > 0)
-    {
-        _isSettingFrameFromEngine = YES;
-        _CPViewUpdateEngineFrame(self, _constraintBasedNeedsLayoutMask, _frame, _variableMinX, _variableMinY, _variableWidth, _variableHeight);
-        _isSettingFrameFromEngine = NO;
-        _constraintBasedNeedsLayoutMask = 0;
-    }
-}
-
-- (void)_updateGeometry
-{
-    _CPViewUpdateEngineFrame(self, _constraintBasedNeedsLayoutMask, _frame, _variableMinX, _variableMinY, _variableWidth, _variableHeight);
 }
 
 /*!
@@ -3776,13 +3758,15 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         if ([aCoder containsValueForKey:CPViewConstraints])
             _internalConstraints = [aCoder decodeObjectForKey:CPViewConstraints];
 
-        [self setTranslatesAutoresizingMaskIntoConstraints:![aCoder decodeBoolForKey:CPDoNotTranslateAutoresizingMask]];
+        _translatesAutoresizingMaskIntoConstraints = ![aCoder decodeBoolForKey:CPDoNotTranslateAutoresizingMask];
 
         if ([aCoder containsValueForKey:CPHuggingPriority])
             _huggingPriorities = [aCoder decodeSizeForKey:CPHuggingPriority];
 
         if ([aCoder containsValueForKey:CPAntiCompressionPriority])
             _compressionPriorities = [aCoder decodeSizeForKey:CPAntiCompressionPriority];
+
+        [self _updateNeedsUpdateConstraintsFlag];
 
         [self setNeedsDisplay:YES];
         [self setNeedsLayout];
@@ -3891,16 +3875,29 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
 @implementation CPView (ConstraintBasedLayout)
 
+/*!
+Returns whether the receiver depends on the constraint-based layout system.
 + (BOOL)requiresConstraintBasedLayout
+@returns YES if the view must be in a window using constraint-based layout to function properly, NO otherwise.
+
+@discussion Custom views should override this to return YES if they can not layout correctly using autoresizing.
+*/
++ (BOOL)requiresConstraintBasedLayout
+{
+    return NO;
+}
+
++ (BOOL)refusesConstraintBasedLayout
 {
     return NO;
 }
 
 - (void)_initConstraintsIvars
 {
+    _viewIsConstraintBased = NO;
+    _viewHasConstraintBasedSubviews = NO;
     _isSettingFrameFromEngine = NO;
-    _subviewsNeedUpdateConstraints = YES;
-    _subviewsNeedGeometryUpdate = NO;
+    _subviewsNeedSolvingInEngine = NO;
     _constraintBasedNeedsLayoutMask = 0;
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
@@ -3908,9 +3905,60 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     _storedIntrinsicContentSize = CGSizeMake(-1, -1);
 }
 
+- (void)_cibDidFinishLoadingWithOwner:(id)anOwner
+{
+    if (_internalConstraints)
+    {
+        [_internalConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+        {
+            [aConstraint _replaceCustomViewsIfNeeded];
+        }];
+
+        [self addConstraints:_internalConstraints];
+        _internalConstraints = nil;
+    }
+}
+
 - (CPLayoutConstraintEngine)_layoutEngine
 {
     return [[self window] _layoutEngine];
+}
+
+- (Variable)_variableMinX
+{
+    if (!_variableMinX)
+        _variableMinX = [self newVariableWithName:"minX" value:CGRectGetMinX([self frame])];
+
+    return _variableMinX;
+}
+
+- (Variable)_variableMinY
+{
+    if (!_variableMinY)
+        _variableMinY = [self newVariableWithName:"minY" value:CGRectGetMinY([self frame])];
+
+    return _variableMinY;
+}
+
+- (Variable)_variableWidth
+{
+    if (!_variableWidth)
+        _variableWidth = [self newVariableWithName:"width" value:CGRectGetWidth([self frame])];
+
+    return _variableWidth;
+}
+
+- (Variable)_variableHeight
+{
+    if (!_variableHeight)
+        _variableHeight = [self newVariableWithName:"height" value:CGRectGetHeight([self frame])];
+
+    return _variableHeight;
+}
+
+- (Variable)newVariableWithName:(CPString)aName value:(float)aValue
+{
+    return [[self _layoutEngine] variableWithPrefix:[self debugID] name:aName value:aValue owner:self];
 }
 
 // DEBUG
@@ -3961,14 +4009,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
 }
 
-/*!
-    Returns the natural size for the receiving view, considering only properties of the view itself.
-    @return A size indicating the natural size for the receiving view based on its intrinsic properties.
-    @discussion Custom views typically have content that they display of which the layout system is unaware. Overriding this method allows a custom view to communicate to the layout system what size it would like to be based on its content. This intrinsic size must be independent of the content frame, because there’s no way to dynamically communicate a changed width to the layout system based on a changed height, for example.
-
-        If a custom view has no intrinsic size for a given dimension, it can return CPViewNoInstrinsicMetric for that dimension.
-*/
-
 - (BOOL)intrinsicContentSizeIsNoInstrinsicMetric
 {
     var intrinsic = [self intrinsicContentSize];
@@ -3976,21 +4016,60 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return CGSizeEqualToSize(intrinsic, CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric));
 }
 
+/*!
+    Returns The natural size for the receiving view, considering only properties of the view itself.
+
+    @return A size indicating the natural size for the receiving view based on its intrinsic properties.
+
+    @discussion The default width and height values of this property are set to CPViewNoInstrinsicMetric. For a custom view, you can override this property and use it to communicate what size you would like your view to be based on its content. You might do this in cases where the layout system cannot determine the size of the view based solely on its current constraints. For example, a text field might override this method and return an intrinsic size based on the text it contains. The intrinsic size you supply must be independent of the content frame, because there’s no way to dynamically communicate a changed width to the layout system based on a changed height. If your custom view has no intrinsic size for a given dimension, you can set the corresponding dimension to the CPViewNoInstrinsicMetric.
+*/
 - (CGSize)intrinsicContentSize
 {
     return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
 }
+/*!
+The distance (in points) between the bottom of the view’s alignment rectangle and its baseline.
 
+- (float)baselineOffsetFromBottom
+
+@discussion The default value of this property is 0. For views that contain text or other content whose layout benefits from having a custom baseline, you can override this property and provide the correct distance between the bottom of the view’s alignment rectangle and that baseline.
+*/
 - (float)baselineOffsetFromBottom
 {
     return 0.0;
 }
 
+/*!
+Returns the view’s alignment rectangle for a given frame.
+
+- (CGRect)alignmentRectForFrame:(CGRect)frame
+
+@param frame The frame whose corresponding alignment rectangle is desired.
+
+@returns The alignment rectangle for the specified frame.
+
+@discussion The constraint-based layout system uses alignment rectangles to align views, rather than their frame. This allows custom views to be aligned based on the location of their content while still having a frame that encompasses any ornamentation they need to draw around their content, such as shadows or reflections.
+
+    The default implementation returns the view’s frame modified by the insets specified by the view’s alignmentRectInsets method. Most custom views can override alignmentRectInsets to specify the location of their content within their frame. Custom views that require arbitrary transformations can override alignmentRectForFrame: and frameForAlignmentRect: to describe the location of their content. These two methods must always be inverses of each other.
+*/
 - (CGRect)alignmentRectForFrame:(CGRect)frame
 {
     return CGRectInsetByInset(frame, [self alignmentRectInsets]);
 }
 
+/*!
+Returns the view’s frame for a given alignment rectangle.
+
+- (CGRect)frameForAlignmentRect:(CGRect)alignmentRect
+
+@param alignmentRect The alignment rectangle whose corresponding frame is desired.
+
+@returns The frame for the specified alignment rectangle
+
+@discussion The constraint-based layout system uses alignment rectangles to align views, rather than their frame. This allows custom views to be aligned based on the location of their content while still having a frame that encompasses any ornamentation they need to draw around their content, such as shadows or reflections.
+
+    The default implementation returns alignmentRect modified by the insets specified by the view’s alignmentRectInsets method. Most custom views can override alignmentRectInsets to specify the location of their content within their frame. Custom views that require arbitrary transformations can override alignmentRectForFrame: and frameForAlignmentRect: to describe the location of their content. These two methods must always be inverses of each other.
+*/
 - (CGRect)frameForAlignmentRect:(CGRect)alignmentRect
 {
     var invertedInset = CGInsetMakeInvertedCopy([self alignmentRectInsets]);
@@ -3998,6 +4077,15 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return CGRectInsetByInset(alignmentRect, invertedInset);
 }
 
+/*!
+The insets (in points) from the view’s frame that define its content rectangle.
+
+- (CGInset)alignmentRectInsets
+
+@discussion The default value is an NSEdgeInsets structure with the value 0 for each component. Custom views that draw ornamentation around their content can override this property and return insets that align with the edges of the content, excluding the ornamentation. This allows the constraint-based layout system to align views based on their content, rather than just their frame.
+
+@note Custom views whose content location can’t be expressed by a simple set of insets should override alignmentRectForFrame: and frameForAlignmentRect: to describe their custom transform between alignment rectangle and frame.
+*/
 - (CGInset)alignmentRectInsets
 {
     if ([self hasThemeAttribute:@"bezel-inset"])
@@ -4007,8 +4095,11 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 }
 
 /*!
-    Invalidates the view’s intrinsic content size.
-    @discussion Call this when something changes in your custom view that invalidates its intrinsic content size. This allows the constraint-based layout system to take the new intrinsic content size into account in its next layout pass.
+Invalidates the view’s intrinsic content size.
+
+- (void)invalidateIntrinsicContentSize
+
+@discussion Call this when something changes in your custom view that invalidates its intrinsic content size. This allows the constraint-based layout system to take the new intrinsic content size into account in its next layout pass.
 */
 - (void)invalidateIntrinsicContentSize
 {
@@ -4082,6 +4173,19 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return constraints;
 }
 
+/*!
+Sets the priority with which a view resists being made larger than its intrinsic size.
+
+- (void)setContentHuggingPriority:(CPLayoutPriority)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
+
+@param aPriority The new priority.
+
+@param orientation The orientation for which the content hugging priority should be set.
+
+@discussion Custom views should set default values for both orientations on creation, based on their content, typically to CPLayoutPriorityDefaultLow or CPLayoutPriorityDefaultHigh. When creating user interfaces, the layout designer can modify these priorities for specific views when the overall layout design requires different tradeoffs than the natural priorities of the views being used in the interface.
+
+@note Subclasses should not override this method.
+*/
 - (void)setContentHuggingPriority:(CPLayoutPriority)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
 {
     if ([self contentHuggingPriorityForOrientation:orientation] !== aPriority)
@@ -4092,6 +4196,19 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     }
 }
 
+/*!
+Returns the priority with which a view resists being made larger than its intrinsic size.
+
+- (CPLayoutPriority)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
+
+@param orientation The orientation of the dimension of the view that might be enlarged.
+
+@returns The priority with which the view should resist being enlarged from its intrinsic size in the specified orientation.
+
+@discussion The constraint-based layout system uses these priorities when determining the best layout for views that are encountering constraints that would require them to be smaller than their intrinsic size.
+
+@note Subclasses should not override this method. Instead, custom views should set default values for their content on creation, typically to CPLayoutPriorityDefaultLow or CPLayoutPriorityDefaultHigh.
+*/
 - (CPLayoutPriority)contentHuggingPriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var huggingPriorities = [self _contentHuggingPriorities];
@@ -4099,6 +4216,19 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return (orientation == 0) ? huggingPriorities.width : huggingPriorities.height;
 }
 
+/*!
+Sets the priority with which a view resists being made smaller than its intrinsic size.
+
+- (void)setContentCompressionResistancePriority:(CPLayoutPriority)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
+
+@param aPriority The new priority.
+
+@param orientation The orientation for which the compression resistance priority should be set.
+
+@discussion Custom views should set default values for both orientations on creation, based on their content, typically to CPLayoutPriorityDefaultLow or CPLayoutPriorityDefaultHigh. When creating user interfaces, the layout designer can modify these priorities for specific views when the overall layout design requires different tradeoffs than the natural priorities of the views being used in the interface.
+
+@note Subclasses should not override this method.
+*/
 - (void)setContentCompressionResistancePriority:(CPLayoutPriority)aPriority forOrientation:(CPLayoutConstraintOrientation)orientation
 {
     if ([self contentCompressionResistancePriorityForOrientation:orientation] !== aPriority)
@@ -4109,6 +4239,19 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     }
 }
 
+/*!
+Returns the priority with which a view resists being made smaller than its intrinsic size.
+
+- (CPLayoutPriority)contentCompressionResistancePriorityForOrientation:(CPLayoutConstraintOrientation)orientation
+
+@param orientation The orientation of the dimension of the view that might be reduced.
+
+@returns The priority with which the view should resist being compressed from its intrinsic size in the specified orientation.
+
+@discussion The constraint-based layout system uses these priorities when determining the best layout for views that are encountering constraints that would require them to be smaller than their intrinsic size.
+
+@note Subclasses should not override this method. Instead, custom views should set default values for their content on creation, typically to CPLayoutPriorityDefaultLow or CPLayoutPriorityDefaultHigh.
+*/
 - (CPLayoutPriority)contentCompressionResistancePriorityForOrientation:(CPLayoutConstraintOrientation)orientation
 {
     var compressionResistancePriorities = [self _contentCompressionResistancePriorities];
@@ -4133,7 +4276,14 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     return nil;
 }
 */
-// All constraints, active and inactive.
+
+/*!
+The constraints held by the view.
+
+- (CPArray)constraints
+
+@discussion This property contains an array of CPLayoutConstraint objects representing the constraints applied to the view. If the view does not have any constraints, this property contains an empty array.
+*/
 - (CPArray)constraints
 {
     var constraints = [CPArray arrayWithArray:_constraintsArray];
@@ -4161,11 +4311,29 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
            }];
 }
 
+/*!
+Adds a constraint on the layout of the receiving view or its subviews.
+
+- (void)addConstraint:(CPLayoutConstraint)aConstraint
+
+@param aConstraint The constraint to be added to the view. The constraint may only reference the view itself or its subviews.
+
+@discussion The constraint must involve only views that are within scope of the receiving view. Specifically, any views involved must be either the receiving view itself, or a subview of the receiving view. Constraints that are added to a view are said to be held by that view. The coordinate system used when evaluating the constraint is the coordinate system of the view that holds the constraint.
+*/
 - (void)addConstraint:(CPLayoutConstraint)aConstraint
 {
     [self addConstraints:@[aConstraint]];
 }
 
+/*!
+Adds multiple constraints on the layout of the receiving view or its subviews.
+
+- (void)addConstraints:(CPArray)constraints
+
+@param An array of constraints to be added to the view. All constraints may only reference the view itself or its subviews.
+
+@discussion All constraints must involve only views that are within scope of the receiving view. Specifically, any views involved must be either the receiving view itself, or a subview of the receiving view. Constraints that are added to a view are said to be held by that view. The coordinate system used when evaluating each constraint is the coordinate system of the view that holds the constraint.
+*/
 - (void)addConstraints:(CPArray)constraints
 {
     var engine = [self _layoutEngine],
@@ -4182,8 +4350,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         var constraintFlags = [aConstraint constraintFlags];
 
-        CPLog.debug("Added " + aConstraint);
-        //if (constraintFlags & 8 || constraintFlags & 64)
         [self _setHasConstraintBasedLayoutSubviews];
 
         if (constraintFlags & 8)
@@ -4208,11 +4374,25 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [self didChangeValueForKey:@"constraints"];
 }
 
+/*!
+Removes the specified constraint from the view.
+
+- (void)removeConstraint:(CPLayoutConstraint)aConstraint
+
+@param aConstraint The constraint to remove. Removing a constraint not held by the view has no effect.
+*/
 - (void)removeConstraint:(CPLayoutConstraint)aConstraint
 {
     [self removeConstraints:@[aConstraint]];
 }
 
+/*!
+Removes the specified constraints from the view.
+
+- (void)removeConstraints:(CPArray)constraints
+
+@param constraints The constraints to remove.
+*/
 - (void)removeConstraints:(CPArray)constraints
 {
     var engine = [self _layoutEngine],
@@ -4240,111 +4420,101 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [self didChangeValueForKey:@"constraints"];
 }
 
-- (void)_updateConstraint:(id)aConstraint withConstant:(id)aConstant
+- (void)_updateConstraint:(id)aConstraint withValue:(id)aValue usingBlock:(Function)aFunction
 {
-    var engine = [self _layoutEngine];
+    if ([aConstraint isActive])
+    {
+        var engine = [self _layoutEngine];
 
-    [engine removeConstraint:aConstraint];
-    [aConstraint _setEngineConstraints:nil];
-    [aConstraint _setConstant:aConstant];
-    [engine addConstraint:aConstraint];
+        [engine removeConstraint:aConstraint];
+        [aConstraint _setEngineConstraints:nil];
+        aFunction(aConstraint, aValue);
+        [engine addConstraint:aConstraint];
+    }
+    else
+        aFunction(aConstraint, aValue);
 }
 
-- (void)_updateConstraint:(id)aConstraint withPriority:(id)aPriority
-{
-    var engine = [self _layoutEngine];
+/*!
+A Boolean value indicating whether the view’s autoresizing mask is translated into constraints for the constraint-based layout system.
 
-    [engine removeConstraint:aConstraint];
-    [aConstraint _setEngineConstraints:nil];
-    [aConstraint _setPriority:aPriority];
-    [engine addConstraint:aConstraint];
-}
+- (void)setTranslatesAutoresizingMaskIntoConstraints:(BOOL)shouldTranslate
 
-- (void)setTranslatesAutoresizingMaskIntoConstraints:(BOOL)translate
+@discussion When this property is set to YES, the view’s superview looks at the view’s autoresizing mask, produces constraints that implement it, and adds those constraints to itself (the superview). If your view has flexible constraints that require dynamic adjustment, set this property to NO and apply the constraints yourself.
+*/
+- (void)setTranslatesAutoresizingMaskIntoConstraints:(BOOL)shouldTranslate
 {
-    if (translate !== _translatesAutoresizingMaskIntoConstraints)
+    if (shouldTranslate !== _translatesAutoresizingMaskIntoConstraints)
     {
 //        CPLog.debug([self debugID] + " " +  _cmd);
-        _translatesAutoresizingMaskIntoConstraints = translate;
+        _translatesAutoresizingMaskIntoConstraints = shouldTranslate;
 
-        if (translate)
-            [self setNeedsUpdateConstraints:YES];
+        [self _updateNeedsUpdateConstraintsFlag];
     }
 }
 
-- (void)_informSuperviewThatSubviewsNeedUpdateConstraints
+- (void)_informSuperviewThatSubviewsNeedSolvingInEngine
 {
 //CPLog.debug([self debugID] + " " +  _cmd);
     if (_superview)
     {
-        if ([_superview _setSubviewsNeedUpdateConstraints])
-            [_superview _informSuperviewThatSubviewsNeedUpdateConstraints];
+        [_superview _setSubviewsNeedSolvingInEngine]
+        [_superview _informSuperviewThatSubviewsNeedSolvingInEngine];
     }
-    else
+}
+
+- (BOOL)_setSubviewsNeedSolvingInEngine
+{
+    if (_subviewsNeedSolvingInEngine == NO)
     {
+        CPLog.debug([self debugID] + " " +  _cmd);
+        _subviewsNeedSolvingInEngine = YES;
+        return YES;
+    }
+
+    return NO;
+}
+
+/*!
+Updates the constraints for the receiving view and its subviews.
+
+- (void)setNeedsUpdateConstraints:(BOOL)needsUpdate
+
+@param needsUpdate A Boolean value indicating whether the view’s constraints need to be updated.
+
+@discussion When a property of your view changes in a way that would impact constraints, set the value of this property to YES to indicate that the constraints need to be updated at some point in the future. The next time the layout process happens, the constraint-based layout system uses the value of this property to determine whether it needs to call updateConstraints on the view.
+*/
+- (void)setNeedsUpdateConstraints:(BOOL)needsUpdate
+{
+    if (needsUpdate !== _needsUpdateConstraints)
+    {
+//CPLog.debug([self debugID] + " " +  _cmd + " " + flag);
+        _needsUpdateConstraints = needsUpdate;
+
         [[self window] _setSubviewsNeedUpdateConstraints];
     }
 }
 
-- (void)_informSuperviewThatSubviewsNeedGeometryUpdate
+- (void)_updateNeedsUpdateConstraintsFlag
 {
-//CPLog.debug([self debugID] + " " +  _cmd);
-    if (_superview)
-    {
-        if ([_superview _setSubviewsNeedGeometryUpdate])
-            [_superview _informSuperviewThatSubviewsNeedGeometryUpdate];
-    }
+    _needsUpdateConstraints = (_translatesAutoresizingMaskIntoConstraints || ![self intrinsicContentSizeIsNoInstrinsicMetric])
 }
 
-- (BOOL)_setSubviewsNeedUpdateConstraints
-{
-    if (_subviewsNeedUpdateConstraints == NO)
-    {
-        _subviewsNeedUpdateConstraints = YES;
-        return YES;
-    }
-
-    return NO;
-}
-
-- (BOOL)_setSubviewsNeedGeometryUpdate
-{
-    if (_subviewsNeedGeometryUpdate == NO)
-    {
-        _subviewsNeedGeometryUpdate = YES;
-        return YES;
-    }
-
-    return NO;
-}
-
-- (void)setNeedsUpdateConstraints:(BOOL)flag
-{
-    if (flag !== _needsUpdateConstraints)
-    {
-//CPLog.debug([self debugID] + " " +  _cmd + " " + flag);
-        _needsUpdateConstraints = flag;
-
-        if (flag && _superview)
-            [self _informSuperviewThatSubviewsNeedUpdateConstraints];
-    }
-}
-
-/*
+/*!
 Updates the constraints for the receiving view and its subviews.
 
 - (void)updateConstraintsForSubtreeIfNeeded
 
 @discussion Whenever a new layout pass is triggered for a view, the system invokes this method to ensure that any constraints for the view and its subviews are updated with information from the current view hierarchy and its constraints. This method is called automatically by the system, but may be invoked manually if you need to examine the most up to date constraints.
 
-Subclasses should not override this method.
+@note Subclasses should not override this method.
 */
 - (BOOL)updateConstraintsForSubtreeIfNeeded
 {
-//CPLog.debug([self debugID] + " " +  _cmd + " _subviewsNeedUpdateConstraints=" + _subviewsNeedUpdateConstraints);
+//CPLog.debug([self debugID] + " " +  _cmd);
     var result = _needsUpdateConstraints;
 
-    if (_subviewsNeedUpdateConstraints)
+    if (![[self class] refusesConstraintBasedLayout])
     {
         [[self subviews] enumerateObjectsUsingBlock:function(aSubview, idx, stop)
         {
@@ -4352,18 +4522,16 @@ Subclasses should not override this method.
 
             result |= [aSubview updateConstraintsForSubtreeIfNeeded];
         }];
-
-        _subviewsNeedUpdateConstraints = NO;
     }
 
-    [self updateConstraintsIfNeeded];
+    [self _updateConstraintsIfNeeded];
 
     return result;
 }
 
-- (void)updateConstraintsIfNeeded
+- (void)_updateConstraintsIfNeeded
 {
-//CPLog.debug([self debugID] + " " +  _cmd + "_needsUpdateConstraints=" + _needsUpdateConstraints);
+//CPLog.debug([self debugID] + " " +  _cmd);
     if (_needsUpdateConstraints)
     {
         [self updateConstraints];
@@ -4372,32 +4540,25 @@ Subclasses should not override this method.
     //CPLog.debug([self identifier] + ": no need to update constraints");
 }
 
+/*!
+Update constraints for the view.
+
+- (void)updateConstraints
+
+@discussion Custom views that set up constraints themselves should do so by overriding this method. When your custom view notes that a change has been made to the view that invalidates one of its constraints, it should immediately remove that constraint, and update the needsUpdateConstraints property to note that constraints need to be updated. Before layout is performed, your implementation of updateConstraints will be invoked, allowing you to verify that all necessary constraints for your content are in place at a time when your custom view’s properties are not changing.
+
+@note You may not invalidate any constraints as part of your constraint update phase. You also may not invoke a layout or drawing phase as part of constraint updating.
+
+@note You must call [super updateConstraints] at the end of your implementation.
+*/
 - (void)updateConstraints
 {
     var translate = [self translatesAutoresizingMaskIntoConstraints];
- CPLog.debug([self debugID] + " " + _cmd + " translate=" + translate);
 
     if (translate)
         return [self _updateAutoresizingConstraints];
     else
         return [self _updateContentSizeConstraints];
-}
-
-- (void)_cibDidFinishLoadingWithOwner:(id)anOwner
-{
-    var update = _translatesAutoresizingMaskIntoConstraints || ![self intrinsicContentSizeIsNoInstrinsicMetric];
-    [self setNeedsUpdateConstraints:update];
-
-    if (_internalConstraints)
-    {
-        [_internalConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
-        {
-            [aConstraint _replaceCustomViewsIfNeeded];
-        }];
-
-        [self addConstraints:_internalConstraints];
-        _internalConstraints = nil;
-    }
 }
 
 - (BOOL)_updateAutoresizingConstraints
@@ -4408,7 +4569,9 @@ Subclasses should not override this method.
     {
         var constraints = [self _constraintsEquivalentToAutoresizingMask];
         [self _setAutoresizingConstraints:constraints];
+        // ! AutoresizingConstraints are NOT added to the _constraintArray
         [[self _layoutEngine] addConstraints:constraints];
+        [constraints makeObjectsPerformSelector:@selector(_setActive:) withObject:YES];
 
         return YES;
         //CPLog.debug([self identifier] + _cmd + [_autoresizingConstraints description]);
@@ -4480,43 +4643,71 @@ Subclasses should not override this method.
     return [CPAutoresizingMaskLayoutConstraint constraintsWithAutoresizingMask:mask subitem:self frame:frame  superitem:superview bounds:bounds];
 }
 
-// Debugging
+/*!
+    @warning Not Implemented
+*/
 - (BOOL)hasAmbiguousLayout
 {
-    // Not Implemented
 }
 
-/*
+/*!
 Perform layout in concert with the constraint-based layout system.
 
 - (void)layout
 
 @discussion Override this method if your custom view needs to perform custom layout not expressible using the constraint-based layout system. In this case you are responsible for calling setNeedsLayout: when something that impacts your custom layout changes.
 
-You may not invalidate any constraints as part of your layout phase, nor invalidate the layout of your superview or views outside of your view hierarchy. You also may not invoke a drawing pass as part of layout.
+@note You may not invalidate any constraints as part of your layout phase, nor invalidate the layout of your superview or views outside of your view hierarchy. You also may not invoke a drawing pass as part of layout.
 
-You must call [super layout] as part of your implementation.
+@note You must call [super layout] as part of your implementation.
 */
 - (void)layout
 {
     [self layoutSubviews];
 }
 
-/*
+- (void)layoutSubviews
+{
+    [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
+    {
+        [subview _updateGeometryIfNeeded];
+    }];
+}
+
+/*!
 Updates the layout of the receiving view and its subviews based on the current views and constraints.
 
 - (void)layoutSubtreeIfNeeded
 
 @discussion Before displaying a view that uses constraints-based layout the system invokes this method to ensure that the layout of the view and its subviews is up to date. This method updates the layout if needed, first invoking updateConstraintsForSubtreeIfNeeded to ensure that all constraints are up to date. This method is called automatically by the system, but may be invoked manually if you need to examine the most up to date layout.
 
-Subclasses should not override this method.
+@note Subclasses should not override this method.
 */
 - (void)layoutSubtreeIfNeeded
 {
-    if ([self updateConstraintsForSubtreeIfNeeded] || _subviewsNeedGeometryUpdate)
+    if ([self updateConstraintsForSubtreeIfNeeded] || _subviewsNeedSolvingInEngine)
         [[self _layoutEngine] solve];
 
-    [self _updateSubtreeGeometryIfNeeded];
+    _subviewsNeedSolvingInEngine = NO;
+}
+
+- (void)_updateGeometryIfNeeded
+{
+    if (_constraintBasedNeedsLayoutMask > 0)
+    {
+        [self _updateGeometry];
+        _constraintBasedNeedsLayoutMask = 0;
+    }
+
+    _subviewsNeedSolvingInEngine = NO;
+}
+
+- (void)_updateGeometry
+{
+//CPLog.debug([self debugID] + " " + _cmd);
+    _isSettingFrameFromEngine = YES;
+    _CPViewUpdateEngineFrame(self, _constraintBasedNeedsLayoutMask, _frame, _variableMinX, _variableMinY, _variableWidth, _variableHeight);
+    _isSettingFrameFromEngine = NO;
 }
 
 - (void)_updateSubtreeGeometryIfNeeded
@@ -4527,45 +4718,6 @@ Subclasses should not override this method.
     }];
 
     [self _updateGeometryIfNeeded];
-
-    _subviewsNeedGeometryUpdate = NO;
-}
-
-- (Variable)_variableMinX
-{
-    if (!_variableMinX)
-        _variableMinX = [self newVariableWithName:"minX" value:CGRectGetMinX([self frame])];
-
-    return _variableMinX;
-}
-
-- (Variable)_variableMinY
-{
-    if (!_variableMinY)
-        _variableMinY = [self newVariableWithName:"minY" value:CGRectGetMinY([self frame])];
-
-    return _variableMinY;
-}
-
-- (Variable)_variableWidth
-{
-    if (!_variableWidth)
-        _variableWidth = [self newVariableWithName:"width" value:CGRectGetWidth([self frame])];
-
-    return _variableWidth;
-}
-
-- (Variable)_variableHeight
-{
-    if (!_variableHeight)
-        _variableHeight = [self newVariableWithName:"height" value:CGRectGetHeight([self frame])];
-
-    return _variableHeight;
-}
-
-- (Variable)newVariableWithName:(CPString)aName value:(float)aValue
-{
-    return [[self _layoutEngine] variableWithPrefix:[self debugID] name:aName value:aValue owner:self];
 }
 
 // FROM ENGINE DELEGATE (the window)

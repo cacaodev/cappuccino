@@ -60,7 +60,7 @@ CPLogRegister(CPLogConsole);
             color = [CPColor performSelector:selColor];
     }
 
-    [self setNeedsDisplay:YES];
+    [super viewDidMoveToSuperview];
 }
 
 - (void)drawRect:(CGRect)aRect
@@ -91,14 +91,13 @@ CPLogRegister(CPLogConsole);
 
 - (IBAction)addView:(id)sender
 {
-    var view = [[ColorView alloc] initWithFrame:CGRectMake(10, 10, 100, 100)];
-    [view setIdentifier:@"orangeColor"];
+    var view = [[CPView alloc] initWithFrame:CGRectMake(10, 10, 100, 100)];
+    [view setIdentifier:@"maskView"];
+    [view setBackgroundColor:[CPColor randomColor]];
     [view setAutoresizingMask:[maskField intValue]];
-    [view setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     [greenView addSubview:view];
-    //[view setNeedsUpdateConstraints:YES];
-    [greenView setNeedsUpdateConstraints:YES];
+    [view setTranslatesAutoresizingMaskIntoConstraints:YES];
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification

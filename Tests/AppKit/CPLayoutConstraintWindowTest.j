@@ -16,11 +16,9 @@
 - (void)setUp
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 200, 200) styleMask:CPResizableWindowMask];
-
     [theWindow setAutolayoutEnabled:YES];
 
     contentView = [theWindow contentView];
-    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     leftView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
 
@@ -42,13 +40,14 @@
 
 - (void)testWindowResizingAfterRightConstraintConstantChange
 {
-    [[contentView window] layoutIfNeeded];
+    [[contentView window] setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertEqual(CGRectGetMaxX([leftView frame]),  CGRectGetWidth([contentView frame]) - 10);
 
     [rightConstraint setConstant:50];
     [[contentView window] setNeedsLayout];
-    [[contentView window] layoutIfNeeded];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertEqual(CGRectGetWidth([leftView frame]), 180); // required min width constraint set.
     XCTAssertEqual(CGRectGetMaxX([leftView frame]), 10 + 180);
@@ -57,14 +56,16 @@
 
 - (void)testWindowNotResizingAfterRightConstraintConstantChange
 {
-    [[contentView window] layoutIfNeeded];
+    [[contentView window] setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertEqual(CGRectGetMaxX([leftView frame]),  CGRectGetWidth([contentView frame]) - 10);
 
     [minWidthConstraint setPriority:450];
     [rightConstraint setConstant:50];
+
     [[contentView window] setNeedsLayout];
-    [[contentView window] layoutIfNeeded];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertEqual(CGRectGetMinX([leftView frame]), 10);
     XCTAssertEqual(CGRectGetWidth([leftView frame]), 140); // required min width constraint set.

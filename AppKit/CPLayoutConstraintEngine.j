@@ -161,7 +161,7 @@ var CPLayoutItemIsNull          = 2,
     AddConstraint(_simplexSolver, heightStay, onAdd, onAddError);
 }
 
-- (void)addConstraints:(CPArray)constraints
+- (BOOL)addConstraints:(CPArray)constraints
 {
     var result = YES;
 
@@ -173,7 +173,7 @@ var CPLayoutItemIsNull          = 2,
     return result;
 }
 
-- (void)removeConstraints:(CPArray)constraints
+- (BOOL)removeConstraints:(CPArray)constraints
 {
     var result = YES;
 

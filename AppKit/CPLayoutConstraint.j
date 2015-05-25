@@ -72,12 +72,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     CPArray             _engineConstraints @accessors(property=_engineConstraints);
 }
 
-+ (CPSet)keyPathsForValuesAffectingValueForKey:(CPString)key
++ (CPSet)keyPathsForValuesAffectingValueForKey:(CPString)aKey
 {
-    if (key == @"description")
-    {
+    if (aKey == @"description")
         return [CPSet setWithObjects:@"constant", @"priority"];
-    }
 
     return [CPSet set];
 }
@@ -131,6 +129,22 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return copy;
 }
 
+- (CPString)hash
+{
+    return [CPString stringWithFormat:@"%d%d%d%d%d%d%d%d", [_firstItem UID], [_secondItem UID], _firstAttribute, _secondAttribute, _relation, _constant, _coefficient, _priority];
+}
+
+- (BOOL)isEqual:(id)anObject
+{
+    if (anObject === self)
+        return YES;
+
+    if (!anObject || [anObject class] !== [self class] || [anObject firstItem] !== _firstItem || [anObject secondItem] !== _secondItem || [anObject firstAttribute] !== _firstAttribute || [anObject secondAttribute] !== _secondAttribute || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
+        return NO;
+
+    return YES;
+}
+
 - (id)_findCommonAncestorForItem:(id)firstItem andItem:(id)secondItem
 {
     var ancestor = nil;
@@ -165,7 +179,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         }
         else
         {
-            [CPException raise:CPGenericException format:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", _firstItem, _secondItem];
+            [CPException raise:CPGenericException reason:[CPString stringWithFormat:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", _firstItem, _secondItem]];
         }
     }
     else
@@ -225,15 +239,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (void)setConstant:(double)aConstant
 {
-    if (aConstant !== _constant)
-    {
-        if (_active)
-        {
-            [_container _updateConstraint:self withConstant:aConstant];
-        }
-        else
-            [self _setConstant:aConstant];
-    }
+    if (aConstant === _constant)
+        return;
+
+    [_container _updateConstraint:self withValue:aConstant usingBlock:_CPLayoutConstraintSetConstantBlock];
 }
 
 - (void)_setConstant:(double)aConstant
@@ -245,36 +254,15 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     var priority = MAX(MIN(aPriority, CPLayoutPriorityRequired), 0);
 
-    if (priority !== _priority)
-    {
-        if (_active)
-        {
-            [_container _updateConstraint:self withPriority:priority];
-        }
-        else
-            [self _setPriority:priority];
-    }
+    if (priority === _priority)
+        return
+
+    [_container _updateConstraint:self withValue:priority usingBlock:_CPLayoutConstraintSetPriorityBlock];
 }
 
 - (void)_setPriority:(CPLayoutPriority)aPriority
 {
     _priority = aPriority;
-}
-
-- (CPString)hash
-{
-    return [CPString stringWithFormat:@"%d%d%d%d%d%d%d%d", [_firstItem UID], [_secondItem UID], _firstAttribute, _secondAttribute, _relation, _constant, _coefficient, _priority];
-}
-
-- (BOOL)isEqual:(id)anObject
-{
-    if (anObject === self)
-        return YES;
-
-    if (!anObject || [anObject class] !== [self class] || [anObject firstItem] !== _firstItem || [anObject secondItem] !== _secondItem || [anObject firstAttribute] !== _firstAttribute || [anObject secondAttribute] !== _secondAttribute || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
-        return NO;
-
-    return YES;
 }
 
 - (CPString)description
@@ -285,7 +273,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         plusMinus = (_constant < 0) ? "" : "+",
         active = _active ? "":" [inactive]";
 
-    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@ %d", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier, active, _constraintFlags];
+    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier, active];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem
@@ -490,4 +478,14 @@ var CPLayoutConstraintFlags = function(aContainer, anItem)
         return 4;
     else
         return 8;
+};
+
+var _CPLayoutConstraintSetConstantBlock = function(aConstraint, aValue)
+{
+    [aConstraint _setConstant:aValue];
+};
+
+var _CPLayoutConstraintSetPriorityBlock = function(aConstraint, aValue)
+{
+    [aConstraint _setPriority:aValue];
 };

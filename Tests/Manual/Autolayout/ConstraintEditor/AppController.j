@@ -435,7 +435,7 @@ CPLog.debug(_cmd);
     BOOL _selected        @accessors(getter=selected);
     BOOL _showConstraints @accessors(property=showConstraints);
     CPIndexSet    selectedConstraintIndexes @accessors;
-    CGSize intrinsicContentSize;
+    CGSize m_intrinsicContentSize;
 }
 
 + (CPSet)keyPathsForValuesAffectingConstraints
@@ -448,14 +448,30 @@ CPLog.debug(_cmd);
     return YES;
 }
 
-- (void)viewDidMoveToWindow
+- (id)initWithFrame:(CGRect)aFrame
 {
     CPLog.debug([self class] + _cmd);
+    self = [super initWithFrame:aFrame];
 
     _selected  = NO;
     _showConstraints = YES;
-    intrinsicContentSize = [super intrinsicContentSize];
+    m_intrinsicContentSize = CGSizeMake(-1,-1);
     selectedConstraintIndexes = [CPIndexSet indexSet];
+
+    return self;
+}
+
+- (id)initWithCoder:(CPCoder)aCoder
+{
+    CPLog.debug([self class] + _cmd);
+    self = [super initWithCoder:aCoder];
+
+    _selected  = NO;
+    _showConstraints = YES;
+    m_intrinsicContentSize = CGSizeMake(-1,-1);
+    selectedConstraintIndexes = [CPIndexSet indexSet];
+
+    return self;
 }
 
 - (void)mouseDown:(CPEvent)anEvent
@@ -661,7 +677,10 @@ CPLog.debug(_cmd);
 
 - (CGSize)intrinsicContentSize
 {
-    return intrinsicContentSize;
+    if (m_intrinsicContentSize)
+        return m_intrinsicContentSize;
+
+    return CGSizeMake(-1,-1);
 }
 
 - (float)horizontalContentHuggingPriority
@@ -710,28 +729,24 @@ CPLog.debug(_cmd);
 
 - (float)intrinsicContentWidth
 {
-    return intrinsicContentSize.width;
+    return m_intrinsicContentSize.width;
 }
 
 - (void)setIntrinsicContentWidth:(float)aWidth
 {
-    [self willChangeValueForKey:@"constraints"];
-    intrinsicContentSize.width = aWidth;
+    m_intrinsicContentSize.width = aWidth;
     [self invalidateIntrinsicContentSize];
-    [self didChangeValueForKey:@"constraints"];
 }
 
 - (float)intrinsicContentHeight
 {
-    return intrinsicContentSize.height;
+    return m_intrinsicContentSize.height;
 }
 
 - (void)setIntrinsicContentHeight:(float)aHeight
 {
-    [self willChangeValueForKey:@"constraints"];
-    intrinsicContentSize.height = aHeight;
+    m_intrinsicContentSize.height = aHeight;
     [self invalidateIntrinsicContentSize];
-    [self didChangeValueForKey:@"constraints"];
 }
 
 @end

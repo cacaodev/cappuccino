@@ -3894,21 +3894,20 @@ Subclasses should not override this method.
 */
 - (BOOL)updateConstraintsIfNeeded
 {
-    var result = NO;
     //CPLog.debug([self className] + " " + _cmd + " " + _subviewsNeedUpdateConstraints);
     if (_subviewsNeedUpdateConstraints)
-    {
-        result = [self updateConstraints];
-        _subviewsNeedUpdateConstraints = NO;
-    }
+        return [self updateConstraints];
 
-    return result;
+    return NO;
 }
 
 - (BOOL)updateConstraints
 {
-//([self className] + " " + _cmd);
-    return [_windowView updateConstraintsForSubtreeIfNeeded];
+CPLog.debug([self className] + " " + _cmd);
+    var result = [_windowView updateConstraintsForSubtreeIfNeeded];
+    _subviewsNeedUpdateConstraints = NO;
+
+    return result;
 }
 
 - (void)_suggestFrameSize:(CGSize)newSize
@@ -4037,17 +4036,18 @@ Subclasses should not override this method.
     // Very important if we want a layout pass for the dirty views:
     // the CPDisplayServer will be flushed at the end of this method.
     // We need to feed it with ALL views that need a display after a solve.
+    //CPLog.debug("Engine will update geometry for " + [containers count]);
     [containers enumerateObjectsUsingBlock:function(aContainer)
     {
         // Disable the layout pass for performance reasons. TODO: profile and see the difference.
         //[[aContainer superview] setNeedsLayout];
-        [aContainer _updateGeometry];
+        [[aContainer superview] setNeedsLayout];
     }];
 }
 
 - (void)engine:(id)anEngine constraintDidChangeInContainer:(id)aContainer
 {
-    [aContainer _informSuperviewThatSubviewsNeedGeometryUpdate];
+    [aContainer _informSuperviewThatSubviewsNeedSolvingInEngine];
 }
 
 @end

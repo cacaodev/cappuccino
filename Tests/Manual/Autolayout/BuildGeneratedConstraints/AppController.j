@@ -61,13 +61,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
-CPLog.debug(_cmd);
-    // This is called when the cib is done loading.
-    // You can implement this method on any object instantiated from a Cib.
-    // It's a useful hook for setting up current UI values, and other things.
-
     var cst = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationLessThanOrEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:400];
-    [cst setPriority:CPLayoutPriorityRequired];
 
     [self setConstraint:cst];
     // In this case, we want the window from Cib to become our full browser window
@@ -77,19 +71,17 @@ CPLog.debug(_cmd);
 - (@action)activate:(id)sender
 {
     [constraint setActive:[sender state]];
-    [theWindow setNeedsLayout];
 }
 
 - (@action)setConstant:(id)sender
 {
     var constant = [sender intValue];
     [constraint setConstant:constant];
-    [theWindow setNeedsLayout];
 }
 
 - (@action)layout:(id)sender
 {
-    [theWindow layout];
+    [theWindow setNeedsLayout];
 }
 
 @end

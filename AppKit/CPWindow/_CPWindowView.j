@@ -163,11 +163,6 @@ _CPWindowViewResizeSlop = 3;
     return self;
 }
 
-- (CGSize)intrinsicContentSize
-{
-    return [self frameSize];
-}
-
 - (void)setDocumentEdited:(BOOL)isEdited
 {
 }
