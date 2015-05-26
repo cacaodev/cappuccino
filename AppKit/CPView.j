@@ -4486,7 +4486,8 @@ Updates the constraints for the receiving view and its subviews.
 //CPLog.debug([self debugID] + " " +  _cmd + " " + flag);
         _needsUpdateConstraints = needsUpdate;
 
-        [[self window] _setSubviewsNeedUpdateConstraints];
+        if (needsUpdate)
+            [[self window] _setSubviewsNeedUpdateConstraints];
     }
 }
 
@@ -4680,10 +4681,18 @@ Updates the layout of the receiving view and its subviews based on the current v
 */
 - (void)layoutSubtreeIfNeeded
 {
-    if ([self updateConstraintsForSubtreeIfNeeded] || _subviewsNeedSolvingInEngine)
+    if ([self _updateConstraintsAtWindowLevelIfNeeded] || _subviewsNeedSolvingInEngine)
         [[self _layoutEngine] solve];
 
     _subviewsNeedSolvingInEngine = NO;
+}
+
+- (BOOL)_updateConstraintsAtWindowLevelIfNeeded
+{
+    if (_window)
+        return [_window updateConstraintsIfNeeded];
+    else
+        return [self updateConstraintsForSubtreeIfNeeded];
 }
 
 - (void)_updateGeometryIfNeeded
