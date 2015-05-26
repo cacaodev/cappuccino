@@ -4420,19 +4420,14 @@ Removes the specified constraints from the view.
     [self didChangeValueForKey:@"constraints"];
 }
 
-- (void)_updateConstraint:(id)aConstraint withValue:(id)aValue usingBlock:(Function)aFunction
+- (void)_updateConstraint:(id)aConstraint usingBlock:(Function)aFunction
 {
-    if ([aConstraint isActive])
-    {
-        var engine = [self _layoutEngine];
+    var engine = [self _layoutEngine];
 
-        [engine removeConstraint:aConstraint];
-        [aConstraint _setEngineConstraints:nil];
-        aFunction(aConstraint, aValue);
-        [engine addConstraint:aConstraint];
-    }
-    else
-        aFunction(aConstraint, aValue);
+    [engine removeConstraint:aConstraint];
+    [aConstraint _setEngineConstraints:nil];
+    aFunction();
+    [engine addConstraint:aConstraint];
 }
 
 /*!

@@ -242,7 +242,15 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (aConstant === _constant)
         return;
 
-    [_container _updateConstraint:self withValue:aConstant usingBlock:_CPLayoutConstraintSetConstantBlock];
+    var CPLayoutConstraintSetConstantBlock = function()
+    {
+        [self _setConstant:aConstant];
+    };
+
+    if (_active)
+        [_container _updateConstraint:self usingBlock:CPLayoutConstraintSetConstantBlock];
+    else
+        CPLayoutConstraintSetConstantBlock();
 }
 
 - (void)_setConstant:(double)aConstant
@@ -255,9 +263,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     var priority = MAX(MIN(aPriority, CPLayoutPriorityRequired), 0);
 
     if (priority === _priority)
-        return
+        return;
 
-    [_container _updateConstraint:self withValue:priority usingBlock:_CPLayoutConstraintSetPriorityBlock];
+    var CPLayoutConstraintSetPriorityBlock = function()
+    {
+        [self _setPriority:priority];
+    };
+
+    if (_active)
+        [_container _updateConstraint:self usingBlock:CPLayoutConstraintSetPriorityBlock];
+    else
+        CPLayoutConstraintSetPriorityBlock();
 }
 
 - (void)_setPriority:(CPLayoutPriority)aPriority
@@ -478,14 +494,4 @@ var CPLayoutConstraintFlags = function(aContainer, anItem)
         return 4;
     else
         return 8;
-};
-
-var _CPLayoutConstraintSetConstantBlock = function(aConstraint, aValue)
-{
-    [aConstraint _setConstant:aValue];
-};
-
-var _CPLayoutConstraintSetPriorityBlock = function(aConstraint, aValue)
-{
-    [aConstraint _setPriority:aValue];
 };
