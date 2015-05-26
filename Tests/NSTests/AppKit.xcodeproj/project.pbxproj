@@ -8,10 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5B49DECC18F679B400B46AEE /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B2F440618F280F500A7CC73 /* XCTest.framework */; };
-		5B49DEE218F67D4A00B46AEE /* Autolayout-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B49DEDF18F67D4A00B46AEE /* Autolayout-Info.plist */; };
 		5B49DEE318F67D4A00B46AEE /* IntrinsicContentSize.m in Sources */ = {isa = PBXBuildFile; fileRef = 5B49DEE118F67D4A00B46AEE /* IntrinsicContentSize.m */; };
-		5B49DEE518F69BF200B46AEE /* AntiCompression.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B49DEE418F69BF100B46AEE /* AntiCompression.plist */; };
-		5B49DEE718F6D57B00B46AEE /* Hugging.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B49DEE618F6D57B00B46AEE /* Hugging.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -139,9 +136,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5B49DEE718F6D57B00B46AEE /* Hugging.plist in Resources */,
-				5B49DEE518F69BF200B46AEE /* AntiCompression.plist in Resources */,
-				5B49DEE218F67D4A00B46AEE /* Autolayout-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

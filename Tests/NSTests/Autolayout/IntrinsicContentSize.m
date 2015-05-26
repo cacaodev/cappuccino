@@ -9,7 +9,19 @@
 #import <XCTest/XCTest.h>
 #import <cocoa/Cocoa.h>
 
-@interface IntrinsicView : NSView
+@interface FlippedView : NSView
+@end
+
+@implementation FlippedView
+
+-(BOOL)isFlipped
+{
+    return YES;
+}
+
+@end
+
+@interface IntrinsicView : FlippedView
     @property (readwrite, assign) CGFloat intrinsicContentWidth;
 @end
 
@@ -19,25 +31,31 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        self.intrinsicContentWidth = 100.0;
+        self.intrinsicContentWidth = -1;
     }
     return self;
 }
 
 - (CGSize)intrinsicContentSize
 {
-    return CGSizeMake(self.intrinsicContentWidth, [super intrinsicContentSize].height);
+    return CGSizeMake(self.intrinsicContentWidth, 100);
 }
 
 @end
 
 @interface IntrinsicContentSize : XCTestCase
 {
-    NSWindow *window;
-    NSView *mainView;
-    IntrinsicView *intrinsicView;
-    NSArray *antiCompressionTestData;
-    NSArray *huggingTestData;
+    NSWindow           *window;
+    IntrinsicView      *intrinsicView;
+    NSLayoutConstraint *left;
+    NSLayoutConstraint *right;
+    
+    float leftPriority;
+    float rightPriority;
+    float compressionPriority;
+    float huggingPriority;
+    float oldIntrinsicSize;
+    float newIntrinsicSize;
 }
 @end
 
@@ -45,91 +63,619 @@
 
 - (void)setUp
 {
-    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:@"AntiCompression" ofType:@"plist"];
-    antiCompressionTestData = [[NSArray alloc] initWithContentsOfFile:path];
+    window = [[NSWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:YES];
 
-    path = [[NSBundle bundleForClass:[self class]] pathForResource:@"Hugging" ofType:@"plist"];
-    huggingTestData = [[NSArray alloc] initWithContentsOfFile:path];
-
-    window = [[NSWindow alloc] initWithContentRect:CGRectMake(0, 0, 1000, 1000) styleMask:NSTitledWindowMask backing:NSBackingStoreBuffered defer:YES];
-    
-    mainView = [[NSView alloc] initWithFrame:CGRectMake(0, 0, 1000, 1000)];
-    window.contentView = mainView;
-    
     intrinsicView = [[IntrinsicView alloc] initWithFrame:CGRectZero];
-    intrinsicView.translatesAutoresizingMaskIntoConstraints = NO;
-    [mainView addSubview:intrinsicView];
-}
-
-- (void)tearDown
-{
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
-    [super tearDown];
-}
-
-- (void)testAntiCompression
-{
-    for (NSDictionary *test in antiCompressionTestData)
-        [self doTestIntrinsicContentSize:test];
-}
-
-- (void)testHugging
-{
-    for (NSDictionary *test in huggingTestData)
-        [self doTestIntrinsicContentSize:test];
-}
-
-- (void)doTestIntrinsicContentSize:(NSDictionary*)params
-{
-    float leftPriority = [[params objectForKey:@"leftPriority"] floatValue];
-    float rightPriority = [[params objectForKey:@"rightPriority"] floatValue];
-    float compressionResistancePriority = [[params objectForKey:@"compressionResistancePriority"] floatValue];
-    float huggingPriority = [[params objectForKey:@"huggingPriority"] floatValue];
-    float initialIntrinsicWidth = [[params objectForKey:@"initialIntrinsicWidth"] floatValue];
-    float initialWidth = [[params objectForKey:@"initialWidth"] floatValue];
-    float excpectedWidth = [[params objectForKey:@"excpectedWidth"] floatValue];
-    float newIntrinsicWidth = [[params objectForKey:@"newIntrinsicWidth"] floatValue];
-    float excpectedNewWidth = [[params objectForKey:@"excpectedNewWidth"] floatValue];
+    [intrinsicView setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [[window contentView] addSubview:intrinsicView];
     
-    NSLayoutConstraint *left = [NSLayoutConstraint constraintWithItem:intrinsicView
-                                                            attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual toItem:mainView attribute:NSLayoutAttributeLeft multiplier:1 constant:10];
-    [left setPriority:leftPriority];
+    left = [NSLayoutConstraint constraintWithItem:intrinsicView
+                                                            attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual toItem:[window contentView] attribute:NSLayoutAttributeLeft multiplier:1 constant:100];
     
-    NSLayoutConstraint *right = [NSLayoutConstraint constraintWithItem:intrinsicView
+    right = [NSLayoutConstraint constraintWithItem:[window contentView]
                                                              attribute:NSLayoutAttributeRight
-                                                             relatedBy:NSLayoutRelationEqual toItem:mainView attribute:NSLayoutAttributeRight multiplier:1 constant:(-990 + initialWidth)];
+                                                             relatedBy:NSLayoutRelationEqual toItem:intrinsicView attribute:NSLayoutAttributeRight multiplier:1 constant:100];
+
+    NSLayoutConstraint *top = [NSLayoutConstraint constraintWithItem:intrinsicView
+                                                             attribute:NSLayoutAttributeTop
+                                                             relatedBy:NSLayoutRelationEqual toItem:[window contentView] attribute:NSLayoutAttributeTop multiplier:1 constant:100];
+    
+    top.active = YES;
+}
+
+- (void)testAntiCompression1
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = NSLayoutPriorityRequired;
+    compressionPriority = 1;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+
+
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testAntiCompression2
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 501;
+    compressionPriority = 1;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
     [right setPriority:rightPriority];
     
-    intrinsicView.intrinsicContentWidth = initialIntrinsicWidth;
-    
-    [intrinsicView setContentCompressionResistancePriority:compressionResistancePriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
     [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
     
-    [mainView removeConstraints:mainView.constraints];
-    [mainView addConstraints:@[left,right]];
-
-    [window layoutIfNeeded];
+    [NSLayoutConstraint activateConstraints:@[left, right]];
     
-    float minX = intrinsicView.frame.origin.x;
-    float w = intrinsicView.frame.size.width;
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
     
-    float intrinsicWidth = intrinsicView.intrinsicContentSize.width;
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
     
-    //XCTAssertFalse(mainView.hasAmbiguousLayout, @"Ambiguous layout for %@", mainView);
-    XCTAssertEqual(minX, 10, @"minX = %f", minX);
-    XCTAssertEqual(w , excpectedWidth, @"params=%@", [params description]);
-    
-    intrinsicView.intrinsicContentWidth = newIntrinsicWidth;
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
     
-    intrinsicWidth = intrinsicView.intrinsicContentSize.width;
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
     
-    [window layoutIfNeeded];
-    w = intrinsicView.frame.size.width;
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testAntiCompression3
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 498;
+    compressionPriority = 499;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
     
-    //XCTAssertFalse(mainView.hasAmbiguousLayout, @"Ambiguous layout for %@", mainView);
-    //XCTAssertTrue(intrinsicWidth = );
-    XCTAssertEqual(w , excpectedNewWidth, @"params=%@", [params description]);
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testAntiCompression4
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 499;
+    compressionPriority = 498;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testAntiCompression5
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 502;
+    compressionPriority = 501;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+}
+
+- (void)testAntiCompression6
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 501;
+    compressionPriority = 502;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+}
+
+- (void)testAntiCompression7
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 499;
+    compressionPriority = 501;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testAntiCompression8
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 501;
+    compressionPriority = 499;
+    huggingPriority = NSLayoutPriorityRequired;
+    oldIntrinsicSize = 100;
+    newIntrinsicSize = 200;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testHugging1
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = NSLayoutPriorityRequired;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 1;
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+    
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+}
+
+- (void)testHugging2
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 501;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 1;
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+}
+
+- (void)testHugging3
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 498;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 499;
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testHugging4
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 499;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 498;
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testHugging5
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 502;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 501;
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testHugging6
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 501;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 502;
+
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testHugging7
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 499;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 501;
+
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
+}
+
+- (void)testHugging8
+{
+    leftPriority = NSLayoutPriorityRequired;
+    rightPriority = 501;
+    compressionPriority = NSLayoutPriorityRequired;
+    huggingPriority = 499;
+
+    oldIntrinsicSize = 200;
+    newIntrinsicSize = 100;
+
+    [intrinsicView setIntrinsicContentWidth:oldIntrinsicSize];
+    
+    [left setPriority:leftPriority];
+    [right setPriority:rightPriority];
+    
+    [intrinsicView setContentCompressionResistancePriority:compressionPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [intrinsicView setContentHuggingPriority:huggingPriority forOrientation:NSLayoutConstraintOrientationHorizontal];
+    
+    [NSLayoutConstraint activateConstraints:@[left, right]];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 200);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 400);
+    
+    [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
+    [intrinsicView invalidateIntrinsicContentSize];
+    
+    [[window contentView] layoutSubtreeIfNeeded];
+    [[NSRunLoop mainRunLoop] limitDateForMode:NSDefaultRunLoopMode];
+    
+    XCTAssertEqual(CGRectGetMinX([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([intrinsicView frame]), 100);
+    XCTAssertEqual(CGRectGetWidth([[window contentView] frame]), 300);
 }
 
 @end

@@ -7,34 +7,34 @@
 	<key>IDESourceControlProjectIdentifier</key>
 	<string>698DD28F-B3E9-4B34-9D5A-E41E8F49DA80</string>
 	<key>IDESourceControlProjectName</key>
-	<string>AppKit</string>
+	<string>project</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>5501B6EE-02A3-4967-9910-81942EE17A50</key>
-		<string>ssh://github.com/cacaodev/cappuccino.git</string>
+		<key>AF11E0AF1948C02D4ED58ED8E5522C267378003B</key>
+		<string>github.com:cacaodev/cappuccino.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>Tests/NSTests/AppKit.xcodeproj/project.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>5501B6EE-02A3-4967-9910-81942EE17A50</key>
+		<key>AF11E0AF1948C02D4ED58ED8E5522C267378003B</key>
 		<string>../../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>ssh://github.com/cacaodev/cappuccino.git</string>
+	<string>github.com:cacaodev/cappuccino.git</string>
 	<key>IDESourceControlProjectVersion</key>
-	<integer>110</integer>
+	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>5501B6EE-02A3-4967-9910-81942EE17A50</string>
+	<string>AF11E0AF1948C02D4ED58ED8E5522C267378003B</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>5501B6EE-02A3-4967-9910-81942EE17A50</string>
+			<string>AF11E0AF1948C02D4ED58ED8E5522C267378003B</string>
 			<key>IDESourceControlWCCName</key>
-			<string>cacaodev</string>
+			<string>cappuccino</string>
 		</dict>
 	</array>
 </dict>
