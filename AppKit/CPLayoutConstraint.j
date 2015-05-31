@@ -198,7 +198,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     [self constraints:constraints activateOrNot:YES];
 }
 
-+ (void)desactivateConstraints:(CPArray)constrainst
++ (void)deactivateConstraints:(CPArray)constraints
 {
     [self constraints:constraints activateOrNot:NO];
 }
