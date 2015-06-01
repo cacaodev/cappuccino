@@ -91,11 +91,6 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
     [_solidView setFrameSize:CGSizeMake(CGRectGetWidth(bounds), CGRectGetHeight(bounds) - [[CPTheme defaultTheme] valueForAttributeWithName:@"gradient-height" forClass:_CPStandardWindowView])];
 }
 
-- (BOOL)_subtreeNeedsUpdateConstraint
-{
-    return NO;
-}
-
 @end
 
 
@@ -173,6 +168,8 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
 
         _dividerView = [[CPView alloc] initWithFrame:CGRectMake(0.0, CGRectGetMaxY([_headView frame]), CGRectGetWidth(bounds), _CPStandardWindowViewDividerViewHeight)];
 
+        //CPConstraintBasedLayout DEBUG
+        [_dividerView setIdentifier:@"dividerView"];
         [_dividerView setAutoresizingMask:CPViewWidthSizable];
         [_dividerView setHitTests:NO];
 
@@ -181,6 +178,8 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
         var y = CGRectGetMinY([_dividerView frame]);
 
         _bodyView = [[CPView alloc] initWithFrame:CGRectMake(0.0, y, CGRectGetWidth(bounds), CGRectGetHeight(bounds) - y)];
+        //CPConstraintBasedLayout DEBUG
+        [_bodyView setIdentifier:@"bodyView"];
 
         [_bodyView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
         [_bodyView setHitTests:NO];
@@ -192,6 +191,8 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
         if (_styleMask & CPClosableWindowMask)
         {
             _closeButton = [[CPButton alloc] initWithFrame:CGRectMake(8.0, 8.0, 16.0, 16.0)];
+            //CPConstraintBasedLayout DEBUG
+            [_closeButton setIdentifier:@"closeButton"];
 
             [_closeButton setButtonType:CPMomentaryChangeButton];
             [_closeButton setBordered:NO];
@@ -203,6 +204,8 @@ var _CPStandardWindowViewDividerViewHeight = 1.0;
         if (_styleMask & CPMiniaturizableWindowMask && ![CPPlatform isBrowser])
         {
             _minimizeButton = [[CPButton alloc] initWithFrame:CGRectMake(27.0, 7.0, 16.0, 16.0)];
+            //CPConstraintBasedLayout DEBUG
+            [_minimizeButton setIdentifier:@"minimizeButton"];
             [_minimizeButton setButtonType:CPMomentaryChangeButton];
             [_minimizeButton setBordered:NO];
 

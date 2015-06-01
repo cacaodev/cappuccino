@@ -63,6 +63,8 @@
     if (self)
     {
         _titleField = [[CPTextField alloc] initWithFrame:CGRectMakeZero()];
+        //CPConstraintBasedLayout DEBUG
+        [_titleField setIdentifier:@"titleField"];
 
         [_titleField setHitTests:NO];
         [_titleField setStringValue:@"Untitled"];

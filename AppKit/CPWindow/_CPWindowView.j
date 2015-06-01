@@ -733,6 +733,8 @@ _CPWindowViewResizeSlop = 3;
     if (shouldShowResizeIndicator && CPWindowResizeStyle === CPWindowResizeStyleLegacy)
     {
         _resizeIndicator = [[CPImageView alloc] initWithFrame:CGRectMakeZero()];
+        //CPConstraintBasedLayout DEBUG
+        [_resizeIndicator setIdentifier:@"resizeIndicator"];
         [_resizeIndicator setAutoresizingMask:CPViewMinXMargin | CPViewMinYMargin];
 
         [self addSubview:_resizeIndicator];
