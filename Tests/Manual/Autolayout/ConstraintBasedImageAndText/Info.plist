@@ -5,10 +5,8 @@
 	<key>Main cib file base name</key>
 	<string>MainMenu.cib</string>
 	<key>CPBundleName</key>
-	<string>BuildGeneratedConstraints</string>
-    <key>CPBundleVersion</key>
-    <string>1.0</string>
-    <key>CPHumanReadableCopyright</key>
-    <string>Copyright © 2014, Your Company All rights reserved.</string>
+	<string>ConstraintBasedImageAndText</string>
+	<key>CPPrincipalClass</key>
+	<string>CPApplication</string>
 </dict>
 </plist>

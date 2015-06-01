@@ -54,17 +54,13 @@ CPLogRegister(CPLogConsole);
     CPLayoutConstraint  constraint @accessors;
 }
 
-- (void)applicationDidFinishLaunching:(CPNotification)aNotification
-{
-    [theWindow setAutolayoutEnabled:YES];
-}
-
 - (void)awakeFromCib
 {
     var cst = [CPLayoutConstraint constraintWithItem:view attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationLessThanOrEqual toItem:nil attribute:CPLayoutAttributeNotAnAttribute multiplier:1 constant:400];
 
     [self setConstraint:cst];
     // In this case, we want the window from Cib to become our full browser window
+    [theWindow setAutolayoutEnabled:YES];
     [theWindow setFullPlatformWindow:NO];
 }
 

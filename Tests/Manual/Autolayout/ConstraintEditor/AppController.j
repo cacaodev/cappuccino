@@ -119,6 +119,7 @@ CPLogRegister(CPLogConsole);
     self = [super init];
 
     _selectedViews = @[];
+    
     windowLoaded = NO;
 
     return self;
@@ -148,7 +149,6 @@ CPLogRegister(CPLogConsole);
 
 - (IBAction)constantAction:(id)sender
 {
-CPLog.debug(_cmd);
     [constraintWindow setNeedsLayout];
     [[self selectedView] setNeedsDisplay:YES];
 }
@@ -331,10 +331,15 @@ CPLog.debug(_cmd);
 
 - (void)updatePrioritySlider
 {
+    var constraints = [[self selectedView] constraints];
+    
     [tableView enumerateAvailableViewsUsingBlock:function(aCellView, row, column, stop)
     {
-        var constraint = [[[self selectedView] constraints] objectAtIndex:row];
-        [[aCellView viewWithTag:1000] setFloatValue:[constraint priority]];
+        if ([aCellView identifier] == "Constraint")
+        {
+            var priority = [[constraints objectAtIndex:row] priority];
+            [[aCellView viewWithTag:1000] setFloatValue:priority];
+        }
     }];
 }
 

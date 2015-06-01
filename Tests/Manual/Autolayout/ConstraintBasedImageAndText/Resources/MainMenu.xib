@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="7706" systemVersion="14D136" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="7706"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
+            <connections>
+                <outlet property="delegate" destination="Voe-Tx-rLC" id="GzC-gU-4Uq"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customObject id="Voe-Tx-rLC" customClass="AppController">
+            <connections>
+                <outlet property="stackView" destination="28P-WK-2Gk" id="B5N-tK-hBy"/>
+                <outlet property="theWindow" destination="1qn-ag-xLs" id="SoW-bd-2as"/>
+            </connections>
+        </customObject>
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="1qn-ag-xLs">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="163" y="199" width="713" height="258"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
+            <view key="contentView" identifier="contentView" id="ExV-nR-G4U">
+                <rect key="frame" x="0.0" y="-1" width="713" height="258"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="28P-WK-2Gk" customClass="StackView">
+                        <rect key="frame" x="143" y="84" width="367" height="109"/>
+                    </customView>
+                    <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kGe-mK-7lK">
+                        <rect key="frame" x="550" y="215" width="145" height="26"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="140" id="rfx-ZU-fyk"/>
+                        </constraints>
+                        <popUpButtonCell key="cell" type="push" title="NSNoImage" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="b8A-B6-zvm" id="Zj6-kw-Vxd">
+                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="menu"/>
+                            <menu key="menu" id="T2g-dI-uTD">
+                                <items>
+                                    <menuItem title="NSNoImage" state="on" id="b8A-B6-zvm"/>
+                                    <menuItem title="NSImageOnly" tag="1" id="WkB-gQ-bSd"/>
+                                    <menuItem title="NSImageLeft" tag="2" id="SJS-dY-hKY"/>
+                                    <menuItem title="NSImageRight" tag="3" id="bdm-3l-wAS"/>
+                                    <menuItem title="NSImageOverlaps" tag="6" id="Cfz-wV-Yxl"/>
+                                </items>
+                            </menu>
+                        </popUpButtonCell>
+                        <connections>
+                            <action selector="setPosition:" target="Voe-Tx-rLC" id="1Sy-ew-oRj"/>
+                        </connections>
+                    </popUpButton>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="kGe-mK-7lK" firstAttribute="top" secondItem="ExV-nR-G4U" secondAttribute="top" constant="19" id="1CB-Yn-E2y"/>
+                    <constraint firstAttribute="trailing" secondItem="kGe-mK-7lK" secondAttribute="trailing" constant="21" id="9Lv-7T-0iu"/>
+                    <constraint firstItem="28P-WK-2Gk" firstAttribute="leading" secondItem="ExV-nR-G4U" secondAttribute="leading" constant="143" id="BI7-fU-Xd1"/>
+                    <constraint firstItem="28P-WK-2Gk" firstAttribute="top" secondItem="ExV-nR-G4U" secondAttribute="top" constant="65" id="J4K-rk-Eow"/>
+                    <constraint firstAttribute="trailing" secondItem="28P-WK-2Gk" secondAttribute="trailing" constant="203" id="Nh8-90-Pdb"/>
+                    <constraint firstAttribute="bottom" secondItem="28P-WK-2Gk" secondAttribute="bottom" constant="84" id="bQN-yg-yhW"/>
+                </constraints>
+            </view>
+            <point key="canvasLocation" x="638.5" y="345"/>
+        </window>
+    </objects>
+</document>
