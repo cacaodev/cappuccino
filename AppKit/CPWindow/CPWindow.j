@@ -4026,25 +4026,6 @@ Subclasses should not override this method.
 
 @implementation CPWindow (CPLayoutConstraintEngineDelegate)
 
-- (void)engine:(id)anEngine variableDidChange:(Object)aVariable inContainer:(id)anOwner
-{
-    [anOwner _informContainerThatVariableDidChange:aVariable];
-}
-
-- (void)engine:(id)anEngine didChangeVariablesInContainers:(CPSet)containers
-{
-    // Very important if we want a layout pass for the dirty views:
-    // the CPDisplayServer will be flushed at the end of this method.
-    // We need to feed it with ALL views that need a display after a solve.
-    //CPLog.debug("Engine will update geometry for " + [containers count]);
-    [containers enumerateObjectsUsingBlock:function(aContainer)
-    {
-        // Disable the layout pass for performance reasons. TODO: profile and see the difference.
-        //[[aContainer superview] setNeedsLayout];
-        [[aContainer superview] setNeedsLayout];
-    }];
-}
-
 - (void)engine:(id)anEngine constraintDidChangeInContainer:(id)aContainer
 {
     [aContainer _informSuperviewThatSubviewsNeedSolvingInEngine];

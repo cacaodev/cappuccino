@@ -45,12 +45,15 @@ var CPLayoutItemIsNull          = 2,
             var variable = change.variable,
                    container = _variableOwnerMap.get(variable);
 
-            [_delegate engine:self variableDidChange:variable inContainer:container];
+            [container valueOfVariable:variable didChangeInEngine:self];
 
             [updatedContainers addObject:container];
         });
 
-        [_delegate engine:self didChangeVariablesInContainers:updatedContainers];
+        [updatedContainers enumerateObjectsUsingBlock:function(container, idx, stop)
+        {
+	        [container engineDidUpdateVariables];
+        }];
     };
 
     return self;
@@ -78,7 +81,6 @@ var CPLayoutItemIsNull          = 2,
         _simplexSolver.suggestValue(variable, values[idx]);
     });
 
-    // Perf: call the solver directly ?
     _simplexSolver.resolve();
 }
 

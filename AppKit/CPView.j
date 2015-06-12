@@ -4724,8 +4724,7 @@ Updates the layout of the receiving view and its subviews based on the current v
     [self _updateGeometryIfNeeded];
 }
 
-// FROM ENGINE DELEGATE (the window)
-- (void)_informContainerThatVariableDidChange:(Variable)aVariable
+- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
 {
     var name = aVariable.name,
         mask;
@@ -4745,6 +4744,10 @@ Updates the layout of the receiving view and its subviews based on the current v
     _constraintBasedNeedsLayoutMask |= mask;
 }
 
+- (void)engineDidUpdateVariables
+{
+	[_superview setNeedsLayout];
+}
 - (CPView)_is_superitem
 {
 	return _superview;
