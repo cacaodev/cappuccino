@@ -55,8 +55,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 @implementation CPLayoutConstraint : CPObject
 {
     id                  _container        @accessors(getter=container);
-    id                  _firstItem        @accessors(getter=firstItem, setter=_setFirstItem:);
-    id                  _secondItem       @accessors(getter=secondItem, setter=_setSecondItem:);
+    id                  _firstItem        @accessors(getter=firstItem);
+    id                  _secondItem       @accessors(getter=secondItem);
     CPLayoutAttribute   _firstAttribute   @accessors(getter=firstAttribute);
     CPLayoutAttribute   _secondAttribute  @accessors(getter=secondAttribute);
     CPLayoutRelation    _relation         @accessors(getter=relation);
@@ -64,7 +64,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     float               _coefficient      @accessors(getter=multiplier);
     CPLayoutPriority    _priority         @accessors(getter=priority);
     BOOL                _active           @accessors(getter=isActive);
-    CPString            _identifier       @accessors(getter=identifier);
+    CPString            _identifier       @accessors(property=identifier);
     BOOL                _shouldBeArchived @accessors(property=shouldBeArchived);
 
     unsigned            _constraintFlags   @accessors(getter=constraintFlags);
