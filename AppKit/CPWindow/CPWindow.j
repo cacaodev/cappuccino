@@ -4028,7 +4028,7 @@ Subclasses should not override this method.
 
 - (void)engine:(id)anEngine constraintDidChangeInContainer:(id)aContainer
 {
-    [aContainer _informSuperviewThatSubviewsNeedSolvingInEngine];
+    [[aContainer _is_superitem] _informContainerThatSubviewsNeedSolvingInEngine];
 }
 
 @end

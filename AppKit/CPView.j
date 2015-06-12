@@ -4448,14 +4448,13 @@ A Boolean value indicating whether the view’s autoresizing mask is translated 
     }
 }
 
-- (void)_informSuperviewThatSubviewsNeedSolvingInEngine
+- (void)_informContainerThatSubviewsNeedSolvingInEngine
 {
 //CPLog.debug([self debugID] + " " +  _cmd);
+    [self _setSubviewsNeedSolvingInEngine];
+    
     if (_superview)
-    {
-        [_superview _setSubviewsNeedSolvingInEngine]
-        [_superview _informSuperviewThatSubviewsNeedSolvingInEngine];
-    }
+        [_superview _informContainerThatSubviewsNeedSolvingInEngine];
 }
 
 - (BOOL)_setSubviewsNeedSolvingInEngine
