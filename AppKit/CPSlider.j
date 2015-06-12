@@ -442,8 +442,8 @@ CPCircularSlider    = 1;
 // TODO: min/max-size needed in themes.
     if ([self hasThemeState:CPThemeStateCircular])
         return CGSizeMake(30.0, 30.0);
-        return CGSizeMake(24.0, CPViewNoInstrinsicMetric);
     else if ([self isVertical] === 1)
+        return CGSizeMake(24.0, CPViewNoInstrinsicMetric);
     else
         return CGSizeMake(CPViewNoInstrinsicMetric, 24.0);
 }
