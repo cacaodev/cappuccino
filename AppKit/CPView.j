@@ -4745,6 +4745,11 @@ Updates the layout of the receiving view and its subviews based on the current v
     _constraintBasedNeedsLayoutMask |= mask;
 }
 
+- (CPView)_is_superitem
+{
+	return _superview;
+}
+
 @end
 
 @implementation CPLayoutConstraint (CPView)

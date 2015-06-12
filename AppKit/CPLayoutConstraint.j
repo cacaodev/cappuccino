@@ -157,6 +157,42 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         ancestor = [firstItem ancestorSharedWithView:secondItem];
 
     return ancestor;
++ (id)_findCommonAncestorOfItem:(id)anItem andItem:(id)otherItem
+{
+    var parent1,
+        parent2,
+        result;
+
+    parent1 = anItem;
+  
+    if (anItem)
+    {
+        if (otherItem)
+        {
+            parent2 = otherItem;
+          
+            while (parent1 !== parent2)
+            {
+                parent2 = [parent2 _is_superitem];
+                
+                if (!parent2)
+                {
+                    parent1 = [parent1 _is_superitem];
+                    
+                    if (parent1)
+                        parent2 = otherItem;
+                }
+            }
+        }
+        
+        result = parent1;
+    }
+    else
+    {
+        result = otherItem;
+    }
+    
+    return result;
 }
 
 - (BOOL)_isSubtreeRelationship
@@ -171,7 +207,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
     if (shouldActivate)
     {
-        var container = [self _findCommonAncestorForItem:_firstItem andItem:_secondItem];
+        var container = [CPLayoutConstraint _findCommonAncestorOfItem:_firstItem andItem:_secondItem];
 
         if (container !== nil)
         {
