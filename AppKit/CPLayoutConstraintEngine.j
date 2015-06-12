@@ -62,7 +62,7 @@ var CPLayoutItemIsNull          = 2,
 
         [updatedContainers enumerateObjectsUsingBlock:function(container, idx, stop)
         {
-	        [container engineDidUpdateVariables];
+            [container engineDidUpdateVariables];
         }];
     };
 

@@ -70,6 +70,7 @@
 @import "CPImageView.j"
 @import "CPKeyBinding.j"
 @import "CPLayoutConstraint.j"
+@import "CPLayoutGuide.j"
 @import "CPLevelIndicator.j"
 @import "CPMenu.j"
 @import "CPMenuItem.j"

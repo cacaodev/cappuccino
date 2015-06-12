@@ -37,6 +37,7 @@
 @import "CPLayoutConstraint.j"
 @import "CPContentSizeLayoutConstraint.j"
 @import "CPAutoresizingMaskLayoutConstraint.j"
+@import "CPLayoutAnchor.j"
 
 @class _CPToolTip
 @class CPWindow
@@ -278,6 +279,19 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL     _isSettingFrameFromEngine;
     BOOL     _viewIsConstraintBased;
     BOOL     _viewHasConstraintBasedSubviews;
+    
+    CPView _layoutGuides;
+    
+    CPLayoutAnchor _centerYAnchor;
+    CPLayoutAnchor _centerXAnchor;
+    CPLayoutAnchor _heightAnchor;
+    CPLayoutAnchor _widthAnchor;
+    CPLayoutAnchor _bottomAnchor;
+    CPLayoutAnchor _topAnchor;
+    CPLayoutAnchor _rightAnchor;
+    CPLayoutAnchor _leftAnchor;
+    CPLayoutAnchor _trailingAnchor;
+    CPLayoutAnchor _leadingAnchor;
 }
 
 /*
@@ -3903,6 +3917,18 @@ Returns whether the receiver depends on the constraint-based layout system.
     _contentSizeConstraints = @[];
     _constraintsArray = @[];
     _storedIntrinsicContentSize = CGSizeMake(-1, -1);
+    _layoutGuides = @[];
+    _centerYAnchor = nil;
+    _centerXAnchor = nil;
+    _heightAnchor = nil;
+    _widthAnchor = nil;
+    _bottomAnchor = nil;
+    _topAnchor = nil;
+    _rightAnchor = nil;
+    _leftAnchor = nil;
+    _trailingAnchor = nil;
+    _leadingAnchor = nil;
+
 }
 
 - (void)_cibDidFinishLoadingWithOwner:(id)anOwner
@@ -4667,6 +4693,11 @@ Perform layout in concert with the constraint-based layout system.
     {
         [subview _updateGeometryIfNeeded];
     }];
+
+    [_layoutGuides enumerateObjectsUsingBlock:function(guide, idx, stop)
+    {
+        [guide _updateGeometryIfNeeded];
+    }];
 }
 
 /*!
@@ -4745,11 +4776,105 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 - (void)engineDidUpdateVariables
 {
-	[_superview setNeedsLayout];
+    [_superview setNeedsLayout];
 }
+
+// LayoutGuides support
+
+- (CPArra)layoutGuides
+{
+    return [CPArray arrayWithArray:_layoutGuides];
+}
+
+- (void)addLayoutGuide:(CPLayoutGuide)aGuide
+{
+    [aGuide setOwningView:self];
+    [_layoutGuides addObject:aGuide];
+}
+
+- (void)removeLayoutGuide:(CPLayoutGuide)aGuide
+{
+    [aGuide setOwningView:nil];
+    [_layoutGuides removeObject:aGuide];
+}
+
+- (id)topAnchor
+{
+    if (!_topAnchor)
+        _topAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeTop];
+
+    return _topAnchor;
+}
+
+- (id)bottomAnchor
+{
+    if (!_bottomAnchor)
+        _bottomAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeBottom];
+
+    return _bottomAnchor;
+}
+
+- (id)centerYAnchor
+{
+    if (!_centerYAnchor)
+        _centerYAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeCenterY];
+
+    return _centerYAnchor;
+}
+
+- (id)centerXAnchor
+{
+    if (!_centerXAnchor)
+        _centerXAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeCenterX];
+
+    return _centerXAnchor;
+}
+
+- (id)leftAnchor
+{
+    if (!_leftAnchor)
+        _leftAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeLeft];
+
+    return _leftAnchor;
+}
+
+- (id)leadingAnchor
+{
+    return [self leftAnchor];
+}
+
+- (id)rightAnchor
+{
+    if (!_rightAnchor)
+        _rightAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeRight];
+
+    return _rightAnchor;
+}
+
+- (id)trailingAnchor
+{
+    return [self rightAnchor];
+}
+
+- (id)widthAnchor
+{
+    if (!_widthAnchor)
+        _widthAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeWidth];
+
+    return _widthAnchor;
+}
+
+- (id)heightAnchor
+{
+    if (!_heightAnchor)
+        _heightAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeHeight];
+
+    return _heightAnchor;
+}
+
 - (CPView)_is_superitem
 {
-	return _superview;
+    return _superview;
 }
 
 @end
