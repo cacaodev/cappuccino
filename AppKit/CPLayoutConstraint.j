@@ -69,7 +69,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
     unsigned            _constraintFlags   @accessors(getter=constraintFlags);
     CPString            _symbolicConstant;
-    CPArray             _engineConstraints @accessors(property=_engineConstraints);
+    CPArray             _engineConstraints;
 }
 
 + (CPSet)keyPathsForValuesAffectingValueForKey:(CPString)aKey
@@ -145,18 +145,19 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return YES;
 }
 
-- (id)_findCommonAncestorForItem:(id)firstItem andItem:(id)secondItem
+- (CPArray)_engineConstraints
 {
-    var ancestor = nil;
+    if (!_engineConstraints)
+        _engineConstraints = [CPLayoutConstraintEngine _engineConstraintsFromConstraint:self];
+        
+    return _engineConstraints;
+}
 
-    if (firstItem !== nil && secondItem == nil)
-        ancestor = _firstItem;
-    else if (firstItem == nil && secondItem !== nil)
-        ancestor = _secondItem;
-    else if (firstItem !== nil && secondItem !== nil)
-        ancestor = [firstItem ancestorSharedWithView:secondItem];
+- (void)_resetEngineConstraints
+{
+    _engineConstraints = nil;
+}
 
-    return ancestor;
 + (id)_findCommonAncestorOfItem:(id)anItem andItem:(id)otherItem
 {
     var parent1,

@@ -4425,7 +4425,7 @@ Removes the specified constraints from the view.
     var engine = [self _layoutEngine];
 
     [engine removeConstraint:aConstraint];
-    [aConstraint _setEngineConstraints:nil];
+    [aConstraint _resetEngineConstraints];
     aFunction();
     [engine addConstraint:aConstraint];
 }

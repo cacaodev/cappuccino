@@ -24,6 +24,16 @@ var CPLayoutItemIsNull          = 2,
     id            _delegate @accessors(getter=delegate);
 }
 
++ (CPArray)_engineConstraintsFromConstraint:(CPLayoutConstraint)aConstraint
+{
+    return CreateConstraint(aConstraint);
+}
+
++ (CPArray)_engineConstraintsFromContentSizeConstraint:(CPLayoutConstraint)aConstraint
+{
+    return CreateSizeConstraints(aConstraint);
+}
+
 - (id)initWithDelegate:(id)aDelegate
 {
     self = [super init];
@@ -207,12 +217,6 @@ var CPLayoutItemIsNull          = 2,
     };
 
     var engine_constraints = [aConstraint _engineConstraints];
-
-    if (!engine_constraints)
-    {
-        engine_constraints = (type == "SizeConstraint") ? CreateSizeConstraints(aConstraint) : CreateConstraint(aConstraint);
-        [aConstraint _setEngineConstraints:engine_constraints];
-    }
 
     [engine_constraints enumerateObjectsUsingBlock:function(engine_constraint, idx, stop)
     {

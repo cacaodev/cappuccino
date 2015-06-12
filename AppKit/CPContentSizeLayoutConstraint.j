@@ -49,6 +49,14 @@
     return YES;
 }
 
+- (CPArray)_engineConstraints
+{
+    if (!_engineConstraints)
+        _engineConstraints = [CPLayoutConstraintEngine _engineConstraintsFromContentSizeConstraint:self];
+        
+    return _engineConstraints;
+}
+
 - (void)resolveConstant
 {
 }
