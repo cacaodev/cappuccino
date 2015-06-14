@@ -27,7 +27,7 @@
     CPLayoutAnchor _leadingAnchor;
 
     BOOL           _shouldBeArchived;
-    unsigned int   _frameNeedsUpdate;
+    BOOL           _frameNeedsUpdate;
 }
 
 - (id)init
@@ -55,7 +55,7 @@
     _frame = CGRectMakeZero();
 
     _shouldBeArchived = NO;
-    _frameNeedsUpdate = 0;
+    _frameNeedsUpdate = NO;
     
     return self;
 }
@@ -217,26 +217,8 @@
 
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
 {
-    var name = aVariable.name,
-        mask;
+    _frameNeedsUpdate = YES;
 
-    switch (name)
-    {
-        case "minX" : mask = 2;
-        break;
-        case "minY" : mask = 4;
-        break;
-        case "width" : mask = 8;
-        break;
-        case "height" : mask = 16;
-        break;
-    }
-
-    _frameNeedsUpdate |= mask;
-}
-
-- (void)engineDidUpdateVariables
-{
     [_owningView setNeedsLayout];
 }
 
@@ -265,10 +247,10 @@
 
 - (void)_updateGeometryIfNeeded
 {
-    if (_frameNeedsUpdate > 0)
+    if (_frameNeedsUpdate)
     {
         [self _updateGeometry];
-        _frameNeedsUpdate = 0;
+        _frameNeedsUpdate = NO;
     }
 }
 
@@ -276,17 +258,7 @@
 {
     [self willChangeValueForKey:@"frame"];
 
-    if (_frameNeedsUpdate & 2)
-        _frame.origin.x = _variableMinX.valueOf();
-        
-    if (_frameNeedsUpdate & 4)
-        _frame.origin.y = _variableMinY.valueOf();
-        
-    if (_frameNeedsUpdate & 8)
-        _frame.size.width = _variableWidth.valueOf();
-        
-    if (_frameNeedsUpdate & 16)
-        _frame.size.height = _variableHeight.valueOf();
+    _frame = CGRectMake(_variableMinX.valueOf(), _variableMinY.valueOf(), _variableWidth.valueOf(), _variableHeight.valueOf());
         
     [self didChangeValueForKey:@"frame"];
 }

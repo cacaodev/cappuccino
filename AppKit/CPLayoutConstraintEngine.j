@@ -56,14 +56,7 @@ var CPLayoutItemIsNull          = 2,
                    container = _variableOwnerMap.get(variable);
 
             [container valueOfVariable:variable didChangeInEngine:self];
-
-            [updatedContainers addObject:container];
         });
-
-        [updatedContainers enumerateObjectsUsingBlock:function(container, idx, stop)
-        {
-            [container engineDidUpdateVariables];
-        }];
     };
 
     return self;

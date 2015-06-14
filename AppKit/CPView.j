@@ -274,7 +274,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
     BOOL     _subviewsNeedSolvingInEngine;
     // Is the view geometry dirty and does it to set its frame from the current engine variables ?
-    unsigned _constraintBasedNeedsLayoutMask @accessors(property=_constraintBasedNeedsLayoutMask);
+    BOOL     _frameNeedsUpdate;
 
     BOOL     _isSettingFrameFromEngine;
     BOOL     _viewIsConstraintBased;
@@ -3912,7 +3912,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     _viewHasConstraintBasedSubviews = NO;
     _isSettingFrameFromEngine = NO;
     _subviewsNeedSolvingInEngine = NO;
-    _constraintBasedNeedsLayoutMask = 0;
+    _frameNeedsUpdate = NO;
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
     _constraintsArray = @[];
@@ -3985,6 +3985,11 @@ Returns whether the receiver depends on the constraint-based layout system.
 - (Variable)newVariableWithName:(CPString)aName value:(float)aValue
 {
     return [[self _layoutEngine] variableWithPrefix:[self debugID] name:aName value:aValue owner:self];
+}
+
+- (CPView)_is_superitem
+{
+    return _superview;
 }
 
 // DEBUG
@@ -4727,10 +4732,10 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 - (void)_updateGeometryIfNeeded
 {
-    if (_constraintBasedNeedsLayoutMask > 0)
+    if (_frameNeedsUpdate)
     {
         [self _updateGeometry];
-        _constraintBasedNeedsLayoutMask = 0;
+        _frameNeedsUpdate = NO;
     }
 
     _subviewsNeedSolvingInEngine = NO;
@@ -4740,7 +4745,10 @@ Updates the layout of the receiving view and its subviews based on the current v
 {
 //CPLog.debug([self debugID] + " " + _cmd);
     _isSettingFrameFromEngine = YES;
-    _CPViewUpdateEngineFrame(self, _constraintBasedNeedsLayoutMask, _frame, _variableMinX, _variableMinY, _variableWidth, _variableHeight);
+    
+    [self setFrameOrigin:CGPointMake(_variableMinX.valueOf(), _variableMinY.valueOf())];
+    [self setFrameSize:CGSizeMake(_variableWidth.valueOf(), _variableHeight.valueOf())];
+    
     _isSettingFrameFromEngine = NO;
 }
 
@@ -4755,27 +4763,9 @@ Updates the layout of the receiving view and its subviews based on the current v
 }
 
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
-    var name = aVariable.name,
-        mask;
-
-    switch (name)
-    {
-        case "minX" : mask = 2;
-        break;
-        case "minY" : mask = 4;
-        break;
-        case "width" : mask = 8;
-        break;
-        case "height" : mask = 16;
-        break;
-    }
-
-    _constraintBasedNeedsLayoutMask |= mask;
-}
-
-- (void)engineDidUpdateVariables
-{
+{    
+    _frameNeedsUpdate = YES;
+    
     [_superview setNeedsLayout];
 }
 
@@ -4872,11 +4862,6 @@ Updates the layout of the receiving view and its subviews based on the current v
     return _heightAnchor;
 }
 
-- (CPView)_is_superitem
-{
-    return _superview;
-}
-
 @end
 
 @implementation CPLayoutConstraint (CPView)
@@ -4917,8 +4902,6 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 var _CPViewUpdateEngineFrame = function(aView, mask, frame, is_left, is_top, is_width, is_height)
 {
-    //CPLog.debug("Updated view " + [self debugID] + " mask=" + _constraintBasedNeedsLayoutMask);
-
     var pmask = mask & 6,
         smask = mask & 24;
 
