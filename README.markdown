@@ -16,9 +16,9 @@
 - [ ] Implement `-baselineOffsetFromBottom` in all controls.
 - [ ] Implement `-alignmentRectInsets` in controls where relevant. Use theme attribute. Note: what about nib2cib conversion ? when we adjust frames in nib2cib we will need to also adjust constraints constants.
 - [ ] call `-invalidateIntrinsicContentSize` in controls when appropriate (the content changes). Currently done in CPButton & subclasses.
-- [ ] Decide how autosize and autolayout can live together. We should explcitely declare CPView subclasses that refuse to be involved in Autolayout and continue to use Autosize or custom layoutSubviews. This should be done in the FMW and we should make sure that all CPView classes created in the FMW are subclasses, not plain CPView.
+- [-] Decide how autosize and autolayout can live together. We should explcitely declare CPView subclasses that refuse to be involved in Autolayout and continue to use Autosize or custom layoutSubviews. This should be done in the FMW and we should make sure that all CPView classes created in the FMW are subclasses, not plain CPView.
 CPView +(BOOL)requiresAutoSize
-- [ ] -CPView -layout and layoutSubtree : do we update constraints and frames for the descendants only or all constraints affecting the receiver ?
+- [x] -CPView -layout and layoutSubtree : do we update constraints and frames for the descendants only or all constraints affecting the receiver ?
 - [x] translateAutoresizingMask default is NO currently. Should be YES for initWithFrame: views.
 - [ ] Handle removeSubview: , when a view moves from a window to another (different engines) and in general situations where the engine frames and the local frame are out of sync.
 - [ ] compute -fittingSize in controls. The computation should take care of constraints and CPLayoutPriorityFittingSize
@@ -31,6 +31,9 @@ CPView +(BOOL)requiresAutoSize
 - [ ] Visual debug support
 - [ ] Parser API. Visual language with PEGJS grammar like Angular.js ?
 - [ ] Currently, when you resize a window from the left or top edge and the window size is constrained by subviews constraints, the window frameOrigin changes. It should not (add a stay constraint on WindowView x and y ?).
+
+[![Build Status](https://travis-ci.org/cappuccino/cappuccino.svg?branch=master)](https://travis-ci.org/cappuccino/cappuccino)
+
 Welcome to Cappuccino!
 ======================
 
