@@ -98,7 +98,7 @@ CPLogRegister(CPLogConsole);
     @outlet CPPopover addPopover;
     @outlet CPTableView tableView;
 
-    @outlet CPWindow  constraintWindow @accessors;
+    @outlet CPWindow  constraintWindow;
 
     BOOL    windowLoaded;
     CPArray _selectedViews;
@@ -131,9 +131,14 @@ CPLogRegister(CPLogConsole);
 
     [CPBundle loadCibNamed:@"Autolayout" owner:self];
 
-    [constraintWindow setAutolayoutEnabled:YES];
     [[constraintWindow contentView] addObserver:self forKeyPath:@"constraints" options:CPKeyValueObservingOptionNew context:nil];
     [constraintWindow orderFront:nil];
+}
+
+- (void)awakeFromCib
+{
+    if (constraintWindow && [constraintWindow isAutolayoutEnabled] == NO)
+        [constraintWindow setAutolayoutEnabled:YES];
 }
 
 - (void)observeValueForKeyPath:(CPString)keyPath
