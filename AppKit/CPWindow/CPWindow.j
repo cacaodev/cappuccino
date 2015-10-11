@@ -252,12 +252,13 @@ var CPWindowActionMessageKeys = [
     BOOL                                _isSheet;
     _CPWindowFrameAnimation             _frameAnimation;
 
-    CPLayoutConstraintEngine            _layoutEngine;
-    BOOL                                _autolayoutEnabled             @accessors(getter=isAutolayoutEnabled);
+// CPConstraintBasedLayout
+    CPLayoutConstraintEngine            _layoutEngine @accessors;
+    BOOL                                _autolayoutEnabled @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
     // An autoresize or contentSize contraint needs update in one or more subviews of this window.
-    BOOL                                _subviewsNeedUpdateConstraints;
-    BOOL                                _needsLayout;
-    BOOL                                _layoutLock;
+    BOOL                                _subviewsNeedUpdateConstraints @accessors;
+    BOOL                                _needsLayout @accessors;
+    BOOL                                _layoutLock @accessors;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -3914,6 +3915,7 @@ CPLog.debug([self className] + " " + _cmd);
 
 - (void)_suggestFrameSize:(CGSize)newSize
 {
+CPLog.debug([self className] + " " + _cmd);
     var engine = [self _layoutEngine],
         variables = @[[_windowView _variableWidth], [_windowView _variableHeight]],
         values = @[newSize.width, newSize.height];
@@ -3932,14 +3934,6 @@ CPLog.debug([self className] + " " + _cmd);
 
     if (_hasShadow)
         [_shadowView setNeedsLayout];
-}
-
-- (void)setAutolayoutEnabled:(BOOL)enable
-{
-    if (_autolayoutEnabled !== enable)
-    {
-        _autolayoutEnabled = enable;
-    }
 }
 
 - (void)setNeedsLayout
