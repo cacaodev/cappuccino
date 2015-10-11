@@ -25,8 +25,10 @@
 @import <Foundation/CPSet.j>
 @import <Foundation/CPIndexSet.j>
 
+@import "_CPObject+Theme.j"
 @import "CGAffineTransform.j"
 @import "CGGeometry.j"
+@import "CPAppearance.j"
 @import "CPColor.j"
 @import "CPGraphicsContext.j"
 @import "CPResponder.j"
@@ -122,8 +124,7 @@ CPViewFrameDidChangeNotification    = @"CPViewFrameDidChangeNotification";
 
 CPViewNoInstrinsicMetric = -1;
 
-var CachedNotificationCenter    = nil,
-    CachedThemeAttributes       = nil;
+var CachedNotificationCenter    = nil;
 
 #if PLATFORM(DOM)
 var DOMElementPrototype         = nil,
@@ -137,7 +138,8 @@ var DOMElementPrototype         = nil,
 
 var CPViewFlags                     = { },
     CPViewHasCustomDrawRect         = 1 << 0,
-    CPViewHasCustomLayoutSubviews   = 1 << 1;
+    CPViewHasCustomLayoutSubviews   = 1 << 1,
+    CPViewHasCustomViewWillLayout   = 1 << 2;
 
 var CPViewHighDPIDrawingEnabled = YES;
 
@@ -158,8 +160,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     appearance. Other methods of CPView and CPResponder can
     also be overridden to handle user generated events.
 */
-
-@implementation CPView : CPResponder
+@implementation CPView : CPResponder <CPTheme>
 {
     CPWindow            _window;
 
@@ -228,12 +229,6 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL                _needsLayout;
     JSObject            _ephemeralSubviews;
 
-    // Theming Support
-    CPTheme             _theme;
-    CPString            _themeClass;
-    JSObject            _themeAttributes;
-    unsigned            _themeState;
-
     JSObject            _ephemeralSubviewsForNames;
     CPSet               _ephereralSubviews;
 
@@ -250,6 +245,10 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL                _toolTipInstalled;
 
     BOOL                _isObserving;
+
+    BOOL                _allowsVibrancy         @accessors(property=allowsVibrancy);
+    CPAppearance        _appearance             @accessors(getter=appearance);
+    CPAppearance        _effectiveAppearance;
 
     // ConstraintBasedLayout support
     Variable _variableMinX;
@@ -279,9 +278,9 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL     _isSettingFrameFromEngine;
     BOOL     _viewIsConstraintBased;
     BOOL     _viewHasConstraintBasedSubviews;
-    
+
     CPView _layoutGuides;
-    
+
     CPLayoutAnchor _centerYAnchor;
     CPLayoutAnchor _centerXAnchor;
     CPLayoutAnchor _heightAnchor;
@@ -343,6 +342,21 @@ var CPViewHighDPIDrawingEnabled = YES;
     return CPViewHighDPIDrawingEnabled;
 }
 
++ (CPSet)keyPathsForValuesAffectingFrame
+{
+    return [CPSet setWithObjects:@"frameOrigin", @"frameSize"];
+}
+
++ (CPSet)keyPathsForValuesAffectingBounds
+{
+    return [CPSet setWithObjects:@"boundsOrigin", @"boundsSize"];
+}
+
++ (CPMenu)defaultMenu
+{
+    return nil;
+}
+
 - (void)_setupViewFlags
 {
     var theClass = [self class],
@@ -352,8 +366,12 @@ var CPViewHighDPIDrawingEnabled = YES;
     {
         var flags = 0;
 
-        if ([theClass instanceMethodForSelector:@selector(drawRect:)] !== [CPView instanceMethodForSelector:@selector(drawRect:)])
+        if ([theClass instanceMethodForSelector:@selector(drawRect:)] !== [CPView instanceMethodForSelector:@selector(drawRect:)]
+            || [theClass instanceMethodForSelector:@selector(viewWillDraw)] !== [CPView instanceMethodForSelector:@selector(viewWillDraw)])
             flags |= CPViewHasCustomDrawRect;
+
+        if ([theClass instanceMethodForSelector:@selector(viewWillLayout)] !== [CPView instanceMethodForSelector:@selector(viewWillLayout)])
+            flags |= CPViewHasCustomViewWillLayout;
 
         if ([theClass instanceMethodForSelector:@selector(layoutSubviews)] !== [CPView instanceMethodForSelector:@selector(layoutSubviews)])
             flags |= CPViewHasCustomLayoutSubviews;
@@ -390,21 +408,6 @@ var CPViewHighDPIDrawingEnabled = YES;
         return NO;
 
     return [super automaticallyNotifiesObserversForKey:theKey];
-}
-
-+ (CPSet)keyPathsForValuesAffectingFrame
-{
-    return [CPSet setWithObjects:@"frameOrigin", @"frameSize"];
-}
-
-+ (CPSet)keyPathsForValuesAffectingBounds
-{
-    return [CPSet setWithObjects:@"boundsOrigin", @"boundsSize"];
-}
-
-+ (CPMenu)defaultMenu
-{
-    return nil;
 }
 
 - (id)init
@@ -461,7 +464,6 @@ var CPViewHighDPIDrawingEnabled = YES;
 #endif
 
         [self _setupViewFlags];
-
         [self _loadThemeAttributes];
 
         [self _initConstraintsIvars];
@@ -931,8 +933,8 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (void)viewDidMoveToSuperview
 {
-//    if (_graphicsContext)
-        [self setNeedsDisplay:YES];
+    [self setNeedsLayout:YES];
+    [self setNeedsDisplay:YES];
 }
 
 /*!
@@ -1943,7 +1945,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     else if ([[self nextResponder] isKindOfClass:CPView])
         [super rightMouseDown:anEvent];
     else
-        [[[anEvent window] platformWindow] _propagateContextMenuDOMEvent:YES];
+        [[[anEvent window] platformWindow] _propagateContextMenuDOMEvent:NO];
 }
 
 - (CPMenu)menuForEvent:(CPEvent)anEvent
@@ -2717,7 +2719,7 @@ setBoundsOrigin:
     }
 
 #if PLATFORM(DOM)
-    if (_needToSetTransformMatrix)
+    if (_needToSetTransformMatrix && _highDPIRatio !== 1)
         [_graphicsContext graphicsPort].setTransform(_highDPIRatio, 0, 0 , _highDPIRatio, 0, 0);
 #endif
 
@@ -2744,13 +2746,15 @@ setBoundsOrigin:
 
 - (void)setNeedsLayout:(BOOL)needsLayout
 {
-    if ((_viewHasConstraintBasedSubviews || _viewClassFlags & CPViewHasCustomLayoutSubviews) && _needsLayout !== needsLayout)
+    if (!needsLayout)
     {
-        _needsLayout = needsLayout;
-
-        if (needsLayout)
-            _CPDisplayServerAddLayoutObject(self);
+        _needsLayout = NO;
+        return;
     }
+
+    _needsLayout = YES;
+
+    _CPDisplayServerAddLayoutObject(self);
 }
 
 - (BOOL)needsLayout
@@ -2764,8 +2768,43 @@ setBoundsOrigin:
     {
         _needsLayout = NO;
 
-        [self layoutSubviews];
+        if (_viewClassFlags & CPViewHasCustomViewWillLayout)
+            [self viewWillLayout];
+
+        if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
+            [self layoutSubviews];
+
+        [self viewDidLayout];
     }
+}
+
+/*!
+    @ignore
+*/
+- (void)viewWillLayout
+{
+
+}
+
+/*!
+    @ignore
+*/
+- (void)viewDidLayout
+{
+    [self _recomputeAppearance];
+}
+
+- (void)layoutSubviews
+{
+    [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
+    {
+        [subview _updateGeometryIfNeeded];
+    }];
+
+    [_layoutGuides enumerateObjectsUsingBlock:function(guide, idx, stop)
+    {
+        [guide _updateGeometryIfNeeded];
+    }];
 }
 
 /*!
@@ -3207,33 +3246,19 @@ setBoundsOrigin:
 
 @end
 
+
 @implementation CPView (Theming)
-#pragma mark Theme States
 
-- (unsigned)themeState
-{
-    return _themeState;
-}
-
-- (BOOL)hasThemeState:(ThemeState)aState
-{
-    if (aState.isa && [aState isKindOfClass:CPArray])
-        return _themeState.hasThemeState.apply(_themeState, aState);
-
-    return _themeState.hasThemeState(aState);
-}
+#pragma mark Override
 
 - (BOOL)setThemeState:(ThemeState)aState
 {
-    if (aState && aState.isa && [aState isKindOfClass:CPArray])
-        aState = CPThemeState.apply(null, aState);
+    var shouldLayout = [super setThemeState:aState];
 
-    if (_themeState.hasThemeState(aState))
+    if (!shouldLayout)
         return NO;
 
-    _themeState = CPThemeState(_themeState, aState);
-
-    [self setNeedsLayout];
+    [self setNeedsLayout:YES];
     [self setNeedsDisplay:YES];
 
     return YES;
@@ -3241,26 +3266,35 @@ setBoundsOrigin:
 
 - (BOOL)unsetThemeState:(ThemeState)aState
 {
-    if (aState && aState.isa && [aState isKindOfClass:CPArray])
-        aState = CPThemeState.apply(null, aState);
+    var shouldLayout = [super unsetThemeState:aState];
 
-    var oldThemeState = _themeState;
-    _themeState = _themeState.without(aState);
-
-    if (oldThemeState === _themeState)
+    if (!shouldLayout)
         return NO;
 
-    [self setNeedsLayout];
+    [self setNeedsLayout:YES];
     [self setNeedsDisplay:YES];
 
     return YES;
 }
 
+- (void)setThemeClass:(CPString)theClass
+{
+    [super setThemeClass:theClass];
+
+    [self setNeedsLayout];
+    [self setNeedsDisplay:YES];
+}
+
+
+#pragma mark First responder
+
 - (BOOL)becomeFirstResponder
 {
     var r = [super becomeFirstResponder];
+
     if (r)
         [self _notifyViewDidBecomeFirstResponder];
+
     return r;
 }
 
@@ -3269,6 +3303,7 @@ setBoundsOrigin:
     [self setThemeState:CPThemeStateFirstResponder];
 
     var count = [_subviews count];
+
     while (count--)
         [_subviews[count] _notifyViewDidBecomeFirstResponder];
 }
@@ -3276,8 +3311,10 @@ setBoundsOrigin:
 - (BOOL)resignFirstResponder
 {
     var r = [super resignFirstResponder];
+
     if (r)
         [self _notifyViewDidResignFirstResponder];
+
     return r;
 }
 
@@ -3286,6 +3323,7 @@ setBoundsOrigin:
     [self unsetThemeState:CPThemeStateFirstResponder];
 
     var count = [_subviews count];
+
     while (count--)
         [_subviews[count] _notifyViewDidResignFirstResponder];
 }
@@ -3295,6 +3333,7 @@ setBoundsOrigin:
     [self setThemeState:CPThemeStateKeyWindow];
 
     var count = [_subviews count];
+
     while (count--)
         [_subviews[count] _notifyWindowDidBecomeKey];
 }
@@ -3304,117 +3343,12 @@ setBoundsOrigin:
     [self unsetThemeState:CPThemeStateKeyWindow];
 
     var count = [_subviews count];
+
     while (count--)
         [_subviews[count] _notifyWindowDidResignKey];
 }
 
 #pragma mark Theme Attributes
-
-+ (CPString)defaultThemeClass
-{
-    return nil;
-}
-
-- (CPString)themeClass
-{
-    if (_themeClass)
-        return _themeClass;
-
-    return [[self class] defaultThemeClass];
-}
-
-- (void)setThemeClass:(CPString)theClass
-{
-    _themeClass = theClass;
-
-    [self _loadThemeAttributes];
-
-    [self setNeedsLayout];
-    [self setNeedsDisplay:YES];
-}
-
-+ (CPDictionary)themeAttributes
-{
-    return nil;
-}
-
-+ (CPArray)_themeAttributes
-{
-    if (!CachedThemeAttributes)
-        CachedThemeAttributes = {};
-
-    var theClass = [self class],
-        CPViewClass = [CPView class],
-        attributes = [],
-        nullValue = [CPNull null];
-
-    for (; theClass && theClass !== CPViewClass; theClass = [theClass superclass])
-    {
-        var cachedAttributes = CachedThemeAttributes[class_getName(theClass)];
-
-        if (cachedAttributes)
-        {
-            attributes = attributes.length ? attributes.concat(cachedAttributes) : attributes;
-            CachedThemeAttributes[[self className]] = attributes;
-
-            break;
-        }
-
-        var attributeDictionary = [theClass themeAttributes];
-
-        if (!attributeDictionary)
-            continue;
-
-        var attributeKeys = [attributeDictionary allKeys],
-            attributeCount = attributeKeys.length;
-
-        while (attributeCount--)
-        {
-            var attributeName = attributeKeys[attributeCount],
-                attributeValue = [attributeDictionary objectForKey:attributeName];
-
-            attributes.push(attributeValue === nullValue ? nil : attributeValue);
-            attributes.push(attributeName);
-        }
-    }
-
-    return attributes;
-}
-
-- (void)_loadThemeAttributes
-{
-    var theClass = [self class],
-        attributes = [theClass _themeAttributes],
-        count = attributes.length;
-
-    if (!count)
-        return;
-
-    var theme = [self theme],
-        themeClass = [self themeClass];
-
-    _themeAttributes = {};
-
-    while (count--)
-    {
-        var attributeName = attributes[count--],
-            attribute = [[_CPThemeAttribute alloc] initWithName:attributeName defaultValue:attributes[count]];
-
-        [attribute setParentAttribute:[theme attributeWithName:attributeName forClass:themeClass]];
-
-        _themeAttributes[attributeName] = attribute;
-    }
-}
-
-- (void)setTheme:(CPTheme)aTheme
-{
-    if (_theme === aTheme)
-        return;
-
-    _theme = aTheme;
-
-    [self viewDidChangeTheme];
-}
 
 - (void)_setThemeIncludingDescendants:(CPTheme)aTheme
 {
@@ -3422,54 +3356,22 @@ setBoundsOrigin:
     [[self subviews] makeObjectsPerformSelector:@selector(_setThemeIncludingDescendants:) withObject:aTheme];
 }
 
-- (CPTheme)theme
-{
-    return _theme;
-}
-
-- (void)viewDidChangeTheme
+- (void)objectDidChangeTheme
 {
     if (!_themeAttributes)
         return;
 
-    var theme = [self theme],
-        themeClass = [self themeClass];
-
-    for (var attributeName in _themeAttributes)
-        if (_themeAttributes.hasOwnProperty(attributeName))
-            [_themeAttributes[attributeName] setParentAttribute:[theme attributeWithName:attributeName forClass:themeClass]];
+    [super objectDidChangeTheme];
 
     [self setNeedsLayout];
     [self setNeedsDisplay:YES];
 }
 
-- (CPDictionary)_themeAttributeDictionary
-{
-    var dictionary = @{};
-
-    if (_themeAttributes)
-    {
-        var theme = [self theme];
-
-        for (var attributeName in _themeAttributes)
-            if (_themeAttributes.hasOwnProperty(attributeName))
-                [dictionary setObject:_themeAttributes[attributeName] forKey:attributeName];
-    }
-
-    return dictionary;
-}
-
 - (void)setValue:(id)aValue forThemeAttribute:(CPString)aName inState:(ThemeState)aState
 {
-   if (aState.isa && [aState isKindOfClass:CPArray])
-        aState = CPThemeState.apply(null, aState);
-
-    if (!_themeAttributes || !_themeAttributes[aName])
-        [CPException raise:CPInvalidArgumentException reason:[self className] + " does not contain theme attribute '" + aName + "'"];
-
     var currentValue = [self currentValueForThemeAttribute:aName];
 
-    [_themeAttributes[aName] setValue:aValue forState:aState];
+    [super setValue:aValue forThemeAttribute:aName inState:aState];
 
     if ([self currentValueForThemeAttribute:aName] === currentValue)
         return;
@@ -3480,94 +3382,15 @@ setBoundsOrigin:
 
 - (void)setValue:(id)aValue forThemeAttribute:(CPString)aName
 {
-    if (!_themeAttributes || !_themeAttributes[aName])
-        [CPException raise:CPInvalidArgumentException reason:[self className] + " does not contain theme attribute '" + aName + "'"];
-
     var currentValue = [self currentValueForThemeAttribute:aName];
 
-    [_themeAttributes[aName] setValue:aValue];
+    [super setValue:aValue forThemeAttribute:aName ];
 
     if ([self currentValueForThemeAttribute:aName] === currentValue)
         return;
 
     [self setNeedsDisplay:YES];
     [self setNeedsLayout];
-}
-
-- (id)valueForThemeAttribute:(CPString)aName inState:(ThemeState)aState
-{
-   if (aState.isa && [aState isKindOfClass:CPArray])
-        aState = CPThemeState.apply(null, aState);
-
-    if (!_themeAttributes || !_themeAttributes[aName])
-        [CPException raise:CPInvalidArgumentException reason:[self className] + " does not contain theme attribute '" + aName + "'"];
-
-    return [_themeAttributes[aName] valueForState:aState];
-}
-
-- (id)valueForThemeAttribute:(CPString)aName
-{
-    if (!_themeAttributes || !_themeAttributes[aName])
-        [CPException raise:CPInvalidArgumentException reason:[self className] + " does not contain theme attribute '" + aName + "'"];
-
-    return [_themeAttributes[aName] value];
-}
-
-- (id)currentValueForThemeAttribute:(CPString)aName
-{
-    if (!_themeAttributes || !_themeAttributes[aName])
-        [CPException raise:CPInvalidArgumentException reason:[self className] + " does not contain theme attribute '" + aName + "'"];
-
-    return [_themeAttributes[aName] valueForState:_themeState];
-}
-
-- (BOOL)hasThemeAttribute:(CPString)aName
-{
-    return (_themeAttributes && _themeAttributes[aName] !== undefined);
-}
-
-/*!
-    Registers theme values encoded in an array at runtime. The format of the data in the array
-    is the same as that used by ThemeDescriptors.j, with the exception that you need to use
-    CPColorWithImages() in place of PatternColor(). For more information see the comments
-    at the top of ThemeDescriptors.j.
-
-    @param themeValues array of theme values
-*/
-- (void)registerThemeValues:(CPArray)themeValues
-{
-    for (var i = 0; i < themeValues.length; ++i)
-    {
-        var attributeValueState = themeValues[i],
-            attribute = attributeValueState[0],
-            value = attributeValueState[1],
-            state = attributeValueState[2];
-
-        if (state)
-            [self setValue:value forThemeAttribute:attribute inState:state];
-        else
-            [self setValue:value forThemeAttribute:attribute];
-    }
-}
-
-/*!
-    Registers theme values encoded in an array at runtime. The format of the data in the array
-    is the same as that used by ThemeDescriptors.j, with the exception that you need to use
-    CPColorWithImages() in place of PatternColor(). The values in \c inheritedValues are
-    registered first, then those in \c themeValues override/augment the inherited values.
-    For more information see the comments at the top of ThemeDescriptors.j.
-
-    @param themeValues array of base theme values
-    @param inheritedValues array of overridden/additional theme values
-*/
-- (void)registerThemeValues:(CPArray)themeValues inherit:(CPArray)inheritedValues
-{
-    // Register inherited values first, then override those with the subtheme values.
-    if (inheritedValues)
-        [self registerThemeValues:inheritedValues];
-
-    if (themeValues)
-        [self registerThemeValues:themeValues];
 }
 
 - (CPView)createEphemeralSubviewNamed:(CPString)aViewName
@@ -3628,6 +3451,79 @@ setBoundsOrigin:
 
 @end
 
+
+@implementation CPView (Appearance)
+
+/*! Returns the receiver's appearance if any, or ask the superview and returns it.
+*/
+- (CPAppearance)effectiveAppearance
+{
+    if (_appearance)
+        return _appearance;
+
+    return [_superview effectiveAppearance];
+}
+
+- (void)setAppearance:(CPAppearance)anAppearance
+{
+    if ([_appearance isEqual:anAppearance])
+        return;
+
+    [self willChangeValueForKey:@"appearance"];
+    _appearance = anAppearance;
+    [self didChangeValueForKey:@"appearance"];
+
+    [self setNeedsLayout:YES];
+}
+
+/*! @ignore
+*/
+- (void)_recomputeAppearance
+{
+    var effectiveAppearance = [self effectiveAppearance];
+
+    if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameAqua]])
+    {
+        [self setThemeState:CPThemeStateAppearanceAqua];
+        [self unsetThemeState:CPThemeStateAppearanceLightContent];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+    }
+    else if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameLightContent]])
+    {
+        [self unsetThemeState:CPThemeStateAppearanceAqua];
+        [self setThemeState:CPThemeStateAppearanceLightContent];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+    }
+    else if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameVibrantLight]])
+    {
+        [self unsetThemeState:CPThemeStateAppearanceAqua];
+        [self unsetThemeState:CPThemeStateAppearanceLightContent];
+        [self setThemeState:CPThemeStateAppearanceVibrantLight];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+    }
+    else if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameVibrantDark]])
+    {
+        [self unsetThemeState:CPThemeStateAppearanceAqua];
+        [self unsetThemeState:CPThemeStateAppearanceLightContent];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+        [self setThemeState:CPThemeStateAppearanceVibrantDark];
+    }
+    else
+    {
+        [self unsetThemeState:CPThemeStateAppearanceAqua];
+        [self unsetThemeState:CPThemeStateAppearanceLightContent];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+    }
+
+    [_subviews makeObjectsPerformSelector:@selector(_recomputeAppearance)];
+}
+
+
+@end
+
 var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     CPViewAutoresizesSubviewsKey    = @"CPViewAutoresizesSubviews",
     CPViewBackgroundColorKey        = @"CPViewBackgroundColor",
@@ -3640,8 +3536,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     CPViewSubviewsKey               = @"CPViewSubviewsKey",
     CPViewSuperviewKey              = @"CPViewSuperviewKey",
     CPViewTagKey                    = @"CPViewTagKey",
-    CPViewThemeClassKey             = @"CPViewThemeClassKey",
-    CPViewThemeStateKey             = @"CPViewThemeStateKey",
     CPViewWindowKey                 = @"CPViewWindowKey",
     CPViewNextKeyViewKey            = @"CPViewNextKeyViewKey",
     CPViewPreviousKeyViewKey        = @"CPViewPreviousKeyViewKey",
@@ -3649,6 +3543,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     CPViewScaleKey                  = @"CPViewScaleKey",
     CPViewSizeScaleKey              = @"CPViewSizeScaleKey",
     CPViewIsScaledKey               = @"CPViewIsScaledKey",
+    CPViewAppearanceKey             = @"CPViewAppearanceKey";
     CPViewConstraints               = @"CPViewConstraints",
     CPHuggingPriority               = @"CPHuggingPriority",
     CPAntiCompressionPriority       = @"CPAntiCompressionPriority",
@@ -3748,23 +3643,9 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         [self setBackgroundColor:[aCoder decodeObjectForKey:CPViewBackgroundColorKey]];
         [self _setupViewFlags];
+        [self _decodeThemeObjectsWithCoder:aCoder];
 
-        _theme = [CPTheme defaultTheme];
-        _themeClass = [aCoder decodeObjectForKey:CPViewThemeClassKey];
-        _themeState = CPThemeState([aCoder decodeObjectForKey:CPViewThemeStateKey]);
-        _themeAttributes = {};
-
-        var theClass = [self class],
-            themeClass = [self themeClass],
-            attributes = [theClass _themeAttributes],
-            count = attributes.length;
-
-        while (count--)
-        {
-            var attributeName = attributes[count--];
-
-            _themeAttributes[attributeName] = CPThemeAttributeDecode(aCoder, attributeName, attributes[count], _theme, themeClass);
-        }
+        [self setAppearance:[aCoder decodeObjectForKey:CPViewAppearanceKey]];
 
         //ConstraintBasedLayout
         [self _initConstraintsIvars];
@@ -3857,12 +3738,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if (previousKeyView !== nil && ![previousKeyView isEqual:self])
         [aCoder encodeConditionalObject:previousKeyView forKey:CPViewPreviousKeyViewKey];
 
-    [aCoder encodeObject:[self themeClass] forKey:CPViewThemeClassKey];
-    [aCoder encodeObject:String(_themeState) forKey:CPViewThemeStateKey];
-
-    for (var attributeName in _themeAttributes)
-        if (_themeAttributes.hasOwnProperty(attributeName))
-            CPThemeAttributeEncode(aCoder, _themeAttributes[attributeName]);
+    [self _encodeThemeObjectsWithCoder:aCoder];
 
     if (_identifier)
         [aCoder encodeObject:_identifier forKey:CPReuseIdentifierKey];
@@ -3870,6 +3746,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [aCoder encodeSize:[self scaleSize] forKey:CPViewScaleKey];
     [aCoder encodeSize:[self _hierarchyScaleSize] forKey:CPViewSizeScaleKey];
     [aCoder encodeBool:_isScaled forKey:CPViewIsScaledKey];
+    [aCoder encodeObject:_appearance forKey:CPViewAppearanceKey];
 
     var constraints = [_internalConstraints filteredArrayUsingBlock:_CPViewArchiveConstraintsBlock];
 
@@ -4483,7 +4360,7 @@ A Boolean value indicating whether the view’s autoresizing mask is translated 
 {
 //CPLog.debug([self debugID] + " " +  _cmd);
     [self _setSubviewsNeedSolvingInEngine];
-    
+
     if (_superview)
         [_superview _informContainerThatSubviewsNeedSolvingInEngine];
 }
@@ -4692,19 +4569,6 @@ Perform layout in concert with the constraint-based layout system.
     [self layoutSubviews];
 }
 
-- (void)layoutSubviews
-{
-    [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
-    {
-        [subview _updateGeometryIfNeeded];
-    }];
-
-    [_layoutGuides enumerateObjectsUsingBlock:function(guide, idx, stop)
-    {
-        [guide _updateGeometryIfNeeded];
-    }];
-}
-
 /*!
 Updates the layout of the receiving view and its subviews based on the current views and constraints.
 
@@ -4732,6 +4596,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 - (void)_updateGeometryIfNeeded
 {
+//CPLog.debug([self debugID] + " " + _cmd);
     if (_frameNeedsUpdate)
     {
         [self _updateGeometry];
@@ -4745,10 +4610,10 @@ Updates the layout of the receiving view and its subviews based on the current v
 {
 //CPLog.debug([self debugID] + " " + _cmd);
     _isSettingFrameFromEngine = YES;
-    
+
     [self setFrameOrigin:CGPointMake(_variableMinX.valueOf(), _variableMinY.valueOf())];
     [self setFrameSize:CGSizeMake(_variableWidth.valueOf(), _variableHeight.valueOf())];
-    
+
     _isSettingFrameFromEngine = NO;
 }
 
@@ -4763,9 +4628,10 @@ Updates the layout of the receiving view and its subviews based on the current v
 }
 
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{    
+{
+//CPLog.debug([self debugID] + " " + _cmd);
     _frameNeedsUpdate = YES;
-    
+
     [_superview setNeedsLayout];
 }
 
