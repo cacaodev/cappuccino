@@ -136,6 +136,12 @@
     theWindow._positioningMask = _wtFlags;
     theWindow._positioningScreenRect = _screenRect;
 
+    [theWindow setAutolayoutEnabled:NO];
+    [theWindow _setSubviewsNeedUpdateConstraints:YES];
+    [theWindow _setNeedsLayout:NO];
+    [theWindow _setLayoutLock:NO];
+    [theWindow _setLayoutEngine:nil];
+
     return theWindow;
 }
 
