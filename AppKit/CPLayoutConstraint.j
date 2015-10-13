@@ -2,6 +2,7 @@
 @import <Foundation/CPString.j>
 
 @class CPArray
+@class CPLayoutConstraintEngine
 
 @typedef CPLayoutRelation
 CPLayoutRelationLessThanOrEqual = -1;
@@ -149,7 +150,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     if (!_engineConstraints)
         _engineConstraints = [CPLayoutConstraintEngine _engineConstraintsFromConstraint:self];
-        
+
     return _engineConstraints;
 }
 
@@ -165,34 +166,34 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         result;
 
     parent1 = anItem;
-  
+
     if (anItem)
     {
         if (otherItem)
         {
             parent2 = otherItem;
-          
+
             while (parent1 !== parent2)
             {
                 parent2 = [parent2 _is_superitem];
-                
+
                 if (!parent2)
                 {
                     parent1 = [parent1 _is_superitem];
-                    
+
                     if (parent1)
                         parent2 = otherItem;
                 }
             }
         }
-        
+
         result = parent1;
     }
     else
     {
         result = otherItem;
     }
-    
+
     return result;
 }
 
