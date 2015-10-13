@@ -4474,12 +4474,18 @@ Update constraints for the view.
     if (autoresizingConstraints == nil)
     {
         var constraints = [self _constraintsEquivalentToAutoresizingMask];
-        [self _setAutoresizingConstraints:constraints];
         // ! AutoresizingConstraints are NOT added to the _constraintArray
-        [[self _layoutEngine] addConstraints:constraints];
-        [constraints makeObjectsPerformSelector:@selector(_setActive:) withObject:YES];
+        if ([[self _layoutEngine] addConstraints:constraints])
+        {
+            [self _setAutoresizingConstraints:constraints];
 
-        return YES;
+            [[self superview] _setHasConstraintBasedLayoutSubviews];
+            [self _setNeedsConstraintBasedLayout];
+
+            [constraints makeObjectsPerformSelector:@selector(_setActive:) withObject:YES];
+
+            return YES;
+        }
         //CPLog.debug([self identifier] + _cmd + [_autoresizingConstraints description]);
     }
 
