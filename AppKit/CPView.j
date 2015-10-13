@@ -4276,10 +4276,13 @@ Adds multiple constraints on the layout of the receiving view or its subviews.
         }
     }];
 
-    [self willChangeValueForKey:@"constraints"];
-    [_constraintsArray addObjectsFromArray:[constraints objectsAtIndexes:constraintsIndexes]];
-    [_contentSizeConstraints addObjectsFromArray:[constraints objectsAtIndexes:contentSizeIndexes]];
-    [self didChangeValueForKey:@"constraints"];
+    if ([constraintsIndexes count] || [contentSizeIndexes count])
+    {
+        [self willChangeValueForKey:@"constraints"];
+        [_constraintsArray addObjectsFromArray:[constraints objectsAtIndexes:constraintsIndexes]];
+        [_contentSizeConstraints addObjectsFromArray:[constraints objectsAtIndexes:contentSizeIndexes]];
+        [self didChangeValueForKey:@"constraints"];
+    }
 }
 
 /*!
