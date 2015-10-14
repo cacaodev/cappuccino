@@ -19,8 +19,11 @@
     [theWindow setAutolayoutEnabled:YES];
 
     contentView = [theWindow contentView];
+    [contentView setIdentifier:@"contentView"];
 
     leftView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+    [leftView setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [leftView setIdentifier:@"leftView"];
 
     var leftConstraint = [CPLayoutConstraint constraintWithItem:leftView attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:contentView attribute:CPLayoutAttributeLeft multiplier:1 constant:10];
 
@@ -43,7 +46,7 @@
     [[contentView window] setNeedsLayout];
     [[CPRunLoop mainRunLoop] performSelectors];
 
-    XCTAssertEqual(CGRectGetMaxX([leftView frame]),  CGRectGetWidth([contentView frame]) - 10);
+    XCTAssertEqual(CGRectGetMaxX([leftView frame]),  190);
 
     [rightConstraint setConstant:50];
     [[contentView window] setNeedsLayout];
@@ -59,7 +62,7 @@
     [[contentView window] setNeedsLayout];
     [[CPRunLoop mainRunLoop] performSelectors];
 
-    XCTAssertEqual(CGRectGetMaxX([leftView frame]),  CGRectGetWidth([contentView frame]) - 10);
+    XCTAssertEqual(CGRectGetMaxX([leftView frame]),  190);
 
     [minWidthConstraint setPriority:450];
     [rightConstraint setConstant:50];
