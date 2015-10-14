@@ -3880,7 +3880,7 @@ var interpolate = function(fromValue, toValue, progress)
     if (!_layoutEngine)
     {
         _layoutEngine = [[CPLayoutConstraintEngine alloc] initWithDelegate:self];
-        [self _updateWindowStayConstraintsInEngine:_layoutEngine];
+        [self _updateWindowContentSizeConstraints];
     }
 
     return _layoutEngine;
@@ -3906,7 +3906,7 @@ Subclasses should not override this method.
 
 - (BOOL)updateConstraints
 {
-CPLog.debug([self className] + " " + _cmd);
+//CPLog.debug([self className] + " " + _cmd);
     var result = [_windowView updateConstraintsForSubtreeIfNeeded];
     _subviewsNeedUpdateConstraints = NO;
 
@@ -3915,7 +3915,7 @@ CPLog.debug([self className] + " " + _cmd);
 
 - (void)_suggestFrameSize:(CGSize)newSize
 {
-CPLog.debug([self className] + " " + _cmd);
+//CPLog.debug([self className] + " " + _cmd);
     var engine = [self _layoutEngine],
         variables = @[[_windowView _variableWidth], [_windowView _variableHeight]],
         values = @[newSize.width, newSize.height];
@@ -3975,7 +3975,7 @@ Subclasses should not override this method.
         var engine = [self _layoutEngine];
 
         [engine stopEditing];
-        [self _updateWindowStayConstraintsInEngine:engine];
+        [self _updateWindowContentSizeConstraints];
 
         [_windowView layoutSubtreeIfNeeded];
 
@@ -3999,16 +3999,23 @@ Subclasses should not override this method.
     _autolayoutEnabled = YES;
 }
 
-// The need to replace stay constraints when the variable value changes seems to be a bug in cassowary.
-// See https://github.com/slightlyoff/cassowary.js/pull/51
-- (void)_updateWindowStayConstraintsInEngine:(id)anEngine
+- (void)_updateWindowContentSizeConstraints
 {
     var newSize = [_windowView frameSize],
         oldSize = [_windowView storedIntrinsicContentSize];
 
     if (!CGSizeEqualToSize(newSize, oldSize))
     {
-        [anEngine replaceStayConstraintsForItem:_windowView priority:CPLayoutPriorityWindowSizeStayPut];
+        var constraintWidth = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.width huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:0];
+
+        var constraintHeight = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.height huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:1];
+
+        var constraints = [_windowView _contentSizeConstraints];
+
+        if (constraints)
+            [_windowView removeConstraints:constraints];
+        [_windowView addConstraints:[constraintWidth, constraintHeight]];
+
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
 }

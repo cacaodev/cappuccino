@@ -119,53 +119,6 @@ var CPLayoutItemIsNull          = 2,
     _simplexSolver.resolve();
 }
 
-- (void)replaceStayConstraintsForItem:(id)anItem priority:(CPLayoutPriority)aPriority
-{
-    var widthStay   = CreateStayConstraint([anItem _variableWidth], aPriority),
-        heightStay  = CreateStayConstraint([anItem _variableHeight], aPriority),
-        containerId = [anItem debugID],
-        type        = "StayConstraint",
-        toRemove    = [];
-
-    var onAdd = function(constraint)
-    {
-        _constraintContainerMap.set(constraint, {"Type":type, "Container":anItem});
-        EngineLog("Added " + type + " in " + containerId + " : " + constraint.toString());
-    };
-
-    var onAddError = function(error, constraint)
-    {
-        EngineWarn(containerId + ": could not add " + type + " " + constraint.toString() + " with error " + error);
-    };
-
-    var onRemove = function(constraint)
-    {
-        _constraintContainerMap.delete(constraint);
-        EngineLog("Removed " + type + " in " + containerId + " : " + constraint.toString());
-    };
-
-    var onRemoveError = function(error, constraint)
-    {
-        EngineWarn(containerId + ": could not remove " + type + " " + constraint.toString() + " with error " + error);
-    };
-
-    var toRemove = [];
-
-    _constraintContainerMap.forEach(function(viewAndType, engine_constraint)
-    {
-        if (viewAndType.Container == anItem && viewAndType.Type == type)
-            toRemove.push(engine_constraint);
-    });
-
-    toRemove.forEach(function(engine_constraint, idx)
-    {
-        RemoveConstraint(_simplexSolver ,engine_constraint, onRemove, onRemoveError);
-    });
-
-    AddConstraint(_simplexSolver, widthStay, onAdd, onAddError);
-    AddConstraint(_simplexSolver, heightStay, onAdd, onAddError);
-}
-
 - (BOOL)addConstraints:(CPArray)constraints
 {
     var result = YES;
