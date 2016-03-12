@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/cappuccino/cappuccino.svg?branch=master)](https://travis-ci.org/cappuccino/cappuccino) [![Join the chat at https://gitter.im/cappuccino/cappuccino](https://badges.gitter.im/cappuccino/cappuccino.svg)](https://gitter.im/cappuccino/cappuccino?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Welcome to Cappuccino!
 ======================
 
@@ -13,7 +15,7 @@ with the complexities of traditional web technologies like HTML, CSS, or even
 the DOM. The unpleasantries of building complex cross browser applications are
 abstracted away for you.
 
-For more information, see <http://cappuccino-project.org>.
+For more information, see <http://cappuccino-project.org>. Follow [@cappuccino](https://twitter.com/cappuccino) on Twitter for updates on the project.
 
 System Requirements
 -------------------
@@ -33,7 +35,7 @@ Getting Started
 ---------------
 To get started, download and install the current release version of Cappuccino:
 
-    $ curl https://raw.githubusercontent.com/cappuccino/cappuccino/v0.9.7-1/bootstrap.sh >/tmp/cappuccino_bootstrap.sh && bash /tmp/cappuccino_bootstrap.sh
+    $ curl https://raw.githubusercontent.com/cappuccino/cappuccino/v0.9.8/bootstrap.sh >/tmp/cappuccino_bootstrap.sh && bash /tmp/cappuccino_bootstrap.sh
 
 If you'd just like to get started using Cappuccino for your web apps, you are done.
 
@@ -71,7 +73,7 @@ If you need help with Cappuccino, you can get help from the following sources:
   - Mailing Lists:
     - [Objective-J](http://groups.google.com/group/objectivej)
     - [Objective-J Developers](http://groups.google.com/group/objectivej-dev)
-  - IRC: irc://irc.freenode.net#cappuccino
+  - [Gitter] (https://gitter.im/cappuccino/cappuccino)
 
 If you discover any bugs, please file a ticket at:
 

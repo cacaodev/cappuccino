@@ -127,6 +127,7 @@
 @import "CPText.j"
 @import "CPWindow_Constants.j"
 
+@class CPApplication
 @class CPDragServer
 @class _CPToolTip
 
@@ -202,6 +203,10 @@ var ModifierKeyCodes = [
 
 var resizeTimer = nil;
 var PreventScroll = true;
+var blurTimer = nil;
+
+_CPPlatformWindowWillCloseNotification = @"_CPPlatformWindowWillCloseNotification";
+
 
 // When scrolling with an old-style scroll wheel with discete steps ('clicks'), the scroll amount can indicate how many "lines" to
 // scroll.
@@ -360,6 +365,7 @@ var PreventScroll = true;
         _DOMBodyElement.style["-khtml-user-select"] = "none";
 
     _DOMBodyElement.webkitTouchCallout = "none";
+    _DOMBodyElement.style[CPBrowserStyleProperty(@"user-select")] = @"none";
 
     [self createDOMElements];
     [self _addLayers];
@@ -393,7 +399,15 @@ var PreventScroll = true;
 
         touchEventSelector = @selector(touchEvent:),
         touchEventImplementation = class_getMethodImplementation(theClass, touchEventSelector),
-        touchEventCallback = function (anEvent) { touchEventImplementation(self, nil, anEvent); };
+        touchEventCallback = function (anEvent) { touchEventImplementation(self, nil, anEvent); },
+
+        onFocusEventSelector = @selector(focusEvent:),
+        onFocusEventImplementation = class_getMethodImplementation(theClass, onFocusEventSelector),
+        onFocusEventCallback = function (anEvent) { onFocusEventImplementation(self, nil, anEvent); },
+
+        onBlurEventSelector = @selector(blurEvent:),
+        onBlurEventImplementation = class_getMethodImplementation(theClass, onBlurEventSelector),
+        onBlurEventCallback = function (anEvent) { onBlurEventImplementation(self, nil, anEvent); };
 
     if (theDocument.addEventListener)
     {
@@ -427,8 +441,15 @@ var PreventScroll = true;
 
         _DOMWindow.addEventListener("resize", resizeEventCallback, NO);
 
+        _DOMWindow.addEventListener("blur", onBlurEventCallback, NO);
+        _DOMWindow.addEventListener("focus", onFocusEventCallback, NO);
+
         _DOMWindow.addEventListener("unload", function()
         {
+            _DOMWindow.removeEventListener("unload", arguments.callee, NO);
+
+            [self blurEvent:nil];
+            [self _notifyPlatformWindowWillClose];
             [self updateFromNativeContentRect];
             [self _removeLayers];
 
@@ -447,12 +468,13 @@ var PreventScroll = true;
 
             _DOMWindow.removeEventListener("resize", resizeEventCallback, NO);
 
+            _DOMWindow.removeEventListener("blur", onBlurEventCallback, NO);
+            _DOMWindow.removeEventListener("focus", onFocusEventCallback, NO);
+
             //FIXME: does firefox really need a different value?
             _DOMWindow.removeEventListener("DOMMouseScroll", scrollEventCallback, NO);
             _DOMWindow.removeEventListener("wheel", scrollEventCallback, NO);
             _DOMWindow.removeEventListener("mousewheel", scrollEventCallback, NO);
-
-            //_DOMWindow.removeEventListener("beforeunload", this, NO);
 
             [PlatformWindows removeObject:self];
 
@@ -475,6 +497,9 @@ var PreventScroll = true;
 
         _DOMWindow.attachEvent("onresize", resizeEventCallback);
 
+        _DOMWindow.attachEvent("onfocus", onFocusEventCallback);
+        _DOMWindow.attachEvent("onblur", onBlurEventCallback);
+
         _DOMWindow.onmousewheel = scrollEventCallback;
         theDocument.onmousewheel = scrollEventCallback;
 
@@ -483,6 +508,10 @@ var PreventScroll = true;
 
         _DOMWindow.attachEvent("onunload", function()
         {
+            _DOMWindow.detachEvent("unload", arguments.callee);
+
+            [self blurEvent:nil];
+            [self _notifyPlatformWindowWillClose];
             [self updateFromNativeContentRect];
             [self _removeLayers];
 
@@ -498,13 +527,15 @@ var PreventScroll = true;
 
             _DOMWindow.detachEvent("onresize", resizeEventCallback);
 
+            _DOMWindow.detachEvent("onfocus", onBlurEventCallback);
+            _DOMWindow.detachEvent("onblur", onFocusEventCallback);
+
             _DOMWindow.onmousewheel = NULL;
+
             theDocument.onmousewheel = NULL;
 
             _DOMBodyElement.ondrag = NULL;
             _DOMBodyElement.onselectstart = NULL;
-
-            //_DOMWindow.removeEvent("beforeunload", this);
 
             [PlatformWindows removeObject:self];
 
@@ -537,10 +568,13 @@ var PreventScroll = true;
 
     _DOMWindow = window.open("about:blank", "_blank", "menubar=no,location=no,resizable=yes,scrollbars=no,status=no,left=" + CGRectGetMinX(_contentRect) + ",top=" + CGRectGetMinY(_contentRect) + ",width=" + CGRectGetWidth(_contentRect) + ",height=" + CGRectGetHeight(_contentRect));
 
+    if (!_DOMWindow)
+        return;
+
     [PlatformWindows addObject:self];
 
     // FIXME: cpSetFrame?
-    _DOMWindow.document.write('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"></head><body style="background-color:transparent;"></body></html>');
+    _DOMWindow.document.write('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"></head><body style="background-color:transparent; overflow:hidden"></body></html>');
     _DOMWindow.document.close();
 
     if (self != [CPPlatformWindow primaryPlatformWindow])
@@ -988,6 +1022,7 @@ var PreventScroll = true;
 
 - (void)_actualResizeEvent
 {
+    _shouldUpdateContentRect = NO;
     resizeTimer = nil;
 
     // FIXME: This is not the right way to do this.
@@ -1021,7 +1056,99 @@ var PreventScroll = true;
     //window.liveResize = NO;
 
     [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+
+    _shouldUpdateContentRect = YES;
 }
+
+/*!
+    @ignore
+*/
+- (void)blurEvent:(DOMEvent)aDOMEvent
+{
+    if ([CPApp keyWindow] == _currentKeyWindow)
+        [_currentKeyWindow resignKeyWindow];
+
+    if ([CPApp mainWindow] == _currentMainWindow)
+        [_currentMainWindow resignMainWindow];
+
+    _previousKeyWindow = aDOMEvent ? _currentKeyWindow : nil;
+    _previousMainWindow = aDOMEvent ? _currentMainWindow : nil;
+
+    [blurTimer invalidate];
+    blurTimer = [CPTimer scheduledTimerWithTimeInterval:0.2 target:self selector:@selector(_blurEventTimer:) userInfo:nil repeats:NO];
+}
+
+/*!
+    @ignore
+*/
+- (void)_blurEventTimer:(CPTimer)aTimer
+{
+    if (![CPApp mainWindow])
+        [[CPApplication sharedApplication] deactivate];
+
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+}
+
+/*!
+    @ignore
+*/
+- (void)focusEvent:(DOMEvent)aDOMEvent
+{
+    [blurTimer invalidate];
+    [CPApp activateIgnoringOtherApps:YES];
+
+    var keyWindow = _previousKeyWindow;
+
+    if (!keyWindow)
+       keyWindow = [[[_windowLayers objectForKey:[_windowLevels firstObject]] orderedWindows] firstObject];
+
+    if (!keyWindow)
+        return;
+
+    [self _makeKeyWindow:keyWindow];
+
+    if ([keyWindow isKeyWindow] && ([keyWindow firstResponder] === keyWindow || ![keyWindow firstResponder]))
+       [keyWindow makeFirstResponder:[keyWindow initialFirstResponder]];
+
+    [self _makeMainWindow:keyWindow];
+
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+
+    _previousKeyWindow = nil;
+    _previousMainWindow = nil;
+}
+
+/*!
+    @ignore
+*/
+- (void)_makeKeyWindow:(CPWindow)aWindow
+{
+    if ([CPApp keyWindow] === aWindow || ![aWindow canBecomeKeyWindow])
+        return;
+
+    [[CPApp keyWindow] resignKeyWindow];
+    [aWindow becomeKeyWindow];
+}
+
+/*!
+    @ignore
+*/
+- (void)_makeMainWindow:(CPWindow)aWindow
+{
+    // Sheets cannot be main. Their parent window becomes main.
+    if (aWindow._isSheet)
+    {
+        [self _makeMainWindow:aWindow._parentView];
+        return;
+    }
+
+    if ([CPApp mainWindow] === aWindow || ![aWindow canBecomeMainWindow])
+        return;
+
+    [[CPApp mainWindow] resignMainWindow];
+    [aWindow becomeMainWindow];
+}
+
 
 - (void)touchEvent:(DOMEvent)aDOMEvent
 {
@@ -1290,6 +1417,9 @@ var PreventScroll = true;
 
 - (void)order:(CPWindowOrderingMode)orderingMode window:(CPWindow)aWindow relativeTo:(CPWindow)otherWindow
 {
+    if (!_DOMWindow)
+        return;
+
     [CPPlatform initializeScreenIfNecessary];
 
     // Grab the appropriate level for the layer, and create it if
@@ -1629,6 +1759,13 @@ var PreventScroll = true;
     KeyCodesToPrevent = {};
 }
 
+- (void)_notifyPlatformWindowWillClose
+{
+    [[CPNotificationCenter defaultCenter] postNotificationName:_CPPlatformWindowWillCloseNotification
+                                                        object:self
+                                                      userInfo:nil];
+}
+
 @end
 #endif
 
@@ -1720,11 +1857,10 @@ function CPWindowObjectList()
 
 function CPWindowList()
 {
-    var windowObjectList = CPWindowObjectList(),
-        windowList = [];
+    var windowObjectList = CPWindowObjectList();
 
-    for (var i = 0, count = [windowObjectList count]; i < count; i++)
-        windowList.push([windowObjectList[i] windowNumber]);
-
-    return windowList;
+    return [windowObjectList arrayByApplyingBlock:function(windowObject)
+    {
+        return [windowObject windowNumber];
+    }];
 }

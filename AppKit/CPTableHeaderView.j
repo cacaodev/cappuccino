@@ -21,10 +21,12 @@
  */
 
 @import "CPTableColumn.j"
-@import "CPTableView.j"
 @import "CPView.j"
 @import "CPCursor.j"
 @import "_CPImageAndTextView.j"
+@import "CPTrackingArea.j"
+
+@class CPTableView
 
 @global CPApp
 
@@ -67,7 +69,7 @@
     _textField = [[_CPImageAndTextView alloc] initWithFrame:
         CGRectMake(5.0, 0.0, CGRectGetWidth([self bounds]) - 10.0, CGRectGetHeight([self bounds]))];
 
-    [_textField setAutoresizingMask:CPViewWidthSizable|CPViewHeightSizable];
+    [_textField setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
 
     [_textField setLineBreakMode:CPLineBreakByTruncatingTail];
     [_textField setTextColor:[CPColor colorWithRed:51.0 / 255.0 green:51.0 / 255.0 blue:51.0 / 255.0 alpha:1.0]];
@@ -123,7 +125,7 @@
 
 - (CPFont)font
 {
-    return [self currentValueForThemeAttribute:@"font"]
+    return [self currentValueForThemeAttribute:@"font"];
 }
 
 - (void)setAlignment:(CPTextAlignment)alignment
@@ -133,7 +135,7 @@
 
 - (CPTextAlignment)alignment
 {
-    return [self currentValueForThemeAttribute:@"text-alignment"]
+    return [self currentValueForThemeAttribute:@"text-alignment"];
 }
 
 - (void)setLineBreakMode:(CPLineBreakMode)mode
@@ -143,7 +145,7 @@
 
 - (CPLineBreakMode)lineBreakMode
 {
-    return [self currentValueForThemeAttribute:@"line-break-mode"]
+    return [self currentValueForThemeAttribute:@"line-break-mode"];
 }
 
 - (void)setTextColor:(CPColor)aColor
@@ -153,7 +155,7 @@
 
 - (CPColor)textColor
 {
-    return [self currentValueForThemeAttribute:@"text-color"]
+    return [self currentValueForThemeAttribute:@"text-color"];
 }
 
 - (void)setTextShadowColor:(CPColor)aColor
@@ -163,20 +165,20 @@
 
 - (CPColor)textShadowColor
 {
-    return [self currentValueForThemeAttribute:@"text-shadow-color"]
+    return [self currentValueForThemeAttribute:@"text-shadow-color"];
 }
 
 - (void)_setIndicatorImage:(CPImage)anImage
 {
-	if (anImage)
-	{
-		[_textField setImage:anImage];
-		[_textField setImagePosition:CPImageRight];
-	}
-	else
-	{
-		[_textField setImagePosition:CPNoImage];
-	}
+    if (anImage)
+    {
+        [_textField setImage:anImage];
+        [_textField setImagePosition:CPImageRight];
+    }
+    else
+    {
+        [_textField setImagePosition:CPNoImage];
+    }
 }
 
 - (CPImage)_indicatorImage
@@ -195,7 +197,7 @@
         maxX = CGRectGetMaxX(bounds) - 0.5;
 
     CGContextSetLineWidth(context, 1);
-    CGContextSetStrokeColor(context, [CPColor colorWithWhite:192.0/255.0 alpha:1.0]);
+    CGContextSetStrokeColor(context, [CPColor colorWithWhite:192.0 / 255.0 alpha:1.0]);
 
     CGContextBeginPath(context);
 
@@ -209,7 +211,7 @@
 
 var _CPTableColumnHeaderViewStringValueKey = @"_CPTableColumnHeaderViewStringValueKey",
     _CPTableColumnHeaderViewFontKey = @"_CPTableColumnHeaderViewFontKey",
-    _CPTableColumnHeaderViewImageKey = @"_CPTableColumnHeaderViewImageKey";
+    _CPTableColumnHeaderViewImageKey = @"_CPTableColumnHeaderViewImageKey",
     _CPTableColumnHeaderViewIsDraggingKey = @"_CPTableColumnHeaderViewIsDraggingKey";
 
 @implementation _CPTableColumnHeaderView (CPCoding)
@@ -221,7 +223,6 @@ var _CPTableColumnHeaderViewStringValueKey = @"_CPTableColumnHeaderViewStringVal
         [self _init];
         [self _setIndicatorImage:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewImageKey]];
         [self setStringValue:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewStringValueKey]];
-        [self setFont:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewFontKey]];
         [self setFont:[aCoder decodeObjectForKey:_CPTableColumnHeaderViewFontKey]];
     }
 
@@ -305,7 +306,9 @@ var CPTableHeaderViewResizeZone = 3.0,
     self = [super initWithFrame:aFrame];
 
     if (self)
+    {
         [self _init];
+    }
 
     return self;
 }
@@ -456,34 +459,26 @@ var CPTableHeaderViewResizeZone = 3.0,
     _activeColumn = -1;
 }
 
-- (void)mouseEntered:(CPEvent)theEvent
+@end
+
+@implementation CPTableHeaderView (CPTrackingArea)
+
+- (void)updateTrackingAreas
 {
-    var location = [theEvent globalLocation];
-
-    if (CGPointEqualToPoint(location, _mouseEnterExitLocation))
-        return;
-
-    _mouseEnterExitLocation = location;
-
-    [self _updateResizeCursor:theEvent];
+    [self removeAllTrackingAreas];
+    
+    var options = CPTrackingCursorUpdate | CPTrackingActiveInKeyWindow;
+    
+    for (var i = 0; i < _tableView._tableColumns.length; i++)
+        [self addTrackingArea:[[CPTrackingArea alloc] initWithRect:[self _cursorRectForColumn:i]
+                                                           options:options
+                                                             owner:self
+                                                          userInfo:nil]];
 }
 
-- (void)mouseMoved:(CPEvent)theEvent
+- (void)cursorUpdate:(CPEvent)anEvent
 {
-    [self _updateResizeCursor:theEvent];
-}
-
-- (void)mouseExited:(CPEvent)theEvent
-{
-    var location = [theEvent globalLocation];
-
-    if (CGPointEqualToPoint(location, _mouseEnterExitLocation))
-        return;
-
-    _mouseEnterExitLocation = location;
-
-    // FIXME: we should use CPCursor push/pop (if previous currentCursor != arrow).
-    [[CPCursor arrowCursor] set];
+    [self _updateResizeCursor:anEvent];
 }
 
 @end
@@ -622,7 +617,7 @@ var CPTableHeaderViewResizeZone = 3.0,
     [[headerView subviews] makeObjectsPerformSelector:@selector(setHidden:) withObject:YES];
 
     // The underlying column header shows normal state
-    [headerView unsetThemeState:CPThemeStateHighlighted | CPThemeStateSelected];
+    [headerView unsetThemeStates:[CPThemeStateHighlighted, CPThemeStateSelected]];
 
     // Keep track of the location within the column header where the original mousedown occurred
     _columnDragHeaderView = [_columnDragView viewWithTag:CPTableHeaderViewDragColumnHeaderTag];
@@ -697,6 +692,7 @@ var CPTableHeaderViewResizeZone = 3.0,
     [[_tableView headerView] setNeedsLayout];
 
     [[CPCursor arrowCursor] set];
+    [self updateTrackingAreas];
 }
 
 - (BOOL)_shouldResizeTableColumn:(CPInteger)aColumnIndex at:(CGPoint)aPoint
@@ -762,7 +758,10 @@ var CPTableHeaderViewResizeZone = 3.0,
     var tableColumn = [[_tableView tableColumns] objectAtIndex:aColumnIndex];
 
     if ([tableColumn width] != _columnOldWidth)
+    {
         [_tableView _didResizeTableColumn:tableColumn oldWidth:_columnOldWidth];
+        [self updateTrackingAreas];
+    }
 
     [tableColumn setDisableResizingPosting:NO];
     [_tableView setDisableAutomaticResizing:NO];
@@ -772,13 +771,6 @@ var CPTableHeaderViewResizeZone = 3.0,
 
 - (void)_updateResizeCursor:(CPEvent)theEvent
 {
-    // never get stuck in resize cursor mode (FIXME take out when we turn on tracking rects)
-    if (![_tableView allowsColumnResizing] || ([theEvent type] === CPLeftMouseUp && ![[self window] acceptsMouseMovedEvents]))
-    {
-        [[CPCursor arrowCursor] set];
-        return;
-    }
-
     var mouseLocation = [self convertPoint:[theEvent locationInWindow] fromView:nil],
         mouseOverLocation = CGPointMake(MAX(mouseLocation.x - CPTableHeaderViewResizeZone, 0.0), mouseLocation.y),
         overColumn = [self columnAtPoint:mouseOverLocation];
