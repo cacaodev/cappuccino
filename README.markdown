@@ -32,7 +32,7 @@ CPView +(BOOL)requiresAutoSize
 - [ ] Parser API. Visual language with PEGJS grammar like Angular.js ?
 - [ ] Currently, when you resize a window from the left or top edge and the window size is constrained by subviews constraints, the window frameOrigin changes. It should not (add a stay constraint on WindowView x and y ?).
 
-[![Build Status](https://travis-ci.org/cappuccino/cappuccino.svg?branch=master)](https://travis-ci.org/cappuccino/cappuccino)
+[![Build Status](https://travis-ci.org/cappuccino/cappuccino.svg?branch=master)](https://travis-ci.org/cappuccino/cappuccino) [![Join the chat at https://gitter.im/cappuccino/cappuccino](https://badges.gitter.im/cappuccino/cappuccino.svg)](https://gitter.im/cappuccino/cappuccino?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Welcome to Cappuccino!
 ======================
@@ -49,7 +49,7 @@ with the complexities of traditional web technologies like HTML, CSS, or even
 the DOM. The unpleasantries of building complex cross browser applications are
 abstracted away for you.
 
-For more information, see <http://cappuccino-project.org>.
+For more information, see <http://cappuccino-project.org>. Follow [@cappuccino](https://twitter.com/cappuccino) on Twitter for updates on the project.
 
 System Requirements
 -------------------
