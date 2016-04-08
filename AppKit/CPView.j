@@ -44,6 +44,7 @@
 @class CPClipView
 @class CPScrollView
 @class CALayer
+@class CPViewController
 
 @global appkit_tag_dom_elements
 
@@ -247,6 +248,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     id                  _animator;
     CPDictionary        _animationsDictionary;
+
+    // CPViewController support
+    CPViewController _viewController @accessors(property=_viewController);
 }
 
 /*
@@ -382,6 +386,8 @@ var CPViewHighDPIDrawingEnabled = YES;
 
         _theme = [CPTheme defaultTheme];
         _themeState = CPThemeStateNormal;
+
+        _viewController = nil;
 
 #if PLATFORM(DOM)
         _DOMElement = DOMElementPrototype.cloneNode(false);
@@ -599,6 +605,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         // Remove the view from its previous superview.
         [aSubview _removeFromSuperview];
 
+        [[aSubview _viewController] viewWillAppear];
         // Set ourselves as the superview.
         [aSubview _setSuperview:self];
     }
@@ -685,6 +692,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     [[self window] _dirtyKeyViewLoop];
 
     [_superview willRemoveSubview:self];
+    [_viewController viewWillDisappear];
 
     [_superview._subviews removeObjectIdenticalTo:self];
 
@@ -1616,12 +1624,16 @@ var CPViewHighDPIDrawingEnabled = YES;
             while (view = [view superview]);
         }
 
+        [_viewController viewWillDisappear];
+        [_viewController viewDidDisappear];
         [self _recursiveGainedHiddenAncestor];
     }
     else
     {
         [self setNeedsDisplay:YES];
 
+        [_viewController viewWillAppear];
+        [_viewController viewDidAppear];
         [self _recursiveLostHiddenAncestor];
     }
 
@@ -1642,6 +1654,12 @@ var CPViewHighDPIDrawingEnabled = YES;
         [self _recursiveGainedHiddenAncestor];
 
     _superview = aSuperview;
+
+    if (hasOldSuperview)
+        [_viewController viewDidDisappear];
+
+    if (hasNewSuperview)
+        [_viewController viewDidAppear];
 }
 
 - (void)_recursiveLostHiddenAncestor
@@ -3669,7 +3687,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         _window = [aCoder decodeObjectForKey:CPViewWindowKey];
         _superview = [aCoder decodeObjectForKey:CPViewSuperviewKey];
-
+        _viewController = nil;
         // We have to manually add the subviews so that they will receive
         // viewWillMoveToSuperview: and viewDidMoveToSuperview:
         _subviews = [];

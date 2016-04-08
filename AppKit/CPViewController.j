@@ -150,7 +150,7 @@ var CPViewControllerCachedCibs;
     If you use Interface Builder to create your views, and you initialize the
     controller using the initWithCibName:bundle: methods, then you MUST NOT override
     this method.
-    
+
     @note When using this method, the cib loading system is synchronous.
     See the loadViewWithCompletionHandler: method for an asynchronous loading.
 */
@@ -179,11 +179,11 @@ var CPViewControllerCachedCibs;
 
 /*!
     Loads asynchronously the cib and creates the view that the controller manages.
-    
+
     @param aHandler A function passing the loaded view as the first argument
     and a network error or nil as the second argument: function(view, error).
-    
-    @note If the view has already been loaded, the completion handler is run immediatly 
+
+    @note If the view has already been loaded, the completion handler is run immediatly
     and the process is synchronous.
 */
 - (void)loadViewWithCompletionHandler:(Function/*(view, error)*/)aHandler
@@ -213,10 +213,11 @@ var CPViewControllerCachedCibs;
                 if (anError == nil)
                 {
                     var data = [CPData dataWithRawString:aData],
-                        aCib = [[CPCib alloc] _initWithData:data bundle:_cibBundle cibName:_cibName];
+                          aCib = [[CPCib alloc] _initWithData:data bundle:_cibBundle cibName:_cibName];
 
                     [CPViewControllerCachedCibs setObject:aCib forKey:_cibName];
                     [aCib instantiateCibWithExternalNameTable:_cibExternalNameTable];
+                    [_view _setViewController:self];
                     aHandler(_view, nil);
                 }
                 else
@@ -228,12 +229,14 @@ var CPViewControllerCachedCibs;
         else
         {
             [cib instantiateCibWithExternalNameTable:_cibExternalNameTable];
+            [_view _setViewController:self];
             aHandler(_view, nil);
         }
     }
     else
     {
         _view = [CPView new];
+        [_view _setViewController:self];
         aHandler(_view, nil);
     }
 }
@@ -280,6 +283,8 @@ var CPViewControllerCachedCibs;
         _isLazy = NO;
         [self _viewDidLoad];
     }
+
+    [_view _setViewController:self];
 
     return _view;
 }
