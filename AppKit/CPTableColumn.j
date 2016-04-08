@@ -546,13 +546,22 @@ CPTableColumnUserResizingMask   = 1 << 1;
 - (void)setValueFor:(CPString)aBinding
 {
     var tableView = [_source tableView],
-        column = [[tableView tableColumns] indexOfObjectIdenticalTo:_source],
-        rowIndexes = [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, [tableView numberOfRows])],
-        columnIndexes = [CPIndexSet indexSetWithIndex:column];
+        newNumberOfRows = [tableView _numberOfRows];
 
-    // Reloads objectValues only, not the views.
-    // FIXME: reload data for all rows or just exposed rows ?
-    [tableView _reloadDataForRowIndexes:rowIndexes columnIndexes:columnIndexes];
+    if ([tableView numberOfRows] == newNumberOfRows)
+    {
+        var rowIndexes = [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, newNumberOfRows)],
+            column = [[tableView tableColumns] indexOfObjectIdenticalTo:_source],
+            columnIndexes = [CPIndexSet indexSetWithIndex:column];
+
+        // Reloads objectValues only, not the views.
+        // FIXME: reload data for all rows or just rows intersecting exposed rows ?
+        [tableView _reloadDataForRowIndexes:rowIndexes columnIndexes:columnIndexes];
+    }
+    else
+    {
+        [tableView reloadData];
+    }
 }
 
 - (CPSortDescriptor)_defaultSortDescriptorPrototype
@@ -592,7 +601,7 @@ CPTableColumnUserResizingMask   = 1 << 1;
 }
 
 /*!
-    Binds the receiver to an object.
+    Binds the receiver to an object. Note that unlike Cocoa, this works only *after* the receiver has been added to a \c CPTableView.
 
     @param CPString aBinding - The binding you wish to make. Typically CPValueBinding.
     @param id anObject - The object to bind the receiver to.

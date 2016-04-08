@@ -448,21 +448,27 @@ CPTokenFieldDeleteButtonType     = 1;
     element.style.width = CGRectGetWidth(contentRect) + "px";
     element.style.height = [font defaultLineHeightForFont] + "px";
 
-    window.setTimeout(function()
+    [[CPRunLoop mainRunLoop] performBlock:function()
     {
         [_tokenScrollView documentView]._DOMElement.appendChild(element);
 
         //post CPControlTextDidBeginEditingNotification
         [self textDidBeginEditing:[CPNotification notificationWithName:CPControlTextDidBeginEditingNotification object:self userInfo:nil]];
 
-        window.setTimeout(function()
+        [[CPRunLoop mainRunLoop] performBlock:function()
         {
+            // This will prevent to jump to the focused element
+            var previousScrollingOrigin = [self _scrollToVisibleRectAndReturnPreviousOrigin];
+
             element.focus();
+
+            [self _restorePreviousScrollingOrigin:previousScrollingOrigin];
+
             CPTokenFieldInputOwner = self;
-        }, 0.0);
+        } argument:nil order:0 modes:[CPDefaultRunLoopMode]];
 
         [self textDidFocus:[CPNotification notificationWithName:CPTextFieldDidFocusNotification object:self userInfo:nil]];
-    }, 0.0);
+    } argument:nil order:0 modes:[CPDefaultRunLoopMode]];
 
     [[[self window] platformWindow] _propagateCurrentDOMEvent:YES];
 
@@ -1033,6 +1039,21 @@ CPTokenFieldDeleteButtonType     = 1;
     [[[self window] platformWindow] _propagateCurrentDOMEvent:YES];
 }
 
+- (BOOL)performKeyEquivalent:(CPEvent)anEvent
+{
+    var characters = [anEvent characters];
+
+    // Here we handle the event when getting a CPNewlineCharacter or CPCarriageReturnCharacter when the menu is open
+    // We don't want that the application dispatches the event to the other controls
+    if ([self hasThemeState:CPThemeStateAutocompleting] && (characters === CPNewlineCharacter || characters === CPCarriageReturnCharacter))
+    {
+        [self keyDown:anEvent];
+        return YES;
+    }
+
+    return [super performKeyEquivalent:anEvent];
+}
+
 - (void)textDidChange:(CPNotification)aNotification
 {
     if ([aNotification object] !== self)
@@ -1454,9 +1475,6 @@ CPTokenFieldDeleteButtonType     = 1;
 
 - (BOOL)setThemeState:(ThemeState)aState
 {
-   if (aState.isa && [aState isKindOfClass:CPArray])
-        aState = CPThemeState.apply(null, aState);
-
     var r = [super setThemeState:aState];
 
     // Share hover state with the disclosure and delete buttons.
@@ -1471,9 +1489,6 @@ CPTokenFieldDeleteButtonType     = 1;
 
 - (BOOL)unsetThemeState:(ThemeState)aState
 {
-   if (aState.isa && [aState isKindOfClass:CPArray])
-        aState = CPThemeState.apply(null, aState);
-
     var r = [super unsetThemeState:aState];
 
     // Share hover state with the disclosure and delete button.

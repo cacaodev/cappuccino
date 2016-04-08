@@ -1,7 +1,5 @@
 @import <AppKit/AppKit.j>
 
-[CPApplication sharedApplication];
-
 @implementation CPTableViewReloadDataTest : OJTestCase
 {
     CPWindow        theWindow;
@@ -11,6 +9,9 @@
 
 - (void)setUp
 {
+    // This will init the global var CPApp which are used internally in the AppKit
+    [[CPApplication alloc] init];
+
     tableContent = [];
     // setup a reasonable table
     theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0.0, 0.0, 1024.0, 768.0)
@@ -41,13 +42,18 @@
 
     [tableView reloadData];
 
+    var enumerateViewsInRowsCall = 0;
+
     [tableView _enumerateViewsInRows:[CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, 3)]  columns:[CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, 4)] usingBlock:function(view, row, column, stop)
     {
         var tableColumn = [[tableView tableColumns] objectAtIndex:column],
             expected = [tableColumn identifier] + "_" + [tableContent objectAtIndex:row];
 
         [self assertTrue:([view stringValue] == expected)];
+        enumerateViewsInRowsCall++;
     }];
+
+    [self assert:enumerateViewsInRowsCall equals:12];
 }
 
 - (int)numberOfRowsInTableView:(CPTableView)aTableView
