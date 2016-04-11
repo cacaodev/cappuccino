@@ -1,6 +1,8 @@
 
+@import "_CPObjectAnimator.j"
 @import "CPView.j"
-@import "CPSegmentedControl.j"
+
+ @import "CPSegmentedControl.j"
 @import "CPTabView.j"
 @import "_CPImageAndTextView.j"
 
@@ -40,7 +42,6 @@
     {
         [_target viewDidMoveToSuperview];
     }
-
 }
 
 - (void)removeFromSuperview
@@ -364,7 +365,7 @@ var DEFAULT_CSS_PROPERTIES = nil;
     if (aTabViewItem == [self selectedTabViewItem])
         return NO;
 
-    if (![self _delegateShouldSelectTabViewItem:aTabViewItem])
+    if (![self _sendDelegateShouldSelectTabViewItem:aTabViewItem])
         return NO;
 
     [self _sendDelegateWillSelectTabViewItem:aTabViewItem];

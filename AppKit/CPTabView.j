@@ -34,6 +34,8 @@ CPNoTabsBezelBorder      = 4; //Displays no tabs and has a bezeled border.
 CPNoTabsLineBorder       = 5; //Has no tabs and displays a line border.
 CPNoTabsNoBorder         = 6; //Displays no tabs and no border.
 
+@class _CPTabViewBox
+
 var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
     CPTabViewShouldSelectTabViewItemSelector        = 1 << 2,
     CPTabViewWillSelectTabViewItemSelector          = 1 << 3,
@@ -64,7 +66,8 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
     CPArray                 _items;
 
     CPSegmentedControl      _tabs @accessors(getter=_tabs);
-    CPBox                   _box @accessors(getter=_box);
+    _CPTabViewBox           _box @accessors(getter=_box);
+
     CPView                  _placeHolderView;
 
     CPTabViewItem           _selectedTabViewItem @accessors;
@@ -97,7 +100,8 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
     var height = [_tabs valueForThemeAttribute:@"min-size"].height;
     [_tabs setFrameSize:CGSizeMake(0, height)];
 
-    _box = [[CPBox alloc] initWithFrame:[self  bounds]];
+    _box = [[_CPTabViewBox alloc] initWithFrame:[self  bounds]];
+    [_box setTabView:self];
     [self setBackgroundColor:[CPColor colorWithCalibratedWhite:0.95 alpha:1.0]];
 
     [self addSubview:_box];
@@ -203,7 +207,7 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
 {
     return [[self items] indexOfObjectPassingTest:function(item, idx, stop)
     {
-        [[item identifier] isEqual:anIdentifier];
+        return [[item identifier] isEqual:anIdentifier];
     }];
 }
 
@@ -325,7 +329,7 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
     if (aTabViewItem == _selectedTabViewItem)
         return NO;
 
-    if (![self _delegateShouldSelectTabViewItem:aTabViewItem])
+    if (![self _sendDelegateShouldSelectTabViewItem:aTabViewItem])
         return NO;
 
     [self _sendDelegateWillSelectTabViewItem:aTabViewItem];
@@ -333,7 +337,6 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
     [_tabs setSelectedSegment:anIndex];
 
     _selectedTabViewItem = aTabViewItem;
-
     [self _displayItemView:[aTabViewItem view]];
 
     [self _sendDelegateDidSelectTabViewItem:aTabViewItem];
@@ -517,7 +520,7 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
 
 // DELEGATE METHODS
 
-- (void)_delegateShouldSelectTabViewItem:(CPTabViewItem)aTabViewItem
+- (BOOL)_sendDelegateShouldSelectTabViewItem:(CPTabViewItem)aTabViewItem
 {
     if (_delegateSelectors & CPTabViewShouldSelectTabViewItemSelector)
         return [_delegate tabView:self shouldSelectTabViewItem:aTabViewItem];
@@ -634,6 +637,17 @@ var CPTabViewDidSelectTabViewItemSelector           = 1 << 1,
     [textField setFrameOrigin:origin];
 
     [self _displayItemView:_placeHolderView];
+}
+
+#pragma mark -
+#pragma mark Override
+
+/*!
+    Enabled controls accept first mouse by default.
+*/
+- (BOOL)acceptsFirstMouse:(CPEvent)anEvent
+{
+    return YES;
 }
 
 @end
@@ -767,6 +781,8 @@ var CPTabViewItemsKey               = "CPTabViewItemsKey",
 
 - (void)awakeFromCib
 {
+    [super awakeFromCib];
+
     // This cannot be run in initWithCoder because it might call selectTabViewItem:, which is
     // not safe to call before the views of the tab views items are fully decoded.
 
@@ -775,7 +791,13 @@ var CPTabViewItemsKey               = "CPTabViewItemsKey",
         var idx = [self indexOfTabViewItem:_selectedTabViewItem];
 
         if (idx !== CPNotFound)
+        {
+            // Temporarily set the selected item to not selected.
+            // It allows the initial selection to be made correctly.
+            _selectedTabViewItem = nil;
+
             [self selectTabViewItemAtIndex:idx];
+        }
     }
 
     var type = _type;
@@ -803,6 +825,29 @@ var CPTabViewItemsKey               = "CPTabViewItemsKey",
     [aCoder encodeObject:_font forKey:CPTabViewFontKey];
 
     [aCoder encodeConditionalObject:_delegate forKey:CPTabViewDelegateKey];
+}
+
+@end
+
+@implementation _CPTabViewBox : CPBox
+{
+    CPTabView _tabView @accessors(property=tabView);
+}
+
+
+#pragma mark -
+#pragma mark Override
+
+- (CPView)hitTest:(CGPoint)aPoint
+{
+    // Here we check if we have clicked on the segmentedControl of the tabView or not
+    // If YES, the CPBox should not handle the click
+    var segmentIndex = [_tabView._tabs testSegment:[_tabView._tabs convertPoint:aPoint fromView:[self superview]]];
+
+    if (segmentIndex != CPNotFound)
+        return nil;
+
+    return [super hitTest:aPoint];
 }
 
 @end

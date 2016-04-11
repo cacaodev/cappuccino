@@ -1,4 +1,3 @@
-@import "CAAnimation.j"
 @import "CABasicAnimation.j"
 @import "CAKeyframeAnimation.j"
 @import "CPView.j"
