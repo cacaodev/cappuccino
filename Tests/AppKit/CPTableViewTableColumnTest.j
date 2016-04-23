@@ -1,7 +1,5 @@
 @import <AppKit/AppKit.j>
 
-[CPApplication sharedApplication];
-
 @implementation CPTableViewTableColumnTest : OJTestCase
 {
     CPWindow        theWindow;
@@ -10,6 +8,9 @@
 
 - (void)setUp
 {
+    // This will init the global var CPApp which are used internally in the AppKit
+    [[CPApplication alloc] init];
+
     // setup a reasonable table
     theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0.0, 0.0, 1024.0, 768.0)
                                             styleMask:CPWindowNotSizable];
@@ -40,19 +41,21 @@
     [self assertTrue:([[tableView tableColumns] count] == 4)];
 
     [tableView removeTableColumn:[[tableView tableColumns] firstObject]];
-[[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     [self assertTrue:([[tableView tableColumns] count] == 3)];
 
     [tableView removeTableColumn:[[tableView tableColumns] firstObject]];
-[[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     [self assertTrue:([[tableView tableColumns] count] == 2)];
+
+    var enumerateViewsInRowsCall = 0;
 
     [tableView enumerateAvailableViewsUsingBlock:function(view, row, column, stop)
     {
         var tableColumn = [[tableView tableColumns] objectAtIndex:column];
         [self assert:("COLUMN_" + [tableColumn identifier] + "ROW_" + row) equals:[view objectValue]];
-
+        enumerateViewsInRowsCall++;
     }];
+
+    [self assert:enumerateViewsInRowsCall equals:30];
 }
 
 - (int)numberOfRowsInTableView:(CPTableView)aTableView

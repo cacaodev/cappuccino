@@ -74,7 +74,7 @@ var CPComboBoxTextSubview = @"text",
     BOOL                        _usesDataSource;
     CGSize                      _intercellSpacing;
     CPArray                     _items;
-    id<CPComboBoxDataSource>    _dataSource;
+    id <CPComboBoxDataSource>   _dataSource;
     CPInteger                   _implementedDelegateComboBoxMethods;
     CPString                    _selectedStringValue;
     float                       _itemHeight;
@@ -843,7 +843,17 @@ var CPComboBoxTextSubview = @"text",
         // In FireFox this needs to be done in setTimeout, otherwise there is no caret
         // We have to save the input element now, when we lose focus it will change.
         var element = [self _inputElement];
-        window.setTimeout(function() { element.focus(); }, 0);
+
+        [[CPRunLoop mainRunLoop] performBlock:function()
+        {
+            // This will prevent to jump to the focused element
+            var previousScrollingOrigin = [self _scrollToVisibleRectAndReturnPreviousOrigin];
+
+            element.focus();
+
+            [self _restorePreviousScrollingOrigin:previousScrollingOrigin];
+
+        } argument:nil order:0 modes:[CPDefaultRunLoopMode]];
 #endif
 
         return NO;
@@ -1132,11 +1142,9 @@ var CPComboBoxTextSubview = @"text",
     // Directly nuke _items, [_items removeAll] will trigger an extra call to setContent
     _items = [];
 
-    var values = [];
-
-    [anArray enumerateObjectsUsingBlock:function(object)
+    var values = [anArray arrayByApplyingBlock:function(object)
     {
-        values.push([object description]);
+        return [object description];
     }];
 
     [self addItemsWithObjectValues:values];

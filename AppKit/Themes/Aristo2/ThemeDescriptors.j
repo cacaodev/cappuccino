@@ -28,6 +28,7 @@
 @import <AppKit/CPButtonBar.j>
 @import <AppKit/CPCheckBox.j>
 @import <AppKit/CPComboBox.j>
+@import <AppKit/CPColor.j>
 @import <AppKit/CPColorWell.j>
 @import <AppKit/CPDatePicker.j>
 @import <AppKit/CPLevelIndicator.j>
@@ -96,7 +97,22 @@ var themedButtonValues = nil,
             "themedRuleEditor",
             "themedTableDataView",
             "themedCornerview",
-            "themedTokenFieldTokenCloseButton"];
+            "themedTokenFieldTokenCloseButton",
+            "themedColor"];
+}
+
++ (CPColor)themedColor
+{
+    var color = [CPColor redColor],
+        themedColorValues =
+    [
+        [@"alternate-selected-control-color", [[CPColor alloc] _initWithRGBA:[0.22, 0.46, 0.84, 1.0]]],
+        [@"secondary-selected-control-color", [[CPColor alloc] _initWithRGBA:[0.83, 0.83, 0.83, 1.0]]]
+    ];
+
+    [self registerThemeValues:themedColorValues forObject:color];
+
+    return color;
 }
 
 + (CPButton)makeButton
@@ -310,7 +326,7 @@ var themedButtonValues = nil,
     var button = [self button];
 
     [button setTitle:@"OK"];
-    [button setThemeState:[CPButtonStateBezelStyleRounded, CPThemeStateDefault]];
+    [button setThemeStates:[CPButtonStateBezelStyleRounded, CPThemeStateDefault]];
 
     return button;
 }
@@ -688,7 +704,8 @@ var themedButtonValues = nil,
         [@"text-color",         [CPColor blackColor],                                       [CPThemeStateTableDataView, CPThemeStateSelectedDataView, CPThemeStateEditable, CPThemeStateFirstResponder, CPThemeStateKeyWindow]],
         [@"content-inset",      CGInsetMake(7.0, 7.0, 5.0, 10.0),                           [CPThemeStateTableDataView, CPThemeStateEditable]],
         [@"font",               [CPFont systemFontOfSize:CPFontCurrentSystemSize],          [CPThemeStateTableDataView, CPThemeStateEditing]],
-        [@"bezel-inset",        CGInsetMake(-2.0, -2.0, -2.0, -2.0),                        [CPThemeStateTableDataView, CPThemeStateEditing]],
+        [@"bezel-inset",        CGInsetMake(-2.0, -2.0, -2.0, -2.0),                        [CPThemeStateTableDataView, CPThemeStateEditable, CPThemeStateEditing]],
+        [@"bezel-inset",        CGInsetMake(1.0, 1.0, 1.0, 1.0),                            [CPThemeStateTableDataView, CPThemeStateEditable]],
 
         [@"text-color",         [CPColor colorWithCalibratedWhite:125.0 / 255.0 alpha:1.0], [CPThemeStateTableDataView, CPThemeStateGroupRow]],
         [@"text-color",         [CPColor whiteColor],                                       [CPThemeStateTableDataView, CPThemeStateGroupRow, CPThemeStateSelectedDataView, CPThemeStateFirstResponder, CPThemeStateKeyWindow]],
@@ -760,8 +777,8 @@ var themedButtonValues = nil,
 
             [@"font",                       [CPFont systemFontOfSize:CPFontCurrentSystemSize]],
 
-            [@"content-inset",              CGInsetMake(8.0, 14.0, 6.0, 14.0),                      [CPTextFieldStateRounded, CPThemeStateBezeled]],
-            [@"content-inset",              CGInsetMake(8.0, 14.0, 6.0, 14.0),                      [CPTextFieldStateRounded, CPThemeStateBezeled, CPThemeStateEditing]],
+            [@"content-inset",              CGInsetMake(7.0, 10.0, 4.0, 10.0),                      [CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"content-inset",              CGInsetMake(7.0, 10.0, 4.0, 10.0),                      [CPTextFieldStateRounded, CPThemeStateBezeled, CPThemeStateEditing]],
 
             [@"bezel-inset",                CGInsetMake(3.0, 4.0, 3.0, 4.0),                        [CPTextFieldStateRounded, CPThemeStateBezeled]],
             [@"bezel-inset",                CGInsetMake(0.0, 1.0, 0.0, 1.0),                        [CPTextFieldStateRounded, CPThemeStateBezeled, CPThemeStateEditing]],
@@ -772,9 +789,23 @@ var themedButtonValues = nil,
 
             [@"min-size",                   CGSizeMake(0.0, 29.0),                                  [CPTextFieldStateRounded, CPThemeStateBezeled]],
             [@"max-size",                   CGSizeMake(-1.0, 29.0),                                 [CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"nib2cib-adjustment-frame",   CGRectMake(-4.0, 7.0, 8.0, 10.0),                       [CPTextFieldStateRounded, CPThemeStateBezeled]],
 
-            [@"min-size",                   CGSizeMake(0.0, 20.0),                                  [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled]],
-            [@"max-size",                   CGSizeMake(-1.0, 20.0),                                 [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled]]
+            // CPThemeStateControlSizeSmall
+            [@"content-inset",              CGInsetMake(7.0, 6.0, 4.0, 6.0),                        [CPThemeStateControlSizeSmall, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"bezel-inset",                CGInsetMake(2.0, 4.0, 2.0, 4.0),                        [CPThemeStateControlSizeSmall, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"bezel-inset",                CGInsetMake(0.0, 1.0, 0.0, 1.0),                        [CPThemeStateControlSizeSmall, CPTextFieldStateRounded, CPThemeStateBezeled, CPThemeStateEditing]],
+            [@"min-size",                   CGSizeMake(0.0, 25.0),                                  [CPThemeStateControlSizeSmall, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"max-size",                   CGSizeMake(-1.0, 25.0),                                 [CPThemeStateControlSizeSmall, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"nib2cib-adjustment-frame",   CGRectMake(-4.0, 7.0, 8.0, 9.0),                        [CPThemeStateControlSizeSmall, CPTextFieldStateRounded, CPThemeStateBezeled]],
+
+            // CPThemeStateControlSizeMini
+            [@"content-inset",              CGInsetMake(7.0, 6.0, 4.0, 6.0),                        [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"bezel-inset",                CGInsetMake(2.0, 4.0, 2.0, 4.0),                        [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"bezel-inset",                CGInsetMake(0.0, 1.0, 0.0, 1.0),                        [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled, CPThemeStateEditing]],
+            [@"min-size",                   CGSizeMake(0.0, 22.0),                                  [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"max-size",                   CGSizeMake(-1.0, 22.0),                                 [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled]],
+            [@"nib2cib-adjustment-frame",   CGRectMake(-4.0, 2.0, 8.0, 4.0),                        [CPThemeStateControlSizeMini, CPTextFieldStateRounded, CPThemeStateBezeled]],
         ];
 
     [self registerThemeValues:themedRoundedTextFieldValues forView:textfield];
@@ -793,17 +824,40 @@ var themedButtonValues = nil,
 {
     var searchField = [[CPSearchField alloc] initWithFrame:CGRectMake(0.0, 0.0, 160.0, 29.0)],
 
-        imageSearch = PatternImage("search-field-search.png", 25.0, 22.0),
-        imageFind = PatternImage("search-field-find.png", 25.0, 22.0),
-        imageCancel = PatternImage("search-field-cancel.png", 22.0, 22.0),
-        imageCancelPressed = PatternImage("search-field-cancel-pressed.png", 22.0, 22.0),
+        imageSearch         = PatternImage("search-field-search.png", 25.0, 22.0),
+        imageFind           = PatternImage("search-field-find.png", 25.0, 22.0),
+        imageCancel         = PatternImage("search-field-cancel.png", 22.0, 22.0),
+        imageCancelPressed  = PatternImage("search-field-cancel-pressed.png", 22.0, 22.0),
+
+        smallImageSearch         = PatternImage("search-field-search.png", 25.0, 22.0),
+        smallImageFind           = PatternImage("search-field-find.png", 25.0, 22.0),
+        smallImageCancel         = PatternImage("search-field-cancel.png", 22.0, 22.0),
+        smallImageCancelPressed  = PatternImage("search-field-cancel-pressed.png", 22.0, 22.0),
+
+        miniImageSearch         = PatternImage("search-field-search.png", 25.0, 22.0),
+        miniImageFind           = PatternImage("search-field-find.png", 25.0, 22.0),
+        miniImageCancel         = PatternImage("search-field-cancel.png", 22.0, 22.0),
+        miniImageCancelPressed  = PatternImage("search-field-cancel-pressed.png", 22.0, 22.0),
 
         overrides =
         [
-            [@"image-search", imageSearch],
-            [@"image-find", imageFind],
-            [@"image-cancel", imageCancel],
-            [@"image-cancel-pressed", imageCancelPressed]
+            [@"image-search-inset",  CGInsetMake(0, 0, 0, 5)],
+            [@"image-cancel-inset",  CGInsetMake(0, 5, 0, 0)],
+
+            [@"image-search",           imageSearch],
+            [@"image-find",             imageFind],
+            [@"image-cancel",           imageCancel],
+            [@"image-cancel-pressed",   imageCancelPressed],
+
+            [@"image-search",           smallImageSearch,               CPThemeStateControlSizeSmall],
+            [@"image-find",             smallImageFind,                 CPThemeStateControlSizeSmall],
+            [@"image-cancel",           smallImageCancel,               CPThemeStateControlSizeSmall],
+            [@"image-cancel-pressed",   smallImageCancelPressed,        CPThemeStateControlSizeSmall],
+
+            [@"image-search",           miniImageSearch,                CPThemeStateControlSizeMini],
+            [@"image-find",             miniImageFind,                  CPThemeStateControlSizeMini],
+            [@"image-cancel",           miniImageCancel,                CPThemeStateControlSizeMini],
+            [@"image-cancel-pressed",   miniImageCancelPressed,         CPThemeStateControlSizeMini],
         ];
 
     [self registerThemeValues:overrides forView:searchField inherit:themedRoundedTextFieldValues];
@@ -1248,7 +1302,7 @@ var themedButtonValues = nil,
             {
                 width: 8.0,
                 height: 26.0,
-                rightWidth: 23.0,
+                rightWidth: 21.0,
                 orientation: PatternIsHorizontal
             }),
 
@@ -1352,6 +1406,10 @@ var themedButtonValues = nil,
             [@"bezel-color",        smallBezelNoBorderFocusedColor,             [CPThemeStateControlSizeSmall, CPThemeStateBezeled, CPThemeStateEditing]],
             [@"bezel-color",        smallBezelNoBorderColor["disabled"],        [CPThemeStateControlSizeSmall, CPThemeStateBezeled, CPThemeStateDisabled]],
 
+            [@"bezel-inset",        CGInsetMake(1.0, 2.0, 1.0, 2.0),            [CPThemeStateBezeled, CPThemeStateEditing, CPComboBoxStateButtonBordered, CPThemeStateControlSizeSmall]],
+            [@"content-inset",      CGInsetMake(7.0, 28.0, 7.0, 8.0),           [CPThemeStateBezeled, CPComboBoxStateButtonBordered, CPThemeStateControlSizeSmall]],
+            [@"content-inset",      CGInsetMake(7.0, 28.0, 7.0, 8.0),           [CPThemeStateBezeled, CPThemeStateControlSizeSmall]],
+
             [@"min-size",           CGSizeMake(0, 26.0),                        CPThemeStateControlSizeSmall],
             [@"max-size",           CGSizeMake(-1, 26.0),                       CPThemeStateControlSizeSmall],
             [@"nib2cib-adjustment-frame",   CGRectMake(-4.0, -1.0, 5.0, 0.0),   CPThemeStateControlSizeSmall],
@@ -1364,6 +1422,10 @@ var themedButtonValues = nil,
             [@"bezel-color",        miniBezelNoBorderColor["@"],                [CPThemeStateControlSizeMini, CPThemeStateBezeled]],
             [@"bezel-color",        miniBezelNoBorderFocusedColor,              [CPThemeStateControlSizeMini, CPThemeStateBezeled, CPThemeStateEditing]],
             [@"bezel-color",        miniBezelNoBorderColor["disabled"],         [CPThemeStateControlSizeMini, CPThemeStateBezeled, CPThemeStateDisabled]],
+
+            [@"bezel-inset",        CGInsetMake(1.0, 2.0, 1.0, 2.0),            [CPThemeStateBezeled, CPThemeStateEditing, CPComboBoxStateButtonBordered, CPThemeStateControlSizeMini]],
+            [@"content-inset",      CGInsetMake(7.0, 26.0, 7.0, 8.0),           [CPThemeStateBezeled, CPComboBoxStateButtonBordered, CPThemeStateControlSizeMini]],
+            [@"content-inset",      CGInsetMake(7.0, 26.0, 7.0, 8.0),           [CPThemeStateBezeled, CPThemeStateControlSizeMini]],
 
             [@"min-size",           CGSizeMake(0, 22.0),                        CPThemeStateControlSizeMini],
             [@"max-size",           CGSizeMake(-1, 22.0),                       CPThemeStateControlSizeMini],
@@ -2447,6 +2509,24 @@ var themedButtonValues = nil,
             [@"spinning-mini-gif", spinningMini],
             [@"spinning-small-gif", spinningSmall],
             [@"spinning-regular-gif", spinningRegular]
+        ];
+
+    [self registerThemeValues:themeValues forView:progressBar];
+
+    return progressBar;
+}
+
++ (CPProgressIndicator)themedCircularProgressIndicator
+{
+    var progressBar = [[CPProgressIndicator alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
+    [progressBar setStyle:CPProgressIndicatorSpinningStyle];
+    [progressBar setIndeterminate:NO];
+
+    var themeValues =
+        [
+            [@"circular-border-color", [CPColor colorWithHexString:@"A0A0A0"]],
+            [@"circular-border-size", 1],
+            [@"circular-color", [CPColor colorWithHexString:@"5982DA"]]
         ];
 
     [self registerThemeValues:themeValues forView:progressBar];

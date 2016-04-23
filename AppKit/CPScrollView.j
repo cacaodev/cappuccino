@@ -33,6 +33,15 @@
 #define SHOULD_SHOW_CORNER_VIEW() (_scrollerStyle === CPScrollerStyleLegacy && _verticalScroller && ![_verticalScroller isHidden])
 
 
+@protocol CPScrollViewDelegate <CPObject>
+
+@optional
+- (void)scrollViewWillScroll:(CPScrollView)aScrollView;
+- (void)scrollViewDidScroll:(CPScrollView)aScrollView;
+
+@end
+
+
 /*! @ignore */
 var _isBrowserUsingOverlayScrollers = function()
 {
@@ -77,15 +86,6 @@ var _isBrowserUsingOverlayScrollers = function()
 #endif
 };
 
-/*!
-    @ingroup appkit
-    @class CPScrollView
-
-    Used to display views that are too large for the viewing area. the CPScrollView
-    places scroll bars on the side of the view to allow the user to scroll and see the entire
-    contents of the view.
-*/
-
 var TIMER_INTERVAL                              = 0.2,
     CPScrollViewDelegate_scrollViewWillScroll_  = 1 << 0,
     CPScrollViewDelegate_scrollViewDidScroll_   = 1 << 1,
@@ -95,38 +95,45 @@ var TIMER_INTERVAL                              = 0.2,
 var CPScrollerStyleGlobal                       = CPScrollerStyleOverlay,
     CPScrollerStyleGlobalChangeNotification     = @"CPScrollerStyleGlobalChangeNotification";
 
+/*!
+    @ingroup appkit
+    @class CPScrollView
 
+    Used to display views that are too large for the viewing area. the CPScrollView
+    places scroll bars on the side of the view to allow the user to scroll and see the entire
+    contents of the view.
+*/
 @implementation CPScrollView : CPView
 {
-    CPClipView      _contentView;
-    CPClipView      _headerClipView;
-    CPView          _cornerView;
-    CPView          _bottomCornerView;
+    CPClipView                  _contentView;
+    CPClipView                  _headerClipView;
+    CPView                      _cornerView;
+    CPView                      _bottomCornerView;
 
-    id              _delegate;
-    CPTimer         _scrollTimer;
+    id <CPScrollViewDelegate>   _delegate;
+    CPTimer                     _scrollTimer;
 
-    BOOL            _hasVerticalScroller;
-    BOOL            _hasHorizontalScroller;
-    BOOL            _autohidesScrollers;
+    BOOL                        _hasVerticalScroller;
+    BOOL                        _hasHorizontalScroller;
+    BOOL                        _autohidesScrollers;
 
-    CPScroller      _verticalScroller;
-    CPScroller      _horizontalScroller;
+    CPScroller                  _verticalScroller;
+    CPScroller                  _horizontalScroller;
 
-    CPInteger       _recursionCount;
-    CPInteger       _implementedDelegateMethods;
+    CPInteger                   _recursionCount;
+    CPInteger                   _implementedDelegateMethods;
 
-    float           _verticalLineScroll;
-    float           _verticalPageScroll;
-    float           _horizontalLineScroll;
-    float           _horizontalPageScroll;
+    float                       _verticalLineScroll;
+    float                       _verticalPageScroll;
+    float                       _horizontalLineScroll;
+    float                       _horizontalPageScroll;
 
-    CPBorderType    _borderType;
+    CPBorderType                _borderType;
 
-    CPTimer         _timerScrollersHide;
+    CPTimer                     _timerScrollersHide;
 
-    int             _scrollerStyle;
-    int             _scrollerKnobStyle;
+    int                         _scrollerStyle;
+    int                         _scrollerKnobStyle;
 }
 
 
@@ -296,7 +303,7 @@ Notifies the delegate when the scroll view has finished scrolling.
 @endcode
 
 */
-- (void)setDelegate:(id)aDelegate
+- (void)setDelegate:(id <CPScrollViewDelegate>)aDelegate
 {
     if (aDelegate === _delegate)
         return;
@@ -1575,6 +1582,8 @@ var CPScrollViewContentViewKey          = @"CPScrollViewContentView",
 */
 - (void)awakeFromCib
 {
+    [super awakeFromCib];
+
     [self _updateScrollerStyle];
     [self _updateCornerAndHeaderView];
 }
