@@ -3,6 +3,7 @@
 
 @class CPArray
 @class CPLayoutConstraintEngine
+@class CPLayoutAnchor
 
 @typedef CPLayoutRelation
 CPLayoutRelationLessThanOrEqual = -1;
@@ -64,10 +65,15 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     double              _constant         @accessors(getter=constant);
     float               _coefficient      @accessors(getter=multiplier);
     CPLayoutPriority    _priority         @accessors(getter=priority);
-    BOOL                _active           @accessors(getter=isActive);
+
     CPString            _identifier       @accessors(property=identifier);
+    CPLayoutAnchor      _firstAnchor      @accessors(getter=firstAnchor);
+    CPLayoutAnchor      _secondAnchor     @accessors(getter=secondAnchor);
+
+    BOOL                _active           @accessors(getter=isActive);
     BOOL                _shouldBeArchived @accessors(property=shouldBeArchived);
 
+// Private ivars
     unsigned            _constraintFlags   @accessors(getter=constraintFlags);
     CPString            _symbolicConstant;
     CPArray             _engineConstraints;
@@ -116,6 +122,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     _container = nil;
     _engineConstraints = nil;
+    _firstAnchor =nil;
+    _secondAnchor = nil;
     _constraintFlags = 0;
     _active = NO;
 }
@@ -132,7 +140,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPString)hash
 {
-    return [CPString stringWithFormat:@"%d%d%d%d%d%d%d%d", [_firstItem UID], [_secondItem UID], _firstAttribute, _secondAttribute, _relation, _constant, _coefficient, _priority];
+    return [CPString stringWithFormat:@"%d-%d-%d-%d-%d-%d-%d-%d", [_firstItem UID], [_secondItem UID], _firstAttribute, _secondAttribute, _relation, _constant, _coefficient, _priority];
 }
 
 - (BOOL)isEqual:(id)anObject
@@ -144,6 +152,22 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         return NO;
 
     return YES;
+}
+
+- (CPLayoutAnchor)firstAnchor
+{
+    if (_firstAnchor == nil)
+        _firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:_firstItem attribute:_firstAttribute];
+
+    return _firstAnchor;
+}
+
+- (CPLayoutAnchor)secondAnchor
+{
+    if (_secondAnchor == nil)
+        _secondAnchor = [CPLayoutAnchor layoutAnchorWithItem:_secondItem attribute:_secondAttribute];
+
+    return _secondAnchor;
 }
 
 - (CPArray)_engineConstraints
