@@ -4445,15 +4445,16 @@ Subclasses should not override this method.
 
     if (!CGSizeEqualToSize(newSize, oldSize))
     {
-        var constraintWidth = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.width huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:0];
+        var constraintWidth = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.width huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:0],
+            constraintHeight = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.height huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:1];
 
-        var constraintHeight = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.height huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:1];
+        var oldConstraints = [_windowView _contentSizeConstraints],
+            newConstraints = @[constraintWidth, constraintHeight];
 
-        var constraints = [_windowView _contentSizeConstraints];
+        if (oldConstraints)
+            [_windowView removeConstraints:oldConstraints];
 
-        if (constraints)
-            [_windowView removeConstraints:constraints];
-        [_windowView addConstraints:[constraintWidth, constraintHeight]];
+        [_windowView addConstraints:newConstraints];
 
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
