@@ -1,6 +1,8 @@
 @import <Foundation/_CGGeometry.j>
 @import "CPLayoutConstraint.j"
 
+@class CPLayoutConstraintEngine
+
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
 {
     CPLayoutPriority _huggingPriority          @accessors(property=huggingPriority);
@@ -53,7 +55,7 @@
 {
     if (!_engineConstraints)
         _engineConstraints = [CPLayoutConstraintEngine _engineConstraintsFromContentSizeConstraint:self];
-        
+
     return _engineConstraints;
 }
 
