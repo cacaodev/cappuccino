@@ -9,7 +9,7 @@
     if (anObject === self)
         return YES;
 
-    if (!anObject || [anObject class] !== [self class] || [anObject firstAttribute] !== _firstAttribute || [anObject viewForAutoresizingMask] !== [self viewForAutoresizingMask])
+    if (!anObject || [anObject class] !== [self class] || [anObject firstAttribute] !== [self firstAttribute] || [anObject viewForAutoresizingMask] !== [self viewForAutoresizingMask])
         return NO;
 
     return YES;
@@ -17,7 +17,7 @@
 
 - (CPView)viewForAutoresizingMask
 {
-    return (_firstItem !== _container) ? _firstItem : _secondItem;
+    return ([self firstItem] !== _container) ? [self firstItem] : [self secondItem];
 }
 
 - (CPString)_constraintType

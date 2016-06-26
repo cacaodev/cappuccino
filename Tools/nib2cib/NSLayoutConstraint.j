@@ -31,21 +31,33 @@
 
     if (self)
     {
-        _firstItem = [aCoder decodeObjectForKey:@"NSFirstItem"];
-        _firstAttribute = [aCoder decodeIntForKey:@"NSFirstAttribute"];
+        if ([aCoder containsValueForKey:@"NSFirstAnchor"])
+            _firstAnchor = [aCoder decodeObjectForKey:@"NSFirstAnchor"];
+        else
+        {
+            var item = [aCoder decodeObjectForKey:@"NSFirstItem"],
+                attr = [aCoder decodeIntForKey:@"NSFirstAttribute"];
+            _firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:item attribute:attr];
+        }
+
+        if ([aCoder containsValueForKey:@"NSSecondAnchor"])
+            _secondAnchor = [aCoder decodeObjectForKey:@"NSSecondAnchor"];
+        else
+        {
+            var item = [aCoder decodeObjectForKey:@"NSSecondItem"],
+                attr = [aCoder decodeIntForKey:@"NSSecondAttribute"];
+            _secondAnchor = [CPLayoutAnchor layoutAnchorWithItem:item attribute:attr];
+        }
 
         var hasKey = [aCoder containsValueForKey:@"NSRelation"];
         _relation = hasKey ? [aCoder decodeIntForKey:@"NSRelation"] : CPLayoutRelationEqual ;// TODO: check relation when not in xib;
 
-        _secondItem = [aCoder decodeObjectForKey:@"NSSecondItem"];
-        _secondAttribute = [aCoder decodeIntForKey:@"NSSecondAttribute"];
-
         var hasKey = [aCoder containsValueForKey:@"NSMultiplier"];
         _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:@"NSMultiplier"] : 1 ;// TODO: check multiplier when not in xib;
-        
+
         if ([aCoder containsValueForKey:@"NSConstantV2"])
             _constant = [aCoder decodeDoubleForKey:@"NSConstantV2"];
-        else 
+        else
             _constant = [aCoder decodeDoubleForKey:@"NSConstant"];
 
         _symbolicConstant = [aCoder decodeObjectForKey:"NSSymbolicConstant"];
@@ -80,4 +92,3 @@
 
 @implementation NSIBPrototypingLayoutConstraint : NSLayoutConstraint
 @end
-

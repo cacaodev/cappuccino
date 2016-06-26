@@ -53,7 +53,7 @@ var CPLayoutItemIsNull          = 2,
         changes.forEach(function(change)
         {
             var variable = change.variable,
-                   container = _variableOwnerMap.get(variable);
+                container = _variableOwnerMap.get(variable);
 
             [container valueOfVariable:variable didChangeInEngine:self];
         });

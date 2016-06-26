@@ -1,7 +1,7 @@
 @import <Foundation/CPObject.j>
+@import <Foundation/CPArray.j>
 @import <Foundation/CPString.j>
 
-@class CPArray
 @class CPLayoutConstraintEngine
 @class CPLayoutAnchor
 
@@ -41,34 +41,17 @@ CPLayoutPriorityDragThatCannotResizeWindow = 490; // This is the priority level 
 CPLayoutPriorityDefaultLow = 250; // this is the priority level at which a button hugs its contents horizontally.
 CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingSize], the smallest size that is large enough for the view's contents is computed.  This is the priority level with which the view wants to be as small as possible in that computation.  It's quite low.  It is generally not appropriate to make a constraint at exactly this priority.  You want to be higher or lower.
 
-var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
-                               "left",
-                               "right",
-                               "top",
-                               "bottom",
-                               "left",
-                               "right",
-                               "width",
-                               "height",
-                               "centerX",
-                               "centerY",
-                               "baseline"];
-
 @implementation CPLayoutConstraint : CPObject
 {
     id                  _container        @accessors(getter=container);
-    id                  _firstItem        @accessors(getter=firstItem);
-    id                  _secondItem       @accessors(getter=secondItem);
-    CPLayoutAttribute   _firstAttribute   @accessors(getter=firstAttribute);
-    CPLayoutAttribute   _secondAttribute  @accessors(getter=secondAttribute);
+    CPLayoutAnchor      _firstAnchor      @accessors(getter=firstAnchor, setter=_setFirstAnchor:);
+    CPLayoutAnchor      _secondAnchor     @accessors(getter=secondAnchor, setter=_setSecondAnchor:);
     CPLayoutRelation    _relation         @accessors(getter=relation);
     double              _constant         @accessors(getter=constant);
-    float               _coefficient      @accessors(getter=multiplier);
+    float               _coefficient      @accessors(getter=multiplier, setter=_setMultiplier:);
     CPLayoutPriority    _priority         @accessors(getter=priority);
 
     CPString            _identifier       @accessors(property=identifier);
-    CPLayoutAnchor      _firstAnchor      @accessors(getter=firstAnchor);
-    CPLayoutAnchor      _secondAnchor     @accessors(getter=secondAnchor);
 
     BOOL                _active           @accessors(getter=isActive);
     BOOL                _shouldBeArchived @accessors(property=shouldBeArchived);
@@ -87,30 +70,26 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [CPSet set];
 }
 
-+ (id)constraintWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
++ (CPLayoutConstraint)constraintWithAnchor:(CPLayoutAnchor)firstAnchor relatedBy:(CPLayoutRelation)relation toAnchor:(CPLayoutAnchor)secondAnchor multiplier:(float)multiplier constant:(float)constant
 {
-    return [[[self class] alloc] initWithItem:item1 attribute:att1 relatedBy:relation toItem:item2 attribute:att2 multiplier:multiplier constant:constant];
+    var constraint = [[[self class] alloc] init];
+    [constraint _setFirstAnchor:firstAnchor];
+    [constraint _setRelation:relation];
+
+    [constraint _setSecondAnchor:secondAnchor];
+    [constraint _setMultiplier:multiplier];
+
+    [constraint _setConstant:constant];
+
+    return constraint;
 }
 
-- (id)initWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
++ (CPLayoutConstraint)constraintWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
 {
-    self = [super init];
+    var firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:item1 attribute:att1],
+        secondAnchor = (multiplier !== 0  && item2 !== nil) ? [CPLayoutAnchor layoutAnchorWithItem:item2 attribute:att2] : nil;
 
-    [self _setFirstItem:item1];
-    [self _setSecondItem:item2];
-    _firstAttribute = att1;
-    _secondAttribute = att2;
-    _relation = relation;
-    _coefficient = multiplier;
-    _constant = constant;
-    _symbolicConstant = nil;
-    _priority = CPLayoutPriorityRequired;
-    _identifier = nil;
-    _shouldBeArchived = NO;
-
-    [self _init];
-
-    return self;
+    return [[self class] constraintWithAnchor:firstAnchor relatedBy:relation toAnchor:secondAnchor multiplier:multiplier constant:constant];
 }
 
 - (CPString)_constraintType
@@ -118,19 +97,34 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return @"Constraint";
 }
 
+- (id)init
+{
+    self = [super init];
+
+    _priority = CPLayoutPriorityRequired;
+    _identifier = nil;
+    _shouldBeArchived = NO;
+    _symbolicConstant = nil;
+
+    [self _init];
+
+    return self;
+}
+
 - (void)_init
 {
     _container = nil;
     _engineConstraints = nil;
-    _firstAnchor =nil;
-    _secondAnchor = nil;
     _constraintFlags = 0;
     _active = NO;
+
+    [self resolveConstant];
 }
 
 - (id)copy
 {
-    var copy = [CPLayoutConstraint constraintWithItem:_firstItem attribute:_firstAttribute relatedBy:_relation toItem:_secondItem attribute:_secondAttribute multiplier:_coefficient constant:_constant];
+    var copy = [CPLayoutConstraint constraintWithAnchor:_firstAnchor relatedBy:_relation toAnchor:_secondAnchor multiplier:_coefficient constant:_constant];
+
     [copy setPriority:_priority];
     [copy _setActive:_active];
     [copy _setContainer:_container];
@@ -140,7 +134,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPString)hash
 {
-    return [CPString stringWithFormat:@"%d-%d-%d-%d-%d-%d-%d-%d", [_firstItem UID], [_secondItem UID], _firstAttribute, _secondAttribute, _relation, _constant, _coefficient, _priority];
+    return [CPString stringWithFormat:@"%d-%d-%d-%d-%d-%d-%d-%d", [_firstAnchor UID], [_secondAnchor UID], _relation, _constant, _coefficient, _priority];
 }
 
 - (BOOL)isEqual:(id)anObject
@@ -148,26 +142,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (anObject === self)
         return YES;
 
-    if (!anObject || [anObject class] !== [self class] || [anObject firstItem] !== _firstItem || [anObject secondItem] !== _secondItem || [anObject firstAttribute] !== _firstAttribute || [anObject secondAttribute] !== _secondAttribute || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
+    if (!anObject || [anObject class] !== [self class] || ![[anObject firstAnchor] isEqual:_firstAnchor] || ![[anObject secondAnchor] isEqual:_secondAnchor] || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
         return NO;
 
     return YES;
-}
-
-- (CPLayoutAnchor)firstAnchor
-{
-    if (_firstAnchor == nil)
-        _firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:_firstItem attribute:_firstAttribute];
-
-    return _firstAnchor;
-}
-
-- (CPLayoutAnchor)secondAnchor
-{
-    if (_secondAnchor == nil)
-        _secondAnchor = [CPLayoutAnchor layoutAnchorWithItem:_secondItem attribute:_secondAttribute];
-
-    return _secondAnchor;
 }
 
 - (CPArray)_engineConstraints
@@ -233,7 +211,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
     if (shouldActivate)
     {
-        var container = [CPLayoutConstraint _findCommonAncestorOfItem:_firstItem andItem:_secondItem];
+        var container = [CPLayoutConstraint _findCommonAncestorOfItem:[self firstItem] andItem:[self secondItem]];
 
         if (container !== nil)
         {
@@ -241,7 +219,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         }
         else
         {
-            [CPException raise:CPGenericException reason:[CPString stringWithFormat:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", _firstItem, _secondItem]];
+            [CPException raise:CPGenericException reason:[CPString stringWithFormat:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", [self firstItem], [self secondItem]]];
         }
     }
     else
@@ -277,18 +255,50 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     _container = aContainer;
 
-    _constraintFlags = (CPLayoutConstraintFlags(_container, _firstItem)) |
-                      (CPLayoutConstraintFlags(_container, _secondItem) << 3);
+    _constraintFlags = (CPLayoutConstraintFlags(_container, [self firstItem])) |
+                      (CPLayoutConstraintFlags(_container, [self secondItem]) << 3);
+}
+
+- (id)firstItem
+{
+    return [_firstAnchor item];
+}
+
+- (id)secondItem
+{
+    return [_secondAnchor item];
+}
+
+- (CPInteger)firstAttribute
+{
+    if (_firstAnchor == nil)
+        return CPLayoutAttributeNotAnAttribute;
+
+    return [_firstAnchor attribute];
+}
+
+- (CPInteger)secondAttribute
+{
+    if (_secondAnchor == nil)
+        return CPLayoutAttributeNotAnAttribute;
+
+    return [_secondAnchor attribute];
 }
 
 - (void)_setFirstItem:(id)anItem
 {
-    _firstItem = [self _validateItem:anItem];
+    if (anItem == nil)
+        _firstAnchor = nil;
+    else
+        [_firstAnchor setItem:[self _validateItem:anItem]];
 }
 
 - (void)_setSecondItem:(id)anItem
 {
-    _secondItem = [self _validateItem:anItem];
+    if (anItem == nil)
+        _secondAnchor = nil;
+    else
+        [_secondAnchor setItem:[self _validateItem:anItem]];
 }
 
 - (id)_validateItem:(id)anItem
@@ -345,24 +355,24 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPString)description
 {
-    var term1 = (_firstItem && _firstAttribute) ? [CPString stringWithFormat:@"%@.%@", [_firstItem debugID], CPStringFromAttribute(_firstAttribute)] : "",
-        term2 = (_secondItem && _secondAttribute && _coefficient) ? [CPString stringWithFormat:@"%@.%@ x%@", [_secondItem debugID], CPStringFromAttribute(_secondAttribute), _coefficient] : "",
+    var lhs = [_firstAnchor description],
+        rhs = (_coefficient !== 0 && _secondAnchor !== nil) ? [CPString stringWithFormat:@"%@ x%@", [_secondAnchor description], _coefficient] : "",
         identifier = (_identifier) ? [CPString stringWithFormat:@" [%@]"] : "",
-        plusMinus = (_constant < 0) ? "" : "+",
+        plusMinus = (_constant < 0) ? "-" : "+",
         active = _active ? "":" [inactive]";
 
-    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@", term1, CPStringFromRelation(_relation), term2, plusMinus, _constant, _priority, identifier, active];
+    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@", lhs, CPStringFromRelation(_relation), rhs, plusMinus, _constant, _priority, identifier, active];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem
 {
-    if (anItem === _firstItem)
+    if (anItem === [self firstItem])
     {
-        _firstItem = aNewItem;
+        [self _setfirstItem:aNewItem];
     }
-    else if (anItem === _secondItem)
+    else if (anItem === [self secondItem])
     {
-        _secondItem = aNewItem;
+        [self _setSecondItem:aNewItem];
     }
 }
 
@@ -387,11 +397,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
             error = @"Cannot resolve symbolic constant because the constraint is not installed.";
             result = NO;
         }
-        else if (symbol == @"NSSpace" && _firstAttribute <= 6 && _secondAttribute <= 6)
+        else if (symbol == @"NSSpace" && [self firstAttribute] <= 6 && [self secondAttribute] <= 6)
         {
-            if (_firstItem == _container || _secondItem == _container)
+            var firstItem = [self firstItem],
+                secondItem = [self secondItem];
+
+            if (firstItem == _container || secondItem == _container)
                 constant = 20.0;
-            else if (_firstItem !== nil && _secondItem !== nil)
+            else if (firstItem !== nil && secondItem !== nil)
                 constant = 8.0;
 
             result = YES;
@@ -408,8 +421,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (float)_frameBasedConstant
 {
-    var firstOffset  = alignmentRectOffsetForItem(_firstItem, _firstAttribute),
-        secondOffset = alignmentRectOffsetForItem(_secondItem, _secondAttribute);
+    var firstOffset  = _firstAnchor ? [_firstAnchor alignmentRectOffset] : 0,
+        secondOffset = _secondAnchor ? [_secondAnchor alignmentRectOffset] : 0;
 
     return _constant + firstOffset - secondOffset * _coefficient;
 }
@@ -421,7 +434,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @end
 
-var CPFirstItem         = @"CPFirstItem",
+var CPFirstAnchor       = @"CPFirstAnchor",
+    CPSecondAnchor      = @"CPSecondAnchor",
+    CPFirstItem         = @"CPFirstItem",
     CPSecondItem        = @"CPSecondItem",
     CPFirstAttribute    = @"CPFirstAttribute",
     CPSecondAttribute   = @"CPSecondAttribute",
@@ -437,14 +452,8 @@ var CPFirstItem         = @"CPFirstItem",
 
 - (void)encodeWithCoder:(CPCoder)aCoder
 {
-    if (_firstItem)
-        [aCoder encodeConditionalObject:_firstItem forKey:CPFirstItem];
-
-    if (_secondItem)
-        [aCoder encodeConditionalObject:_secondItem forKey:CPSecondItem];
-
-    [aCoder encodeInt:_firstAttribute forKey:CPFirstAttribute];
-    [aCoder encodeInt:_secondAttribute forKey:CPSecondAttribute];
+    [aCoder encodeConditionalObject:_firstAnchor forKey:CPFirstAnchor];
+    [aCoder encodeConditionalObject:_secondAnchor forKey:CPSecondAnchor];
 
     if (_relation !== CPLayoutRelationEqual)
         [aCoder encodeInt:_relation forKey:CPRelation];
@@ -467,20 +476,29 @@ var CPFirstItem         = @"CPFirstItem",
 {
     self = [super init];
 
-    var firstItem = [aCoder decodeObjectForKey:CPFirstItem];
-    [self _setFirstItem:firstItem];
-
-    _firstAttribute = [aCoder decodeIntForKey:CPFirstAttribute];
-
-    var hasKey = [aCoder containsValueForKey:CPRelation];
-    _relation = (hasKey) ? [aCoder decodeIntForKey:CPRelation] : CPLayoutRelationEqual ;
+    if ([aCoder containsValueForKey:CPFirstAnchor])
+        _firstAnchor = [aCoder decodeObjectForKey:CPFirstAnchor];
+    else
+    {
+        var item = [aCoder decodeObjectForKey:CPFirstItem],
+            attr = [aCoder decodeIntForKey:CPFirstAttribute];
+        _firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:item attribute:attr];
+    }
 
     var hasKey = [aCoder containsValueForKey:CPMultiplier];
-    _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:CPMultiplier] : 1 ;
+    _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:CPMultiplier] : 1;
 
-    var secondItem = [aCoder decodeObjectForKey:CPSecondItem];
-    [self _setSecondItem:secondItem];
-    _secondAttribute = [aCoder decodeIntForKey:CPSecondAttribute];
+    if ([aCoder containsValueForKey:CPSecondAnchor])
+        _secondAnchor = [aCoder decodeObjectForKey:CPSecondAnchor];
+    else
+    {
+        var item = [aCoder decodeObjectForKey:CPSecondItem],
+            attr = [aCoder decodeIntForKey:CPSecondAttribute];
+        _secondAnchor = (item !== nil && _coefficient !== 0) ? [CPLayoutAnchor layoutAnchorWithItem:item attribute:attr] : nil;
+    }
+
+    var hasKey = [aCoder containsValueForKey:CPRelation];
+    _relation = (hasKey) ? [aCoder decodeIntForKey:CPRelation] : CPLayoutRelationEqual;
 
     _constant = [aCoder decodeDoubleForKey:CPConstant];
     _symbolicConstant = [aCoder decodeObjectForKey:CPSymbolicConstant];
@@ -497,46 +515,6 @@ var CPFirstItem         = @"CPFirstItem",
 }
 
 @end
-
-var alignmentRectOffsetForItem = function(anItem, anAttribute)
-{
-    if (anAttribute === CPLayoutAttributeNotAnAttribute || anItem == nil)
-        return 0;
-
-    var inset = [anItem alignmentRectInsets],
-        offset = 0;
-
-    switch (anAttribute)
-    {
-        case CPLayoutAttributeLeading :
-        case CPLayoutAttributeLeft     : offset = -inset.left;
-        break;
-        case CPLayoutAttributeTrailing :
-        case CPLayoutAttributeRight    : offset = inset.right;
-        break;
-        case CPLayoutAttributeTop      : offset = -inset.top;
-        break;
-        case CPLayoutAttributeBottom   : offset = inset.bottom;
-        break;
-        case CPLayoutAttributeBaseline : offset = inset.bottom + [anItem baselineOffsetFromBottom];
-        break;
-        case CPLayoutAttributeWidth    : offset = inset.left + inset.right;
-        break;
-        case CPLayoutAttributeHeight   : offset = inset.top + inset.bottom;
-        break;
-        case CPLayoutAttributeCenterX  : offset = inset.right - inset.left;
-        break;
-        case CPLayoutAttributeCenterY  : offset = inset.bottom - inset.top;
-        break;
-    }
-
-    return offset;
-};
-
-var CPStringFromAttribute = function(attr)
-{
-    return CPLayoutAttributeLabels[attr];
-};
 
 var CPStringFromRelation = function(relation)
 {

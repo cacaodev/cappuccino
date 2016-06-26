@@ -4950,14 +4950,13 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 @implementation CPLayoutConstraint (CPView)
 
-
 - (void)_replaceCustomViewsIfNeeded
 {
-    if ([_firstItem isKindOfClass:[_CPCibCustomView class]])
-        _firstItem = [_firstItem replacementView];
+    if ([[self firstItem] isKindOfClass:[_CPCibCustomView class]])
+        [self _setFirstItem:[[self firstItem] replacementView]];
 
-    if ([_secondItem isKindOfClass:[_CPCibCustomView class]])
-        _secondItem = [_secondItem replacementView];
+    if ([[self secondItem] isKindOfClass:[_CPCibCustomView class]])
+        [self _setSecondItem:[[self secondItem] replacementView]];
 
     if ([_container isKindOfClass:[_CPCibCustomView class]])
         _container = [_container replacementView];
