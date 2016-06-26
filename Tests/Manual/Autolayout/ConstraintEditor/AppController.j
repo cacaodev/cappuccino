@@ -119,7 +119,7 @@ CPLogRegister(CPLogConsole);
     self = [super init];
 
     _selectedViews = @[];
-    
+
     windowLoaded = NO;
 
     return self;
@@ -337,7 +337,7 @@ CPLogRegister(CPLogConsole);
 - (void)updatePrioritySlider
 {
     var constraints = [[self selectedView] constraints];
-    
+
     [tableView enumerateAvailableViewsUsingBlock:function(aCellView, row, column, stop)
     {
         if ([aCellView identifier] == "Constraint")
@@ -764,7 +764,7 @@ CPLogRegister(CPLogConsole);
 
 var LayoutConstraint = function(firstItem, firstAttr, relation, secondItem, secondAttr, multiplier, constant, priority)
 {
-    var constraint = [[CPLayoutConstraint alloc] initWithItem:firstItem attribute:firstAttr relatedBy:relation toItem:secondItem attribute:secondAttr multiplier:multiplier constant:constant];
+    var constraint = [CPLayoutConstraint constraintWithItem:firstItem attribute:firstAttr relatedBy:relation toItem:secondItem attribute:secondAttr multiplier:multiplier constant:constant];
     [constraint setPriority:priority];
 
     return constraint;
