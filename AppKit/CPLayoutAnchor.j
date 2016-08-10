@@ -636,11 +636,16 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     self = [super init];
 
-    _firstLayoutDimension = firstDimension;
+    _firstLayoutDimension = [firstDimension copy];
+    _secondLayoutDimension = [secondDimension copy];
     _secondLayoutDimensionMultiplier = multiplier;
-    _secondLayoutDimension = secondDimension;
 
     return self;
+}
+
+- (id)copy
+{
+    return [[[self class] alloc] initWithDimension:_firstDimension plusDimension:_secondDimension times:_secondLayoutDimensionMultiplier];
 }
 
 - (int)_anchorType
