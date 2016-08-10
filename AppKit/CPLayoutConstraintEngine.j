@@ -265,12 +265,8 @@ var CreateConstraint = function(aConstraint)
 {
 // EngineLog("firstItem " + args.firstItem.uuid + " secondItem " + args.secondItem.uuid + " containerUUID " + args.containerUUID + " flags " + args.flags);
 
-    var firstAttribute    = [aConstraint firstAttribute],
-        secondAttribute   = [aConstraint secondAttribute],
-        firstItem         = [aConstraint firstItem],
-        secondItem        = [aConstraint secondItem],
-        firstIsContainer  = [aConstraint _isContainerItem:firstItem],
-        secondIsContainer = [aConstraint _isContainerItem:secondItem],
+    var firstAnchor       = [aConstraint firstAnchor],
+        secondAnchor      = [aConstraint secondAnchor],
         relation          = [aConstraint relation],
         multiplier        = [aConstraint multiplier],
         constant          = [aConstraint _frameBasedConstant],
@@ -279,15 +275,28 @@ var CreateConstraint = function(aConstraint)
         constraint,
         rhs_term;
 
-    var lhs_term = expressionForAttribute(firstAttribute, firstIsContainer, firstItem),
-        secondExp = expressionForAttribute(secondAttribute, secondIsContainer, secondItem);
+    var lhs_term = [firstAnchor expressionInContext:secondAnchor];
 
-    if (secondExp.isConstant)
-        rhs_term = new c.Expression.fromConstant(secondExp.constant * multiplier + constant);
-    else if (multiplier === 0)
+    if (secondAnchor == nil || multiplier == 0)
+    {
         rhs_term = new c.Expression.fromConstant(constant);
+    }
     else
-        rhs_term = c.plus(c.times(secondExp, multiplier), constant);
+    {
+        var secondExp = [secondAnchor expressionInContext:firstAnchor];
+
+        if (secondExp.isConstant)
+        {
+            rhs_term = new c.Expression.fromConstant(secondExp.constant * multiplier + constant);
+        }
+        else
+        {
+            rhs_term = c.plus(c.times(secondExp, multiplier), constant);
+        }
+    }
+
+    if (lhs_term == nil || rhs_term == nil)
+        [CPException raise:CPInvalidArgumentException format:"The lhs %@ or rhs %@ of an Equation cannot be nil", lhs_term, rhs_term];
 
     switch(relation)
     {
@@ -322,106 +331,6 @@ var CreateInequality = function(variable, isGreaterOrLess, constant, priority)
                  sw = StrengthForPriority(priority);
 
     return new c.Inequality(variableExp, relation, constantExp, sw.strength, sw.weight);
-};
-
-var CreateStayConstraint = function(variable, priority)
-{
-    var sw = StrengthForPriority(priority);
-
-    return new c.StayConstraint(variable, sw.strength, sw.weight);
-};
-
-var expressionForAttribute = function(attribute, isContainer, item)
-{
-    if (item == nil || attribute === CPLayoutAttributeNotAnAttribute)
-        return new c.Expression.fromConstant(0);
-
-    var left   = [item _variableMinX],
-        top    = [item _variableMinY],
-        width  = [item _variableWidth],
-        height = [item _variableHeight],
-        exp;
-
-    switch(attribute)
-    {
-        case CPLayoutAttributeLeading   :
-        case CPLayoutAttributeLeft      : exp = expressionForAttributeLeft(left, isContainer);
-            break;
-        case CPLayoutAttributeTrailing  :
-        case CPLayoutAttributeRight     : exp = expressionForAttributeRight(left, width, isContainer);
-            break;
-        case CPLayoutAttributeTop       : exp = expressionForAttributeTop(top, isContainer);
-            break;
-        case CPLayoutAttributeBaseline  :
-        case CPLayoutAttributeBottom    : exp = expressionForAttributeBottom(top, height, isContainer);
-            break;
-        case CPLayoutAttributeWidth     : exp = new c.Expression.fromVariable(width);
-            break;
-        case CPLayoutAttributeHeight    : exp = new c.Expression.fromVariable(height);
-            break;
-        case CPLayoutAttributeCenterX   : exp = expressionForAttributeCenterX(left, width, isContainer);
-            break;
-        case CPLayoutAttributeCenterY   : exp = expressionForAttributeCenterY(top, height, isContainer);
-            break;
-    }
-
-    return exp;
-};
-
-var expressionForAttributeLeft = function(variable, isContainer)
-{
-    if (!isContainer)
-        return new c.Expression.fromVariable(variable);
-
-    return new c.Expression.fromConstant(0);
-};
-
-var expressionForAttributeTop = function(variable, isContainer)
-{
-    if (!isContainer)
-        return new c.Expression.fromVariable(variable);
-
-    return new c.Expression.fromConstant(0);
-};
-
-var expressionForAttributeRight = function(leftVariable, widthVariable, isContainer)
-{
-    if (isContainer)
-        return new c.Expression.fromVariable(widthVariable);
-
-    return new c.Expression.fromVariable(leftVariable).plus(widthVariable);
-};
-
-var expressionForAttributeBottom = function(topVariable, heightVariable, isContainer)
-{
-    if (isContainer)
-        return new c.Expression.fromVariable(heightVariable);
-
-    return new c.Expression.fromVariable(topVariable).plus(heightVariable);
-};
-
-var expressionForAttributeCenterX = function(leftVariable, widthVariable, isContainer)
-{
-    var midWidth = new c.Expression.fromVariable(widthVariable).divide(2);
-
-    if (isContainer)
-        return midWidth;
-
-    var left = new c.Expression.fromVariable(leftVariable);
-
-    return c.plus(left, midWidth);
-};
-
-var expressionForAttributeCenterY = function(topVariable, heightVariable, isContainer)
-{
-    var midHeight = new c.Expression.fromVariable(heightVariable).divide(2);
-
-    if (isContainer)
-        return midHeight;
-
-    var top = new c.Expression.fromVariable(topVariable);
-
-    return c.plus(top, midHeight);
 };
 
 var AddConstraint = function(solver, constraint, onsuccess, onerror)
