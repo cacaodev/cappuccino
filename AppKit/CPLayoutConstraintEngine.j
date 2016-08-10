@@ -17,8 +17,8 @@ var CPLayoutItemIsNull          = 2,
 @implementation CPLayoutConstraintEngine : CPObject
 {
     SimplexSolver _simplexSolver;
-    Map           _constraintContainerMap;
-    Map           _variableOwnerMap;
+    Map           _constraintToOwnerMap;
+    Map           _variableToOwnerMap;
     CPArray       _editingVariables;
     Object        _defaultEditStrength;
     id            _delegate @accessors(getter=delegate);
@@ -38,8 +38,8 @@ var CPLayoutItemIsNull          = 2,
 {
     self = [super init];
 
-    _variableOwnerMap = new Map();
-    _constraintContainerMap = new Map();
+    _variableToOwnerMap = new Map();
+    _constraintToOwnerMap = new Map();
     _editingVariables = nil;
     _defaultEditStrength = c.Strength.strong;
     _delegate = aDelegate;
@@ -48,14 +48,12 @@ var CPLayoutItemIsNull          = 2,
     _simplexSolver.autoSolve = false;
     _simplexSolver.onsolved = function(changes)
     {
-        var updatedContainers = [CPSet set];
-
         changes.forEach(function(change)
         {
             var variable = change.variable,
-                container = _variableOwnerMap.get(variable);
+                owner = _variableToOwnerMap.get(variable);
 
-            [container valueOfVariable:variable didChangeInEngine:self];
+            [owner valueOfVariable:variable didChangeInEngine:self];
         });
     };
 
@@ -152,7 +150,7 @@ var CPLayoutItemIsNull          = 2,
 
     var onsuccess = function(constraint)
     {
-        _constraintContainerMap.set(constraint, {"Type":type, "Container":container});
+        _constraintToOwnerMap.set(constraint, {"Type":type, "Container":container});
         EngineLog("Added " + type + " in " + containerId + " : " + constraint.toString());
         [_delegate engine:self constraintDidChangeInContainer:container];
     };
@@ -186,7 +184,7 @@ var CPLayoutItemIsNull          = 2,
 
     var onsuccess = function(constraint)
     {
-        _constraintContainerMap.delete(constraint);
+        _constraintToOwnerMap.delete(constraint);
         EngineLog("Removed " + type + " in " + containerId + " : " + constraint.toString());
         [_delegate engine:self constraintDidChangeInContainer:container];
     };
@@ -220,7 +218,7 @@ var CPLayoutItemIsNull          = 2,
 {
     var str = "Engine Constraints:\n";
 
-    _constraintContainerMap.forEach(function(TypeAndContainer, engine_constraint)
+    _constraintToOwnerMap.forEach(function(TypeAndContainer, engine_constraint)
     {
         str += [TypeAndContainer.Container debugID] + " (" + TypeAndContainer.Type + ") " + engine_constraint.toString() + "\n";
     });
