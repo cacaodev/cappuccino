@@ -9,11 +9,6 @@
     CPView         _owningView     @accessors(property=owningView);
     CPString       _identifier     @accessors(property=identifier);
     CGRect         _frame          @accessors(getter=frame);
-    
-    Variable       _variableMinX;
-    Variable       _variableMinY;
-    Variable       _variableWidth;
-    Variable       _variableHeight;
 
     CPLayoutAnchor _centerYAnchor;
     CPLayoutAnchor _centerXAnchor;
@@ -27,19 +22,15 @@
     CPLayoutAnchor _leadingAnchor;
 
     BOOL           _shouldBeArchived;
-    BOOL           _frameNeedsUpdate;
+    BOOL           _geometryNeedsUpdate;
 }
 
 - (id)init
 {
     self = [super init];
-    
+
     _owningView = nil;
     _identifier = @"";
-    _variableMinX = nil;
-    _variableMinY = nil;
-    _variableWidth = nil;
-    _variableHeight = nil;
 
     _centerYAnchor = nil;
     _centerXAnchor = nil;
@@ -55,15 +46,32 @@
     _frame = CGRectMakeZero();
 
     _shouldBeArchived = NO;
-    _frameNeedsUpdate = NO;
-    
+    _geometryNeedsUpdate = NO;
+
     return self;
+}
+
+// CPLayoutAnchor Support
+- (id)leftAnchor
+{
+    if (!_leftAnchor)
+        _leftAnchor = [CPLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeLeft];
+
+    return _leftAnchor;
+}
+
+- (id)rightAnchor
+{
+    if (!_rightAnchor)
+        _rightAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeRight];
+
+    return _rightAnchor;
 }
 
 - (id)topAnchor
 {
     if (!_topAnchor)
-        _topAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeTop];
+        _topAnchor = [CPLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeTop];
 
     return _topAnchor;
 }
@@ -71,46 +79,35 @@
 - (id)bottomAnchor
 {
     if (!_bottomAnchor)
-        _bottomAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeBottom];
+        _bottomAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeBottom];
 
     return _bottomAnchor;
 }
 
-- (id)centerYAnchor
+- (id)firstBaselineAnchor
 {
-    if (!_centerYAnchor)
-        _centerYAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeCenterY];
+    if (!_firstBaselineAnchor)
+        _firstBaselineAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeFirstBaseline];
 
-    return _centerYAnchor;
+    return _firstBaselineAnchor;
 }
 
-- (id)centerXAnchor
+- (id)lastBaselineAnchor
 {
-    if (!_centerXAnchor)
-        _centerXAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeCenterX];
+    if (!_lastBaselineAnchor)
+        _lastBaselineAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeLastBaseline];
 
-    return _centerXAnchor;
+    return _lastBaselineAnchor;
 }
 
-- (id)leftAnchor
+- (id)baselineAnchor
 {
-    if (!_leftAnchor)
-        _leftAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeLeft];
-
-    return _leftAnchor;
+    return [self lastBaselineAnchor];
 }
 
 - (id)leadingAnchor
 {
     return [self leftAnchor];
-}
-
-- (id)rightAnchor
-{
-    if (!_rightAnchor)
-        _rightAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeRight];
-
-    return _rightAnchor;
 }
 
 - (id)trailingAnchor
@@ -121,7 +118,7 @@
 - (id)widthAnchor
 {
     if (!_widthAnchor)
-        _widthAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeWidth];
+        _widthAnchor = [CPLayoutDimension anchorWithItem:self attribute:CPLayoutAttributeWidth];
 
     return _widthAnchor;
 }
@@ -129,46 +126,25 @@
 - (id)heightAnchor
 {
     if (!_heightAnchor)
-        _heightAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeHeight];
+        _heightAnchor = [CPLayoutDimension anchorWithItem:self attribute:CPLayoutAttributeHeight];
 
     return _heightAnchor;
 }
 
-- (Variable)_variableMinX
+- (id)centerXAnchor
 {
-    if (!_variableMinX)
-        _variableMinX = [self newVariableWithName:"minX" value:CGRectGetMinX([self frame])];
+    if (!_centerXAnchor)
+        _centerXAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterX];
 
-    return _variableMinX;
+    return _centerXAnchor;
 }
 
-- (Variable)_variableMinY
+- (id)centerYAnchor
 {
-    if (!_variableMinY)
-        _variableMinY = [self newVariableWithName:"minY" value:CGRectGetMinY([self frame])];
+    if (!_centerYAnchor)
+        _centerYAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterY];
 
-    return _variableMinY;
-}
-
-- (Variable)_variableWidth
-{
-    if (!_variableWidth)
-        _variableWidth = [self newVariableWithName:"width" value:CGRectGetWidth([self frame])];
-
-    return _variableWidth;
-}
-
-- (Variable)_variableHeight
-{
-    if (!_variableHeight)
-        _variableHeight = [self newVariableWithName:"height" value:CGRectGetHeight([self frame])];
-
-    return _variableHeight;
-}
-
-- (Variable)newVariableWithName:(CPString)aName value:(float)aValue
-{
-    return [[self _layoutEngine] variableWithPrefix:_identifier name:aName value:aValue owner:self];
+    return _centerYAnchor;
 }
 
 - (CPLayoutConstraintEngine)_layoutEngine
@@ -215,10 +191,9 @@
     return ([self identifier] || [self className]);
 }
 
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
+- (void)_engineDidChangeVariableOfType:(int)originOrSize
 {
-    _frameNeedsUpdate = YES;
-
+    _geometryNeedsUpdate = YES;
     [_owningView setNeedsLayout];
 }
 
@@ -227,41 +202,24 @@
     return _owningView;
 }
 
-- (id)ancestorSharedWithView:(CPView)aView
-{
-    return [_owningView ancestorSharedWithView:aView];
-}
-
-- (BOOL)isDescendantOf:(CPView)aView
-{
-    var view = _owningView;
-
-    while (view = [view superview])
-    {
-        if (view == aView)
-            return YES;
-    }
-
-    return NO;
-}
-
 - (void)_updateGeometryIfNeeded
 {
-    if (_frameNeedsUpdate)
+    if (_geometryNeedsUpdate)
     {
         [self _updateGeometry];
-        _frameNeedsUpdate = NO;
+        _geometryNeedsUpdate = NO;
     }
 }
 
 - (void)_updateGeometry
 {
+    var engine = [_owningView _layoutEngine];
+
     [self willChangeValueForKey:@"frame"];
 
-    _frame = CGRectMake(_variableMinX.valueOf(), _variableMinY.valueOf(), _variableWidth.valueOf(), _variableHeight.valueOf());
-        
+    _frame = CGRectMake([_leftAnchor valueInEngine:engine], [_topAnchor valueInEngine:engine], [_widthAnchor valueInEngine:engine], [_heightAnchor valueInEngine:engine]);
+
     [self didChangeValueForKey:@"frame"];
 }
 
 @end
-

@@ -259,11 +259,6 @@ var CPViewHighDPIDrawingEnabled = YES;
     CPDictionary        _animationsDictionary;
 
     // ConstraintBasedLayout support
-    Variable _variableMinX;
-    Variable _variableMinY;
-    Variable _variableWidth;
-    Variable _variableHeight;
-
     CPArray  _constraintsArray @accessors(property=_constraintsArray);
     CPArray  _autoresizingConstraints @accessors;
     CPArray  _internalConstraints @accessors(property=_internalConstraints);
@@ -281,24 +276,30 @@ var CPViewHighDPIDrawingEnabled = YES;
     // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
     BOOL     _subviewsNeedSolvingInEngine;
     // Is the view geometry dirty and does it to set its frame from the current engine variables ?
-    BOOL     _frameNeedsUpdate;
+    unsigned int     _geometryDirtyMask;
 
     BOOL     _isSettingFrameFromEngine;
     BOOL     _viewIsConstraintBased;
     BOOL     _viewHasConstraintBasedSubviews;
 
-    CPView _layoutGuides;
-
-    CPLayoutAnchor _centerYAnchor;
-    CPLayoutAnchor _centerXAnchor;
-    CPLayoutAnchor _heightAnchor;
-    CPLayoutAnchor _widthAnchor;
-    CPLayoutAnchor _bottomAnchor;
-    CPLayoutAnchor _topAnchor;
-    CPLayoutAnchor _rightAnchor;
+    CPView         _layoutGuides;
     CPLayoutAnchor _leftAnchor;
-    CPLayoutAnchor _trailingAnchor;
+    CPLayoutAnchor _rightAnchor;
+    CPLayoutAnchor _topAnchor;
+    CPLayoutAnchor _bottomAnchor;
+    CPLayoutAnchor _lastBaselineAnchor;
+    CPLayoutAnchor _firstBaselineAnchor;
     CPLayoutAnchor _leadingAnchor;
+    CPLayoutAnchor _trailingAnchor;
+    CPLayoutAnchor _widthAnchor;
+    CPLayoutAnchor _heightAnchor;
+    CPLayoutAnchor _centerXAnchor;
+    CPLayoutAnchor _centerYAnchor;
+
+    Variable       _variableMinX;
+    Variable       _variableMinY;
+    Variable       _variableWidth;
+    Variable       _variableHeight;
 }
 
 /*
@@ -2822,8 +2823,8 @@ setBoundsOrigin:
     if (_viewClassFlags & CPViewHasCustomViewWillLayout)
         [self viewWillLayout];
 
-        if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
-            [self layoutSubviews];
+    if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
+        [self layoutSubviews];
 
     [self viewDidLayout];
 }
@@ -3957,7 +3958,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [aCoder encodeObject:_appearance forKey:CPViewAppearanceKey];
     [aCoder encodeObject:_trackingAreas forKey:CPViewTrackingAreasKey];
 
-    var constraints = [_internalConstraints filteredArrayUsingBlock:_CPViewArchiveConstraintsBlock];
+    var constraints = [_internalConstraints filteredArrayUsingBlock:_CPLayoutConstraintNeedArchivingBlock];
 
     if ([constraints count])
         [aCoder encodeObject:constraints forKey:CPViewConstraints];
@@ -3998,23 +3999,30 @@ Returns whether the receiver depends on the constraint-based layout system.
     _viewHasConstraintBasedSubviews = NO;
     _isSettingFrameFromEngine = NO;
     _subviewsNeedSolvingInEngine = NO;
-    _frameNeedsUpdate = NO;
+    _geometryDirtyMask = 0;
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
     _constraintsArray = @[];
     _storedIntrinsicContentSize = CGSizeMake(-1, -1);
     _layoutGuides = @[];
+
     _centerYAnchor = nil;
     _centerXAnchor = nil;
     _heightAnchor = nil;
     _widthAnchor = nil;
     _bottomAnchor = nil;
+    _lastBaselineAnchor = nil;
+    _firstBaselineAnchor = nil;
     _topAnchor = nil;
     _rightAnchor = nil;
     _leftAnchor = nil;
     _trailingAnchor = nil;
     _leadingAnchor = nil;
 
+    _variableMinX = nil;
+    _variableMinY = nil;
+    _variableWidth = nil;
+    _variableHeight = nil;
 }
 
 - (void)_cibDidFinishLoadingWithOwner:(id)anOwner
@@ -4034,43 +4042,6 @@ Returns whether the receiver depends on the constraint-based layout system.
 - (CPLayoutConstraintEngine)_layoutEngine
 {
     return [[self window] _layoutEngine];
-}
-
-- (Variable)_variableMinX
-{
-    if (!_variableMinX)
-        _variableMinX = [self newVariableWithName:"minX" value:CGRectGetMinX([self frame])];
-
-    return _variableMinX;
-}
-
-- (Variable)_variableMinY
-{
-    if (!_variableMinY)
-        _variableMinY = [self newVariableWithName:"minY" value:CGRectGetMinY([self frame])];
-
-    return _variableMinY;
-}
-
-- (Variable)_variableWidth
-{
-    if (!_variableWidth)
-        _variableWidth = [self newVariableWithName:"width" value:CGRectGetWidth([self frame])];
-
-    return _variableWidth;
-}
-
-- (Variable)_variableHeight
-{
-    if (!_variableHeight)
-        _variableHeight = [self newVariableWithName:"height" value:CGRectGetHeight([self frame])];
-
-    return _variableHeight;
-}
-
-- (Variable)newVariableWithName:(CPString)aName value:(float)aValue
-{
-    return [[self _layoutEngine] variableWithPrefix:[self debugID] name:aName value:aValue owner:self];
 }
 
 - (CPView)_is_superitem
@@ -4581,7 +4552,7 @@ A Boolean value indicating whether the view’s autoresizing mask is translated 
 {
     if (_subviewsNeedSolvingInEngine == NO)
     {
-        CPLog.debug([self debugID] + " " +  _cmd);
+        //CPLog.debug([self debugID] + " " +  _cmd);
         _subviewsNeedSolvingInEngine = YES;
         return YES;
     }
@@ -4761,7 +4732,7 @@ Update constraints for the view.
         frame = [self frame],
         mask = [self autoresizingMask];
 
-    return [CPAutoresizingMaskLayoutConstraint constraintsWithAutoresizingMask:mask subitem:self frame:frame  superitem:superview bounds:bounds];
+    return [CPAutoresizingMaskLayoutConstraint constraintsWithAutoresizingMask:mask subitem:self frame:frame superitem:superview bounds:bounds];
 }
 
 /*!
@@ -4812,25 +4783,66 @@ Updates the layout of the receiving view and its subviews based on the current v
         return [self updateConstraintsForSubtreeIfNeeded];
 }
 
+- (void)_engineDidChangeVariableOfType:(int)axisOrDimension
+{
+    _geometryDirtyMask |= axisOrDimension;
+    [_superview setNeedsLayout];
+}
+
 - (void)_updateGeometryIfNeeded
 {
 //CPLog.debug([self debugID] + " " + _cmd);
-    if (_frameNeedsUpdate)
+    if (_geometryDirtyMask !== 0)
     {
         [self _updateGeometry];
-        _frameNeedsUpdate = NO;
+        _geometryDirtyMask = 0;
     }
 
     _subviewsNeedSolvingInEngine = NO;
 }
 
+// Variable uniqueness is done in the layout engine.
+- (Variable)_variableMinX
+{
+    if (!_variableMinX)
+        _variableMinX = [[self leftAnchor] variable];
+
+    return _variableMinX;
+}
+
+- (Variable)_variableMinY
+{
+    if (!_variableMinY)
+        _variableMinY = [[self topAnchor] variable];
+
+    return _variableMinY;
+}
+
+- (Variable)_variableWidth
+{
+    if (!_variableWidth)
+        _variableWidth = [[self widthAnchor] variable];
+
+    return _variableWidth;
+}
+
+- (Variable)_variableHeight
+{
+    if (!_variableHeight)
+        _variableHeight = [[self heightAnchor] variable];
+
+    return _variableHeight;
+}
+
 - (void)_updateGeometry
 {
-//CPLog.debug([self debugID] + " " + _cmd);
     _isSettingFrameFromEngine = YES;
+//    CPLog.debug(_cmd + " " + [self debugID] + " " + [[self leftAnchor] valueInEngine:engine] + " " + [[self topAnchor] valueInEngine:engine]);
+    if (_geometryDirtyMask & 2)
+        [self setFrameOrigin:CGPointMake([self _variableMinX].valueOf(), [self _variableMinY].valueOf())];
 
-    [self setFrameOrigin:CGPointMake(_variableMinX.valueOf(), _variableMinY.valueOf())];
-    [self setFrameSize:CGSizeMake(_variableWidth.valueOf(), _variableHeight.valueOf())];
+    if (_geometryDirtyMask & 4)
+        [self setFrameSize:CGSizeMake([self _variableWidth].valueOf(), [self _variableHeight].valueOf())];
 
     _isSettingFrameFromEngine = NO;
 }
@@ -4845,16 +4857,7 @@ Updates the layout of the receiving view and its subviews based on the current v
     [self _updateGeometryIfNeeded];
 }
 
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
-//CPLog.debug([self debugID] + " " + _cmd);
-    _frameNeedsUpdate = YES;
-
-    [_superview setNeedsLayout];
-}
-
 // LayoutGuides support
-
 - (CPArra)layoutGuides
 {
     return [CPArray arrayWithArray:_layoutGuides];
@@ -4872,10 +4875,27 @@ Updates the layout of the receiving view and its subviews based on the current v
     [_layoutGuides removeObject:aGuide];
 }
 
+// CPLayoutAnchor Support
+- (id)leftAnchor
+{
+    if (!_leftAnchor)
+        _leftAnchor = [CPLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeLeft];
+
+    return _leftAnchor;
+}
+
+- (id)rightAnchor
+{
+    if (!_rightAnchor)
+        _rightAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeRight];
+
+    return _rightAnchor;
+}
+
 - (id)topAnchor
 {
     if (!_topAnchor)
-        _topAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeTop];
+        _topAnchor = [CPLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeTop];
 
     return _topAnchor;
 }
@@ -4883,46 +4903,35 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)bottomAnchor
 {
     if (!_bottomAnchor)
-        _bottomAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeBottom];
+        _bottomAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeBottom];
 
     return _bottomAnchor;
 }
 
-- (id)centerYAnchor
+- (id)firstBaselineAnchor
 {
-    if (!_centerYAnchor)
-        _centerYAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeCenterY];
+    if (!_firstBaselineAnchor)
+        _firstBaselineAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeFirstBaseline];
 
-    return _centerYAnchor;
+    return _firstBaselineAnchor;
 }
 
-- (id)centerXAnchor
+- (id)lastBaselineAnchor
 {
-    if (!_centerXAnchor)
-        _centerXAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeCenterX];
+    if (!_lastBaselineAnchor)
+        _lastBaselineAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeLastBaseline];
 
-    return _centerXAnchor;
+    return _lastBaselineAnchor;
 }
 
-- (id)leftAnchor
+- (id)baselineAnchor
 {
-    if (!_leftAnchor)
-        _leftAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeLeft];
-
-    return _leftAnchor;
+    return [self lastBaselineAnchor];
 }
 
 - (id)leadingAnchor
 {
     return [self leftAnchor];
-}
-
-- (id)rightAnchor
-{
-    if (!_rightAnchor)
-        _rightAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeRight];
-
-    return _rightAnchor;
 }
 
 - (id)trailingAnchor
@@ -4933,7 +4942,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)widthAnchor
 {
     if (!_widthAnchor)
-        _widthAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeWidth];
+        _widthAnchor = [CPLayoutDimension anchorWithItem:self attribute:CPLayoutAttributeWidth];
 
     return _widthAnchor;
 }
@@ -4941,9 +4950,57 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)heightAnchor
 {
     if (!_heightAnchor)
-        _heightAnchor = [CPLayoutAnchor layoutAnchorWithItem:self attribute:CPLayoutAttributeHeight];
+        _heightAnchor = [CPLayoutDimension anchorWithItem:self attribute:CPLayoutAttributeHeight];
 
     return _heightAnchor;
+}
+
+- (id)centerXAnchor
+{
+    if (!_centerXAnchor)
+        _centerXAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterX];
+
+    return _centerXAnchor;
+}
+
+- (id)centerYAnchor
+{
+    if (!_centerYAnchor)
+        _centerYAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterY];
+
+    return _centerYAnchor;
+}
+
+- (CPLayoutAnchor)layoutAnchorForAttribute:(CPLayoutAttribute)anAttribute
+{
+    switch (anAttribute)
+    {
+        case CPLayoutAttributeLeading       :
+        case CPLayoutAttributeLeft          : return [self leftAnchor];
+        break;
+        case CPLayoutAttributeTrailing      :
+        case CPLayoutAttributeRight         : return [self rightAnchor];
+        break;
+        case CPLayoutAttributeTop           : return [self topAnchor];
+        break;
+        case CPLayoutAttributeBottom        : return [self bottomAnchor];
+        break;
+        case CPLayoutAttributeLastBaseline  : return [self lastBaselineAnchor];
+        break;
+        case CPLayoutAttributeBaseline      :
+        case CPLayoutAttributeFirstBaseline : return [self firstBaselineAnchor];
+        break;
+        case CPLayoutAttributeWidth         : return [self widthAnchor];
+        break;
+        case CPLayoutAttributeHeight        : return [self heightAnchor];
+        break;
+        case CPLayoutAttributeCenterX       : return [self centerXAnchor];
+        break;
+        case CPLayoutAttributeCenterY       : return [self centerYAnchor];
+        break;
+        default                             : [CPException raise:CPInvalidArgumentException format:@"Unknown attribute %@", anAttribute];
+        break;
+    }
 }
 
 @end
@@ -4952,11 +5009,8 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 - (void)_replaceCustomViewsIfNeeded
 {
-    if ([[self firstItem] isKindOfClass:[_CPCibCustomView class]])
-        [self _setFirstItem:[[self firstItem] replacementView]];
-
-    if ([[self secondItem] isKindOfClass:[_CPCibCustomView class]])
-        [self _setSecondItem:[[self secondItem] replacementView]];
+    [_firstAnchor _replaceCustomViewsIfNeeded];
+    [_secondAnchor _replaceCustomViewsIfNeeded];
 
     if ([_container isKindOfClass:[_CPCibCustomView class]])
         _container = [_container replacementView];
@@ -4983,41 +5037,9 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 @end
 
-var _CPViewUpdateEngineFrame = function(aView, mask, frame, is_left, is_top, is_width, is_height)
+var SetSizeValue = function(size, value, orientation)
 {
-    var pmask = mask & 6,
-        smask = mask & 24;
-
-    if (pmask === 6)
-    {
-        [aView setFrameOrigin:CGPointMake(is_left.valueOf(), is_top.valueOf())];
-    }
-    else if (pmask === 4)
-    {
-        [aView setFrameOrigin:CGPointMake(CGRectGetMinX(frame), is_top.valueOf())];
-    }
-    else if (pmask === 2)
-    {
-        [aView setFrameOrigin:CGPointMake(is_left.valueOf(), CGRectGetMinY(frame))];
-    }
-
-    if (smask === 24)
-    {
-        [aView setFrameSize:CGSizeMake(is_width.valueOf(), is_height.valueOf())];
-    }
-    else if (smask === 16)
-    {
-        [aView setFrameSize:CGSizeMake(CGRectGetWidth(frame), is_height.valueOf())];
-    }
-    else if (smask === 8)
-    {
-        [aView setFrameSize:CGSizeMake(is_width.valueOf(), CGRectGetHeight(frame))];
-    }
-};
-
-var SetSizeValue = function(size, value, idx)
-{
-    switch (idx)
+    switch (orientation)
     {
         case 0 : size.width = value;
         break;
@@ -5026,7 +5048,7 @@ var SetSizeValue = function(size, value, idx)
     }
 };
 
-var _CPViewArchiveConstraintsBlock = function(cst, idx)
+var _CPLayoutConstraintNeedArchivingBlock = function(cst, idx)
 {
     return [cst shouldBeArchived];
 };

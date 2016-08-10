@@ -6,8 +6,8 @@
 
 @implementation CPContentSizeLayoutConstraint : CPLayoutConstraint
 {
-    CPLayoutPriority _huggingPriority          @accessors(property=huggingPriority);
-    CPLayoutPriority _compressPriority         @accessors(property=compressPriority);
+    CPLayoutPriority _huggingPriority  @accessors(property=huggingPriority);
+    CPLayoutPriority _compressPriority @accessors(property=compressPriority);
 }
 
 - (id)initWithLayoutItem:(id)anItem value:(float)value huggingPriority:(CPLayoutPriority)huggingPriority compressionResistancePriority:(CPLayoutPriority)compressionResistancePriority orientation:(CPLayoutConstraintOrientation)orientation
@@ -23,7 +23,7 @@
         _constant = value;
         _container = anItem;
         var attribute = orientation ? CPLayoutAttributeHeight : CPLayoutAttributeWidth;
-        _firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:anItem attribute:attribute];
+        _firstAnchor = [CPLayoutDimension anchorWithItem:anItem attribute:attribute];
         _secondAnchor = nil;
     }
 
@@ -70,15 +70,12 @@
 
 - (Variable)variableForOrientation
 {
-    var item = [self firstItem];
-    return [self orientation] ? [item _variableHeight] : [item _variableWidth];
+    return [_firstAnchor variable];
 }
 
 - (Variable)valueForOrientation
 {
-    var itemRect = [[self firstItem] frame];
-
-    return [self orientation] ? CGRectGetHeight(itemRect) : CGRectGetWidth(itemRect);
+    return [_firstAnchor valueInLayoutSpace];
 }
 
 - (CPString)description

@@ -4356,7 +4356,7 @@ Subclasses should not override this method.
 {
 //CPLog.debug([self className] + " " + _cmd);
     var engine = [self _layoutEngine],
-        variables = @[[_windowView _variableWidth], [_windowView _variableHeight]],
+        variables = @[[[_windowView widthAnchor] variable], [[_windowView heightAnchor] variable]],
         values = @[newSize.width, newSize.height];
 
     [self updateConstraintsIfNeeded];

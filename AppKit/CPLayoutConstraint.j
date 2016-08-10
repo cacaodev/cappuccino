@@ -15,17 +15,27 @@ CPLayoutConstraintOrientationHorizontal = 0;
 CPLayoutConstraintOrientationVertical = 1;
 
 @typedef CPLayoutAttribute
-CPLayoutAttributeLeft       = 1;
-CPLayoutAttributeRight      = 2;
-CPLayoutAttributeTop        = 3;
-CPLayoutAttributeBottom     = 4;
-CPLayoutAttributeLeading    = 5;
-CPLayoutAttributeTrailing   = 6;
-CPLayoutAttributeWidth      = 7;
-CPLayoutAttributeHeight     = 8;
-CPLayoutAttributeCenterX    = 9;
-CPLayoutAttributeCenterY    = 10;
-CPLayoutAttributeBaseline   = 11;
+CPLayoutAttributeLeft                 = 1;
+CPLayoutAttributeRight                = 2;
+CPLayoutAttributeTop                  = 3;
+CPLayoutAttributeBottom               = 4;
+CPLayoutAttributeLeading              = 5;
+CPLayoutAttributeTrailing             = 6;
+CPLayoutAttributeWidth                = 7;
+CPLayoutAttributeHeight               = 8;
+CPLayoutAttributeCenterX              = 9;
+CPLayoutAttributeCenterY              = 10;
+CPLayoutAttributeLastBaseline         = 11;
+CPLayoutAttributeBaseline             = CPLayoutAttributeLastBaseline;
+CPLayoutAttributeFirstBaseline        = 12;
+CPLayoutAttributeLeftMargin           = 13;
+CPLayoutAttributeRightMargin          = 14;
+CPLayoutAttributeTopMargin            = 15;
+CPLayoutAttributeBottomMargin         = 16;
+CPLayoutAttributeLeadingMargin        = 17;
+CPLayoutAttributeTrailingMargin       = 18;
+CPLayoutAttributeCenterXWithinMargins = 19;
+CPLayoutAttributeCenterYWithinMargins = 20;
 
 CPLayoutAttributeNotAnAttribute = 0;
 
@@ -72,7 +82,11 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 
 + (CPLayoutConstraint)constraintWithAnchor:(CPLayoutAnchor)firstAnchor relatedBy:(CPLayoutRelation)relation toAnchor:(CPLayoutAnchor)secondAnchor multiplier:(float)multiplier constant:(float)constant
 {
-    var constraint = [[[self class] alloc] init];
+    var constraint = [[self alloc] init];
+
+    if (firstAnchor == nil)
+        [CPException raise:CPInvalidArgumentException format:@"+%@: firstAnchor cannot be nil.", _cmd];
+
     [constraint _setFirstAnchor:firstAnchor];
     [constraint _setRelation:relation];
 
@@ -86,10 +100,10 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 
 + (CPLayoutConstraint)constraintWithItem:(id)item1 attribute:(CPLayoutAttribute)att1 relatedBy:(CPLayoutRelation)relation toItem:(id)item2 attribute:(CPLayoutAttribute)att2 multiplier:(double)multiplier constant:(double)constant
 {
-    var firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:item1 attribute:att1],
-        secondAnchor = (multiplier !== 0  && item2 !== nil) ? [CPLayoutAnchor layoutAnchorWithItem:item2 attribute:att2] : nil;
+    var firstAnchor = [item1 layoutAnchorForAttribute:att1],
+        secondAnchor = (multiplier !== 0  && item2 !== nil) ? [item2 layoutAnchorForAttribute:att2] : nil;
 
-    return [[self class] constraintWithAnchor:firstAnchor relatedBy:relation toAnchor:secondAnchor multiplier:multiplier constant:constant];
+    return [self constraintWithAnchor:firstAnchor relatedBy:relation toAnchor:secondAnchor multiplier:multiplier constant:constant];
 }
 
 - (CPString)_constraintType
@@ -261,12 +275,12 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 
 - (id)firstItem
 {
-    return [_firstAnchor item];
+    return [_firstAnchor _referenceItem];
 }
 
 - (id)secondItem
 {
-    return [_secondAnchor item];
+    return [_secondAnchor _referenceItem];
 }
 
 - (CPInteger)firstAttribute
@@ -288,9 +302,9 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 - (void)_setFirstItem:(id)anItem
 {
     if (anItem == nil)
-        _firstAnchor = nil;
-    else
-        [_firstAnchor setItem:[self _validateItem:anItem]];
+        [CPException raise:CPInvalidArgumentException format:@"%@ firstItem should not be nil", [self class]];
+
+    [_firstAnchor setItem:[self _validateItem:anItem]];
 }
 
 - (void)_setSecondItem:(id)anItem
@@ -355,25 +369,22 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 
 - (CPString)description
 {
-    var lhs = [_firstAnchor description],
-        rhs = (_coefficient !== 0 && _secondAnchor !== nil) ? [CPString stringWithFormat:@"%@ x%@", [_secondAnchor description], _coefficient] : "",
-        identifier = (_identifier) ? [CPString stringWithFormat:@" [%@]"] : "",
+    var lhs = [_firstAnchor descriptionEquation],
+        rhs = (_secondAnchor && _coefficient) ? [CPString stringWithFormat:@"%@ x%@", [_secondAnchor descriptionEquation], _coefficient] : @"",
+        identifier = (_identifier) ? [CPString stringWithFormat:@" [%@]"] : @"",
         plusMinus = (_constant < 0) ? "-" : "+",
         active = _active ? "":" [inactive]";
 
-    return [CPString stringWithFormat:@"%@ %@ %@ %@%@ (%@)%@%@", lhs, CPStringFromRelation(_relation), rhs, plusMinus, _constant, _priority, identifier, active];
+    return [CPString stringWithFormat:@"%@ %@ %@ %@ %@ (%@)%@%@", lhs, CPStringFromRelation(_relation), rhs, plusMinus, ABS(_constant), _priority, identifier, active];
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)aNewItem
 {
-    if (anItem === [self firstItem])
-    {
-        [self _setfirstItem:aNewItem];
-    }
-    else if (anItem === [self secondItem])
-    {
-        [self _setSecondItem:aNewItem];
-    }
+    if (aNewItem === nil)
+        CPLog.warn(_cmd + " destination item should not be nil.");
+
+    [_firstAnchor _replaceItem:anItem withItem:aNewItem];
+    [_secondAnchor _replaceItem:anItem withItem:aNewItem];
 }
 
 - (void)resolveConstant
@@ -452,8 +463,11 @@ var CPFirstAnchor       = @"CPFirstAnchor",
 
 - (void)encodeWithCoder:(CPCoder)aCoder
 {
-    [aCoder encodeConditionalObject:_firstAnchor forKey:CPFirstAnchor];
-    [aCoder encodeConditionalObject:_secondAnchor forKey:CPSecondAnchor];
+    if (_firstAnchor)
+        [aCoder encodeConditionalObject:_firstAnchor forKey:CPFirstAnchor];
+
+    if (_secondAnchor)
+        [aCoder encodeConditionalObject:_secondAnchor forKey:CPSecondAnchor];
 
     if (_relation !== CPLayoutRelationEqual)
         [aCoder encodeInt:_relation forKey:CPRelation];
@@ -469,7 +483,8 @@ var CPFirstAnchor       = @"CPFirstAnchor",
     if (_priority !== CPLayoutPriorityRequired)
         [aCoder encodeInt:_priority forKey:CPPriority];
 
-    [aCoder encodeObject:_identifier forKey:CPLayoutIdentifier];
+    if (_identifier)
+        [aCoder encodeObject:_identifier forKey:CPLayoutIdentifier];
 }
 
 - (id)initWithCoder:(CPCoder)aCoder
@@ -478,23 +493,31 @@ var CPFirstAnchor       = @"CPFirstAnchor",
 
     if ([aCoder containsValueForKey:CPFirstAnchor])
         _firstAnchor = [aCoder decodeObjectForKey:CPFirstAnchor];
-    else
+    else if ([aCoder containsValueForKey:CPFirstItem])
     {
-        var item = [aCoder decodeObjectForKey:CPFirstItem],
-            attr = [aCoder decodeIntForKey:CPFirstAttribute];
-        _firstAnchor = [CPLayoutAnchor layoutAnchorWithItem:item attribute:attr];
+        var item1 = [aCoder decodeObjectForKey:CPFirstItem],
+            attr1 = [aCoder decodeIntForKey:CPFirstAttribute];
+
+        _firstAnchor = [item1 layoutAnchorForAttribute:attr1];
     }
+
+    if (_firstAnchor == nil)
+        [CPException raise:CPInvalidArgumentException format:@"CPLayoutConstraint decoding: firstAnchor should not be nil"];
 
     var hasKey = [aCoder containsValueForKey:CPMultiplier];
     _coefficient = (hasKey) ? [aCoder decodeDoubleForKey:CPMultiplier] : 1;
 
     if ([aCoder containsValueForKey:CPSecondAnchor])
         _secondAnchor = [aCoder decodeObjectForKey:CPSecondAnchor];
-    else
+    else if ([aCoder containsValueForKey:CPSecondItem] && _coefficient !== 0)
     {
-        var item = [aCoder decodeObjectForKey:CPSecondItem],
-            attr = [aCoder decodeIntForKey:CPSecondAttribute];
-        _secondAnchor = (item !== nil && _coefficient !== 0) ? [CPLayoutAnchor layoutAnchorWithItem:item attribute:attr] : nil;
+        var item2 = [aCoder decodeObjectForKey:CPSecondItem],
+            attr2 = [aCoder decodeIntForKey:CPSecondAttribute];
+
+        _secondAnchor = [item2 layoutAnchorForAttribute:attr2];
+    }
+    else {
+        _secondAnchor = nil;
     }
 
     var hasKey = [aCoder containsValueForKey:CPRelation];
