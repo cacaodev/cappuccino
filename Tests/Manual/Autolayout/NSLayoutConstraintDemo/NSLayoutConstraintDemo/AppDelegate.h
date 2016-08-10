@@ -30,7 +30,7 @@
 {
     IBOutlet NSTableView *tableView;
     IBOutlet WebView *cappView;
-    IBOutlet NSView *windowSpace;
+    IBOutlet GridView *windowSpace;
     IBOutlet NSTextField *consoleView;
     IBOutlet NSPopUpButton *popUp;
     NSMutableArray *windowControllers;

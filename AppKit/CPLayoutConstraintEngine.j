@@ -211,26 +211,22 @@ var CPLayoutItemIsNull          = 2,
     //CPLog.debug(_cmd + " prefix" + aPrefix + " name:" + aName + " value:" + aValue);
     var result = nil;
 
-    _variableToOwnerMap.forEach(function(owner, variable) {
+    _variableToOwnerMap.forEach(function(anchor, variable) {
         if (variable._prefix == aPrefix && variable.name == aName)
         {
             result = variable;
-            EngineWarn("Found existing variable " + [[owner item] debugID] + "[" + result.name + "]");
+            EngineWarn("Found existing variable " + [[anchor _referenceItem] debugID] + "[" + result.name + "]");
         }
     });
 
     if (result == nil)
-    {
         result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
 
-        var constituentAnchors = [anOwner _constituentAnchors];
-
-        constituentAnchors.forEach(function(anchor, idx)
-        {
-            if (_variableToOwnerMap.get(result) == null)
-                _variableToOwnerMap.set(result, anchor);
-        });
-    }
+    [[anOwner _constituentAnchors] enumerateObjectsUsingBlock:function(anchor, idx, stop)
+    {
+        if (_variableToOwnerMap.get(anchor) == null)
+            _variableToOwnerMap.set(result, anchor);
+    }];
 
     return result;
 }
