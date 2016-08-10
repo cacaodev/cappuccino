@@ -208,10 +208,31 @@ var CPLayoutItemIsNull          = 2,
 
 - (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
 {
-    var variable = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
-    _variableOwnerMap.set(variable, anOwner);
+    //CPLog.debug(_cmd + " prefix" + aPrefix + " name:" + aName + " value:" + aValue);
+    var result = nil;
 
-    return variable;
+    _variableToOwnerMap.forEach(function(owner, variable) {
+        if (variable._prefix == aPrefix && variable.name == aName)
+        {
+            result = variable;
+            EngineWarn("Found existing variable " + [[owner item] debugID] + "[" + result.name + "]");
+        }
+    });
+
+    if (result == nil)
+    {
+        result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
+
+        var constituentAnchors = [anOwner _constituentAnchors];
+
+        constituentAnchors.forEach(function(anchor, idx)
+        {
+            if (_variableToOwnerMap.get(result) == null)
+                _variableToOwnerMap.set(result, anchor);
+        });
+    }
+
+    return result;
 }
 
 - (CPString)description
