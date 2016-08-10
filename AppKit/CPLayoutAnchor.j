@@ -85,7 +85,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     if (_variable == nil)
     {
-        var item = [self item],
+        var item = [self _referenceItem],
             engine = [item _layoutEngine];
 
         _variable = [engine variableWithPrefix:[item UID] name:[self name] value:[self valueInLayoutSpace] owner:self];
@@ -134,7 +134,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (otherAnchor === self)
         return YES;
 
-    if ([otherAnchor class] !== [self class] || [otherAnchor item] !== _item || [otherAnchor attribute] !== _attribute)
+    if ([otherAnchor class] !== [self class] || [otherAnchor _referenceItem] !== [self _referenceItem] || [otherAnchor attribute] !== _attribute)
         return NO;
 
     return YES;
