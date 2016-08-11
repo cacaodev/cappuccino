@@ -280,6 +280,20 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return result;
 }
 
+// CPLayoutAnchor creation
+
+- (CPCompositeLayoutAxisAnchor)anchorAtMidpointToAnchor:(id)arg1
+{
+    var distance = [self anchorWithOffsetToAnchor:arg1];
+
+    return [self anchorByOffsettingWithDimension:distance multiplier:0.5 constant:0];
+}
+
+- (CPDistanceLayoutDimension)anchorWithOffsetToAnchor:(id)arg1
+{
+    return [CPDistanceLayoutDimension distanceFromAnchor:self toAnchor:arg1];
+}
+
 // CPLayoutConstraint creation
 
 - (CPLayoutConstraint)constraintLessThanOrEqualToConstant:(double)constant
@@ -377,6 +391,11 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     [[self _referenceItem] _engineDidChangeVariableOfType:2];
 }
 
+- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
+{
+    return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:arg1];
+}
+
 @end
 
 @implementation CPLayoutXAxisAnchor : CPLayoutAxisAnchor
@@ -391,9 +410,11 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [self valueInEngine:nil] - CGRectGetMinX([anItem frame]);
 }
 
-- (CPCompositeLayoutXAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
+// CPLayoutAnchor creation
+
+- (CPCompositeLayoutXAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
 {
-  return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:nil times:0 plus:arg1 name:@"IndependantX"];
+    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:@"[]"];
 }
 
 @end
@@ -412,9 +433,11 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [self valueInEngine:nil] - CGRectGetMinY([anItem frame]);
 }
 
-- (id)anchorByOffsettingWithConstant:(float)arg1
+// CPLayoutAnchor creation
+
+- (CPCompositeLayoutYAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
 {
-    return [[CPCompositeLayoutYAxisAnchor alloc] initWithAnchor:self plusDimension:nil times:0 plus:arg1 name:nil];
+    return [[CPCompositeLayoutYAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:@"[]"];
 }
 
 @end
@@ -586,6 +609,12 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
     return anchor;
 }
+// CPLayoutAnchor creation
+
+- (CPCompositeLayoutYAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
+{
+    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:@"[]"];
+}
 
 @end
 
@@ -621,6 +650,12 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     [anchor _setAttribute:anAttribute];
 
     return anchor;
+}
+// CPLayoutAnchor creation
+
+- (CPCompositeLayoutYAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
+{
+    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:@"[]"];
 }
 
 @end
