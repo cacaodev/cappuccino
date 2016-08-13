@@ -67,7 +67,7 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
     BOOL                _shouldBeArchived @accessors(property=shouldBeArchived);
 
 // Private ivars
-    unsigned            _constraintFlags   @accessors(getter=constraintFlags);
+    unsigned            _constraintFlags  @accessors(getter=constraintFlags);
     CPString            _symbolicConstant;
     CPArray             _engineConstraints;
 }
@@ -233,7 +233,7 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
         }
         else
         {
-            [CPException raise:CPGenericException reason:[CPString stringWithFormat:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", [self firstItem], [self secondItem]]];
+            [CPException raise:CPGenericException format:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", [self firstItem], [self secondItem]];
         }
     }
     else
@@ -323,48 +323,42 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
     return anItem;
 }
 
-- (void)setConstant:(double)aConstant
+- (void)setConstant:(double)aConstant priority:(CPInteger)aPriority
 {
-    if (aConstant === _constant)
-        return;
-
-    var CPLayoutConstraintSetConstantBlock = function()
+    var block = function()
     {
         [self _setConstant:aConstant];
+        [self _setPriority:aPriority];
     };
 
     if (_active)
-        [_container _updateConstraint:self usingBlock:CPLayoutConstraintSetConstantBlock];
+        [_container _updateConstraint:self usingBlock:block];
     else
-        CPLayoutConstraintSetConstantBlock();
+        block();
+}
+
+- (void)setConstant:(double)aConstant
+{
+    [self setConstant:aConstant priority:_priority];
 }
 
 - (void)_setConstant:(double)aConstant
 {
-    _constant = aConstant;
+    if (aConstant !== _constant)
+        _constant = aConstant;
 }
 
 - (void)setPriority:(CPLayoutPriority)aPriority
 {
     var priority = MAX(MIN(aPriority, CPLayoutPriorityRequired), 0);
 
-    if (priority === _priority)
-        return;
-
-    var CPLayoutConstraintSetPriorityBlock = function()
-    {
-        [self _setPriority:priority];
-    };
-
-    if (_active)
-        [_container _updateConstraint:self usingBlock:CPLayoutConstraintSetPriorityBlock];
-    else
-        CPLayoutConstraintSetPriorityBlock();
+    [self setConstant:_constant priority:priority];
 }
 
 - (void)_setPriority:(CPLayoutPriority)aPriority
 {
-    _priority = aPriority;
+    if (aPriority !== _priority)
+        _priority = aPriority;
 }
 
 - (CPString)description
