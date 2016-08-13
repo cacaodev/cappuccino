@@ -121,6 +121,11 @@ CPViewHeightSizable = 16;
 */
 CPViewMaxYMargin    = 32;
 
+_CPViewWillAppearNotification        = @"CPViewWillAppearNotification";
+_CPViewDidAppearNotification         = @"CPViewDidAppearNotification";
+_CPViewWillDisappearNotification     = @"CPViewWillDisappearNotification";
+_CPViewDidDisappearNotification      = @"CPViewDidDisappearNotification";
+
 CPViewBoundsDidChangeNotification   = @"CPViewBoundsDidChangeNotification";
 CPViewFrameDidChangeNotification    = @"CPViewFrameDidChangeNotification";
 
@@ -183,6 +188,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     CPArray             _registeredDraggedTypesArray;
 
     BOOL                _isHidden;
+    BOOL                _isHiddenOrHasHiddenAncestor;
     BOOL                _hitTests;
     BOOL                _clipsToBounds;
 
@@ -454,6 +460,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
         _opacity = 1.0;
         _isHidden = NO;
+        _isHiddenOrHasHiddenAncestor = NO;
         _hitTests = YES;
 
         _hierarchyScaleSize = CGSizeMake(1.0 , 1.0);
@@ -686,8 +693,9 @@ var CPViewHighDPIDrawingEnabled = YES;
         // Remove the view from its previous superview.
         [aSubview _removeFromSuperview];
 
+        [aSubview _postViewWillAppearNotification];
         // Set ourselves as the superview.
-        aSubview._superview = self;
+        [aSubview _setSuperview:self];
     }
 
     if (anIndex === CPNotFound || anIndex >= count)
@@ -711,11 +719,6 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     [aSubview setNextResponder:self];
     [aSubview _scaleSizeUnitSquareToSize:[self _hierarchyScaleSize]];
-
-    // If the subview is not hidden and one of its ancestors is hidden,
-    // notify the subview that it is now hidden.
-    if (![aSubview isHidden] && [self isHiddenOrHasHiddenAncestor])
-        [aSubview _notifyViewDidHide];
 
     [aSubview viewDidMoveToSuperview];
 
@@ -782,6 +785,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     [[self window] _dirtyKeyViewLoop];
 
     [_superview willRemoveSubview:self];
+    [self _postViewWillDisappearNotification];
 
     [_superview._subviews removeObjectIdenticalTo:self];
 
@@ -791,13 +795,10 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     // If the view is not hidden and one of its ancestors is hidden,
     // notify the view that it is now unhidden.
-    if (!_isHidden && [_superview isHiddenOrHasHiddenAncestor])
-        [self _notifyViewDidUnhide];
+    [self _setSuperview:nil];
 
     [self _notifyWindowDidResignKey];
     [self _notifyViewDidResignFirstResponder];
-
-    _superview = nil;
 }
 
 /*!
@@ -1699,10 +1700,8 @@ var CPViewHighDPIDrawingEnabled = YES;
 
 //  FIXME: Should we return to visibility?  This breaks in FireFox, Opera, and IE.
 //    _DOMElement.style.visibility = (_isHidden = aFlag) ? "hidden" : "visible";
-    _isHidden = aFlag;
-
 #if PLATFORM(DOM)
-    _DOMElement.style.display = _isHidden ? "none" : "block";
+    _DOMElement.style.display = aFlag ? "none" : "block";
 #endif
 
     if (aFlag)
@@ -1722,33 +1721,89 @@ var CPViewHighDPIDrawingEnabled = YES;
             while (view = [view superview]);
         }
 
-        [self _notifyViewDidHide];
+        [self _postViewWillDisappearNotification];
+        [self _recursiveGainedHiddenAncestor];
     }
     else
     {
         [self setNeedsDisplay:YES];
-        [self _notifyViewDidUnhide];
+
+        [self _postViewWillAppearNotification];
+        [self _recursiveLostHiddenAncestor];
     }
+
+    _isHidden = aFlag;
 }
 
-- (void)_notifyViewDidHide
+- (void)_postViewWillAppearNotification
 {
-    [self viewDidHide];
-
-    var count = [_subviews count];
-
-    while (count--)
-        [_subviews[count] _notifyViewDidHide];
+    [[CPNotificationCenter defaultCenter] postNotificationName:_CPViewWillAppearNotification object:self userInfo:nil];
 }
 
-- (void)_notifyViewDidUnhide
+- (void)_postViewDidAppearNotification
 {
-    [self viewDidUnhide];
+    [[CPNotificationCenter defaultCenter] postNotificationName:_CPViewDidAppearNotification object:self userInfo:nil];
+}
 
-    var count = [_subviews count];
+- (void)_postViewWillDisappearNotification
+{
+    [[CPNotificationCenter defaultCenter] postNotificationName:_CPViewWillDisappearNotification object:self userInfo:nil];
+}
 
-    while (count--)
-        [_subviews[count] _notifyViewDidUnhide];
+- (void)_postViewDidDisappearNotification
+{
+    [[CPNotificationCenter defaultCenter] postNotificationName:_CPViewDidDisappearNotification object:self userInfo:nil];
+}
+
+- (void)_setSuperview:(CPView)aSuperview
+{
+    var hasOldSuperview = (_superview !== nil),
+        hasNewSuperview = (aSuperview !== nil),
+        oldSuperviewIsHidden = hasOldSuperview && [_superview isHiddenOrHasHiddenAncestor],
+        newSuperviewIsHidden = hasNewSuperview && [aSuperview isHiddenOrHasHiddenAncestor];
+
+    if (!newSuperviewIsHidden && oldSuperviewIsHidden)
+        [self _recursiveLostHiddenAncestor];
+
+    if (newSuperviewIsHidden && !oldSuperviewIsHidden)
+        [self _recursiveGainedHiddenAncestor];
+
+    _superview = aSuperview;
+
+    if (hasOldSuperview)
+        [self _postViewDidDisappearNotification];
+
+    if (hasNewSuperview)
+        [self _postViewDidAppearNotification];
+}
+
+- (void)_recursiveLostHiddenAncestor
+{
+    if (_isHiddenOrHasHiddenAncestor)
+    {
+        _isHiddenOrHasHiddenAncestor = NO;
+        [self viewDidUnhide];
+    }
+
+    [_subviews enumerateObjectsUsingBlock:function(view, idx, stop)
+    {
+        [view _recursiveLostHiddenAncestor];
+    }];
+}
+
+- (void)_recursiveGainedHiddenAncestor
+{
+    if (!_isHidden)
+    {
+        [self viewDidHide];
+    }
+
+    _isHiddenOrHasHiddenAncestor = YES;
+
+    [_subviews enumerateObjectsUsingBlock:function(view, idx, stop)
+    {
+        [view _recursiveGainedHiddenAncestor];
+    }];
 }
 
 /*!
@@ -1818,12 +1873,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (BOOL)isHiddenOrHasHiddenAncestor
 {
-    var view = self;
-
-    while (view && ![view isHidden])
-        view = [view superview];
-
-    return view !== nil;
+    return _isHiddenOrHasHiddenAncestor;
 }
 
 /*!
@@ -3789,7 +3839,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         _identifier = [aCoder decodeObjectForKey:CPReuseIdentifierKey];
         _window = [aCoder decodeObjectForKey:CPViewWindowKey];
         _superview = [aCoder decodeObjectForKey:CPViewSuperviewKey];
-
         // We have to manually add the subviews so that they will receive
         // viewWillMoveToSuperview: and viewDidMoveToSuperview:
         _subviews = [];
@@ -3844,6 +3893,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 #endif
 
         [self setHidden:[aCoder decodeBoolForKey:CPViewIsHiddenKey]];
+        _isHiddenOrHasHiddenAncestor = NO;
 
         if ([aCoder containsValueForKey:CPViewOpacityKey])
             [self setAlphaValue:[aCoder decodeIntForKey:CPViewOpacityKey]];
