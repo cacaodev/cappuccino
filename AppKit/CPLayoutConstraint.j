@@ -339,7 +339,8 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 
 - (void)setConstant:(double)aConstant
 {
-    [self setConstant:aConstant priority:_priority];
+    if (aConstant !== _constant)
+        [self setConstant:aConstant priority:_priority];
 }
 
 - (void)_setConstant:(double)aConstant
@@ -352,7 +353,8 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 {
     var priority = MAX(MIN(aPriority, CPLayoutPriorityRequired), 0);
 
-    [self setConstant:_constant priority:priority];
+    if (priority !== _priority)
+        [self setConstant:_constant priority:priority];
 }
 
 - (void)_setPriority:(CPLayoutPriority)aPriority
