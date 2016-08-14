@@ -573,7 +573,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (CPString)descriptionEquation
 {
     if ([self name])
-        [super descriptionEquation];
+        return [super descriptionEquation];
 
     return [CPString stringWithFormat:@"{%@ + %@x%@ + %@}",[[self axisAnchor] descriptionEquation], [_dimension descriptionEquation], _dimensionMultiplier, _constant];
 }
@@ -613,7 +613,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPCompositeLayoutYAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
 {
-    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:@"[]"];
+    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:nil];
 }
 
 @end
@@ -655,7 +655,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPCompositeLayoutYAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
 {
-    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:@"[]"];
+    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:nil];
 }
 
 @end
@@ -776,9 +776,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return @[_minAnchor, _maxAnchor];
 }
 
-- (id)equationDescription
+- (CPString)descriptionEquation
 {
-    return [CPString stringWithFormat:@"[%@-%@]", [_minAnchor equationDescription], [_maxAnchor equationDescription]];
+    return [CPString stringWithFormat:@"[%@-%@]", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
 }
 
 - (float)valueInItem:(id)arg1
