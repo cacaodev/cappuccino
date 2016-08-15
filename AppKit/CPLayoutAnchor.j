@@ -294,6 +294,11 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [CPDistanceLayoutDimension distanceFromAnchor:self toAnchor:arg1];
 }
 
+- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
+{
+    return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:arg1];
+}
+
 // CPLayoutConstraint creation
 
 - (CPLayoutConstraint)constraintLessThanOrEqualToConstant:(double)constant
@@ -389,11 +394,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
 {
     [[self _referenceItem] _engineDidChangeVariableOfType:2];
-}
-
-- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
-{
-    return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:arg1];
 }
 
 @end
@@ -578,6 +578,13 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [CPString stringWithFormat:@"{%@ + %@x%@ + %@}",[[self axisAnchor] descriptionEquation], [_dimension descriptionEquation], _dimensionMultiplier, _constant];
 }
 
+// CPLayoutAnchor creation
+
+- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
+{
+    return [[[self class] alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:nil];
+}
+
 @end
 
 @implementation CPCompositeLayoutXAxisAnchor : CPCompositeLayoutAxisAnchor
@@ -608,12 +615,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     [anchor _setAttribute:anAttribute];
 
     return anchor;
-}
-// CPLayoutAnchor creation
-
-- (CPCompositeLayoutYAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
-{
-    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:nil];
 }
 
 @end
@@ -650,12 +651,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     [anchor _setAttribute:anAttribute];
 
     return anchor;
-}
-// CPLayoutAnchor creation
-
-- (CPCompositeLayoutYAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
-{
-    return [[CPCompositeLayoutXAxisAnchor alloc] initWithAnchor:self plusDimension:distance times:multiplier plus:constant name:nil];
 }
 
 @end
