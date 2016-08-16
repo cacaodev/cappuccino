@@ -209,15 +209,19 @@ var CPLayoutItemIsNull          = 2,
 - (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
 {
     //CPLog.debug(_cmd + " prefix" + aPrefix + " name:" + aName + " value:" + aValue);
-    var result = nil;
+    var result = nil,
+        variables = Array.from(_variableToOwnerMap.keys());
 
-    _variableToOwnerMap.forEach(function(anchor, variable) {
+    [variables enumerateObjectsUsingBlock:function(variable, idx, stop)
+    {
         if (variable._prefix == aPrefix && variable.name == aName)
         {
             result = variable;
-            EngineWarn("Found existing variable " + [[anchor _referenceItem] debugID] + "[" + result.name + "]");
+            stop(YES);
+            var anchor = _variableToOwnerMap.get(variable);
+            EngineWarn([CPString stringWithFormat:"Reuse variable %@(%@)[%@]", aPrefix, [[anchor _referenceItem] debugID], aName]);
         }
-    });
+    }];
 
     if (result == nil)
         result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
