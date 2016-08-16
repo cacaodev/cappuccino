@@ -31,7 +31,7 @@ var displayObjects      = [],
     layoutObjectsByUID  = { },
 
     runLoop             = [CPRunLoop mainRunLoop],
-    locked = 0;
+    locked              = 0;
 
 function _CPDisplayServerAddDisplayObject(anObject)
 {
@@ -70,18 +70,12 @@ function _CPDisplayServerAddLayoutObject(anObject)
 
 + (void)unlock
 {
-    locked--;
+    locked = MAX(locked - 1, 0);
 }
 
 + (void)run
 {
-    if (locked > 0)
-    {
-        CPLog.warn("Tried to run _CPDisplayServer while locked. Aborting.");
-        return;
-    }
-
-    while (layoutObjects.length || displayObjects.length)
+    while (locked == 0 && layoutObjects.length || displayObjects.length)
     {
         var index = 0;
 
