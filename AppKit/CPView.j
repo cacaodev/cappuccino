@@ -490,8 +490,6 @@ var CPViewHighDPIDrawingEnabled = YES;
         _translatesAutoresizingMaskIntoConstraints = YES;
         _huggingPriorities = nil;
         _compressionPriorities = nil;
-
-        [self _updateNeedsUpdateConstraintsFlag];
     }
 
     return self;
@@ -944,6 +942,11 @@ var CPViewHighDPIDrawingEnabled = YES;
     [self _manageToolTipInstallation];
 
     [[self window] _dirtyKeyViewLoop];
+
+    if (_window && _needsUpdateConstraints)
+    {
+        [_window _setSubviewsNeedUpdateConstraints];
+    }
 }
 
 /*!
@@ -3918,8 +3921,6 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         if ([aCoder containsValueForKey:CPAntiCompressionPriority])
             _compressionPriorities = [aCoder decodeSizeForKey:CPAntiCompressionPriority];
 
-        [self _updateNeedsUpdateConstraintsFlag];
-
         [self setNeedsDisplay:YES];
         [self setNeedsLayout];
     }
@@ -4047,6 +4048,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     _viewHasConstraintBasedSubviews = NO;
     _isSettingFrameFromEngine = NO;
     _subviewsNeedSolvingInEngine = NO;
+    _needsUpdateConstraints = YES;
     _geometryDirtyMask = 0;
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
@@ -4582,8 +4584,8 @@ A Boolean value indicating whether the view’s autoresizing mask is translated 
     {
 //        CPLog.debug([self debugID] + " " +  _cmd);
         _translatesAutoresizingMaskIntoConstraints = shouldTranslate;
-
-        [self _updateNeedsUpdateConstraintsFlag];
+        // TODO: If we switch from YES to NO after a layout, should we remove the autoresizing constraints ?.
+        [self setNeedsUpdateConstraints:YES];
     }
 }
 
@@ -4626,13 +4628,9 @@ Updates the constraints for the receiving view and its subviews.
         _needsUpdateConstraints = needsUpdate;
 
         if (needsUpdate)
-            [[self window] _setSubviewsNeedUpdateConstraints];
+            [_window _setSubviewsNeedUpdateConstraints];
+        // _window may be nil. In this case, the window will be notified in _setWindow:
     }
-}
-
-- (void)_updateNeedsUpdateConstraintsFlag
-{
-    _needsUpdateConstraints = (_translatesAutoresizingMaskIntoConstraints || ![self intrinsicContentSizeIsNoInstrinsicMetric])
 }
 
 /*!

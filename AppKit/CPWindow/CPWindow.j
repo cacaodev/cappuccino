@@ -4461,7 +4461,8 @@ Subclasses should not override this method.
 
 - (void)_setSubviewsNeedUpdateConstraints
 {
-    _subviewsNeedUpdateConstraints = YES;
+    if (!_subviewsNeedUpdateConstraints)
+        _subviewsNeedUpdateConstraints = YES;
 }
 
 @end
