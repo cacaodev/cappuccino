@@ -1,9 +1,12 @@
 @import <Foundation/CPObject.j>
+@import <Foundation/CPGeometry.j>
+@import <Foundation/CPSet.j>
 
 @import "CPLayoutConstraint.j"
 @import "c.js"
 
 @class CPLayoutConstraint
+@class _CPCibCustomView
 @typedef Expression
 
 var CPLayoutAnchorTypeSimple    = 0;
