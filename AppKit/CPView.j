@@ -277,12 +277,10 @@ var CPViewHighDPIDrawingEnabled = YES;
     CGSize   _storedIntrinsicContentSize @accessors(property=storedIntrinsicContentSize);
 
     BOOL     _needsUpdateConstraints    @accessors(property=needsUpdateConstraints);
-    // An autoresize or contentSize contraint needs update in one or more subviews of this window.
-    BOOL     _subviewsNeedUpdateConstraints;
     // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
     BOOL     _subviewsNeedSolvingInEngine;
-    // Is the view geometry dirty and does it to set its frame from the current engine variables ?
-    unsigned int     _geometryDirtyMask;
+    // Is the view geometry dirty and does it need to set its frame from the current engine variables ?
+    unsigned int _geometryDirtyMask;
 
     BOOL     _isSettingFrameFromEngine;
     BOOL     _viewIsConstraintBased;
@@ -489,7 +487,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
         [self _initConstraintsIvars];
 
-        _translatesAutoresizingMaskIntoConstraints = YES; // ! In cocoa, the default is YES !
+        _translatesAutoresizingMaskIntoConstraints = YES;
         _huggingPriorities = nil;
         _compressionPriorities = nil;
 
@@ -4053,7 +4051,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
     _constraintsArray = @[];
-    _storedIntrinsicContentSize = CGSizeMake(-1, -1);
+    _storedIntrinsicContentSize = CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
     _layoutGuides = @[];
 
     _centerYAnchor = nil;
@@ -4591,6 +4589,7 @@ A Boolean value indicating whether the view’s autoresizing mask is translated 
 
 - (void)_informContainerThatSubviewsNeedSolvingInEngine
 {
+    // FIXME: RECURSIVE, add a guard.
 //CPLog.debug([self debugID] + " " +  _cmd);
     [self _setSubviewsNeedSolvingInEngine];
 
