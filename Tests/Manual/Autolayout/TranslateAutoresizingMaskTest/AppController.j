@@ -30,7 +30,13 @@ CPLogRegister(CPLogConsole);
 
     if (flags & CPCommandKeyMask)
     {
-        CPLog.debug([[[self window] _layoutEngine] description]);
+        CPLog.debug([self identifier] + " " + CPStringFromRect([self frame]));
+        CPLog.debug([[[self window] _layoutEngine] getInfo]);
+    }
+
+    if (flags & CPShiftKeyMask)
+    {
+        CPLog.debug([[[self window] _layoutEngine] sendCommand:"getconstraints" withArguments:null]);
     }
 }
 

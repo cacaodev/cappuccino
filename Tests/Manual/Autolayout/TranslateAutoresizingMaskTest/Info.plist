@@ -5,7 +5,7 @@
 	<key>Main cib file base name</key>
 	<string>MainMenu.cib</string>
 	<key>CPBundleName</key>
-	<string>WorkerTest</string>
+	<string>TranslateAutoresizingMaskTest</string>
     <key>CPBundleVersion</key>
     <string>1.0</string>
     <key>CPHumanReadableCopyright</key>

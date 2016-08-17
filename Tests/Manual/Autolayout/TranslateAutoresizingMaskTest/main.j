@@ -1,6 +1,6 @@
 /*
  * AppController.j
- * WorkerTest
+ * TranslateAutoresizingMaskTest
  *
  * Created by You on May 13, 2013.
  * Copyright 2013, Your Company All rights reserved.

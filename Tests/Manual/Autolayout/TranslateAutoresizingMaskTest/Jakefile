@@ -1,6 +1,6 @@
 /*
  * Jakefile
- * WorkerTest
+ * TranslateAutoresizingMaskTest
  *
  * Created by You on May 13, 2013.
  * Copyright 2013, Your Company All rights reserved.
@@ -15,22 +15,22 @@ var ENV = require("system").env,
     configuration = ENV["CONFIG"] || ENV["CONFIGURATION"] || ENV["c"] || "Debug",
     OS = require("os");
 
-app ("WorkerTest", function(task)
+app ("TranslateAutoresizingMaskTest", function(task)
 {
     ENV["OBJJ_INCLUDE_PATHS"] = "Frameworks";
 
     if (configuration === "Debug")
         ENV["OBJJ_INCLUDE_PATHS"] = FILE.join(ENV["OBJJ_INCLUDE_PATHS"], configuration);
 
-    task.setBuildIntermediatesPath(FILE.join("Build", "WorkerTest.build", configuration));
+    task.setBuildIntermediatesPath(FILE.join("Build", "TranslateAutoresizingMaskTest.build", configuration));
     task.setBuildPath(FILE.join("Build", configuration));
 
-    task.setProductName("WorkerTest");
-    task.setIdentifier("com.yourcompany.WorkerTest");
+    task.setProductName("TranslateAutoresizingMaskTest");
+    task.setIdentifier("com.yourcompany.TranslateAutoresizingMaskTest");
     task.setVersion("1.0");
     task.setAuthor("Your Company");
     task.setEmail("feedback @nospam@ yourcompany.com");
-    task.setSummary("WorkerTest");
+    task.setSummary("TranslateAutoresizingMaskTest");
     task.setSources(new FileList("**/*.j").exclude(FILE.join("Build", "**")).exclude(FILE.join("Frameworks", "Source", "**")));
     task.setResources(new FileList("Resources/**"));
     task.setIndexFilePath("index.html");
@@ -42,7 +42,7 @@ app ("WorkerTest", function(task)
         task.setCompilerFlags("-O");
 });
 
-task ("default", ["WorkerTest"], function()
+task ("default", ["TranslateAutoresizingMaskTest"], function()
 {
     printResults(configuration);
 });
@@ -63,36 +63,36 @@ task ("release", function()
 
 task ("run", ["debug"], function()
 {
-    OS.system(["open", FILE.join("Build", "Debug", "WorkerTest", "index.html")]);
+    OS.system(["open", FILE.join("Build", "Debug", "TranslateAutoresizingMaskTest", "index.html")]);
 });
 
 task ("run-release", ["release"], function()
 {
-    OS.system(["open", FILE.join("Build", "Release", "WorkerTest", "index.html")]);
+    OS.system(["open", FILE.join("Build", "Release", "TranslateAutoresizingMaskTest", "index.html")]);
 });
 
 task ("deploy", ["release"], function()
 {
-    FILE.mkdirs(FILE.join("Build", "Deployment", "WorkerTest"));
-    OS.system(["press", "-f", FILE.join("Build", "Release", "WorkerTest"), FILE.join("Build", "Deployment", "WorkerTest")]);
+    FILE.mkdirs(FILE.join("Build", "Deployment", "TranslateAutoresizingMaskTest"));
+    OS.system(["press", "-f", FILE.join("Build", "Release", "TranslateAutoresizingMaskTest"), FILE.join("Build", "Deployment", "TranslateAutoresizingMaskTest")]);
     printResults("Deployment")
 });
 
 task ("desktop", ["release"], function()
 {
-    FILE.mkdirs(FILE.join("Build", "Desktop", "WorkerTest"));
-    require("cappuccino/nativehost").buildNativeHost(FILE.join("Build", "Release", "WorkerTest"), FILE.join("Build", "Desktop", "WorkerTest", "WorkerTest.app"));
+    FILE.mkdirs(FILE.join("Build", "Desktop", "TranslateAutoresizingMaskTest"));
+    require("cappuccino/nativehost").buildNativeHost(FILE.join("Build", "Release", "TranslateAutoresizingMaskTest"), FILE.join("Build", "Desktop", "TranslateAutoresizingMaskTest", "TranslateAutoresizingMaskTest.app"));
     printResults("Desktop")
 });
 
 task ("run-desktop", ["desktop"], function()
 {
-    OS.system([FILE.join("Build", "Desktop", "WorkerTest", "WorkerTest.app", "Contents", "MacOS", "NativeHost"), "-i"]);
+    OS.system([FILE.join("Build", "Desktop", "TranslateAutoresizingMaskTest", "TranslateAutoresizingMaskTest.app", "Contents", "MacOS", "NativeHost"), "-i"]);
 });
 
 function printResults(configuration)
 {
     print("----------------------------");
-    print(configuration+" app built at path: "+FILE.join("Build", configuration, "WorkerTest"));
+    print(configuration+" app built at path: "+FILE.join("Build", configuration, "TranslateAutoresizingMaskTest"));
     print("----------------------------");
 }
