@@ -6,11 +6,8 @@
  * Copyright 2013, Your Company All rights reserved.
  */
 
-#define ALLOW_CLASS_OVERRIDE
-
 @import <Foundation/Foundation.j>
 @import <AppKit/AppKit.j>
-//@import "CPLayoutConstraintEngine.j"
 
 CPLogRegister(CPLogConsole);
 
@@ -31,15 +28,9 @@ CPLogRegister(CPLogConsole);
     if (flags & CPCommandKeyMask)
     {
         CPLog.debug([self identifier] + " " + CPStringFromRect([self frame]));
-        CPLog.debug([[[self window] _layoutEngine] getInfo]);
-    }
-
-    if (flags & CPShiftKeyMask)
-    {
-        CPLog.debug([[[self window] _layoutEngine] sendCommand:"getconstraints" withArguments:null]);
+        CPLog.debug([[[self window] _layoutEngine] description]);
     }
 }
-
 
 @end
 
@@ -92,7 +83,7 @@ CPLogRegister(CPLogConsole);
 - (IBAction)addView:(id)sender
 {
     var view = [[CPView alloc] initWithFrame:CGRectMake(10, 10, 100, 100)];
-    [view setIdentifier:@"maskView"];
+    [view setIdentifier:@"autoresizingMaskView"];
     [view setBackgroundColor:[CPColor randomColor]];
     [view setAutoresizingMask:[maskField intValue]];
 
