@@ -178,15 +178,99 @@
 
     return [[self class] layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor trailingAnchor:trailingAnchor bottomAnchor:bottomAnchor];
 }
-/*
+
+- (id)_rectangleBySlicingWithDimension:(id)aDimension plusConstant:(float)aConstant fromEdge:(int)anEdge
+{
+  var leadingAnchor,
+      topAnchor,
+      widthAnchor,
+      heightAnchor;
+
+  switch ( anEdge )
+  {
+    case 0:
+      if ( aDimension )
+      {
+        heightAnchor = [aDimension anchorByAddingConstant:aConstant];
+      }
+      else
+      {
+        var v13 = [self heightAnchor];
+        var v14 = [v13 anchorByMultiplyingByConstant:0];
+        heightAnchor = [v14 anchorByAddingConstant:aConstant];
+      }
+
+      leadingAnchor = [self leadingAnchor];
+      topAnchor = [self topAnchor];
+      widthAnchor = [self widthAnchor];
+      break;
+    case 1:
+      leadingAnchor = [self leadingAnchor];
+
+      if ( aDimension )
+      {
+         widthAnchor = [aDimension anchorByAddingConstant:aConstant];
+      }
+      else
+      {
+        var v19 = [self widthAnchor];
+        var v20 = [v19 anchorByMultiplyingByConstant:0];
+        widthAnchor = [v20 anchorByAddingConstant:aConstant];
+      }
+
+      topAnchor = [self topAnchor];
+      heightAnchor = [self heightAnchor];
+      break;
+    case 2:
+      leadingAnchor = [self leadingAnchor];
+      var bottomAnchor = [self bottomAnchor];
+
+      if ( aDimension )
+      {
+        topAnchor = [bottomAnchor anchorByOffsettingWithDimension:aDimension multiplier:-0.5 constant:aConstant];
+        heightAnchor = [arg1 anchorByAddingConstant:aConstant];
+      }
+      else
+      {
+        topAnchor = [bottomAnchor anchorByOffsettingWithConstant:aConstant];
+        var v16 = [self heightAnchor];
+        var v17 = [v16 anchorByMultiplyingByConstant:0];
+        heightAnchor = [v17 anchorByAddingConstant:aConstant];
+      }
+      widthAnchor = [self widthAnchor];
+      break;
+    case 3:
+      var trailingAnchor = [self trailingAnchor];
+      if ( aDimension )
+      {
+        leadingAnchor = [trailingAnchor anchorByOffsettingWithDimension:aDimension multiplier:-0.5 constant:aConstant];
+        widthAnchor = [aDimension anchorByAddingConstant:aConstant];
+      }
+      else
+      {
+        leadingAnchor = [trailingAnchor anchorByOffsettingWithConstant:aConstant];
+        var v19 = [self widthAnchor];
+        var v20 = [v19 anchorByMultiplyingByConstant:0];
+        widthAnchor = [v20 anchorByAddingConstant:aConstant];
+      }
+      topAnchor = [self topAnchor];
+      heightAnchor = [self heightAnchor];
+      break;
+    default:
+      break;
+  }
+
+    return [CPLayoutRect layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor widthAnchor:widthAnchor heightAnchor:heightAnchor];
+}
+
 - (id)layoutRectBySlicingWithDistance:(double)arg1 fromEdge:(CPInteger)arg2
 {
-    return [self :0 plusConstant:arg2 fromEdge:arg1];
+    return [self _rectangleBySlicingWithDimension:nil plusConstant:arg1 fromEdge:arg2];
 }
 
 - (id)layoutRectBySlicingWithDimension:(id)arg1 fromEdge:(CPInteger)arg2
 {
-    return [self _rectangleBySlicingWithDimension:arg1 plusConstant:arg2 fromEdge:0];
+    return [self _rectangleBySlicingWithDimension:arg1 plusConstant:0 fromEdge:arg2];
 }
 
 - (id)layoutRectBySlicingWithProportion:(double)arg1 fromEdge:(CPInteger)arg2
@@ -210,12 +294,12 @@
     var dimension = [anchor anchorByMultiplyingByConstant:arg1];
     return [[self class] layoutRectBySlicingWithDimension:dimension fromEdge:arg2];
 }
-*/
+/*
 - (id)observableValueInItem:(id)arg1
 {
     return [CPLayoutRectObservable observableForRect:self inItem:arg1];
 }
-
+*/
 - (CGRect)valueInItem:(id)arg1
 {
     return CGRectMake([_leadingAnchor valueInItem:arg1], [_topAnchor valueInItem:arg1], [_widthAnchor valueInItem:arg1], [_heightAnchor valueInItem:arg1]);
