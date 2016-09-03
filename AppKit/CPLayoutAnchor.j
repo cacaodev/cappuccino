@@ -470,6 +470,26 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     [[self _referenceItem] _engineDidChangeVariableOfType:4];
 }
 
+- (id)anchorByMultiplyingByConstant:(float)aMultiplier
+{
+    return [[CPArithmeticLayoutDimension alloc] initWithMultiplier:aMultiplier dimension:self constant:0];
+}
+
+- (id)anchorByAddingConstant:(float)aConstant
+{
+    return [[CPArithmeticLayoutDimension alloc] initWithMultiplier:1 dimension:self constant:aConstant];
+}
+
+- (id)anchorByAddingDimension:(id)aDimension
+{
+    return [[CPCompositeLayoutDimension alloc] initWithDimension:self plusDimension:aDimension times:1];
+}
+
+- (id)anchorBySubtractingDimension:(id)aDimension
+{
+    return [[CPCompositeLayoutDimension alloc] initWithDimension:self plusDimension:aDimension times:-1];
+}
+
 @end
 
 @implementation CPCompositeLayoutAxisAnchor : CPLayoutAnchor
@@ -732,6 +752,65 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (CPArray)_childAnchors
 {
     return @[_firstLayoutDimension, _secondLayoutDimension];
+}
+
+@end
+
+@implementation CPArithmeticLayoutDimension : CPLayoutDimension
+{
+    CPLayoutDimension _rootLayoutDimension;
+    float             _multiplier;
+    float             _constant;
+}
+
+/*
+- (id)initWithAnchor:(id)arg1
+{
+  self = [super initWithAnchor:arg1];
+
+  if ( self )
+  {
+    _rootLayoutDimension = [[arg1 rootLayoutDimension] copy];
+    _multiplier = [arg1 multiplier];
+    _constant = [arg1 constant];
+  }
+
+  return self;
+}
+*/
+- (id)initWithMultiplier:(float)arg1 dimension:(id)arg2 constant:(float)arg3
+{
+    self = [super init];
+
+    if ( self )
+    {
+        _rootLayoutDimension = [arg2 copy];
+        _multiplier = arg1;
+        _constant = arg3;
+    }
+
+    return self;
+}
+
+- (float)valueInEngine:(id)arg1
+{
+    return [_rootLayoutDimension _valueInEngine:arg1] * _multiplier + _constant;
+}
+
+- (id)_childAnchors
+{
+    return @[_rootLayoutDimension];
+}
+
+- (id)_nearestAncestorLayoutItem
+{
+    return [_rootLayoutDimension _nearestAncestorLayoutItem];
+}
+
+- (id)_expressionInContext:(id)arg1
+{
+    var rootExp = [_rootLayoutDimension _expressionInContext:arg1];
+    return c.times(rootExp, _multiplier).plus(_constant);
 }
 
 @end
