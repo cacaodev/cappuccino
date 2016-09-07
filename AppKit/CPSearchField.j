@@ -36,8 +36,6 @@ CPSearchFieldNoRecentsMenuItemTag       = 1003;
 
 var CPAutosavedRecentsChangedNotification = @"CPAutosavedRecentsChangedNotification";
 
-var RECENT_SEARCH_PREFIX = @"   ";
-
 /*!
     @ingroup appkit
     @class CPSearchField
@@ -73,7 +71,9 @@ var RECENT_SEARCH_PREFIX = @"   ";
             @"image-search": [CPNull null],
             @"image-find": [CPNull null],
             @"image-cancel": [CPNull null],
-            @"image-cancel-pressed": [CPNull null]
+            @"image-cancel-pressed": [CPNull null],
+            @"image-search-inset" : CGInsetMake(0, 0, 0, 5),
+            @"image-cancel-inset" : CGInsetMake(0, 5, 0, 0)
         };
 }
 
@@ -266,9 +266,10 @@ var RECENT_SEARCH_PREFIX = @"   ";
 */
 - (CGRect)searchButtonRectForBounds:(CGRect)rect
 {
-    var size = [[self valueForThemeAttribute:@"image-search"] size] || CGSizeMakeZero();
+    var size = [[self currentValueForThemeAttribute:@"image-search"] size] || CGSizeMakeZero(),
+        inset = [self currentValueForThemeAttribute:@"image-search-inset"];
 
-    return CGRectMake(5, (CGRectGetHeight(rect) - size.height) / 2, size.width, size.height);
+    return CGRectMake(inset.left - inset.right, inset.top - inset.bottom + (CGRectGetHeight(rect) - size.height) / 2, size.width, size.height);
 }
 
 /*!
@@ -278,9 +279,10 @@ var RECENT_SEARCH_PREFIX = @"   ";
 */
 - (CGRect)cancelButtonRectForBounds:(CGRect)rect
 {
-    var size = [[self valueForThemeAttribute:@"image-cancel"] size] || CGSizeMakeZero();
+    var size = [[self currentValueForThemeAttribute:@"image-cancel"] size] || CGSizeMakeZero(),
+        inset = [self currentValueForThemeAttribute:@"image-cancel-inset"];
 
-    return CGRectMake(CGRectGetWidth(rect) - size.width - 5, (CGRectGetHeight(rect) - size.width) / 2, size.height, size.height);
+    return CGRectMake(CGRectGetWidth(rect) - size.width + inset.left - inset.right, inset.top - inset.bottom + (CGRectGetHeight(rect) - size.width) / 2, size.height, size.height);
 }
 
 // Managing Menu Templates
@@ -626,10 +628,10 @@ var RECENT_SEARCH_PREFIX = @"   ";
 
                 for (var recentIndex = 0; recentIndex < countOfRecents; ++recentIndex)
                 {
-                    // RECENT_SEARCH_PREFIX is a hack until CPMenuItem -setIndentationLevel works
-                    var recentItem = [[CPMenuItem alloc] initWithTitle:RECENT_SEARCH_PREFIX + [_recentSearches objectAtIndex:recentIndex]
+                    var recentItem = [[CPMenuItem alloc] initWithTitle:[_recentSearches objectAtIndex:recentIndex]
                                                                  action:itemAction
                                                           keyEquivalent:[item keyEquivalent]];
+                    [recentItem setIndentationLevel:1];
                     [item setTarget:self];
                     [menu addItem:recentItem];
                 }
@@ -715,7 +717,7 @@ var RECENT_SEARCH_PREFIX = @"   ";
 
 - (void)_searchFieldSearch:(id)sender
 {
-    var searchString = [[sender title] substringFromIndex:[RECENT_SEARCH_PREFIX length]];
+    var searchString = [sender title];
 
     if ([sender tag] != CPSearchFieldRecentsMenuItemTag)
         [self _addStringToRecentSearches:searchString];

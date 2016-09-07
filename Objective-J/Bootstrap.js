@@ -45,6 +45,32 @@ if (DOMBaseElementsCount > 0)
         pageURL = new CFURL(DOMBaseElementHref, pageURL);
 }
 
+// Set compiler flags
+
+if (typeof OBJJ_COMPILER_FLAGS !== 'undefined')
+{
+    var flags = {};
+    for (var i = 0; i < OBJJ_COMPILER_FLAGS.length; i++)
+    {
+        switch (OBJJ_COMPILER_FLAGS[i])
+        {
+            case "IncludeDebugSymbols":
+                flags.includeMethodFunctionNames = true;
+                break;
+
+            case "IncludeTypeSignatures":
+                flags.includeIvarTypeSignatures = true;
+                flags.includeMethodArgumentTypeSignatures = true;
+                break;
+
+            case "InlineMsgSend":
+                flags.inlineMsgSendFunctions = true;
+                break;
+        }
+    }
+    FileExecutable.setCurrentCompilerFlags(flags);
+}
+
 // Turn the main file into a URL.
 var mainFileURL = new CFURL(window.OBJJ_MAIN_FILE || "main.j"),
 

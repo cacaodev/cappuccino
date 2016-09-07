@@ -26,6 +26,7 @@
 @import "CPImage.j"
 @import "CPView.j"
 @import "CPCursor.j"
+@import "CPTrackingArea.j"
 
 @class CPUserDefaults
 @global CPApp
@@ -55,7 +56,9 @@ var CPSplitViewDelegate_splitView_canCollapseSubview_                           
     CPSplitViewDelegate_splitView_constrainMaxCoordinate_ofSubviewAt_                   = 1 << 5,
     CPSplitViewDelegate_splitView_constrainMinCoordinate_ofSubviewAt_                   = 1 << 6,
     CPSplitViewDelegate_splitView_constrainSplitPosition_ofSubviewAt_                   = 1 << 7,
-    CPSplitViewDelegate_splitView_resizeSubviewsWithOldSize_                            = 1 << 8;
+    CPSplitViewDelegate_splitView_resizeSubviewsWithOldSize_                            = 1 << 8,
+    CPSplitViewDelegate_splitViewDidResizeSubviews_                                     = 1 << 9,
+    CPSplitViewDelegate_splitViewWillResizeSubviews_                                    = 1 << 10;
 
 #define SPLIT_VIEW_MAYBE_POST_WILL_RESIZE() \
     if ((_suppressResizeNotificationsMask & DidPostWillResizeNotification) === 0) \
@@ -560,26 +563,6 @@ var ShouldSuppressResizeNotifications   = 1,
     //[[self window] setAcceptsMouseMovedEvents:YES];
 }
 
-- (void)mouseEntered:(CPEvent)anEvent
-{
-    // Tracking code handles cursor by itself.
-    if (_currentDivider == CPNotFound)
-        [self _updateResizeCursor:anEvent];
-}
-
-- (void)mouseMoved:(CPEvent)anEvent
-{
-    if (_currentDivider == CPNotFound)
-        [self _updateResizeCursor:anEvent];
-}
-
-- (void)mouseExited:(CPEvent)anEvent
-{
-    if (_currentDivider == CPNotFound)
-        // FIXME: we should use CPCursor push/pop (if previous currentCursor != arrow).
-        [[CPCursor arrowCursor] set];
-}
-
 - (void)_updateResizeCursor:(CPEvent)anEvent
 {
     var point = [self convertPoint:[anEvent locationInWindow] fromView:nil];
@@ -967,26 +950,14 @@ The sum of the views and the sum of the dividers should be equal to the size of 
     if (_delegate === aDelegate)
         return;
 
-    if ([_delegate respondsToSelector:@selector(splitViewDidResizeSubviews:)])
-        [[CPNotificationCenter defaultCenter] removeObserver:_delegate name:CPSplitViewDidResizeSubviewsNotification object:self];
+    _delegate = aDelegate;
+    _implementedDelegateMethods = 0;
 
     if ([_delegate respondsToSelector:@selector(splitViewWillResizeSubviews:)])
-        [[CPNotificationCenter defaultCenter] removeObserver:_delegate name:CPSplitViewWillResizeSubviewsNotification object:self];
+        _implementedDelegateMethods |= CPSplitViewDelegate_splitViewWillResizeSubviews_;
 
-   _delegate = aDelegate;
-   _implementedDelegateMethods = 0;
-
-   if ([_delegate respondsToSelector:@selector(splitViewDidResizeSubviews:)])
-       [[CPNotificationCenter defaultCenter] addObserver:_delegate
-                                                selector:@selector(splitViewDidResizeSubviews:)
-                                                    name:CPSplitViewDidResizeSubviewsNotification
-                                                  object:self];
-
-   if ([_delegate respondsToSelector:@selector(splitViewWillResizeSubviews:)])
-       [[CPNotificationCenter defaultCenter] addObserver:_delegate
-                                                selector:@selector(splitViewWillResizeSubviews:)
-                                                    name:CPSplitViewWillResizeSubviewsNotification
-                                                  object:self];
+    if ([_delegate respondsToSelector:@selector(splitViewDidResizeSubviews:)])
+        _implementedDelegateMethods |= CPSplitViewDelegate_splitViewDidResizeSubviews_;
 
     if ([_delegate respondsToSelector:@selector(splitView:canCollapseSubview:)])
         _implementedDelegateMethods |= CPSplitViewDelegate_splitView_canCollapseSubview_;
@@ -1064,27 +1035,12 @@ The sum of the views and the sum of the dividers should be equal to the size of 
 
 - (void)_postNotificationWillResize
 {
-    var userInfo = nil;
-
-    if (_currentDivider !== CPNotFound)
-        userInfo = @{ @"CPSplitViewDividerIndex": _currentDivider };
-
-    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewWillResizeSubviewsNotification
-                                                        object:self
-                                                      userInfo:userInfo];
+    [self _sendDelegateSplitViewWillResizeSubviews];
 }
 
 - (void)_postNotificationDidResize
 {
-    var userInfo = nil;
-
-    if (_currentDivider !== CPNotFound)
-        userInfo = @{ @"CPSplitViewDividerIndex": _currentDivider };
-
-    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewDidResizeSubviewsNotification
-                                                        object:self
-                                                      userInfo:userInfo];
-
+    [self _sendDelegateSplitViewDidResizeSubviews];
 
     // TODO Cocoa always autosaves on "viewDidEndLiveResize". If Cappuccino adds support for this we
     // should do the same.
@@ -1230,6 +1186,29 @@ The sum of the views and the sum of the dividers should be equal to the size of 
 
 @end
 
+@implementation CPSplitView (CPTrackingArea)
+
+- (void)updateTrackingAreas
+{
+    [self removeAllTrackingAreas];
+
+    var options = CPTrackingCursorUpdate | CPTrackingActiveInKeyWindow;
+    
+    for (var i = 0; i < _subviews.length - 1; i++)
+        [self addTrackingArea:[[CPTrackingArea alloc] initWithRect:[self effectiveRectOfDividerAtIndex:i]
+                                                           options:options
+                                                             owner:self
+                                                          userInfo:nil]];
+}
+
+- (void)cursorUpdate:(CPEvent)anEvent
+{
+    if (_currentDivider === CPNotFound)
+        [self _updateResizeCursor:anEvent];
+}
+
+@end
+
 
 @implementation CPSplitView (CPSplitViewDelegate)
 
@@ -1367,6 +1346,42 @@ The sum of the views and the sum of the dividers should be equal to the size of 
         return;
 
     [_delegate splitView:self resizeSubviewsWithOldSize:oldSize];
+}
+
+/*!
+    @ignore
+    Call the delegate splitViewWillResizeSubviews:
+*/
+- (void)_sendDelegateSplitViewWillResizeSubviews
+{
+    var userInfo = nil;
+
+    if (_currentDivider !== CPNotFound)
+        userInfo = @{ @"CPSplitViewDividerIndex": _currentDivider };
+
+    if (_implementedDelegateMethods & CPSplitViewDelegate_splitViewWillResizeSubviews_)
+        [_delegate splitViewWillResizeSubviews:[[CPNotification alloc] initWithName:CPSplitViewWillResizeSubviewsNotification object:self userInfo:userInfo]];
+
+    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewWillResizeSubviewsNotification object:self userInfo:userInfo];
+}
+
+/*!
+    @ignore
+    Call the delegate splitViewDidResizeSubviews:
+*/
+- (void)_sendDelegateSplitViewDidResizeSubviews
+{
+    var userInfo = nil;
+
+    if (_currentDivider !== CPNotFound)
+        userInfo = @{ @"CPSplitViewDividerIndex": _currentDivider };
+
+    if (_implementedDelegateMethods & CPSplitViewDelegate_splitViewDidResizeSubviews_)
+        [_delegate splitViewDidResizeSubviews:[[CPNotification alloc] initWithName:CPSplitViewDidResizeSubviewsNotification object:self userInfo:userInfo]];
+
+    [[CPNotificationCenter defaultCenter] postNotificationName:CPSplitViewDidResizeSubviewsNotification object:self userInfo:userInfo];
+
+    [self updateTrackingAreas];
 }
 
 @end
