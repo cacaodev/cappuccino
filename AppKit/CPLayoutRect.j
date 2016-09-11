@@ -40,7 +40,7 @@
     return [self initWithLeadingAnchor:arg1 topAnchor:arg2 widthAnchor:constant heightAnchor:arg4 name:nil];
 }
 
-- (id)initWithLeadingAnchor:(id)arg1 topAnchor:(id)arg2 widthAnchor:(id)constant heightAnchor:(id)arg4 name:(id)arg5
+- (id)initWithLeadingAnchor:(id)arg1 topAnchor:(id)arg2 widthAnchor:(id)arg3 heightAnchor:(id)arg4 name:(id)arg5
 {
     self = [super init];
 
@@ -228,7 +228,7 @@
       if ( aDimension )
       {
         topAnchor = [bottomAnchor anchorByOffsettingWithDimension:aDimension multiplier:-0.5 constant:aConstant];
-        heightAnchor = [arg1 anchorByAddingConstant:aConstant];
+        heightAnchor = [aDimension anchorByAddingConstant:aConstant];
       }
       else
       {

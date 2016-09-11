@@ -76,6 +76,7 @@
 @import "CPLayoutConstraint.j"
 @import "CPLayoutGuide.j"
 @import "CPLayoutPoint.j"
+@import "CPLayoutRect.j"
 @import "CPLevelIndicator.j"
 @import "CPMenu.j"
 @import "CPMenuItem.j"
