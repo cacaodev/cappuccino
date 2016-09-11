@@ -56,7 +56,6 @@
 @global appkit_tag_dom_elements
 
 @typedef _CPViewFullScreenModeState
-@typedef Variable
 
 #if PLATFORM(DOM)
 
