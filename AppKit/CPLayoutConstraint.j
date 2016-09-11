@@ -459,11 +459,13 @@ var CPFirstAnchor       = @"CPFirstAnchor",
 
 - (void)encodeWithCoder:(CPCoder)aCoder
 {
-    if (_firstAnchor)
-        [aCoder encodeConditionalObject:_firstAnchor forKey:CPFirstAnchor];
+    [aCoder encodeInt:[_firstAnchor attribute] forKey:CPFirstAttribute];
+    [aCoder encodeConditionalObject:[_firstAnchor _referenceItem] forKey:CPFirstItem];
 
     if (_secondAnchor)
-        [aCoder encodeConditionalObject:_secondAnchor forKey:CPSecondAnchor];
+        [aCoder encodeConditionalObject:[_secondAnchor _referenceItem] forKey:CPSecondItem];
+
+    [aCoder encodeInt:([_secondAnchor attribute] || CPLayoutAttributeNotAnAttribute) forKey:CPSecondAttribute];
 
     if (_relation !== CPLayoutRelationEqual)
         [aCoder encodeInt:_relation forKey:CPRelation];
@@ -471,7 +473,8 @@ var CPFirstAnchor       = @"CPFirstAnchor",
     if (_coefficient !== 1)
         [aCoder encodeDouble:_coefficient forKey:CPMultiplier];
 
-    [aCoder encodeDouble:_constant forKey:CPConstant];
+    if (_constant !== 0)
+        [aCoder encodeDouble:_constant forKey:CPConstant];
 
     if (_symbolicConstant)
         [aCoder encodeObject:_symbolicConstant forKey:CPSymbolicConstant];
@@ -481,6 +484,9 @@ var CPFirstAnchor       = @"CPFirstAnchor",
 
     if (_identifier)
         [aCoder encodeObject:_identifier forKey:CPLayoutIdentifier];
+
+    if (_shouldBeArchived)
+        [aCoder encodeBool:_shouldBeArchived forKey:CPShouldBeArchived];
 }
 
 - (id)initWithCoder:(CPCoder)aCoder
@@ -512,21 +518,23 @@ var CPFirstAnchor       = @"CPFirstAnchor",
 
         _secondAnchor = [item2 layoutAnchorForAttribute:attr2];
     }
-    else {
+    else
+    {
         _secondAnchor = nil;
     }
 
     var hasKey = [aCoder containsValueForKey:CPRelation];
     _relation = (hasKey) ? [aCoder decodeIntForKey:CPRelation] : CPLayoutRelationEqual;
 
-    _constant = [aCoder decodeDoubleForKey:CPConstant];
+    _constant = [aCoder decodeDoubleForKey:CPConstant] || 0;
     _symbolicConstant = [aCoder decodeObjectForKey:CPSymbolicConstant];
     _identifier = [aCoder decodeObjectForKey:CPLayoutIdentifier];
 
     var hasKey = [aCoder containsValueForKey:CPPriority];
     _priority = (hasKey) ? [aCoder decodeIntForKey:CPPriority] : CPLayoutPriorityRequired;
 
-    _shouldBeArchived = YES;
+    var hasKey = [aCoder containsValueForKey:CPShouldBeArchived];
+    _shouldBeArchived = hasKey ? [aCoder decodeBoolForKey:CPShouldBeArchived] : NO;
 
     [self _init];
 
