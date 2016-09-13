@@ -25,7 +25,7 @@ CPView +(BOOL)requiresAutoSize
 - [x] ojtest comparing autosize and autolayout.
 - [ ] In capp, the contentView size is 2px < than the windowView, in cocoa/IB they are ==. Is this a problem ?
 - [ ] Rewrite CPSplitView with constraints ! CPSplitview drag = user input with a given priority.
-- [ ] Write a Quadrilatere demo in capp. currently i don't think it can be done with the cocoa API where a constraint can link no more than 2 items. Maybe by abstracting constraint items with a protocol ?
+- [x] Write a Quadrilatere demo in capp. currently i don't think it can be done with the cocoa API where a constraint can link no more than 2 items. Maybe by abstracting constraint items with a protocol ?
 - [ ] Handle ambiguous layout and solver failures. The Apple way is to lower the priority on a constraint and try to resolve.
 - [x] CPLayoutPriorityRequired should be a c.Strength.required. Currently medium with weight 1000. required causes problems when they are stay constraints and edit constraints and you try to remove them.
 - [ ] Visual debug support
