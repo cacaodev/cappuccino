@@ -20,6 +20,8 @@
     CPLayoutAnchor _leftAnchor;
     CPLayoutAnchor _trailingAnchor;
     CPLayoutAnchor _leadingAnchor;
+    CPLayoutAnchor _firstBaselineAnchor;
+    CPLayoutAnchor _lastBaselineAnchor;
 
     BOOL           _shouldBeArchived;
     BOOL           _geometryNeedsUpdate;
@@ -42,6 +44,8 @@
     _leftAnchor = nil;
     _trailingAnchor = nil;
     _leadingAnchor = nil;
+    _firstBaselineAnchor = nil;
+    _lastBaselineAnchor = nil;
 
     _frame = CGRectMakeZero();
 
