@@ -1076,6 +1076,11 @@ var CPControlBlackColor = [CPColor blackColor];
     return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
 }
 
++ (CGSize)_defaultCompressionPriorities
+{
+    return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
+}
+
 - (CGSize)intrinsicContentSize
 {
     if ([self hasThemeAttribute:@"min-size"])

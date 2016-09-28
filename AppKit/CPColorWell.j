@@ -352,6 +352,15 @@ var _CPColorWellDidBecomeExclusiveNotification = @"_CPColorWellDidBecomeExclusiv
 
 @end
 
+@implementation CPColorWell (ConstraintBasedLayout)
+
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
+}
+
+@end
+
 @implementation CPColorWellValueBinder : CPBinder
 {
 }

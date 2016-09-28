@@ -477,7 +477,7 @@ var CPImageViewEmptyPlaceholderImage = nil;
 
 + (CGSize)_defaultHuggingPriorities
 {
-    return CGSizeMake(271, 271);
+    return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
 }
 
 - (CGSize)intrinsicContentSize
