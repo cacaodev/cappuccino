@@ -228,7 +228,7 @@ var CPLayoutItemIsNull          = 2,
 
     [[anOwner _constituentAnchors] enumerateObjectsUsingBlock:function(anchor, idx, stop)
     {
-        if (_variableToOwnerMap.get(anchor) == null)
+        if (_variableToOwnerMap.get(result) == null)
             _variableToOwnerMap.set(result, anchor);
     }];
 
