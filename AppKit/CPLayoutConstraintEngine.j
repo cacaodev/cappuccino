@@ -206,7 +206,7 @@ var CPLayoutItemIsNull          = 2,
     return result;
 }
 
-- (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
+- (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anAnchor
 {
     //CPLog.debug(_cmd + " prefix" + aPrefix + " name:" + aName + " value:" + aValue);
     var result = nil,
@@ -226,7 +226,7 @@ var CPLayoutItemIsNull          = 2,
     if (result == nil)
         result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
 
-    [[anOwner _constituentAnchors] enumerateObjectsUsingBlock:function(anchor, idx, stop)
+    [[anAnchor _constituentAnchors] enumerateObjectsUsingBlock:function(anchor, idx, stop)
     {
         if (_variableToOwnerMap.get(result) == null)
             _variableToOwnerMap.set(result, anchor);
@@ -317,17 +317,16 @@ var CreateSizeConstraints = function(aConstraint)
         huggingPriority  = [aConstraint huggingPriority],
         compressPriority = [aConstraint compressPriority],
         constant         = [aConstraint constant],
-        hugg             = CreateInequality(variable, 0, constant, huggingPriority),
-        anticompr        = CreateInequality(variable, 1, constant, compressPriority);
+        hugg             = CreateInequality(variable, c.LEQ, constant, huggingPriority),
+        anticompr        = CreateInequality(variable, c.GEQ, constant, compressPriority);
 
     return [hugg, anticompr];
 };
 
-var CreateInequality = function(variable, isGreaterOrLess, constant, priority)
+var CreateInequality = function(variable, relation, constant, priority)
 {
     var variableExp = new c.Expression.fromVariable(variable),
         constantExp = new c.Expression.fromConstant(constant),
-           relation = (isGreaterOrLess) ? c.GEQ : c.LEQ,
                  sw = StrengthForPriority(priority);
 
     return new c.Inequality(variableExp, relation, constantExp, sw.strength, sw.weight);
