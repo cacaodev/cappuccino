@@ -206,9 +206,12 @@ var CPLayoutItemIsNull          = 2,
     return result;
 }
 
-- (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anAnchor
+- (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)aSimpleAnchor
 {
-    //CPLog.debug(_cmd + " prefix" + aPrefix + " name:" + aName + " value:" + aValue);
+    if ([aSimpleAnchor _anchorType] !== 0)
+        [CPException raise:CPInvalidArgumentException format:@"The variable owner %@ is not a simple (with one variable) anchor. This should never happen"];
+
+    //CPLog.debug(_cmd + " prefix:" + aPrefix + " name:" + aName + " owner:" + [aSimpleAnchor description]);
     var result = nil,
         variables = Array.from(_variableToOwnerMap.keys());
 
@@ -224,13 +227,10 @@ var CPLayoutItemIsNull          = 2,
     }];
 
     if (result == nil)
-        result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
-
-    [[anAnchor _constituentAnchors] enumerateObjectsUsingBlock:function(anchor, idx, stop)
     {
-        if (_variableToOwnerMap.get(result) == null)
-            _variableToOwnerMap.set(result, anchor);
-    }];
+        result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
+        _variableToOwnerMap.set(result, aSimpleAnchor);
+    }
 
     return result;
 }
