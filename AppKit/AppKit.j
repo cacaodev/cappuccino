@@ -107,6 +107,7 @@
 @import "CPTabView.j"
 @import "CPText.j"
 @import "CPTextField.j"
+@import "CPTextView.j"
 @import "CPTokenField.j"
 @import "CPToolbar.j"
 @import "CPToolbarItem.j"
