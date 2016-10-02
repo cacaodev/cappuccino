@@ -90,9 +90,12 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (_variable == nil)
     {
         var item = [self _referenceItem],
+            prefix = [item UID],
             engine = [item _layoutEngine];
-
-        _variable = [engine variableWithPrefix:[item UID] name:[self name] value:[self valueInLayoutSpace] owner:self];
+#if DEBUG
+    prefix += "-" + [item debugID];
+#endif
+        _variable = [engine variableWithPrefix:([item UID] + "-" + [item debugID]) name:[self name] value:[self valueInLayoutSpace] owner:self];
     }
 
     return _variable;
