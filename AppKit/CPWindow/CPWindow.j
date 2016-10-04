@@ -1005,6 +1005,13 @@ CPTexturedBackgroundWindowMask
         [self makeMainWindow];
 
     [_platformWindow _setShouldUpdateContentRect:YES];
+
+    // ConstraintBasedLayout
+    if ([_contentView translatesAutoresizingMaskIntoConstraints])
+    {
+        _autolayoutEnabled = YES;
+        [self setNeedsLayout];
+    }
 }
 
 /*
