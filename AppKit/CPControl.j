@@ -1071,6 +1071,12 @@ var CPControlBlackColor = [CPColor blackColor];
 
 @implementation CPControl (ConstraintBasedLayout)
 
+// This will be removed when subclasses adopt the contraint based layout (vs custom layout) / validate for AutoresizingMask translation.
++ (BOOL)refusesConstraintBasedLayout
+{
+    return YES;
+}
+
 + (CGSize)_defaultHuggingPriorities
 {
     return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
