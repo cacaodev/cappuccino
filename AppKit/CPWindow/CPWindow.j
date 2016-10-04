@@ -379,7 +379,8 @@ CPTexturedBackgroundWindowMask
         [self setMovableByWindowBackground:aStyleMask & CPHUDBackgroundWindowMask];
 
         // Create a generic content view.
-        [self setContentView:[[CPView alloc] initWithFrame:CGRectMakeZero()]];
+        var contentView = [[CPView alloc] initWithFrame:CGRectMakeZero()];
+        [self setContentView:contentView];
 
         _firstResponder = self;
 
@@ -412,6 +413,7 @@ CPTexturedBackgroundWindowMask
         _hasBecomeKeyWindow = NO;
 
         //ConstraintBasedLayout
+        [contentView setTranslatesAutoresizingMaskIntoConstraints:NO];
         _autolayoutEnabled = NO;
         // Force inital updateContraintForSubtree because unarchived view may not be able to
         // propagate the information up to the window.
