@@ -85,7 +85,6 @@ CPLogRegister(CPLogConsole);
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
         contentView = [theWindow contentView];
-
     [theWindow orderFront:self];
 
     var autoSizeWindow = [[NoConstraintWindow alloc] initWithContentRect:CGRectMake(0, 20, 600, 600) styleMask:CPResizableWindowMask],
@@ -93,7 +92,6 @@ CPLogRegister(CPLogConsole);
 
     var constraintsWindow = [[ConstraintWindow alloc] initWithContentRect:CGRectMake(610, 20, 600, 600) styleMask:CPResizableWindowMask],
         constraintContentView = [constraintsWindow contentView];
-    [constraintsWindow setAutolayoutEnabled:YES];
     [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [constraintContentView setIdentifier:@"ContentView"];
 

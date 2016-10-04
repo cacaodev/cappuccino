@@ -17,9 +17,7 @@
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(200,200,800,400) styleMask:CPResizableWindowMask],
         contentView = [theWindow contentView];
-
-    [theWindow setAutolayoutEnabled:YES];
-    [theWindow orderFront:self];
+    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     var leftView = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
     [leftView setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -61,7 +59,7 @@
     [CPLayoutConstraint activateConstraints:@[left1, top1, width1, height1, left2, top2, width2, height2]];
     [CPLayoutConstraint activateConstraints:@[middleConstraintX, middleConstraintY, middleConstraintW, middleConstraintH]];
 
-    [theWindow layout];
+    [theWindow orderFront:self];
 }
 
 @end

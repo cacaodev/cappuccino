@@ -92,8 +92,6 @@ CPLogRegister(CPLogConsole);
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    [theWindow setAutolayoutEnabled:YES];
-    [theWindow setNeedsLayout];
 }
 
 @end

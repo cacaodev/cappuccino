@@ -60,7 +60,6 @@ CPLogRegister(CPLogConsole);
 
     [self setConstraint:cst];
     // In this case, we want the window from Cib to become our full browser window
-    [theWindow setAutolayoutEnabled:YES];
     [theWindow setFullPlatformWindow:NO];
 }
 

@@ -22,8 +22,8 @@ var EDIT_PRIORITY = 1000;
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
         contentView = [theWindow contentView];
-
     [theWindow setAutolayoutEnabled:YES];
+    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [theWindow orderFront:self];
 
     pNum = 0;
@@ -96,7 +96,6 @@ var EDIT_PRIORITY = 1000;
 
     [CPLayoutConstraint activateConstraints:constraints];
     [theWindow layout];
-
     CPLog.debug([container _layoutEngine]);
     // Uncomment the following line to turn on the standard menu bar.
     //[CPMenu setMenuBarVisible:YES];

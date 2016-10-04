@@ -66,11 +66,6 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     //CPTrace("CPWindow", "setFrameSize:");
-
-    [compressionWindow     setAutolayoutEnabled:YES];
-    [huggingWindow         setAutolayoutEnabled:YES];
-    [sizeToFitButtonWindow setAutolayoutEnabled:YES];
-    [sizeToFitLabelWindow  setAutolayoutEnabled:YES];
 }
 
 - (IBAction)changeButtonTitle:(id)sender

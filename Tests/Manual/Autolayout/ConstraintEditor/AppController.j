@@ -127,8 +127,6 @@ CPLogRegister(CPLogConsole);
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    [theWindow setFullPlatformWindow:YES];
-
     [CPBundle loadCibNamed:@"Autolayout" owner:self];
 
     [[constraintWindow contentView] addObserver:self forKeyPath:@"constraints" options:CPKeyValueObservingOptionNew context:nil];
@@ -137,8 +135,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
-    if (constraintWindow && [constraintWindow isAutolayoutEnabled] == NO)
-        [constraintWindow setAutolayoutEnabled:YES];
+    [theWindow setFullPlatformWindow:YES];
 }
 
 - (void)observeValueForKeyPath:(CPString)keyPath

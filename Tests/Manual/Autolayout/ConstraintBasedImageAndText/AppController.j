@@ -58,9 +58,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
-    [theWindow setAutolayoutEnabled:YES];
     [theWindow setFullPlatformWindow:NO];
-    [theWindow layout];
 }
 
 - (IBAction)setPosition:(id)sender

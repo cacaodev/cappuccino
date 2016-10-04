@@ -60,7 +60,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
-    [theWindow setAutolayoutEnabled:YES];
+    [theWindow setFullPlatformWindow:NO];
 }
 
 - (IBAction)changeText:(id)sender
