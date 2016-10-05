@@ -1005,13 +1005,6 @@ CPTexturedBackgroundWindowMask
         [self makeMainWindow];
 
     [_platformWindow _setShouldUpdateContentRect:YES];
-
-    // ConstraintBasedLayout
-    if ([_contentView translatesAutoresizingMaskIntoConstraints])
-    {
-        _autolayoutEnabled = YES;
-        [self setNeedsLayout];
-    }
 }
 
 /*
@@ -2139,6 +2132,9 @@ CPTexturedBackgroundWindowMask
 
     [[CPApp keyWindow] resignKeyWindow];
     [self becomeKeyWindow];
+    
+    // ConstraintBasedLayout
+    [self _engageAutolayoutIfNeeded];
 }
 
 /*!
@@ -4471,6 +4467,15 @@ Subclasses should not override this method.
 {
     if (!_subviewsNeedUpdateConstraints)
         _subviewsNeedUpdateConstraints = YES;
+}
+
+- (void)_engageAutolayoutIfNeeded
+{
+    if (_autolayoutEnabled == NO && [_contentView translatesAutoresizingMaskIntoConstraints])
+    {
+        _autolayoutEnabled = YES;
+        [self setNeedsLayout];
+    }
 }
 
 @end
