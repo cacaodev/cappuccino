@@ -17,19 +17,23 @@
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(200,200,800,400) styleMask:CPResizableWindowMask],
         contentView = [theWindow contentView];
+    [contentView setIdentifier:@"contentView"];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     var leftView = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
+    [leftView setIdentifier:@"leftView"];
     [leftView setTranslatesAutoresizingMaskIntoConstraints:NO];
     [contentView addSubview:leftView];
 
-    var rightView = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
-    [rightView setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [contentView addSubview:rightView];
-
     var middleView = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
+    [middleView setIdentifier:@"middleView"];
     [middleView setTranslatesAutoresizingMaskIntoConstraints:NO];
     [contentView addSubview:middleView];
+
+    var rightView = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
+    [rightView setIdentifier:@"rightView"];
+    [rightView setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [contentView addSubview:rightView];
 
     var left1 = [[leftView leftAnchor] constraintEqualToAnchor:[contentView leftAnchor] constant:100],
         top1  = [[leftView topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:100],
