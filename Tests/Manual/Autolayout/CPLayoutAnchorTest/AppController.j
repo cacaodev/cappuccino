@@ -15,7 +15,7 @@
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(200,200,800,400) styleMask:CPResizableWindowMask],
+    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(200,200,800,400) styleMask:CPResizableWindowMask|CPTitledWindowMask],
         contentView = [theWindow contentView];
     [contentView setIdentifier:@"contentView"];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
