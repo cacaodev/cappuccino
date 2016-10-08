@@ -151,7 +151,9 @@ var CPLayoutItemIsNull          = 2,
     var onsuccess = function(constraint)
     {
         _constraintToOwnerMap.set(constraint, {"Type":type, "Container":container});
+#if (DEBUG)
         EngineLog("Added " + type + " in " + containerId + " : " + constraint.toString());
+#endif
         [_delegate engine:self constraintDidChangeInContainer:container];
     };
 
@@ -206,30 +208,29 @@ var CPLayoutItemIsNull          = 2,
     return result;
 }
 
-- (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)aSimpleAnchor
+- (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
 {
-    if ([aSimpleAnchor _anchorType] !== 0)
-        [CPException raise:CPInvalidArgumentException format:@"The variable owner %@ is not a simple (with one variable) anchor. This should never happen"];
+    if ([anOwner _anchorType] !== 0)
+        [CPException raise:CPInvalidArgumentException format:@"The variable owner %@ is not a simple (with one variable) anchor. This should never happen", anOwner];
 
     //CPLog.debug(_cmd + " prefix:" + aPrefix + " name:" + aName + " owner:" + [aSimpleAnchor description]);
-    var result = nil,
-        variables = Array.from(_variableToOwnerMap.keys());
+    var result = nil;
 
-    [variables enumerateObjectsUsingBlock:function(variable, idx, stop)
+    _variableToOwnerMap.forEach(function(owner, variable)
     {
         if (variable._prefix == aPrefix && variable.name == aName)
         {
             result = variable;
-            stop(YES);
-            var anchor = _variableToOwnerMap.get(variable);
-            EngineWarn([CPString stringWithFormat:"Reuse variable %@(%@)[%@]", aPrefix, [[anchor _referenceItem] debugID], aName]);
+#if (DEBUG)
+            EngineWarn([CPString stringWithFormat:"Reuse variable %@(%@)[%@]", aPrefix, [[owner _referenceItem] debugID], aName]);
+#endif
         }
-    }];
+    });
 
     if (result == nil)
     {
         result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
-        _variableToOwnerMap.set(result, aSimpleAnchor);
+        _variableToOwnerMap.set(result, anOwner);
     }
 
     return result;
