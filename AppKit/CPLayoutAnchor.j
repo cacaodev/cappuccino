@@ -39,7 +39,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 + (id)anchorWithItem:(id)anItem attribute:(CPInteger)anAttribute
 {
-    return [[self alloc] initWithItem:anItem attribute:anAttribute name:nil];
+    return [self anchorWithItem:anItem attribute:anAttribute name:nil];
 }
 
 + (id)anchorWithItem:(id)anItem attribute:(CPInteger)anAttribute name:(CPString)aName
@@ -82,7 +82,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:[self name]];
+    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:[self attribute] name:[self name]];
 }
 
 - (Variable)variable
@@ -494,31 +494,24 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[CPCompositeLayoutDimension alloc] initWithDimension:self plusDimension:aDimension times:-1];
 }
 
+- (id)copy
+{
+    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:[self attribute] name:[self name]];
+}
+
 @end
 
 @implementation CPCompositeLayoutAxisAnchor : CPLayoutAnchor
 {
     CPLayoutXAxisAnchor  _axisAnchor @accessors(getter=axisAnchor);
-    CPLayoutDimension    _dimension;
-    float                _constant;
-    float                _dimensionMultiplier;
-}
-
-- (id)initWithAnchor:(id)axisAnchor plusDimension:(id)dimension times:(float)multiplier plus:(float)constant name:(CPString)aName
-{
-    self = [super initWithItem:[axisAnchor _referenceItem] attribute:-1 name:aName];
-
-    _axisAnchor = [axisAnchor copy];
-    _dimension = [dimension copy];
-    _dimensionMultiplier = _dimension ? multiplier : 0.0;
-    _constant = constant;
-
-    return self;
+    CPLayoutDimension    _dimension @accessors(getter=dimension);
+    float                _constant @accessors(getter=constant);
+    float                _dimensionMultiplier @accessors(getter=dimensionMultiplier);
 }
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithAnchor:_axisAnchor plusDimension:_dimension times:_dimensionMultiplier plus:_constant name:[self name]];
+    return [[[self class] alloc] initWithAnchor:_axisAnchor plusDimension:_dimension times:_dimensionMultiplier plus:_constant name:_name attribute:_attribute];
 }
 
 - (int)_anchorType
@@ -579,7 +572,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (float)valueInItem:(id)anItem
 {
-    return [_axisAnchor valueInItem:anItem] + _dimensionMultiplier * [_dimension valueInItem:anItem] + _constant;
+    return [_axisAnchor valueInItem:anItem] + (_dimensionMultiplier * [_dimension valueInItem:anItem]) + _constant;
 }
 
 - (float)valueInEngine:(id)anEngine
@@ -618,7 +611,29 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (id)initWithItem:(id)anItem attribute:(CPInteger)anAttribute name:(CPString)aName
+- (id)initWithAnchor:(id)axisAnchor plusDimension:(id)dimension times:(float)multiplier plus:(float)constant name:(CPString)aName
+{
+    return [self initWithAnchor:axisAnchor plusDimension:dimension times:multiplier plus:constant name:aName attribute:-1];
+}
+
+- (id)initWithAnchor:(id)axisAnchor plusDimension:(id)dimension times:(float)multiplier plus:(float)constant name:(CPString)aName attribute:(CPLayoutAttribute)attr
+{
+    self = [super initWithItem:[axisAnchor _referenceItem] attribute:attr name:aName];
+
+    _axisAnchor = [axisAnchor copy];
+    _dimension = [dimension copy];
+    _dimensionMultiplier = _dimension ? multiplier : 0.0;
+    _constant = constant;
+
+    return self;
+}
+
+- (CPString)description
+{
+    return [CPString stringWithFormat:@"<%@ 0x%d axisAnchor=%@ dimension=%@ multiplier=%@ constant=%@>", [self class], [self UID], _axisAnchor, _dimension, _dimensionMultiplier, _constant];
+}
+
++ (id)anchorWithItem:(id)anItem attribute:(CPInteger)anAttribute name:(CPString)aName
 {
     var multiplier,
         name;
@@ -635,14 +650,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
             name = "centerX";
             break;
 
-        default: [CPException raise:CPInvalidArgumentException format:@"%@ Unknown attribute %@", [self class], anAttribute];
+        default: [CPException raise:CPInvalidArgumentException format:@"%@ Unknown attribute %@", self, anAttribute];
     }
 
-    self = [self initWithAnchor:[anItem leftAnchor] plusDimension:[anItem widthAnchor] times:multiplier plus:0 name:name];
-
-    _attribute = anAttribute;
-
-    return self;
+    return [[self alloc] initWithAnchor:[anItem leftAnchor] plusDimension:[anItem widthAnchor] times:multiplier plus:0 name:name attribute:anAttribute];
 }
 
 @end
@@ -651,7 +662,24 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (id)initWithItem:(id)anItem attribute:(CPInteger)anAttribute name:(CPString)aName
+- (id)initWithAnchor:(id)axisAnchor plusDimension:(id)dimension times:(float)multiplier plus:(float)constant name:(CPString)aName
+{
+    return [self initWithAnchor:axisAnchor plusDimension:dimension times:multiplier plus:constant name:aName attribute:-1];
+}
+
+- (id)initWithAnchor:(id)axisAnchor plusDimension:(id)dimension times:(float)multiplier plus:(float)constant name:(CPString)aName attribute:(CPLayoutAttribute)attr
+{
+    self = [super initWithItem:[axisAnchor _referenceItem] attribute:attr name:aName];
+
+    _axisAnchor = [axisAnchor copy];
+    _dimension = [dimension copy];
+    _dimensionMultiplier = _dimension ? multiplier : 0.0;
+    _constant = constant;
+
+    return self;
+}
+
++ (id)anchorWithItem:(id)anItem attribute:(CPInteger)anAttribute name:(CPString)aName
 {
     var multiplier,
         name;
@@ -675,11 +703,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         default: [CPException raise:CPInvalidArgumentException format:@"%@ Unknown attribute %@", [self class], anAttribute];
     }
 
-    self = [self initWithAnchor:[anItem topAnchor] plusDimension:[anItem heightAnchor] times:multiplier plus:0 name:name];
-
-    _attribute = anAttribute;
-
-    return self;
+    return [[self alloc] initWithAnchor:[anItem topAnchor] plusDimension:[anItem heightAnchor] times:multiplier plus:0 name:name attribute:anAttribute];
 }
 
 @end
@@ -796,6 +820,11 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     }
 
     return self;
+}
+
+- (id)copy
+{
+    return [[[self class] alloc] initWithMultiplier:_multiplier dimension:_rootLayoutDimension constant:_constant];
 }
 
 - (float)valueInEngine:(id)arg1
