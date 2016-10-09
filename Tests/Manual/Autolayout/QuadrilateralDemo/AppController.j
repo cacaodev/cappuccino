@@ -20,22 +20,25 @@ var EDIT_PRIORITY = 1000;
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
-        contentView = [theWindow contentView];
-    [theWindow setAutolayoutEnabled:YES];
-    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
-    [theWindow orderFront:self];
-
+    var constraints = @[];
     pNum = 0;
 
+    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMakeZero() styleMask:CPBorderlessBridgeWindowMask],
+        contentView = [theWindow contentView];
+    [contentView setIdentifier:@"contentView"];
+    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
+
     var container = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
+    [container setIdentifier:@"container"];
     [container setTranslatesAutoresizingMaskIntoConstraints:NO];
     [contentView addSubview:container];
+
     var tf = [[CPTextField alloc] initWithFrame:CGRectMake(50, 10, 1200, 50)];
     [tf setFont:[CPFont boldSystemFontOfSize:32]];
     [tf setStringValue:@"cmd-click on a point to edit the priority of its constrained coordinates."];
     [contentView addSubview:tf];
 
+// Add constraints for the container view
     var left = [[container leftAnchor] constraintEqualToAnchor:[contentView leftAnchor] constant:50],
         top  = [[container topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:100],
         right = [[container rightAnchor] constraintEqualToAnchor:[contentView rightAnchor] constant:-50],
@@ -44,27 +47,20 @@ var EDIT_PRIORITY = 1000;
     [CPLayoutConstraint activateConstraints:@[left, top, right, bottom]];
 
 // Install edges points
-    var leftAnchor = [[container leftAnchor] anchorByOffsettingWithConstant:50],
-        topAnchor = [[container topAnchor] anchorByOffsettingWithConstant:50],
-        rightAnchor = [[container rightAnchor] anchorByOffsettingWithConstant:-50],
-        bottomAnchor = [[container bottomAnchor] anchorByOffsettingWithConstant:-50];
-
-    var p1 = [self installLayoutPointEqualToXAnchor:leftAnchor yAnchor:topAnchor inView:container priority:900];
-    var p2 = [self installLayoutPointEqualToXAnchor:rightAnchor yAnchor:topAnchor inView:container priority:800];
-    var p3 = [self installLayoutPointEqualToXAnchor:rightAnchor yAnchor:bottomAnchor inView:container priority:700];
-    var p4 = [self installLayoutPointEqualToXAnchor:leftAnchor yAnchor:bottomAnchor inView:container priority:600];
+ 
+    var p1 = [self installLayoutPointAtLocation:CGPointMake(100, 100) inView:container priority:900];
+    var p2 = [self installLayoutPointAtLocation:CGPointMake(1100, 100) inView:container priority:910];
+    var p3 = [self installLayoutPointAtLocation:CGPointMake(1100, 500) inView:container priority:920];
+    var p4 = [self installLayoutPointAtLocation:CGPointMake(100, 500) inView:container priority:930];
 
 // Install mid points
-    var centerXAnchor = [leftAnchor anchorAtMidpointToAnchor:rightAnchor],
-        centerYAnchor = [topAnchor anchorAtMidpointToAnchor:bottomAnchor];
 
-    var p5 = [self installLayoutPointEqualToXAnchor:centerXAnchor yAnchor:topAnchor inView:container priority:500];
-    var p6 = [self installLayoutPointEqualToXAnchor:rightAnchor yAnchor:centerYAnchor inView:container priority:500];
-    var p7 = [self installLayoutPointEqualToXAnchor:centerXAnchor yAnchor:bottomAnchor inView:container priority:500];
-    var p8 = [self installLayoutPointEqualToXAnchor:leftAnchor yAnchor:centerYAnchor inView:container priority:500];
+    var p5 = [self installLayoutPointAtLocation:CGPointMake(600, 100) inView:container priority:500];
+    var p6 = [self installLayoutPointAtLocation:CGPointMake(1100,300) inView:container priority:500];
+    var p7 = [self installLayoutPointAtLocation:CGPointMake(600,500) inView:container priority:500];
+    var p8 = [self installLayoutPointAtLocation:CGPointMake(100,300) inView:container priority:500];
 
 // Constrain mid points
-    var constraints = @[];
     var midConstraints1 = [p5 constraintsBetweenPoint:p1 andPoint:p2];
     var midConstraints2 = [p6 constraintsBetweenPoint:p2 andPoint:p3];
     var midConstraints3 = [p7 constraintsBetweenPoint:p3 andPoint:p4];
@@ -74,12 +70,14 @@ var EDIT_PRIORITY = 1000;
     [constraints addObjectsFromArray:midConstraints2];
     [constraints addObjectsFromArray:midConstraints3];
     [constraints addObjectsFromArray:midConstraints4];
-
+/*
 // Constrain points inside the container view
     var p1Constraints = [p1 constraintsContainingWithinView:container];
     var p2Constraints = [p2 constraintsContainingWithinView:container];
     var p3Constraints = [p3 constraintsContainingWithinView:container];
     var p4Constraints = [p4 constraintsContainingWithinView:container];
+// ... and also mid points
+
     var p5Constraints = [p5 constraintsContainingWithinView:container];
     var p6Constraints = [p6 constraintsContainingWithinView:container];
     var p7Constraints = [p7 constraintsContainingWithinView:container];
@@ -89,38 +87,42 @@ var EDIT_PRIORITY = 1000;
     [constraints addObjectsFromArray:p2Constraints];
     [constraints addObjectsFromArray:p3Constraints];
     [constraints addObjectsFromArray:p4Constraints];
+
     [constraints addObjectsFromArray:p5Constraints];
     [constraints addObjectsFromArray:p6Constraints];
     [constraints addObjectsFromArray:p7Constraints];
     [constraints addObjectsFromArray:p8Constraints];
-
+*/
+// Activate the Quadrilateral constraints
     [CPLayoutConstraint activateConstraints:constraints];
-    [theWindow layout];
-    CPLog.debug([container _layoutEngine]);
-    // Uncomment the following line to turn on the standard menu bar.
-    //[CPMenu setMenuBarVisible:YES];
+    [theWindow orderFront:self];
+
+ //   CPLog.debug([container _layoutEngine]);
 }
 
-- (id)installLayoutPointEqualToXAnchor:(id)anXAnchor yAnchor:(id)anYAnchor inView:(CPView)aView priority:(CPInteger)priority
+- (id)installLayoutPointAtLocation:(CPPoint)loc inView:(CPView)aView priority:(CPInteger)priority
 {
     var idx = pNum++;
 
     var anchorX = [CPLayoutXAxisAnchor anchorNamed:(@"x"+idx) inItem:aView];
     var anchorY = [CPLayoutYAxisAnchor anchorNamed:(@"y"+idx) inItem:aView];
 
-    var p = [CPLayoutPoint layoutPointWithXAxisAnchor:anchorX yAxisAnchor:anchorY];
+    var layoutPoint = [CPLayoutPoint layoutPointWithXAxisAnchor:anchorX yAxisAnchor:anchorY];
 
-    var xConstraint = [anchorX constraintEqualToAnchor:anXAnchor];
-    var yConstraint = [anchorY constraintEqualToAnchor:anYAnchor];
+    var xConstraint = [anchorX constraintEqualToConstant:loc.x];
+    var yConstraint = [anchorY constraintEqualToConstant:loc.y];
 
     [xConstraint setPriority:priority];
     [yConstraint setPriority:priority];
 
     var constraints = @[xConstraint, yConstraint];
-    [aView addConstraints:constraints forLayoutPoint:p withPriority:priority];
+    [aView addConstraints:constraints forLayoutPoint:layoutPoint atLocation:loc withPriority:priority];
     [CPLayoutConstraint activateConstraints:constraints];
 
-    return p;
+    var constraintsWithinView = [layoutPoint constraintsContainingWithinView:aView];
+    [CPLayoutConstraint activateConstraints:constraintsWithinView];
+
+    return layoutPoint;
 }
 
 @end
@@ -140,12 +142,12 @@ var EDIT_PRIORITY = 1000;
 
 - (CPArray)constraintsContainingWithinView:(CPView)aView
 {
-    var cst1 = [[self xAxisAnchor] constraintGreaterThanOrEqualToAnchor:[aView leftAnchor]];
-    var cst2 = [[self yAxisAnchor] constraintGreaterThanOrEqualToAnchor:[aView topAnchor]];
-    var cst3 = [[self xAxisAnchor] constraintLessThanOrEqualToAnchor:[aView rightAnchor]];
-    var cst4 = [[self yAxisAnchor] constraintLessThanOrEqualToAnchor:[aView bottomAnchor]];
+    var cst1 = [[self xAxisAnchor] constraintGreaterThanOrEqualToConstant:0];
+    var cst2 = [[self yAxisAnchor] constraintGreaterThanOrEqualToConstant:0];
+ //   var cst3 = [[self xAxisAnchor] constraintLessThanOrEqualToAnchor:[aView rightAnchor]];
+ //   var cst4 = [[self yAxisAnchor] constraintLessThanOrEqualToAnchor:[aView bottomAnchor]];
 
-    return @[cst1, cst2, cst3, cst4];
+    return @[cst1, cst2];
 }
 
 @end
@@ -173,9 +175,9 @@ var EDIT_PRIORITY = 1000;
     return self;
 }
 
-- (void)addConstraints:(CPArray)constraints forLayoutPoint:(id)aLayoutPoint withPriority:(CPInteger)priority
+- (void)addConstraints:(CPArray)constraints forLayoutPoint:(id)aLayoutPoint atLocation:(CGPoint)aLocation withPriority:(CPInteger)priority
 {
-    layoutPointToConstraints.set(aLayoutPoint, @{"constraints" : constraints, "priority" : priority});
+    layoutPointToConstraints.set(aLayoutPoint, @{"constraints" : constraints, "priority" : priority, "currentPoint" : aLocation});
 }
 
 - (void)setPriority:(CPInteger)aPriority forLayoutPoint:(CPLayoutPoint)aLayoutPoint
@@ -205,17 +207,31 @@ var EDIT_PRIORITY = 1000;
     return [info objectForKey:@"constraints"];
 }
 
-- (void)updateStayConstraintsForLayoutPoint:(CPLayoutPoint)aLayoutPoint
+- (void)updateStayConstraints
 {
-    var info = layoutPointToConstraints.get(aLayoutPoint);
-
-    if (info)
+    layoutPointToConstraints.forEach(function(info, point)
     {
-        var priority = [info objectForKey:@"priority"],
-            constraints = [info objectForKey:@"constraints"];
+        var p = [point valueInEngine:nil],
+            constraints = [info objectForKey:@"constraints"],
+            constraintX = [constraints objectAtIndex:0],
+            constraintY = [constraints objectAtIndex:1];
 
-        [constraints makeObjectsPerformSelector:@selector(setPriority:) withObject:priority];
-    }
+        if (info && point == trackingPoint)
+        {
+            [self setPriority:[info objectForKey:@"priority"] forLayoutPoint:point];
+        }
+
+        var currentPoint = [info objectForKey:@"currentPoint"];
+        var newOffsetX = p.x - currentPoint.x,
+            newOffsetY = p.y - currentPoint.y;
+
+        CPLog.debug("offset=" + newOffsetX + "," + newOffsetY + " constraints=" + [constraints description]);
+
+        [constraintX setConstant:p.x];
+        [constraintY setConstant:p.y];
+
+        [info setObject:CGPointMake(p.x, p.y) forKey:@"currentPoint"];
+    });
 }
 
 - (void)drawString:(CPString)aString inRect:(CGRect)aRect
@@ -246,7 +262,7 @@ var EDIT_PRIORITY = 1000;
 
     [points enumerateObjectsUsingBlock:function(point, idx, stop)
     {
-        var p = [point valueInItem:self];
+        var p = [point valueInEngine:nil];
 
         if (idx == 0)
         {
@@ -286,7 +302,8 @@ var EDIT_PRIORITY = 1000;
         var color =  isSelected ? selected : normal;
         [color setFill];
 
-        var p = [point valueInItem:self];
+        var p = [point valueInEngine:nil];
+        CPLog.debug(CPStringFromPoint(p));
         var rect = CGRectMake(p.x - 25, p.y - 25, 50, 50);
         [[CPBezierPath bezierPathWithOvalInRect:rect] fill];
 
@@ -348,7 +365,7 @@ var EDIT_PRIORITY = 1000;
         {
             [[[self popover] contentViewController] setLayoutPoint:clickedPoint];
 
-            var p = [clickedPoint valueInItem:self];
+            var p = [clickedPoint valueInEngine:nil];
             [[self popover] showRelativeToRect:CGRectMake(p.x-25, p.y-25, 50, 50) ofView:self preferredEdge:1];
         }
     }
@@ -404,15 +421,16 @@ var EDIT_PRIORITY = 1000;
 
 - (void)mouseTracker:(CPMouseTracker)tracker didStopTrackingWithEvent:(CPEvent)anEvent
 {
+    [[self window] layout];
+    [self setNeedsDisplay:YES];
+
     if (trackingPoint)
     {
-        [self updateStayConstraintsForLayoutPoint:trackingPoint];
+        [self updateStayConstraints];
         trackingPoint = nil;
     }
 
     currentLocation = CGPointMakeZero();
-    [[self window] setNeedsLayout];
-    [self setNeedsDisplay:YES];
 }
 
 - (CPLayoutPoint)layoutPointAtLocation:(CGPoint)localEventPoint
@@ -422,7 +440,7 @@ var EDIT_PRIORITY = 1000;
 
     [points enumerateObjectsUsingBlock:function(point, idx, stop)
     {
-        var cgpoint = [point valueInItem:self];
+        var cgpoint = [point valueInEngine:nil];
         var grabrect = CGRectMake(cgpoint.x - 25, cgpoint.y - 25, 50, 50);
 
         if (CGRectContainsPoint(grabrect, localEventPoint))
