@@ -60,6 +60,11 @@
     return CGPointMake([_xAxisAnchor valueInItem:arg1], [_yAxisAnchor valueInItem:arg1]);
 }
 
+- (CGPoint)valueInEngine:(id)arg1
+{
+    return CGPointMake([_xAxisAnchor valueInEngine:arg1], [_yAxisAnchor valueInEngine:arg1]);
+}
+
 - (id)layoutPointByOffsettingWithXOffsetDimension:(id)arg1 yOffsetDimension:(id)arg2
 {
     var xanchor = ( arg1 ) ? [_xAxisAnchor _anchorByOffsettingWithDimension:arg1] : _xAxisAnchor;

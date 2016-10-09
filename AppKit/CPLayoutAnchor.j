@@ -95,13 +95,13 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 #if DEBUG
     prefix += "-" + [item debugID];
 #endif
-        _variable = [engine variableWithPrefix:([item UID] + "-" + [item debugID]) name:[self name] value:[self valueInLayoutSpace] owner:self];
+        _variable = [engine variableWithPrefix:prefix name:[self name] value:[self valueInLayoutSpace] owner:self];
     }
 
     return _variable;
 }
 
-- (id)name
+- (CPString)name
 {
     if (_name == nil && _attribute >= 0)
         _name = CPLayoutAttributeLabels[_attribute];
@@ -114,12 +114,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [self item];
 }
 
+- (CPInteger)_anchorType
+{
+    return CPLayoutAnchorTypeSimple;
+}
+
 - (Expression)expressionInContext:(id)otherAnchor
 {
     return new c.Expression.fromVariable([self variable]); // Overrided by subclasses.
 }
 
-// Default for x|yAxisAnchor and dimension
+// Default for CPLayout(X|Y)AxisAnchor and CPLayoutDimension
 - (float)valueInEngine:(id)anEngine
 {
     return [self variable].valueOf();
@@ -145,6 +150,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         return NO;
 
     return YES;
+}
+
+- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
+{
 }
 
 - (float)alignmentRectOffset
@@ -467,6 +476,11 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     var frame = [[self item] frame];
     return (_attribute == CPLayoutAttributeWidth) ? CGRectGetWidth(frame) : CGRectGetHeight(frame);
+}
+
+- (float)valueInItem:(id)anItem
+{
+    return [self variable].valueOf();
 }
 
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
