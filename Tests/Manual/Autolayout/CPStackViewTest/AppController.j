@@ -23,13 +23,14 @@ CPLogRegister(CPLogConsole);
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(50, 50,1200,400) styleMask:CPResizableWindowMask|CPTitledWindowMask];
-    [theWindow setAutolayoutEnabled:YES];
+    var contentView = [theWindow contentView];
+    [contentView setIdentifier:@"ContentView"];
+    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     priorities = @[@{"label" : "Required", "value" : CPLayoutPriorityRequired},
                    @{"label" : "High", "value"  : CPLayoutPriorityDefaultHigh},
                    @{"label" : "Low", "value"  : CPLayoutPriorityDefaultLow}];
 
-    var contentView = [theWindow contentView];
 
     var segmented = [[CPSegmentedControl alloc] initWithFrame:CGRectMake(20, 10, 200, 32)];
     [segmented setSegmentCount:5];
@@ -139,7 +140,6 @@ CPLogRegister(CPLogConsole);
     [CPLayoutConstraint activateConstraints:[stack1, stack2, stack3, stack4]];
 
     [theWindow orderFront:self];
-    [theWindow layout];
 }
 
 - (void)setAlignment:(id)sender
