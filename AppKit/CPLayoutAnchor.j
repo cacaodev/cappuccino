@@ -282,8 +282,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if ([self _anchorType] == CPLayoutAnchorTypeSimple)
         return [self _referenceItem];
 
-    var items = [self _referencedLayoutItems];
-    var result = nil;
+    var items = [self _referencedLayoutItems],
+        result = nil;
 
     [items enumerateObjectsUsingBlock:function(layoutItem, idx, stop)
     {
@@ -393,7 +393,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (int)_anchorType
+- (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeSimple;
 }
@@ -462,7 +462,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (int)_anchorType
+- (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeSimple;
 }
@@ -528,7 +528,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithAnchor:_axisAnchor plusDimension:_dimension times:_dimensionMultiplier plus:_constant name:_name attribute:_attribute];
 }
 
-- (int)_anchorType
+- (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
 }
@@ -745,7 +745,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithDimension:_firstLayoutDimension plusDimension:_secondLayoutDimension times:_secondLayoutDimensionMultiplier];
 }
 
-- (int)_anchorType
+- (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
 }
@@ -846,7 +846,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_rootLayoutDimension _valueInEngine:arg1] * _multiplier + _constant;
 }
 
-- (id)_childAnchors
+- (CPArray)_childAnchors
 {
     return @[_rootLayoutDimension];
 }
@@ -892,7 +892,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[CPDistanceLayoutDimension alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor];
 }
 
-- (int)_anchorType
+- (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
 }
