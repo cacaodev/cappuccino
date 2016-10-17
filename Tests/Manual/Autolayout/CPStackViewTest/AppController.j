@@ -22,7 +22,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(50, 50,1200,400) styleMask:CPResizableWindowMask|CPTitledWindowMask];
+    theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(50, 50,1400,400) styleMask:CPResizableWindowMask|CPTitledWindowMask];
     var contentView = [theWindow contentView];
     [contentView setIdentifier:@"ContentView"];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
@@ -30,7 +30,6 @@ CPLogRegister(CPLogConsole);
     priorities = @[@{"label" : "Required", "value" : CPLayoutPriorityRequired},
                    @{"label" : "High", "value"  : CPLayoutPriorityDefaultHigh},
                    @{"label" : "Low", "value"  : CPLayoutPriorityDefaultLow}];
-
 
     var segmented = [[CPSegmentedControl alloc] initWithFrame:CGRectMake(20, 10, 200, 32)];
     [segmented setSegmentCount:5];
@@ -88,18 +87,24 @@ CPLogRegister(CPLogConsole);
     [combo setDelegate:self];
 
     var alignPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX([combo frame]) + 10 ,10,100,32)];
+    [alignPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
     [alignPopup addItemsWithTitles:[@"top",@"centerY",@"bottom"]];
     [alignPopup selectItemAtIndex:1];
     [alignPopup setTarget:self];
     [alignPopup setAction:@selector(setAlignment:)];
     [alignPopup setTag:2];
     [contentView addSubview:alignPopup];
+    [[[alignPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
+    [[[alignPopup leftAnchor] constraintEqualToAnchor:[combo rightAnchor] constant:10] setActive:YES];
 
     var testButton = [[CPButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX([alignPopup frame]) + 10, 10, 100, 32)];
+    [testButton setTranslatesAutoresizingMaskIntoConstraints:NO];
     [testButton setTitle:@"Add View"];
     [testButton setTarget:self];
     [testButton setAction:@selector(test:)];
     [contentView addSubview:testButton];
+    [[[testButton topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
+    [[[testButton leftAnchor] constraintEqualToAnchor:[alignPopup rightAnchor] constant:10] setActive:YES];
 
     var testButton2 = [[CPButton alloc] initWithFrame:CGRectMakeZero()];
     [testButton2 setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -111,6 +116,15 @@ CPLogRegister(CPLogConsole);
     [[[testButton2 leftAnchor] constraintEqualToAnchor:[testButton rightAnchor] constant:10] setActive:YES];
     [[[testButton2 heightAnchor] constraintEqualToAnchor:[testButton heightAnchor]] setActive:YES];
 
+    var gravityPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
+    [gravityPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [gravityPopup addItemsWithTitles:[@"in gravity Leading",@"in gravity Center",@"in gravity Trailing"]];
+    [gravityPopup selectItemAtIndex:0];
+    [gravityPopup setTag:3];
+    [contentView addSubview:gravityPopup];
+    [[[gravityPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
+    [[[gravityPopup leftAnchor] constraintEqualToAnchor:[testButton2 rightAnchor] constant:10] setActive:YES];
+
     var views = @[],
         i = 1,
         p = 253;
@@ -120,7 +134,7 @@ CPLogRegister(CPLogConsole);
         var view = [[ColorView alloc] initWithInstrinsicSize:CGSizeMake(50 * i, 200)];
         [view setContentHuggingPriority:(p - i) forOrientation:0];
         [view setContentHuggingPriority:(p - i) forOrientation:1];
-        [view setIdentifier:(@"View" + i)];
+        [view setIdentifier:("View_" + CPStackViewGravityLeading + "_" + i)];
         [views addObject:view];
     }
 
@@ -188,22 +202,31 @@ CPLogRegister(CPLogConsole);
 
 - (void)test2:(id)sender
 {
-    var as = [stackView arrangedSubviews];
-    var view = [as objectAtIndex:([as count] - 1)];
-    [stackView removeView:view];
-    [theWindow setNeedsLayout];
+    var gravity = [[[theWindow contentView] viewWithTag:3] indexOfSelectedItem] + 1;
+    var views = [stackView viewsInGravity:gravity];
+    var lastView = [views lastObject];
+
+    if (lastView !== nil)
+    {
+        [stackView removeView:lastView];
+        [theWindow setNeedsLayout];
+        [stackView setNeedsDisplay:YES];
+    }
 }
 
-- (void)test:(id)sender
+- (IBAction)test:(id)sender
 {
-    var n = [[stackView arrangedSubviews] count];
+    var gravity = [[[theWindow contentView] viewWithTag:3] indexOfSelectedItem] + 1;
+    var n = [[stackView viewsInGravity:gravity] count];
+
     var view = [[ColorView alloc] initWithInstrinsicSize:CGSizeMake(50 * (n + 1), 200)];
     [view setOrientation:[stackView orientation]];
     [view setContentHuggingPriority:(252 - n) forOrientation:0];
     [view setContentHuggingPriority:(252 - n) forOrientation:1];
-    [view setIdentifier:("View" + [[stackView arrangedSubviews] count])];
-    [stackView addArrangedSubview:view];
+    [view setIdentifier:("View_" + gravity + "_" + n)];
+    [stackView addView:view inGravity:gravity];
     [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
 }
 
 - (void)setHugging:(id)sender
@@ -218,6 +241,7 @@ CPLogRegister(CPLogConsole);
     var d = [sender selectedSegment];
     [stackView setDistribution:d];
     [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
 }
 
 - (void)orientate:(id)sender
@@ -240,6 +264,7 @@ CPLogRegister(CPLogConsole);
 
     [stackView setOrientation:o];
     [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
 }
 
 - (void)setSpacing:(id)sender
@@ -247,6 +272,7 @@ CPLogRegister(CPLogConsole);
     var k = [sender intValue];
     [stackView setSpacing:k];
     [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
 }
 
 @end
@@ -326,14 +352,6 @@ CPLogRegister(CPLogConsole);
 
 @implementation StackView : CPStackView
 {
-}
-
-- (void)drawRect:(CGRect)aRect
-{
-    var ctx = [[CPGraphicsContext currentContext] graphicsPort];
-    [[CPColor blackColor] set];
-    CGContextSetLineWidth(ctx, 3);
-    CGContextStrokeRect(ctx, [self bounds]);
 }
 
 - (void)mouseDown:(CPEvent)anEvent

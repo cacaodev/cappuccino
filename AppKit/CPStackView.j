@@ -5,6 +5,7 @@
 @import "CPApplication.j"
 @import "CPLayoutConstraint.j"
 @import "CPView.j"
+@import "CPLayoutRect.j"
 
 //@protocol CPStackViewDelegate;
 
@@ -96,7 +97,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 @implementation CPStackView : CPView
 {
     id                                  _delegate @accessors(getter=delegate);
-    CPArray                             _views @accessors(property=views);
+    CPDictionary                        _viewsInGravity;
 //    CPArray                             _detachedViews @accessors(readonly, copy);
     long long                           _distribution @accessors(getter=distribution);
     CPLayoutConstraintOrientation       _orientation @accessors(getter=orientation);
@@ -111,13 +112,12 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     CPLayoutPriority     _horizontalHuggingPriority;
 //    CPMutableArray       _viewsDetachedWithDeferredNotifications;
 //    CPMutableArray       _viewsReattachedWithDeferredNotifications;
-//    CPStackViewContainer _leadingOrTopViewsManager;
-//    CPStackViewContainer _centerViewsManager;
-//    CPStackViewContainer _trailingOrBottomViewsManager;
-    CPMutableDictionary  _stackConstraintsDictionary;
+    CPDictionary         _gravityLayoutRects;
+//    CPMutableDictionary  _stackConstraintsDictionary;
     CPArray              _stackConstraints;
-    CPLayoutDimension    _idealSizeLayoutDimension;
+    CPDictionary         _idealSizeForGravity;
     float                _alignmentPriority;
+    unsigned int         _gravitiesMask;
 //    CPMapTable           _overriddenHoldingPriorities;
 //    BOOL                 _baselineRelativeArrangement;
 //    BOOL                 _stackViewShouldNotAddConstraints;
@@ -147,8 +147,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 + (CPStackView)stackViewWithViews:(CPArray)views
 {
     var stackView = [[self alloc] initWithFrame:CGRectMakeZero()];
-//    [stackView setViews:views inGravity:CPStackViewGravityTop];
-    [stackView _setViews:views];
+    [stackView setViews:views inGravity:CPStackViewGravityLeading];
     [stackView setTranslatesAutoresizingMaskIntoConstraints:NO];
 
     return stackView;
@@ -164,7 +163,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     if (orientation !== _orientation)
     {
         _orientation = orientation;
-        _idealSizeLayoutDimension = nil;
+        _idealSizeForGravity = @{};
         _alignment = _orientation ? CPLayoutAttributeCenterX : CPLayoutAttributeCenterY;
         [self setNeedsUpdateConstraints:YES];
         [self setNeedsLayout];
@@ -249,7 +248,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 */
 - (CPArray)arrangedSubviews
 {
-    return _views;
+    return [self views];
 }
 
 /*!
@@ -267,6 +266,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
  */
 - (void)insertArrangedSubview:(CPView)view atIndex:(CPInteger)anIndex
 {
+    // FIXME
     var arrangedSubviews = [self arrangedSubviews],
         count = [arrangedSubviews count];
 
@@ -311,43 +311,15 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
  */
 - (void)removeArrangedSubview:(CPView)view
 {
-    if (![_views containsObjectIdenticalTo:view])
+    if (![[self arrangedSubviews] containsObjectIdenticalTo:view])
         [CPException raise:CPInvalidArgumentException format:@"View %@ is not (and has to be) in stack view %@.", view, self];
 
     [self willChangeValueForKey:@"views"];
 
-    [_views removeObjectIdenticalTo:view];
+    // FIXME
+    //[_views removeObjectIdenticalTo:view];
     [self setNeedsUpdateConstraints:YES];
 
-    [self didChangeValueForKey:@"views"];
-}
-
-
-- (void)_setViews:(CPArray)newViews
-{
-    var viewsToRemove = [_views arrayByExcludingObjectsInArray:newViews],
-        viewsToAdd = [newViews arrayByExcludingObjectsInArray:_views];
-
-    [self willChangeValueForKey:@"views"];
-
-    _views = newViews;
-
-    [viewsToRemove enumerateObjectsUsingBlock:function(view, idx, stop)
-    {
-        [view removeFromSuperview];
-    }];
-
-    [viewsToAdd enumerateObjectsUsingBlock:function(view, idx, stop)
-    {
-        [view setTranslatesAutoresizingMaskIntoConstraints:NO];
-
-        if ([view superview])
-            [view removeFromSuperview];
-
-        [self addSubview:view];
-    }];
-
-    [self setNeedsUpdateConstraints:YES];
     [self didChangeValueForKey:@"views"];
 }
 
@@ -475,23 +447,189 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 }
 
+@end
+
+/* API that is intended for use when the `distribution` of the receiver is set to `CPStackViewDistributionGravityAreas`. */
+@implementation CPStackView (CPStackViewGravityAreas)
+
+/*!
+ Adds the view to the given gravity area at the end of that gravity area.
+ This method will update the StackView's layout, and could result in the StackView changing its size or views being detached / clipped.
+ */
+- (void)addView:(CPView)view inGravity:(CPStackViewGravity)aGravity
+{
+    var count = [[self viewsInGravity:aGravity] count];
+    [self insertView:view atIndex:count inGravity:aGravity];
+}
+
+/*!
+ Adds the view to the given gravity area at the index within that gravity area.
+ Index numbers & counts are specific to each gravity area, and are indexed based on the set userInterfaceLayoutDirection.
+ (For a L2R layout, index 0 in the leading gravity is the furthest left index; for a R2L layout index 0 in the leading gravity is the furthest right index)
+ This method will update the StackView's layout, and could result in the StackView changing its size or views being detached / clipped.
+ An CPRangeException will be raised if the index is out of bounds
+ */
+- (void)insertView:(CPView)aView atIndex:(CPInteger)anIndex inGravity:(CPStackViewGravity)aGravity
+{
+    var views = [self _mutableViewsInGravity:aGravity],
+        count = [views count];
+
+    if (anIndex < 0 || anIndex > count)
+        [CPException raise:CPInvalidArgumentException format:@"anIndex (%ld) is out of bounds [%ld-%ld]", anIndex, 0, count];
+
+    _gravitiesMask |= (1 << aGravity);
+
+    var viewIdx = [views indexOfObjectIdenticalTo:aView];
+
+    if (anIndex == viewIdx)
+        return;
+
+    [aView setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+    [self willChangeValueForKey:@"views"];
+
+    if (viewIdx !== CPNotFound)
+    {
+        [self removeView:aView];
+
+        if (anIndex < viewIdx)
+            anIndex--;
+    }
+
+    [views insertObject:aView atIndex:anIndex];
+
+    if (![aView isDescendantOf:self])
+    {
+        if ([aView superview])
+            [aView removeFromSuperview];
+
+        [self addSubview:aView];
+    }
+
+    [self didChangeValueForKey:@"views"];
+
+    [self setNeedsUpdateConstraints:YES];
+}
+
+/*!
+ Will remove view from the StackView.
+ [view removeFromSuperview] will have the same behavior in the case that view is visible (not detached) from the StackView.
+ In the case that view had been detached, this method must be used to remove it from the StackView.
+ view must be managed by the StackView, an exception will be raised if not.
+ */
+- (void)removeView:(CPView)view
+{
+    var allviews = [self views];
+
+    if (![allviews containsObjectIdenticalTo:view])
+        [CPException raise:CPInvalidArgumentException format:@"The view %@ is not present in arrangedSubviews", view];
+
+    [self willChangeValueForKey:@"views"];
+
+    [_viewsInGravity enumerateKeysAndObjectsUsingBlock:function(key, views, stop)
+    {
+        if ([views containsObjectIdenticalTo:view])
+        {
+            [views removeObjectIdenticalTo:view];
+
+            if ([views count] == 0)
+            {
+                var gravity = [self _gravityForName:key];
+                _gravitiesMask &= (~ (1 << gravity));
+            }
+
+            stop(YES);
+        }
+    }];
+
+    [view removeFromSuperview];
+    [self setNeedsUpdateConstraints:YES];
+
+    [self didChangeValueForKey:@"views"];
+}
+
+ // Getters will return the views that are contained by the corresponding gravity area, regardless of detach-status.
+ - (CPArray)viewsInGravity:(CPStackViewGravity)aGravity
+ {
+     var result = @[];
+
+     var gravity_key = [self _nameForGravity:aGravity],
+         views = [_viewsInGravity objectForKey:gravity_key];
+
+     if (views !== nil)
+         [result addObjectsFromArray:views];
+
+     return result;
+ }
+
+// Setters will update the views and the layout for that gravity area.
+- (void)setViews:(CPArray)newViews inGravity:(CPStackViewGravity)aGravity
+{
+    _gravitiesMask |= (1 << aGravity);
+
+    var oldViews = [self viewsInGravity:aGravity],
+        viewsToRemove = [oldViews arrayByExcludingObjectsInArray:newViews],
+        viewsToAdd = [newViews arrayByExcludingObjectsInArray:oldViews];
+
+    [self willChangeValueForKey:@"views"];
+
+    [_viewsInGravity setObject:newViews forKey:[self _nameForGravity:aGravity]];
+
+    [viewsToRemove enumerateObjectsUsingBlock:function(view, idx, stop)
+    {
+        [view removeFromSuperview];
+    }];
+
+    [viewsToAdd enumerateObjectsUsingBlock:function(view, idx, stop)
+    {
+        [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+        if ([view superview])
+            [view removeFromSuperview];
+
+        [self addSubview:view];
+    }];
+
+    [self setNeedsUpdateConstraints:YES];
+    [self didChangeValueForKey:@"views"];
+}
+
+/*
+ Returns an array of all the views managed by this StackView, regardless of detach-status or gravity area.
+ This is indexed in the order of indexing within the StackView. Detached views are indexed at the positions they would have been if they were still attached.
+ */
+- (CPArray)views
+{
+    var result = @[];
+
+    [_viewsInGravity enumerateKeysAndObjectsUsingBlock:function(key, views, stop)
+    {
+        [result addObjectsFromArray:views];
+    }];
+
+    return result;
+}
+
+// PRIVATE METHODS
 - (id)initWithFrame:(CGRect)aRect
 {
     self = [super initWithFrame:aRect];
 
-    _views = @[];
-    _orientation = CPLayoutConstraintOrientationHorizontal;
-    _distribution = CPStackViewDistributionFill;
-    _alignment = CPLayoutAttributeCenterY;
-    _spacing = 8.0;
-    _alignmentPriority = CPStackViewDistributionPriority;
-    _edgeInsets = CGInsetMake(0, 0, 0, 0);
-    _verticalClippingResistancePriority = CPLayoutPriorityRequired;
-    _horizontalClippingResistancePriority = CPLayoutPriorityRequired;
-    _verticalHuggingPriority = CPLayoutPriorityDefaultLow;
-    _horizontalHuggingPriority = CPLayoutPriorityDefaultLow;
+    if (self)
+    {
+        _orientation = CPLayoutConstraintOrientationHorizontal;
+        _distribution = CPStackViewDistributionFill;
+        _alignment = CPLayoutAttributeCenterY;
+        _spacing = 8.0;
+        _alignmentPriority = CPStackViewDistributionPriority;
+        _edgeInsets = CGInsetMake(0, 0, 0, 0);
+        _verticalClippingResistancePriority = CPLayoutPriorityRequired;
+        _horizontalClippingResistancePriority = CPLayoutPriorityRequired;
+        _verticalHuggingPriority = CPLayoutPriorityDefaultLow;
+        _horizontalHuggingPriority = CPLayoutPriorityDefaultLow;
 
-    [self _init];
+        [self _init];
+    }
 
     return self;
 }
@@ -499,13 +637,38 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 - (void)_init
 {
     _stackConstraints = @[];
-    _stackConstraintsDictionary = @{};
-    _idealSizeLayoutDimension = nil;
+//    _stackConstraintsDictionary = @{};
+    _viewsInGravity = @{};
+    _gravityLayoutRects = @{};
+    _idealSizeForGravity = @{};
+    _gravitiesMask = 0;
 }
 
+#if (DEBUG)
+- (void)drawRect:(CGRect)dirtyRect
+{
+    var ctx = [[CPGraphicsContext currentContext] graphicsPort];
+    var colors = @[[CPColor redColor], [CPColor blueColor], [CPColor greenColor]];
+    CGContextSetLineWidth(ctx, 3);
+
+    [self _enumerateGravitiesUsingBlock:function(aGravity, idx)
+    {
+        var layoutRect = [self _layoutRectForGravity:aGravity];
+        [[colors objectAtIndex:(aGravity - 1)] setStroke];
+        CGContextStrokeRect(ctx, [layoutRect valueInEngine:self]);
+    }];
+
+    [[CPColor blackColor] set];
+    CGContextStrokeRect(ctx, [self bounds]);
+}
+#endif
+
+// CONSTRAINTS MANAGEMENT
 - (void)updateConstraints
 {
-    var newConstraints = [self _generateStackViewConstraints];
+    var gravityConstraints = [self _generateGravityConstraints];
+    var viewConstraints = [self _generateViewsConstraints];
+    var newConstraints = [gravityConstraints arrayByAddingObjectsFromArray:viewConstraints];
 
     var constraintsToAdd = [newConstraints arrayByExcludingObjectsInArray:_stackConstraints],
         constraintsToRemove = [_stackConstraints arrayByExcludingObjectsInArray:newConstraints];
@@ -515,20 +678,84 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
     [CPLayoutConstraint activateConstraints:constraintsToAdd];
     [_stackConstraints addObjectsFromArray:constraintsToAdd];
-
-    CPLog.debug("Added " + [constraintsToAdd count] + " constraints.\nRemoved " + [constraintsToRemove count]+ " constraints.")
+#if (DEBUG)
+    CPLog.debug("Added " + [constraintsToAdd description] + " constraints.\nRemoved " + [constraintsToRemove count] + " constraints.")
+#endif
 }
 
-- (CPArray)_generateStackViewConstraints
+- (CPArray)_generateGravityConstraints
+{
+    var result = @[];
+    var previousLayoutRect = nil,
+        count = [self countOfGravities];
+
+    [self _enumerateGravitiesUsingBlock:function(aGravity, idx, stop)
+    {
+        var layoutRect = [self _layoutRectForGravity:aGravity];
+
+        var leading, top, bottom;
+
+        if (idx == 0)
+        {
+            leading = [[layoutRect leadingAnchorForOrientation:_orientation] constraintEqualToAnchor:[self leadingAnchorForOrientation:_orientation] constant:_spacing];
+            top = [[layoutRect leadingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[self leadingAnchorForOrientation:(1-_orientation)] constant:_spacing];
+            bottom = [[layoutRect trailingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[self trailingAnchorForOrientation:(1-_orientation)] constant:-_spacing];
+        }
+        else
+        {
+            leading = [[layoutRect leadingAnchorForOrientation:_orientation] constraintEqualToAnchor:[previousLayoutRect trailingAnchorForOrientation:_orientation] constant:_spacing];
+            top = [[layoutRect leadingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[previousLayoutRect leadingAnchorForOrientation:(1-_orientation)]];
+            bottom = [[layoutRect trailingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[previousLayoutRect trailingAnchorForOrientation:(1-_orientation)]];
+        }
+
+        [result addObjectsFromArray:@[leading, top, bottom]];
+
+        if (idx == count - 1)
+        {
+            var trailing = [[layoutRect trailingAnchorForOrientation:_orientation] constraintEqualToAnchor:[self trailingAnchorForOrientation:_orientation] constant:-_spacing];
+            [result addObject:trailing];
+        }
+
+        previousLayoutRect = layoutRect;
+    }];
+
+    if (count == 3)
+    {
+        var gravityCenterAnchor = [[self _layoutRectForGravity:CPStackViewGravityCenter] centerAnchorForOrientation:_orientation],
+            centerAnchor = [self centerAnchorForOrientation:_orientation],
+            center = [gravityCenterAnchor constraintEqualToAnchor:centerAnchor];
+
+        [center setPriority:CPLayoutPriorityDefaultLow];
+        [result addObject:center];
+    }
+
+    return result;
+}
+
+- (CPArray)_generateViewsConstraints
+{
+    var result = @[];
+
+    [self _enumerateGravitiesUsingBlock:function(aGravity, idx, stop)
+    {
+        var viewsConstraints = [self _generateViewsConstraintsInGravity:aGravity];
+        [result addObjectsFromArray:viewsConstraints];
+    }];
+
+    return result;
+}
+
+- (CPArray)_generateViewsConstraintsInGravity:(CPStackViewGravity)aGravity
 {
     var result = @[],
         previousView = nil,
-        last = [_views count] - 1;
+        views = [self viewsInGravity:aGravity],
+        last = [views count] - 1;
 
-    var stackLeadingAnchor = [self leadingAnchorForOrientation:_orientation],
-        stackTrailingAnchor = [self trailingAnchorForOrientation:_orientation],
-        stackAlignmentLeadingAnchor = [self leadingAnchorForOrientation:(1 - _orientation)],
-        stackAlignmentTrailingAnchor = [self trailingAnchorForOrientation:(1 - _orientation)],
+    var gravityLeadingAnchor = [self leadingAnchorForOrientation:_orientation inGravity:aGravity],
+        gravityTrailingAnchor = [self trailingAnchorForOrientation:_orientation inGravity:aGravity],
+        gravityAlignmentLeadingAnchor = [self leadingAnchorForOrientation:(1 - _orientation) inGravity:aGravity],
+        gravityAlignmentTrailingAnchor = [self trailingAnchorForOrientation:(1 - _orientation) inGravity:aGravity],
 
         huggingPriority = [self huggingPriorityForOrientation:_orientation],
         alignmentHuggingpriority = [self huggingPriorityForOrientation:(1 - _orientation)],
@@ -539,31 +766,31 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         alignmentLeadingInset = [self _leadingInsetForOrientation:(1 - _orientation)],
         alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)];
 
-    [_views enumerateObjectsUsingBlock:function(aView, idx, stop)
+    [views enumerateObjectsUsingBlock:function(aView, idx, stop)
     {
         var leadingAnchor = [aView leadingAnchorForOrientation:_orientation],
             trailingAnchor = [aView trailingAnchorForOrientation:_orientation],
             alignmentLeadingAnchor = [aView leadingAnchorForOrientation:(1 - _orientation)],
             alignmentTrailingAnchor = [aView trailingAnchorForOrientation:(1 - _orientation)];
 
-        var alignment = [CPLayoutConstraint constraintWithItem:aView attribute:_alignment relatedBy:CPLayoutRelationEqual toItem:self attribute:_alignment multiplier:1 constant:0];
+        var alignment = [CPLayoutConstraint constraintWithItem:aView attribute:_alignment relatedBy:CPLayoutRelationEqual toItem:[self _layoutRectForGravity:aGravity] attribute:_alignment multiplier:1 constant:0];
         [alignment setPriority:_alignmentPriority];
         [result addObject:alignment];
 
-        var alignmentLeading = [alignmentLeadingAnchor constraintGreaterThanOrEqualToAnchor:stackAlignmentLeadingAnchor constant:alignmentLeadingInset];
+        var alignmentLeading = [alignmentLeadingAnchor constraintGreaterThanOrEqualToAnchor:gravityAlignmentLeadingAnchor];
         [result addObject:alignmentLeading];
 
-        var alignmentTrailing = [alignmentTrailingAnchor constraintLessThanOrEqualToAnchor:stackAlignmentTrailingAnchor constant:-alignmentTrailingInset];
+        var alignmentTrailing = [alignmentTrailingAnchor constraintLessThanOrEqualToAnchor:gravityAlignmentTrailingAnchor];
         [result addObject:alignmentTrailing];
 
         if (idx == 0)
         {
-            var leading = [leadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset];
+            var leading = [leadingAnchor constraintEqualToAnchor:gravityLeadingAnchor];
             var priority = (_distribution <= 2) ? CPLayoutPriorityRequired : CPLayoutPriorityDefaultHigh;
             [leading setPriority:priority];
             [result addObject:leading];
 
-            var leadingClipping = [leadingAnchor constraintGreaterThanOrEqualToAnchor:stackLeadingAnchor constant:leadingInset];
+            var leadingClipping = [leadingAnchor constraintGreaterThanOrEqualToAnchor:gravityLeadingAnchor];
             [leadingClipping setPriority:clippingPriority];
             [result addObject:leadingClipping];
         }
@@ -577,7 +804,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
             if (_distribution == CPStackViewDistributionEqualSpacing)
             {
-                var spacing = [distance constraintEqualToAnchor:[self _idealSizeLayoutDimension]];
+                var spacing = [distance constraintEqualToAnchor:[self _idealSizeLayoutDimensionInGravity:aGravity]];
                 [spacing setPriority:CPStackViewDistributionPriority];
                 [result addObject:spacing];
             }
@@ -592,12 +819,12 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
         if (idx == last)
         {
-            var trailingHugg = [trailingAnchor constraintEqualToAnchor:stackTrailingAnchor constant:-trailingInset];
+            var trailingHugg = [trailingAnchor constraintEqualToAnchor:gravityTrailingAnchor];
             var priority = (_distribution <= 2) ? CPLayoutPriorityRequired : CPStackViewDistributionPriority;
             [trailingHugg setPriority:priority];
             [result addObject:trailingHugg];
 
-            var trailingClipping = [trailingAnchor constraintLessThanOrEqualToAnchor:stackTrailingAnchor constant:-trailingInset];
+            var trailingClipping = [trailingAnchor constraintLessThanOrEqualToAnchor:gravityTrailingAnchor];
             [trailingClipping setPriority:clippingPriority];
             [result addObject:trailingClipping];
         }
@@ -605,7 +832,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         if (_distribution == CPStackViewDistributionFillEqually)
         {
             var anchor = [aView dimensionForOrientation:_orientation];
-            var sizeConstraint = [anchor constraintEqualToAnchor:[self _idealSizeLayoutDimension]];
+            var sizeConstraint = [anchor constraintEqualToAnchor:[self _idealSizeLayoutDimensionInGravity:aGravity]];
             [sizeConstraint setPriority:CPStackViewDistributionPriority];
             [result addObject:sizeConstraint];
         }
@@ -615,7 +842,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
                 coeff = _orientation ? intrinsicSize.height : intrinsicSize.width,
                 anchor = [aView dimensionForOrientation:_orientation];
 
-            var sizeConstraint = [anchor constraintEqualToAnchor:[self _idealSizeLayoutDimension] multiplier:coeff constant:0];
+            var sizeConstraint = [anchor constraintEqualToAnchor:[self _idealSizeLayoutDimensionInGravity:aGravity] multiplier:coeff constant:0];
             [sizeConstraint setPriority:CPStackViewDistributionPriority];
             [result addObject:sizeConstraint];
         }
@@ -625,37 +852,23 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
     if (_distribution == CPStackViewDistributionEqualCentering)
     {
-        var centeringConstraints = [self _equalCenteringConstraints];
+        var centeringConstraints = [self _equalCenteringConstraintsInGravity:aGravity];
         [result addObjectsFromArray:centeringConstraints];
     }
 
     return result;
 }
 
-- (CPLayoutPriority)_maxSubviewsHuggingPriority
-{
-    var result = 0;
-
-    [_views enumerateObjectsUsingBlock:function(view, idx, stop)
-    {
-        result = MAX(result, [view contentHuggingPriorityForOrientation:_orientation]);
-
-        if (result == CPLayoutPriorityRequired)
-            stop(YES);
-    }];
-
-    return result;
-}
-
-- (CPArray)_equalCenteringConstraints
+- (CPArray)_equalCenteringConstraintsInGravity:(CPStackViewGravity)aGravity
 {
     var result = @[],
-        count = [_views count],
+        views = [self viewsInGravity:aGravity],
+        count = [views count],
         huggingPriority = [self huggingPriorityForOrientation:_orientation];
 
-    [_views enumerateObjectsUsingBlock:function(view, idx, stop)
+    [views enumerateObjectsUsingBlock:function(aView, idx, stop)
     {
-        var midAnchor = [view centerAnchorForOrientation:_orientation],
+        var midAnchor = [aView centerAnchorForOrientation:_orientation],
             opposite = count - 1 - idx;
 
         if (idx == opposite)
@@ -664,7 +877,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         }
         else
         {
-            var opp_view = [_views objectAtIndex:opposite];
+            var opp_view = [views objectAtIndex:opposite];
             midAnchor = [midAnchor anchorAtMidpointToAnchor:[opp_view centerAnchorForOrientation:_orientation]];
         }
 
@@ -676,12 +889,42 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     return result;
 }
 
-- (CPLayoutDimension)_idealSizeLayoutDimension
+- (CPLayoutDimension)_idealSizeLayoutDimensionInGravity:(CPStackViewGravity)aGravity
 {
-    if (_idealSizeLayoutDimension == nil)
-        _idealSizeLayoutDimension = [CPLayoutDimension anchorNamed:@"Ideal" inItem:self];
+    var name = [CPString stringWithFormat:@"Ideal.%@", [self _nameForGravity:aGravity]];
+    var result = [_idealSizeForGravity objectForKey:name];
 
-    return _idealSizeLayoutDimension;
+    if (result == nil)
+    {
+        result = [CPLayoutDimension anchorNamed:name inItem:self];
+        [_idealSizeForGravity setObject:result forKey:name];
+    }
+
+    return result;
+}
+
+- (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
+{
+    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
+    return orientation ? [gravityLayoutRect topAnchor] : [gravityLayoutRect leadingAnchor];
+}
+
+- (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
+{
+    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
+    return orientation ? [gravityLayoutRect bottomAnchor] : [gravityLayoutRect trailingAnchor];
+}
+
+- (CPLayoutAnchor)centerAnchorForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
+{
+    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
+    return orientation ? [gravityLayoutRect centerYAnchor] : [gravityLayoutRect centerXAnchor];
+}
+
+- (CPLayoutAnchor)dimensionForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
+{
+    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
+    return orientation ? [gravityLayoutRect heightAnchor] : [gravityLayoutRect widthAnchor];
 }
 
 - (CPInteger)_leadingInsetForOrientation:(CPLayoutConstraintOrientation)orientation
@@ -693,7 +936,24 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 {
     return orientation ? _edgeInsets.bottom : _edgeInsets.right;
 }
+/*
+- (CPLayoutPriority)_maxSubviewsHuggingPriorityInGravity:(CPStackViewGravity)aGravity
+{
+    var result = 0,
+        views = [self viewsInGravity:aGravity];
 
+    [views enumerateObjectsUsingBlock:function(aView, idx, stop)
+    {
+        result = MAX(result, [aView contentHuggingPriorityForOrientation:_orientation]);
+
+        if (result == CPLayoutPriorityRequired)
+            stop(YES);
+    }];
+
+    return result;
+}
+*/
+/*
 - (CPLayoutConstraint)stackConstraintWithName:(CPString)aName
 {
     var cst = [_stackConstraintsDictionary objectForKey:aName];
@@ -705,69 +965,104 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
     return cst;
 }
+*/
 
-@end
-
-/* API that is intended for use when the `distribution` of the receiver is set to `CPStackViewDistributionGravityAreas`. */
-@implementation CPStackView (CPStackViewGravityAreas)
-
-/*!
- Adds the view to the given gravity area at the end of that gravity area.
- This method will update the StackView's layout, and could result in the StackView changing its size or views being detached / clipped.
- */
-- (void)addView:(CPView)view inGravity:(CPStackViewGravity)gravity
+// GRAVITIES
+- (CPStackViewGravity)_gravityForName:(CPString)aName
 {
+    var s = [CPScanner scannerWithString:aName];
+    [s setScanLocation:[aName length] - 1];
 
+    return [s scanInt];
 }
 
-/*!
- Adds the view to the given gravity area at the index within that gravity area.
- Index numbers & counts are specific to each gravity area, and are indexed based on the set userInterfaceLayoutDirection.
- (For a L2R layout, index 0 in the leading gravity is the furthest left index; for a R2L layout index 0 in the leading gravity is the furthest right index)
- This method will update the StackView's layout, and could result in the StackView changing its size or views being detached / clipped.
- An CPRangeException will be raised if the index is out of bounds
- */
-- (void)insertView:(CPView)view atIndex:(CPInteger)index inGravity:(CPStackViewGravity)gravity
+- (void)_enumerateGravitiesUsingBlock:(Function)aFunction
 {
+    var idx = 0;
 
+    for (var aGravity = CPStackViewGravityLeading; aGravity <= CPStackViewGravityTrailing; aGravity++)
+    {
+        if (_gravitiesMask & (1 << aGravity))
+        {
+            aFunction(aGravity, idx);
+            idx++;
+        }
+    }
 }
 
-/*!
- Will remove view from the StackView.
- [view removeFromSuperview] will have the same behavior in the case that view is visible (not detached) from the StackView.
- In the case that view had been detached, this method must be used to remove it from the StackView.
- view must be managed by the StackView, an exception will be raised if not.
- */
-- (void)removeView:(CPView)view
+- (CPInteger)countOfGravities
 {
-    if (![_views containsObjectIdenticalTo:view])
-        [CPException raise:CPInvalidArgumentException format:@"The view %@ is not present in arrangedSubviews", view];
+    var result = 0;
+
+    [self _enumerateGravitiesUsingBlock:function(g, idx)
+    {
+        result++;
+    }];
+
+    return result;
+}
+
+- (CPString)_nameForGravity:(CPStackViewGravity)aGravity
+{
+    return [CPString stringWithFormat:@"gravity.%d", aGravity];
+}
+
+- (CPArray)_mutableViewsInGravity:(CPStackViewGravity)aGravity
+{
+    var gravity_key = [self _nameForGravity:aGravity],
+        result = [_viewsInGravity objectForKey:gravity_key];
+
+    if (result == nil)
+    {
+        result = [CPArray array];
+        [_viewsInGravity setObject:result forKey:gravity_key];
+    }
+
+    return result;
+}
+
+- (CPLayoutRect)_layoutRectForGravity:(CPStackViewGravity)aGravity
+{
+    var layoutRectKey = [CPString stringWithFormat:@"gravity.%@", aGravity],
+        result = [_gravityLayoutRects objectForKey:layoutRectKey];
+
+    if (result == nil)
+    {
+        result = [[CPLayoutRect alloc] initWithName:layoutRectKey inItem:self];
+        [_gravityLayoutRects setObject:result forKey:layoutRectKey];
+    }
+
+    return result;
+}
+/*
+- (void)_setViews:(CPArray)newViews
+{
+    var viewsToRemove = [_views arrayByExcludingObjectsInArray:newViews],
+        viewsToAdd = [newViews arrayByExcludingObjectsInArray:_views];
 
     [self willChangeValueForKey:@"views"];
 
-    [_views removeObjectIdenticalTo:view];
-    [view removeFromSuperview];
-    [self setNeedsUpdateConstraints:YES];
+    _views = newViews;
 
+    [viewsToRemove enumerateObjectsUsingBlock:function(view, idx, stop)
+    {
+        [view removeFromSuperview];
+    }];
+
+    [viewsToAdd enumerateObjectsUsingBlock:function(view, idx, stop)
+    {
+        [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+        if ([view superview])
+            [view removeFromSuperview];
+
+        [self addSubview:view];
+    }];
+
+    [self setNeedsUpdateConstraints:YES];
     [self didChangeValueForKey:@"views"];
 }
-
-- (CPArray)viewsInGravity:(CPStackViewGravity)gravity
-{
-
-}
-
- // Getters will return the views that are contained by the corresponding gravity area, regardless of detach-status.
-- (void)setViews:(CPArray)views inGravity:(CPStackViewGravity)gravity
-{
-
-} // Setters will update the views and the layout for that gravity area.
-
-/*
- Returns an array of all the views managed by this StackView, regardless of detach-status or gravity area.
- This is indexed in the order of indexing within the StackView. Detached views are indexed at the positions they would have been if they were still attached.
- */
-//CPArray<__kindof CPView> views @accessors(readonly, copy);
+*/
 
 @end
 
@@ -788,7 +1083,6 @@ var CPStackViewAlignment = "CPStackViewAlignment",
 {
     self = [super initWithCoder:aCoder];
 
-    _views = [self subviews];
     _orientation = [aCoder decodeIntForKey:CPStackViewOrientation];
     _distribution = [aCoder decodeIntForKey:CPStackViewDistributionKey];
     _alignment = [aCoder decodeIntForKey:CPStackViewAlignment];
@@ -796,8 +1090,8 @@ var CPStackViewAlignment = "CPStackViewAlignment",
     _spacing = [aCoder decodeFloatForKey:CPStackViewSpacing] || 0.0;
     if ([aCoder containsValueForKey:CPStackViewEdgeInsets])
     {
-        var ei = [aCoder decodeObjectForKey:CPStackViewEdgeInsets];
-        _edgeInsets = CGInsetMake(ei[0], ei[1], ei[2], ei[3]);
+        var insets = [aCoder decodeObjectForKey:CPStackViewEdgeInsets];
+        _edgeInsets = CGInsetMake(insets[0], insets[1], insets[2], insets[3]);
     }
     else {
         _edgeInsets = CGInsetMakeZero();
@@ -809,6 +1103,8 @@ var CPStackViewAlignment = "CPStackViewAlignment",
     _verticalHuggingPriority = [aCoder decodeIntForKey:CPStackViewVerticalHugging];
 
     [self _init];
+
+    [self setViews:[self subviews] inGravity:CPStackViewGravityLeading];
 
     return self;
 }
@@ -837,12 +1133,36 @@ var CPStackViewAlignment = "CPStackViewAlignment",
 
 - (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
 {
-    return orientation ? [self topAnchor] : [self leftAnchor];
+    return orientation ? [self topAnchor] : [self leadingAnchor];
 }
 
 - (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
 {
-    return orientation ? [self bottomAnchor] : [self rightAnchor];
+    return orientation ? [self bottomAnchor] : [self trailingAnchor];
+}
+
+- (CPLayoutAnchor)centerAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return orientation ? [self centerYAnchor] : [self centerXAnchor];
+}
+
+- (CPLayoutAnchor)dimensionForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return orientation ? [self heightAnchor] : [self widthAnchor];
+}
+
+@end
+
+@implementation CPLayoutRect (CPStackView)
+
+- (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return orientation ? [self topAnchor] : [self leadingAnchor];
+}
+
+- (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return orientation ? [self bottomAnchor] : [self trailingAnchor];
 }
 
 - (CPLayoutAnchor)centerAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
