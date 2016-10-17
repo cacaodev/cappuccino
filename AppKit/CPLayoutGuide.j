@@ -201,7 +201,7 @@
     [_owningView setNeedsLayout];
 }
 
-- (CPView)_is_superitem
+- (CPView)_superitem
 {
     return _owningView;
 }

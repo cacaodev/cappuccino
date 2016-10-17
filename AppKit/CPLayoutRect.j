@@ -135,20 +135,6 @@
     return result;
 }
 
-- (id)_is_superitem
-{
-    var leadingItem = [[self leadingAnchor] _nearestAncestorLayoutItem];
-    var topItem = [[self topAnchor] _nearestAncestorLayoutItem];
-    var widthItem = [[self widthAnchor] _nearestAncestorLayoutItem];
-    var heightItem = [[self heightAnchor] _nearestAncestorLayoutItem];
-
-    var v13 = [leadingItem is_ancestorSharedWithItem:topItem];
-    var v14 = [v13 is_ancestorSharedWithItem:widthItem];
-    var v15 = [v14 is_ancestorSharedWithItem:heightItem];
-
-    return [v15 _is_superitem];
-}
-
 - (id)centerLayoutPoint
 {
     return [CPLayoutPoint layoutPointWithXAxisAnchor:[self centerXAnchor] yAxisAnchor:[self centerYAnchor]];
@@ -324,7 +310,7 @@
         y = [_topAnchor valueInItem:arg1],
         w = [_widthAnchor valueInItem:arg1],
         h = [_heightAnchor valueInItem:arg1];
-    
+
     return CGRectMake(x, y, w, h);
 }
 
@@ -334,7 +320,7 @@
         y = [_topAnchor valueInEngine:arg1],
         w = [_widthAnchor valueInEngine:arg1],
         h = [_heightAnchor valueInEngine:arg1];
-    
+
     return CGRectMake(x, y, w, h);
 }
 
@@ -361,6 +347,90 @@
         bottom = [[self bottomAnchor] constraintLessThanOrEqualToAnchor:[arg1 bottomAnchor]];
 
     return @[leading, trailing, top, bottom];
+}
+
+@end
+
+@implementation CPLayoutRect (CPLayoutItemProtocol)
+
+- (id)_superitem
+{
+    if (_superItem !== nil)
+        return _superItem;
+
+    var leadingItem = [[self leadingAnchor] _nearestAncestorLayoutItem],
+        topItem = [[self topAnchor] _nearestAncestorLayoutItem],
+        widthItem = [[self widthAnchor] _nearestAncestorLayoutItem],
+        heightItem = [[self heightAnchor] _nearestAncestorLayoutItem];
+
+    var ancestor1 = [leadingItem _ancestorSharedWithItem:topItem],
+        ancestor2 = [ancestor1 _ancestorSharedWithItem:widthItem],
+        ancestor3 = [ancestor2 _ancestorSharedWithItem:heightItem];
+
+    return [ancestor3 _superitem];
+}
+
+- (id)_layoutEngine
+{
+    return [[self _superitem] _layoutEngine];
+}
+
+- (CPString)debugID
+{
+    return _name || [self className];
+}
+
+- (id)_ancestorSharedWithItem:(id)anItem
+{
+    return IS_SharedAncestor(self, anItem);
+}
+
+- (CPLayoutAnchor)layoutAnchorForAttribute:(CPLayoutAttribute)anAttribute
+{
+    switch (anAttribute)
+    {
+        case CPLayoutAttributeLeading       :
+        case CPLayoutAttributeLeft          : return [self leadingAnchor];
+        break;
+        case CPLayoutAttributeTrailing      :
+        case CPLayoutAttributeRight         : return [self trailingAnchor];
+        break;
+        case CPLayoutAttributeTop           : return [self topAnchor];
+        break;
+        case CPLayoutAttributeBottom        :
+        case CPLayoutAttributeLastBaseline  :
+        case CPLayoutAttributeBaseline      :
+        case CPLayoutAttributeFirstBaseline : return [self bottomAnchor];
+        break;
+        case CPLayoutAttributeWidth         : return [self widthAnchor];
+        break;
+        case CPLayoutAttributeHeight        : return [self heightAnchor];
+        break;
+        case CPLayoutAttributeCenterX       : return [self centerXAnchor];
+        break;
+        case CPLayoutAttributeCenterY       : return [self centerYAnchor];
+        break;
+        default                             : [CPException raise:CPInvalidArgumentException format:@"Unknown attribute %@", anAttribute];
+        break;
+    }
+}
+
+- (void)_setNeedsConstraintBasedLayout
+{
+}
+
+- (void)_engineDidChangeVariableOfType:(CPInteger)aType
+{
+}
+
+- (CGInset)alignmentRectInsets
+{
+    return CGInsetMakeZero();
+}
+
+- (CGRect)frame
+{
+    return CGRectMakeZero();
 }
 
 @end

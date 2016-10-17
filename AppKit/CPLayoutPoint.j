@@ -78,7 +78,7 @@
     return [self layoutPointByOffsettingWithXOffset:arg1 yOffset:arg2];
 }
 
-- (id)_is_superitem
+- (id)_superitem
 {
     return [CPLayoutConstraint _findCommonAncestorOfItem:[_xAxisAnchor _referenceItem] andItem:[_yAxisAnchor _referenceItem]];
 }

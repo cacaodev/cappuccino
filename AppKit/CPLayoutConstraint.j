@@ -187,15 +187,18 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
     {
         if (otherItem)
         {
+            if ([anItem respondsToSelector:@selector(_ancestorSharedWithItem:)])
+                return [anItem _ancestorSharedWithItem:otherItem];
+
             parent2 = otherItem;
 
             while (parent1 !== parent2)
             {
-                parent2 = [parent2 _is_superitem];
+                parent2 = [parent2 _superitem];
 
                 if (!parent2)
                 {
-                    parent1 = [parent1 _is_superitem];
+                    parent1 = [parent1 _superitem];
 
                     if (parent1)
                         parent2 = otherItem;

@@ -201,10 +201,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     var item = [self _referenceItem],
         otherItem = [otherAnchor _referenceItem];
 
-    if (otherItem == nil || [otherItem _is_superitem] == nil || [item _is_superitem] == [otherItem _is_superitem])
+    if (otherItem == nil || [otherItem _superitem] == nil || [item _superitem] == [otherItem _superitem])
         return NO;
 
-    return [otherItem isDescendantOf:item];
+    return IS_isDescendantOf(otherItem, item);
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)otherItem

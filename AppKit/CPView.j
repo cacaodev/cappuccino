@@ -4099,11 +4099,6 @@ Returns whether the receiver depends on the constraint-based layout system.
     return [[self window] _layoutEngine];
 }
 
-- (CPView)_is_superitem
-{
-    return _superview;
-}
-
 // DEBUG
 - (CPString)debugID
 {
@@ -5070,6 +5065,20 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 @end
 
+@implementation CPView (CPLayoutItemProtocol)
+
+- (id)_ancestorSharedWithItem:(id)anItem
+{
+    return IS_SharedAncestor(self, anItem);
+}
+
+- (id)_superitem
+{
+    return [self superview];
+}
+
+@end
+
 @implementation CPArray (CPView)
 
 - (CPArray)filteredArrayUsingBlock:(Function)aFunction
@@ -5088,6 +5097,40 @@ Updates the layout of the receiving view and its subviews based on the current v
 }
 
 @end
+
+function IS_SharedAncestor(anItem, otherItem)
+{
+    if (anItem == otherItem)                  // Are they the same view?
+        return anItem;
+
+    if (IS_isDescendantOf(anItem, otherItem))    // Is self a descendant of view?
+        return otherItem;
+
+    if (IS_isDescendantOf(otherItem, anItem))    // Is view a descendant of self?
+        return anItem;
+
+    // If neither are descendants of each other and either does not have a
+    // superview then they cannot have a common ancestor
+
+    if (![anItem _superitem] || ![otherItem _superitem])
+        return nil;
+
+    // Find the common ancestor of superviews
+    return IS_SharedAncestor([anItem _superitem], [otherItem _superitem]);
+};
+
+function IS_isDescendantOf(anItem, otherItem)
+{
+    var item = anItem;
+
+    do
+    {
+        if (item == otherItem)
+            return YES;
+    } while(item = [item _superitem])
+
+    return NO;
+};
 
 var SetSizeValue = function(size, value, orientation)
 {
