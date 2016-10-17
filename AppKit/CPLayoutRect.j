@@ -382,37 +382,15 @@
 
 - (id)_ancestorSharedWithItem:(id)anItem
 {
-    return IS_SharedAncestor(self, anItem);
+    return _CPLayoutItemSharedAncestor(self, anItem);
 }
 
 - (CPLayoutAnchor)layoutAnchorForAttribute:(CPLayoutAttribute)anAttribute
 {
-    switch (anAttribute)
-    {
-        case CPLayoutAttributeLeading       :
-        case CPLayoutAttributeLeft          : return [self leadingAnchor];
-        break;
-        case CPLayoutAttributeTrailing      :
-        case CPLayoutAttributeRight         : return [self trailingAnchor];
-        break;
-        case CPLayoutAttributeTop           : return [self topAnchor];
-        break;
-        case CPLayoutAttributeBottom        :
-        case CPLayoutAttributeLastBaseline  :
-        case CPLayoutAttributeBaseline      :
-        case CPLayoutAttributeFirstBaseline : return [self bottomAnchor];
-        break;
-        case CPLayoutAttributeWidth         : return [self widthAnchor];
-        break;
-        case CPLayoutAttributeHeight        : return [self heightAnchor];
-        break;
-        case CPLayoutAttributeCenterX       : return [self centerXAnchor];
-        break;
-        case CPLayoutAttributeCenterY       : return [self centerYAnchor];
-        break;
-        default                             : [CPException raise:CPInvalidArgumentException format:@"Unknown attribute %@", anAttribute];
-        break;
-    }
+    if (anAttribute == CPLayoutAttributeLastBaseline || anAttribute == CPLayoutAttributeFirstBaseline)
+        anAttribute = CPLayoutAttributeBottom;
+
+    return _CPLayoutItemAnchorForAttribute(self, anAttribute);
 }
 
 - (void)_setNeedsConstraintBasedLayout

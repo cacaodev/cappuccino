@@ -204,7 +204,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (otherItem == nil || [otherItem _superitem] == nil || [item _superitem] == [otherItem _superitem])
         return NO;
 
-    return IS_isDescendantOf(otherItem, item);
+    return _CPLayoutItemIsDescendantOf(otherItem, item);
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)otherItem

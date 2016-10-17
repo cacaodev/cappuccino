@@ -5018,38 +5018,6 @@ Updates the layout of the receiving view and its subviews based on the current v
     return _centerYAnchor;
 }
 
-- (CPLayoutAnchor)layoutAnchorForAttribute:(CPLayoutAttribute)anAttribute
-{
-    switch (anAttribute)
-    {
-        case CPLayoutAttributeLeading       :
-        case CPLayoutAttributeLeft          : return [self leftAnchor];
-        break;
-        case CPLayoutAttributeTrailing      :
-        case CPLayoutAttributeRight         : return [self rightAnchor];
-        break;
-        case CPLayoutAttributeTop           : return [self topAnchor];
-        break;
-        case CPLayoutAttributeBottom        : return [self bottomAnchor];
-        break;
-        case CPLayoutAttributeLastBaseline  : return [self lastBaselineAnchor];
-        break;
-        case CPLayoutAttributeBaseline      :
-        case CPLayoutAttributeFirstBaseline : return [self firstBaselineAnchor];
-        break;
-        case CPLayoutAttributeWidth         : return [self widthAnchor];
-        break;
-        case CPLayoutAttributeHeight        : return [self heightAnchor];
-        break;
-        case CPLayoutAttributeCenterX       : return [self centerXAnchor];
-        break;
-        case CPLayoutAttributeCenterY       : return [self centerYAnchor];
-        break;
-        default                             : [CPException raise:CPInvalidArgumentException format:@"Unknown attribute %@", anAttribute];
-        break;
-    }
-}
-
 @end
 
 @implementation CPLayoutConstraint (CPView)
@@ -5067,9 +5035,14 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 @implementation CPView (CPLayoutItemProtocol)
 
+- (CPLayoutAnchor)layoutAnchorForAttribute:(CPLayoutAttribute)anAttribute
+{
+    return _CPLayoutItemAnchorForAttribute(self, anAttribute);
+}
+
 - (id)_ancestorSharedWithItem:(id)anItem
 {
-    return IS_SharedAncestor(self, anItem);
+    return _CPLayoutItemSharedAncestor(self, anItem);
 }
 
 - (id)_superitem
@@ -5098,15 +5071,47 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 @end
 
-function IS_SharedAncestor(anItem, otherItem)
+function _CPLayoutItemAnchorForAttribute(anItem, anAttribute)
+{
+    switch (anAttribute)
+    {
+        case CPLayoutAttributeLeading       :
+        case CPLayoutAttributeLeft          : return [anItem leadingAnchor];
+        break;
+        case CPLayoutAttributeTrailing      :
+        case CPLayoutAttributeRight         : return [anItem trailingAnchor];
+        break;
+        case CPLayoutAttributeTop           : return [anItem topAnchor];
+        break;
+        case CPLayoutAttributeBottom        : return [anItem bottomAnchor];
+        break;
+        case CPLayoutAttributeLastBaseline  : return [anItem lastBaselineAnchor];
+        break;
+        case CPLayoutAttributeBaseline      :
+        case CPLayoutAttributeFirstBaseline : return [anItem firstBaselineAnchor];
+        break;
+        case CPLayoutAttributeWidth         : return [anItem widthAnchor];
+        break;
+        case CPLayoutAttributeHeight        : return [anItem heightAnchor];
+        break;
+        case CPLayoutAttributeCenterX       : return [anItem centerXAnchor];
+        break;
+        case CPLayoutAttributeCenterY       : return [anItem centerYAnchor];
+        break;
+        default                             : [CPException raise:CPInvalidArgumentException format:@"Unknown attribute %@", anAttribute];
+        break;
+    }
+}
+
+function _CPLayoutItemSharedAncestor(anItem, otherItem)
 {
     if (anItem == otherItem)                  // Are they the same view?
         return anItem;
 
-    if (IS_isDescendantOf(anItem, otherItem))    // Is self a descendant of view?
+    if (_CPLayoutItemIsDescendantOf(anItem, otherItem))    // Is self a descendant of view?
         return otherItem;
 
-    if (IS_isDescendantOf(otherItem, anItem))    // Is view a descendant of self?
+    if (_CPLayoutItemIsDescendantOf(otherItem, anItem))    // Is view a descendant of self?
         return anItem;
 
     // If neither are descendants of each other and either does not have a
@@ -5116,10 +5121,10 @@ function IS_SharedAncestor(anItem, otherItem)
         return nil;
 
     // Find the common ancestor of superviews
-    return IS_SharedAncestor([anItem _superitem], [otherItem _superitem]);
+    return _CPLayoutItemSharedAncestor([anItem _superitem], [otherItem _superitem]);
 };
 
-function IS_isDescendantOf(anItem, otherItem)
+function _CPLayoutItemIsDescendantOf(anItem, otherItem)
 {
     var item = anItem;
 
