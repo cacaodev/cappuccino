@@ -72,21 +72,16 @@ CPLogRegister(CPLogConsole);
     var prioritiesController = [CPArrayController new];
     [prioritiesController bind:@"contentArray" toObject:self withKeyPath:@"priorities" options:nil];
 
-    var combo = [[CPComboBox alloc] initWithFrame:CGRectMake(CGRectGetMaxX([slider frame]) + 10 ,10,100,28)];
-    [combo setControlSize:CPSmallControlSize];
-    [combo setCompletes:NO];
-    [combo setHasVerticalScroller:NO];
-    [combo setButtonBordered:NO];
+    var huggingPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
+    [huggingPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [huggingPopup addItemsWithTitles:[@"PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [huggingPopup setTarget:self]
+    [huggingPopup setAction:@selector(setHugging:)];
+    [contentView addSubview:huggingPopup];
+    [[[huggingPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
+    [[[huggingPopup leftAnchor] constraintEqualToAnchor:[slider rightAnchor] constant:10] setActive:YES];
 
-    [combo bind:@"content" toObject:prioritiesController withKeyPath:@"arrangedObjects" options:nil];
-    [combo bind:@"contentValues" toObject:prioritiesController withKeyPath:@"arrangedObjects.label" options:nil];
-    [combo bind:@"value" toObject:prioritiesController withKeyPath:@"selection.value" options:nil];
-    [contentView addSubview:combo];
-    [combo setTarget:self];
-    [combo setAction:@selector(setHugging:)];
-    [combo setDelegate:self];
-
-    var alignPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX([combo frame]) + 10 ,10,100,32)];
+    var alignPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [alignPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
     [alignPopup addItemsWithTitles:[@"top",@"centerY",@"bottom"]];
     [alignPopup selectItemAtIndex:1];
@@ -95,9 +90,9 @@ CPLogRegister(CPLogConsole);
     [alignPopup setTag:2];
     [contentView addSubview:alignPopup];
     [[[alignPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
-    [[[alignPopup leftAnchor] constraintEqualToAnchor:[combo rightAnchor] constant:10] setActive:YES];
+    [[[alignPopup leftAnchor] constraintEqualToAnchor:[huggingPopup rightAnchor] constant:10] setActive:YES];
 
-    var testButton = [[CPButton alloc] initWithFrame:CGRectMake(CGRectGetMaxX([alignPopup frame]) + 10, 10, 100, 32)];
+    var testButton = [[CPButton alloc] initWithFrame:CGRectMakeZero()];
     [testButton setTranslatesAutoresizingMaskIntoConstraints:NO];
     [testButton setTitle:@"Add View"];
     [testButton setTarget:self];
@@ -175,31 +170,6 @@ CPLogRegister(CPLogConsole);
     [stackView setAlignment:attr];
 }
 
-- (void)comboBoxWillDismiss:(CPNotification)aNotification
-{
-    var combo = [aNotification object];
-    var idx = [combo indexOfSelectedItem];
-    if (idx !== CPNotFound)
-    {
-        var value = [[priorities objectAtIndex:idx] objectForKey:@"value"];
-        [combo setObjectValue:value];
-        [self setHugging:combo];
-        CPLog.debug(_cmd + " " + value);
-    }
-}
-
-- (void)comboBoxSelectionDidChange:(CPNotification)aNotification
-{
-    var combo = [aNotification object];
-    var idx = [combo indexOfSelectedItem];
-    if (idx !== CPNotFound)
-    {
-        var value = [[priorities objectAtIndex:idx] objectForKey:@"value"];
-        [combo setObjectValue:value];
-        CPLog.debug(_cmd + " " + value);
-    }
-}
-
 - (void)test2:(id)sender
 {
     var gravity = [[[theWindow contentView] viewWithTag:3] indexOfSelectedItem] + 1;
@@ -231,9 +201,10 @@ CPLogRegister(CPLogConsole);
 
 - (void)setHugging:(id)sender
 {
-    var k = [sender objectValue];
-    [stackView setHuggingPriority:k forOrientation:[stackView orientation]];
+    var p = ([sender indexOfSelectedItem] + 1) * 250;
+    [stackView setHuggingPriority:p forOrientation:[stackView orientation]];
     [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
 }
 
 - (void)distribute:(id)sender
