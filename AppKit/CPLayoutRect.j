@@ -8,6 +8,7 @@
     CPLayoutDimension   _heightAnchor  @accessors(getter=heightAnchor);
     CPLayoutDimension   _widthAnchor   @accessors(getter=widthAnchor);
     CPString            _name          @accessors(getter=name);
+    id                  _superItem;
 }
 
 + (id)layoutRectWithLeadingAnchor:(id)arg1 topAnchor:(id)arg2 widthAnchor:(id)arg3 heightAnchor:(id)arg4
@@ -50,6 +51,21 @@
     _widthAnchor = [arg3 copy];
     _heightAnchor = [arg4 copy];
     _name = [arg5 copy];
+    _superItem = nil;
+
+    return self;
+}
+
+- (id)initWithName:(id)aName inItem:(id)superItem
+{
+    self = [super init];
+
+    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:[CPString stringWithFormat:@"%@.leading", aName] inItem:self];
+    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:[CPString stringWithFormat:@"%@.top", aName] inItem:self];
+    _widthAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:@"%@.width", aName] inItem:self];
+    _heightAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:@"%@.height", aName] inItem:self];
+    _name = [aName copy];
+    _superItem = superItem;
 
     return self;
 }
