@@ -666,9 +666,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 // CONSTRAINTS MANAGEMENT
 - (void)updateConstraints
 {
-    var gravityConstraints = [self _generateGravityConstraints];
-    var viewConstraints = [self _generateViewsConstraints];
-    var newConstraints = [gravityConstraints arrayByAddingObjectsFromArray:viewConstraints];
+    var newConstraints = [self _generateGravityConstraints];
 
     var constraintsToAdd = [newConstraints arrayByExcludingObjectsInArray:_stackConstraints],
         constraintsToRemove = [_stackConstraints arrayByExcludingObjectsInArray:newConstraints];
@@ -686,61 +684,74 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 - (CPArray)_generateGravityConstraints
 {
     var result = @[];
-    var previousLayoutRect = nil,
-        count = [self countOfGravities];
+    var count = [self countOfGravities];
+
+    var leading_attr = CPLayoutAttributeLeading - 2 * _orientation,
+        leading_perp_attr = CPLayoutAttributeTop + 2 * _orientation,
+        trailing_attr = CPLayoutAttributeTrailing - 2 * _orientation,
+        trailing_perp_attr = CPLayoutAttributeBottom + 2 * _orientation,
+        dimension_attr = CPLayoutAttributeWidth + _orientation,
+        center_attr = CPLayoutAttributeCenterX + _orientation;
+
+    var stackLeadingAnchor = [self layoutAnchorForAttribute:leading_attr],
+        stackTrailingAnchor = [self layoutAnchorForAttribute:trailing_attr],
+        stackAlignmentLeadingAnchor = [self layoutAnchorForAttribute:leading_perp_attr],
+        stackAlignmentTrailingAnchor = [self layoutAnchorForAttribute:trailing_perp_attr];
+
+    var leadingInset = [self _leadingInsetForOrientation:_orientation],
+        trailingInset = [self _trailingInsetForOrientation:_orientation],
+        alignmentLeadingInset = [self _leadingInsetForOrientation:(1 - _orientation)],
+        alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)];
+
+    var previousLeadingAnchor = stackLeadingAnchor;
 
     [self _enumerateGravitiesUsingBlock:function(aGravity, idx, stop)
     {
-        var layoutRect = [self _layoutRectForGravity:aGravity];
+        var gravityRect = [self _layoutRectForGravity:aGravity];
 
-        var leading, top, bottom;
+        var gravityLeadingAnchor = [gravityRect layoutAnchorForAttribute:leading_attr],
+            gravityTrailingAnchor = [gravityRect layoutAnchorForAttribute:trailing_attr],
+            gravityAlignmentLeadingAnchor = [gravityRect layoutAnchorForAttribute:leading_perp_attr],
+            gravityAlignmentTrailingAnchor = [gravityRect layoutAnchorForAttribute:trailing_perp_attr];
+
+        var leading;
 
         if (idx == 0)
         {
-            leading = [[layoutRect leadingAnchorForOrientation:_orientation] constraintEqualToAnchor:[self leadingAnchorForOrientation:_orientation] constant:_spacing];
-            top = [[layoutRect leadingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[self leadingAnchorForOrientation:(1-_orientation)] constant:_spacing];
-            bottom = [[layoutRect trailingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[self trailingAnchorForOrientation:(1-_orientation)] constant:-_spacing];
+            leading = [gravityLeadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset];
         }
         else
         {
-            leading = [[layoutRect leadingAnchorForOrientation:_orientation] constraintEqualToAnchor:[previousLayoutRect trailingAnchorForOrientation:_orientation] constant:_spacing];
-            top = [[layoutRect leadingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[previousLayoutRect leadingAnchorForOrientation:(1-_orientation)]];
-            bottom = [[layoutRect trailingAnchorForOrientation:(1-_orientation)] constraintEqualToAnchor:[previousLayoutRect trailingAnchorForOrientation:(1-_orientation)]];
+            leading = [gravityLeadingAnchor constraintEqualToAnchor:previousLeadingAnchor constant:_spacing];
         }
+
+        var top = [gravityAlignmentLeadingAnchor constraintEqualToAnchor:stackAlignmentLeadingAnchor constant:alignmentLeadingInset];
+        var bottom = [gravityAlignmentTrailingAnchor constraintEqualToAnchor:stackAlignmentTrailingAnchor constant:-alignmentTrailingInset];
 
         [result addObjectsFromArray:@[leading, top, bottom]];
 
         if (idx == count - 1)
         {
-            var trailing = [[layoutRect trailingAnchorForOrientation:_orientation] constraintEqualToAnchor:[self trailingAnchorForOrientation:_orientation] constant:-_spacing];
+            var trailing = [gravityTrailingAnchor constraintEqualToAnchor:stackTrailingAnchor constant:-trailingInset];
             [result addObject:trailing];
         }
 
-        previousLayoutRect = layoutRect;
+        if (aGravity == CPStackViewGravityCenter && count == 3)
+        {
+            var gravityCenterAnchor = [gravityRect layoutAnchorForAttribute:center_attr],
+                stackCenterAnchor = [self layoutAnchorForAttribute:center_attr],
+                center = [gravityCenterAnchor constraintEqualToAnchor:stackCenterAnchor];
+
+            [center setPriority:CPLayoutPriorityDefaultLow];
+            [result addObject:center];
+        }
+
+        previousLeadingAnchor = gravityTrailingAnchor;
+
+        var viewConstraints = [self _generateViewsConstraintsInGravity:aGravity];
+        [result addObjectsFromArray:viewConstraints];
     }];
 
-    if (count == 3)
-    {
-        var gravityCenterAnchor = [[self _layoutRectForGravity:CPStackViewGravityCenter] centerAnchorForOrientation:_orientation],
-            centerAnchor = [self centerAnchorForOrientation:_orientation],
-            center = [gravityCenterAnchor constraintEqualToAnchor:centerAnchor];
-
-        [center setPriority:CPLayoutPriorityDefaultLow];
-        [result addObject:center];
-    }
-
-    return result;
-}
-
-- (CPArray)_generateViewsConstraints
-{
-    var result = @[];
-
-    [self _enumerateGravitiesUsingBlock:function(aGravity, idx, stop)
-    {
-        var viewsConstraints = [self _generateViewsConstraintsInGravity:aGravity];
-        [result addObjectsFromArray:viewsConstraints];
-    }];
 
     return result;
 }
@@ -749,29 +760,35 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 {
     var result = @[],
         previousView = nil,
-        views = [self viewsInGravity:aGravity],
-        last = [views count] - 1;
+        dimension_attr = CPLayoutAttributeWidth + _orientation,
+        center_attr = CPLayoutAttributeCenterX + _orientation;
 
-    var gravityLeadingAnchor = [self leadingAnchorForOrientation:_orientation inGravity:aGravity],
-        gravityTrailingAnchor = [self trailingAnchorForOrientation:_orientation inGravity:aGravity],
-        gravityAlignmentLeadingAnchor = [self leadingAnchorForOrientation:(1 - _orientation) inGravity:aGravity],
-        gravityAlignmentTrailingAnchor = [self trailingAnchorForOrientation:(1 - _orientation) inGravity:aGravity],
+    var views = [self viewsInGravity:aGravity],
+        last = [views count] - 1,
+        gravityRect = [self _layoutRectForGravity:aGravity];
 
-        huggingPriority = [self huggingPriorityForOrientation:_orientation],
+    var huggingPriority = [self huggingPriorityForOrientation:_orientation],
         alignmentHuggingpriority = [self huggingPriorityForOrientation:(1 - _orientation)],
-        clippingPriority = [self clippingResistancePriorityForOrientation:_orientation],
+        clippingPriority = [self clippingResistancePriorityForOrientation:_orientation];
 
-        leadingInset = [self _leadingInsetForOrientation:_orientation],
-        trailingInset = [self _trailingInsetForOrientation:_orientation],
-        alignmentLeadingInset = [self _leadingInsetForOrientation:(1 - _orientation)],
-        alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)];
+    var leading_attr = CPLayoutAttributeLeading - 2 * _orientation,
+        leading_perp_attr = CPLayoutAttributeTop + 2 * _orientation,
+        trailing_attr = CPLayoutAttributeTrailing - 2 * _orientation,
+        trailing_perp_attr = CPLayoutAttributeBottom + 2 * _orientation,
+        dimension_attr = CPLayoutAttributeWidth + _orientation,
+        center_attr = CPLayoutAttributeCenterX + _orientation;
+
+    var gravityLeadingAnchor = [gravityRect layoutAnchorForAttribute:leading_attr],
+        gravityTrailingAnchor = [gravityRect layoutAnchorForAttribute:trailing_attr],
+        gravityAlignmentLeadingAnchor = [gravityRect layoutAnchorForAttribute:leading_perp_attr],
+        gravityAlignmentTrailingAnchor = [gravityRect layoutAnchorForAttribute:trailing_perp_attr];
 
     [views enumerateObjectsUsingBlock:function(aView, idx, stop)
     {
-        var leadingAnchor = [aView leadingAnchorForOrientation:_orientation],
-            trailingAnchor = [aView trailingAnchorForOrientation:_orientation],
-            alignmentLeadingAnchor = [aView leadingAnchorForOrientation:(1 - _orientation)],
-            alignmentTrailingAnchor = [aView trailingAnchorForOrientation:(1 - _orientation)];
+        var leadingAnchor = [aView layoutAnchorForAttribute:leading_attr],
+            trailingAnchor = [aView layoutAnchorForAttribute:trailing_attr],
+            alignmentLeadingAnchor = [aView layoutAnchorForAttribute:leading_perp_attr],
+            alignmentTrailingAnchor = [aView layoutAnchorForAttribute:trailing_perp_attr];
 
         var alignment = [CPLayoutConstraint constraintWithItem:aView attribute:_alignment relatedBy:CPLayoutRelationEqual toItem:[self _layoutRectForGravity:aGravity] attribute:_alignment multiplier:1 constant:0];
         [alignment setPriority:_alignmentPriority];
@@ -796,7 +813,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         }
         else
         {
-            var previousViewTrailingAnchor = [previousView trailingAnchorForOrientation:_orientation];
+            var previousViewTrailingAnchor = [previousView layoutAnchorForAttribute:trailing_attr];
             var distance = [CPDistanceLayoutDimension distanceFromAnchor:previousViewTrailingAnchor toAnchor:leadingAnchor];
 
             var minSpacing = [distance constraintGreaterThanOrEqualToConstant:_spacing];
@@ -831,8 +848,10 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
         if (_distribution == CPStackViewDistributionFillEqually)
         {
-            var anchor = [aView dimensionForOrientation:_orientation];
-            var sizeConstraint = [anchor constraintEqualToAnchor:[self _idealSizeLayoutDimensionInGravity:aGravity]];
+            var anchor = [aView layoutAnchorForAttribute:dimension_attr],
+                idealSize = [self _idealSizeLayoutDimensionInGravity:aGravity],
+                sizeConstraint = [anchor constraintEqualToAnchor:idealSize];
+
             [sizeConstraint setPriority:CPStackViewDistributionPriority];
             [result addObject:sizeConstraint];
         }
@@ -840,7 +859,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         {
             var intrinsicSize = [aView intrinsicContentSize],
                 coeff = _orientation ? intrinsicSize.height : intrinsicSize.width,
-                anchor = [aView dimensionForOrientation:_orientation];
+                anchor = [aView layoutAnchorForAttribute:dimension_attr];
 
             var sizeConstraint = [anchor constraintEqualToAnchor:[self _idealSizeLayoutDimensionInGravity:aGravity] multiplier:coeff constant:0];
             [sizeConstraint setPriority:CPStackViewDistributionPriority];
@@ -864,11 +883,12 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     var result = @[],
         views = [self viewsInGravity:aGravity],
         count = [views count],
-        huggingPriority = [self huggingPriorityForOrientation:_orientation];
+        huggingPriority = [self huggingPriorityForOrientation:_orientation],
+        center_attr = CPLayoutAttributeCenterX - _orientation;
 
     [views enumerateObjectsUsingBlock:function(aView, idx, stop)
     {
-        var midAnchor = [aView centerAnchorForOrientation:_orientation],
+        var midAnchor = [aView layoutAnchorForAttribute:center_attr],
             opposite = count - 1 - idx;
 
         if (idx == opposite)
@@ -878,10 +898,10 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         else
         {
             var opp_view = [views objectAtIndex:opposite];
-            midAnchor = [midAnchor anchorAtMidpointToAnchor:[opp_view centerAnchorForOrientation:_orientation]];
+            midAnchor = [midAnchor anchorAtMidpointToAnchor:[opp_view layoutAnchorForAttribute:center_attr]];
         }
 
-        var centering = [midAnchor constraintEqualToAnchor:[self centerAnchorForOrientation:_orientation]];
+        var centering = [midAnchor constraintEqualToAnchor:[self layoutAnchorForAttribute:center_attr]];
         [centering setPriority:CPStackViewDistributionPriority];
         [result addObject:centering];
     }];
@@ -901,30 +921,6 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     }
 
     return result;
-}
-
-- (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
-{
-    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
-    return orientation ? [gravityLayoutRect topAnchor] : [gravityLayoutRect leadingAnchor];
-}
-
-- (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
-{
-    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
-    return orientation ? [gravityLayoutRect bottomAnchor] : [gravityLayoutRect trailingAnchor];
-}
-
-- (CPLayoutAnchor)centerAnchorForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
-{
-    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
-    return orientation ? [gravityLayoutRect centerYAnchor] : [gravityLayoutRect centerXAnchor];
-}
-
-- (CPLayoutAnchor)dimensionForOrientation:(CPLayoutConstraintOrientation)orientation inGravity:(CPInteger)gravity
-{
-    var gravityLayoutRect = [self _layoutRectForGravity:gravity];
-    return orientation ? [gravityLayoutRect heightAnchor] : [gravityLayoutRect widthAnchor];
 }
 
 - (CPInteger)_leadingInsetForOrientation:(CPLayoutConstraintOrientation)orientation
@@ -1125,54 +1121,6 @@ var CPStackViewAlignment = "CPStackViewAlignment",
     [aCoder encodeInt:_verticalHuggingPriority forKey:CPStackViewVerticalHugging];
     [aCoder encodeInt:_horizontalClippingResistancePriority forKey:CPStackViewHorizontalClippingResistance];
     [aCoder encodeInt:_verticalClippingResistancePriority forKey:CPStackViewVerticalClippingResistance];
-}
-
-@end
-
-@implementation CPView (CPStackView)
-
-- (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self topAnchor] : [self leadingAnchor];
-}
-
-- (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self bottomAnchor] : [self trailingAnchor];
-}
-
-- (CPLayoutAnchor)centerAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self centerYAnchor] : [self centerXAnchor];
-}
-
-- (CPLayoutAnchor)dimensionForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self heightAnchor] : [self widthAnchor];
-}
-
-@end
-
-@implementation CPLayoutRect (CPStackView)
-
-- (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self topAnchor] : [self leadingAnchor];
-}
-
-- (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self bottomAnchor] : [self trailingAnchor];
-}
-
-- (CPLayoutAnchor)centerAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self centerYAnchor] : [self centerXAnchor];
-}
-
-- (CPLayoutAnchor)dimensionForOrientation:(CPLayoutConstraintOrientation)orientation
-{
-    return orientation ? [self heightAnchor] : [self widthAnchor];
 }
 
 @end
