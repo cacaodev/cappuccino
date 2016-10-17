@@ -94,9 +94,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         var item = [self _referenceItem],
             prefix = [item UID],
             engine = [item _layoutEngine];
-#if DEBUG
-            prefix += "-" + [item debugID];
-#endif
+
         _variable = [engine variableWithPrefix:prefix name:[self name] value:[self valueInLayoutSpace] owner:self];
     }
 
