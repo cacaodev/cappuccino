@@ -683,8 +683,8 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 - (CPArray)_generateGravityConstraints
 {
-    var result = @[];
-    var count = [self countOfGravities];
+    var result = @[],
+        count = [self countOfGravities];
 
     var leading_attr = CPLayoutAttributeLeading - 2 * _orientation,
         leading_perp_attr = CPLayoutAttributeTop + 2 * _orientation,
@@ -703,7 +703,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         alignmentLeadingInset = [self _leadingInsetForOrientation:(1 - _orientation)],
         alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)];
 
-    var previousLeadingAnchor = stackLeadingAnchor;
+    var previousTrailingAnchor = nil;
 
     [self _enumerateGravitiesUsingBlock:function(aGravity, idx, stop)
     {
@@ -718,17 +718,24 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
         if (idx == 0)
         {
-            leading = [gravityLeadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset];
+            var leading = [gravityLeadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset];
+            [result addObject:leading];
         }
         else
         {
-            leading = [gravityLeadingAnchor constraintEqualToAnchor:previousLeadingAnchor constant:_spacing];
+            var min_spacing = [gravityLeadingAnchor constraintGreaterThanOrEqualToAnchor:previousTrailingAnchor constant:_spacing];
+            [min_spacing setPriority:CPLayoutPriorityRequired];
+
+            var spacing = [gravityLeadingAnchor constraintEqualToAnchor:previousTrailingAnchor constant:_spacing];
+            [spacing setPriority:[self huggingPriorityForOrientation:_orientation]];
+
+            [result addObjectsFromArray:@[min_spacing, spacing]];
         }
 
-        var top = [gravityAlignmentLeadingAnchor constraintEqualToAnchor:stackAlignmentLeadingAnchor constant:alignmentLeadingInset];
-        var bottom = [gravityAlignmentTrailingAnchor constraintEqualToAnchor:stackAlignmentTrailingAnchor constant:-alignmentTrailingInset];
+        var top = [gravityAlignmentLeadingAnchor constraintEqualToAnchor:stackAlignmentLeadingAnchor constant:alignmentLeadingInset],
+            bottom = [gravityAlignmentTrailingAnchor constraintEqualToAnchor:stackAlignmentTrailingAnchor constant:-alignmentTrailingInset];
 
-        [result addObjectsFromArray:@[leading, top, bottom]];
+        [result addObjectsFromArray:@[top, bottom]];
 
         if (idx == count - 1)
         {
@@ -746,7 +753,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             [result addObject:center];
         }
 
-        previousLeadingAnchor = gravityTrailingAnchor;
+        previousTrailingAnchor = gravityTrailingAnchor;
 
         var viewConstraints = [self _generateViewsConstraintsInGravity:aGravity];
         [result addObjectsFromArray:viewConstraints];
