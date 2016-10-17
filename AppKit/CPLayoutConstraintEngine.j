@@ -187,7 +187,9 @@ var CPLayoutItemIsNull          = 2,
     var onsuccess = function(constraint)
     {
         _constraintToOwnerMap.delete(constraint);
+#if (DEBUG)
         EngineLog("Removed " + type + " in " + containerId + " : " + constraint.toString());
+#endif
         [_delegate engine:self constraintDidChangeInContainer:container];
     };
 
