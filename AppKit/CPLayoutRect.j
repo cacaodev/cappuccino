@@ -1,5 +1,6 @@
 @import "CPLayoutAnchor.j"
 
+@class CPLayoutPoint
 @implementation CPLayoutRect : CPObject
 {
     CPLayoutXAxisAnchor _leadingAnchor @accessors(getter=leadingAnchor);
@@ -73,7 +74,7 @@
 - (id)description
 {
     if (_name !== nil)
-        return [CPString stringWithFormat:@"%@ <%@ %@>", [self class], self, _name];
+        return [CPString stringWithFormat:@"<%@ %@ %@>", [self class], [self UID], _name];
 
     return [super description];
 }
@@ -83,7 +84,7 @@
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:0.5 constant:0];
 
     if (_name)
-      result = [result anchorWithName:[CPString stringWithFormat:@"%@__centerY", _name]];
+        [result _setName:[CPString stringWithFormat:@"%@.centerY", _name]];
 
     return result;
 }
@@ -93,7 +94,7 @@
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:1 constant:0];
 
     if (_name)
-      result = [result anchorWithName:[CPString stringWithFormat:@"%@__bottom", _name]];
+        [result _setName:[CPString stringWithFormat:@"%@.bottom", _name]];
 
     return result;
 }
@@ -103,7 +104,7 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:0.5 constant:0];
 
     if (_name)
-      result = [result anchorWithName:[CPString stringWithFormat:@"%@__centerX", _name]];
+        [result _setName:[CPString stringWithFormat:@"%@.centerX", _name]];
 
     return result;
 }
@@ -113,7 +114,7 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:1 constant:0];
 
     if (_name)
-        result = [result anchorWithName:[CPString stringWithFormat:@"%@__trailing", _name]];
+        [result _setName:[CPString stringWithFormat:@"%@.trailing", _name]];
 
     return result;
 }
