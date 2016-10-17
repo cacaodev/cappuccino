@@ -759,9 +759,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 - (CPArray)_generateViewsConstraintsInGravity:(CPStackViewGravity)aGravity
 {
     var result = @[],
-        previousView = nil,
-        dimension_attr = CPLayoutAttributeWidth + _orientation,
-        center_attr = CPLayoutAttributeCenterX + _orientation;
+        previousView = nil;
 
     var views = [self viewsInGravity:aGravity],
         last = [views count] - 1,
@@ -884,7 +882,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         views = [self viewsInGravity:aGravity],
         count = [views count],
         huggingPriority = [self huggingPriorityForOrientation:_orientation],
-        center_attr = CPLayoutAttributeCenterX - _orientation;
+        center_attr = CPLayoutAttributeCenterX + _orientation;
 
     [views enumerateObjectsUsingBlock:function(aView, idx, stop)
     {
