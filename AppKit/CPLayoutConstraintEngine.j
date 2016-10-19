@@ -9,18 +9,14 @@
 @typedef SimplexSolver
 @typedef Map
 
-/*
-var CPLayoutItemIsNull          = 2,
-    CPLayoutItemIsContainer     = 4,
-    CPLayoutItemIsNotContainer  = 8;
-*/
+var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
+
 @implementation CPLayoutConstraintEngine : CPObject
 {
     SimplexSolver _simplexSolver;
     Map           _constraintToOwnerMap;
     Map           _variableToOwnerMap;
     CPArray       _editingVariables;
-    Object        _defaultEditStrength;
     id            _delegate @accessors(getter=delegate);
 }
 
@@ -41,7 +37,6 @@ var CPLayoutItemIsNull          = 2,
     _variableToOwnerMap = new Map();
     _constraintToOwnerMap = new Map();
     _editingVariables = nil;
-    _defaultEditStrength = c.Strength.strong;
     _delegate = aDelegate;
 
     _simplexSolver = new c.SimplexSolver();
@@ -71,7 +66,7 @@ var CPLayoutItemIsNull          = 2,
     {
         variables.forEach(function(variable)
         {
-           _simplexSolver.addEditVar(variable, _defaultEditStrength, 1);
+           _simplexSolver.addEditVar(variable, SOLVER_DEFAULT_EDIT_STRENGTH, 1);
         });
 
         _editingVariables = variables;
@@ -257,12 +252,8 @@ var CPLayoutItemIsNull          = 2,
 
 var StrengthForPriority = function(p)
 {
-//    var h = Math.floor(p / 100),
-//        d = Math.floor((p - 100*c) / 10),
-//        n = p - 100*c - 10*d;
-//    (new c.Strength("", h, d, n))
     if (p >= 1000)
-        return {strength:c.Strength.required, weight:p};
+        return {strength:c.Strength.required, weight:1};
 
     return {strength:c.Strength.medium, weight:p};
 };
