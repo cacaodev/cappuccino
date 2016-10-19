@@ -159,7 +159,10 @@ var CPLayoutItemIsNull          = 2,
 
     var onerror = function(error, constraint)
     {
+        CPLog.warn("Unable to simultaneously satisfy constraints.\nThe following constraint conflicts with an existing constraint.\n" + [aConstraint description] + "\nYou can fix the problem by changing the current required priority to a lower priority.");
+#if (DEBUG)
         EngineWarn(containerId + ": could not add " + type + " " + constraint.toString() + " with error " + error);
+#endif
     };
 
     var engine_constraints = [aConstraint _engineConstraints];
