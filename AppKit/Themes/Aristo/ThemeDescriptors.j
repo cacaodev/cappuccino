@@ -2740,9 +2740,9 @@ var themedButtonValues = nil,
         [@"warning-image",                      warningIcon]
     ];
 
-    [self registerThemeValues:themedAlertValues forView:alert];
+    [self registerThemeValues:themedAlertValues forObject:alert];
 
-    return [alert themeView];
+    return alert;
 }
 
 + (CPStepper)themedStepper
@@ -3778,9 +3778,9 @@ var themedButtonValues = nil,
             [@"suppression-button-text-color",  [CPColor whiteColor]],
         ];
 
-    [self registerThemeValues:hudSpecificValues forView:alert inherit:themedAlertValues];
+    [self registerThemeValues:hudSpecificValues forObject:alert inherit:themedAlertValues];
 
-    return [alert themeView];
+    return alert;
 }
 
 + (CPProgressIndicator)themedBarProgressIndicator

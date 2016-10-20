@@ -33,6 +33,7 @@
 @import "CPFont.j"
 @import "CPImage.j"
 @import "CPImageView.j"
+@import "_CPObject+Theme.j"
 @import "CPPanel.j"
 @import "CPText.j"
 @import "CPTextField.j"
@@ -71,8 +72,59 @@ var bottomHeight = 71;
 
 @end
 
+/*!
+    @ingroup appkit
 
-@implementation _CPAlertThemeView : CPView
+    CPAlert is an alert panel that can be displayed modally to present the
+    user with a message and one or more options.
+
+    It can be used to display an information message \c CPInformationalAlertStyle,
+    a warning message \c CPWarningAlertStyle (the default), or a critical
+    alert \c CPCriticalAlertStyle. In each case the user can be presented with one
+    or more options by adding buttons using the \c -addButtonWithTitle: method.
+
+    The panel is displayed modally by calling \c -runModal and once the user has
+    dismissed the panel, a message will be sent to the panel's delegate (if set), informing
+    it which button was clicked (see delegate methods).
+
+    @delegate -(void)alertDidEnd:(CPAlert)theAlert returnCode:(int)returnCode;
+    Called when the user dismisses the alert by clicking one of the buttons.
+    @param theAlert the alert panel that the user dismissed
+    @param returnCode the index of the button that the user clicked (starting from 0,
+           representing the first button added to the alert which appears on the
+           right, 1 representing the next button to the left and so on)
+*/
+@implementation CPAlert : CPObject <CPTheme>
+{
+    BOOL                    _showHelp                   @accessors(property=showsHelp);
+    BOOL                    _showSuppressionButton      @accessors(property=showsSuppressionButton);
+
+    CPAlertStyle            _alertStyle                 @accessors(property=alertStyle);
+    CPString                _title                      @accessors(property=title);
+    CPView                  _accessoryView              @accessors(property=accessoryView);
+    CPImage                 _icon                       @accessors(property=icon);
+
+    CPArray                 _buttons                    @accessors(property=buttons, readonly);
+    CPCheckBox              _suppressionButton          @accessors(property=suppressionButton, readonly);
+
+    id <CPAlertDelegate>    _delegate                   @accessors(property=delegate);
+    id                      _modalDelegate;
+    SEL                     _didEndSelector             @accessors(property=didEndSelector);
+    Function                _didEndBlock;
+    unsigned                _implementedDelegateMethods;
+
+    CPWindow                _window                     @accessors(property=window, readonly);
+    int                     _defaultWindowStyle;
+
+    CPImageView             _alertImageView;
+    CPTextField             _informativeLabel;
+    CPTextField             _messageLabel;
+    CPButton                _alertHelpButton;
+
+    BOOL                    _needsLayout;
+}
+
+#pragma mark Theming
 
 + (CPString)defaultThemeClass
 {
@@ -115,61 +167,6 @@ var bottomHeight = 71;
             @"standard-window-button-margin-y": 0.0,
             @"standard-window-button-margin-x": 0.0,
         };
-}
-
-@end
-
-/*!
-    @ingroup appkit
-
-    CPAlert is an alert panel that can be displayed modally to present the
-    user with a message and one or more options.
-
-    It can be used to display an information message \c CPInformationalAlertStyle,
-    a warning message \c CPWarningAlertStyle (the default), or a critical
-    alert \c CPCriticalAlertStyle. In each case the user can be presented with one
-    or more options by adding buttons using the \c -addButtonWithTitle: method.
-
-    The panel is displayed modally by calling \c -runModal and once the user has
-    dismissed the panel, a message will be sent to the panel's delegate (if set), informing
-    it which button was clicked (see delegate methods).
-
-    @delegate -(void)alertDidEnd:(CPAlert)theAlert returnCode:(int)returnCode;
-    Called when the user dismisses the alert by clicking one of the buttons.
-    @param theAlert the alert panel that the user dismissed
-    @param returnCode the index of the button that the user clicked (starting from 0,
-           representing the first button added to the alert which appears on the
-           right, 1 representing the next button to the left and so on)
-*/
-@implementation CPAlert : CPObject
-{
-    BOOL                    _showHelp                   @accessors(property=showsHelp);
-    BOOL                    _showSuppressionButton      @accessors(property=showsSuppressionButton);
-
-    CPAlertStyle            _alertStyle                 @accessors(property=alertStyle);
-    CPString                _title                      @accessors(property=title);
-    CPView                  _accessoryView              @accessors(property=accessoryView);
-    CPImage                 _icon                       @accessors(property=icon);
-
-    CPArray                 _buttons                    @accessors(property=buttons, readonly);
-    CPCheckBox              _suppressionButton          @accessors(property=suppressionButton, readonly);
-
-    id <CPAlertDelegate>    _delegate                   @accessors(property=delegate);
-    id                      _modalDelegate;
-    SEL                     _didEndSelector             @accessors(property=didEndSelector);
-    Function                _didEndBlock;
-    unsigned                _implementedDelegateMethods;
-
-    _CPAlertThemeView       _themeView                  @accessors(property=themeView, readonly);
-    CPWindow                _window                     @accessors(property=window, readonly);
-    int                     _defaultWindowStyle;
-
-    CPImageView             _alertImageView;
-    CPTextField             _informativeLabel;
-    CPTextField             _messageLabel;
-    CPButton                _alertHelpButton;
-
-    BOOL                    _needsLayout;
 }
 
 #pragma mark Creating Alerts
@@ -233,7 +230,6 @@ var bottomHeight = 71;
         _showHelp           = NO;
         _needsLayout        = YES;
         _defaultWindowStyle = _CPModalWindowMask;
-        _themeView          = [_CPAlertThemeView new];
 
         _messageLabel       = [CPTextField labelWithTitle:@"Alert"];
         _alertImageView     = [[CPImageView alloc] init];
@@ -274,11 +270,6 @@ var bottomHeight = 71;
 
 #pragma mark Accessors
 
-- (CPTheme)theme
-{
-    return [_themeView theme];
-}
-
 /*!
     set the theme to use
 
@@ -296,19 +287,8 @@ var bottomHeight = 71;
 
     _window = nil; // will be regenerated at next layout
     _needsLayout = YES;
-    [_themeView setTheme:aTheme];
+    [super setTheme:aTheme];
 }
-
-- (void)setValue:(id)aValue forThemeAttribute:(CPString)aName
-{
-    [_themeView setValue:aValue forThemeAttribute:aName];
-}
-
-- (void)setValue:(id)aValue forThemeAttribute:(CPString)aName inState:(ThemeState)aState
-{
-    [_themeView setValue:aValue forThemeAttribute:aName inState:aState];
-}
-
 
 /*! @deprecated */
 - (void)setWindowStyle:(int)style
@@ -445,16 +425,16 @@ var bottomHeight = 71;
 */
 - (void)_layoutMessageView
 {
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
+    var inset = [self currentValueForThemeAttribute:@"content-inset"],
         sizeWithFontCorrection = 6.0,
         messageLabelWidth,
         messageLabelTextSize;
 
-    [_messageLabel setTextColor:[_themeView currentValueForThemeAttribute:@"message-text-color"]];
-    [_messageLabel setFont:[_themeView currentValueForThemeAttribute:@"message-text-font"]];
-    [_messageLabel setTextShadowColor:[_themeView currentValueForThemeAttribute:@"message-text-shadow-color"]];
-    [_messageLabel setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"message-text-shadow-offset"]];
-    [_messageLabel setAlignment:[_themeView currentValueForThemeAttribute:@"message-text-alignment"]];
+    [_messageLabel setTextColor:[self currentValueForThemeAttribute:@"message-text-color"]];
+    [_messageLabel setFont:[self currentValueForThemeAttribute:@"message-text-font"]];
+    [_messageLabel setTextShadowColor:[self currentValueForThemeAttribute:@"message-text-shadow-color"]];
+    [_messageLabel setTextShadowOffset:[self currentValueForThemeAttribute:@"message-text-shadow-offset"]];
+    [_messageLabel setAlignment:[self currentValueForThemeAttribute:@"message-text-alignment"]];
     [_messageLabel setLineBreakMode:CPLineBreakByWordWrapping];
 
     messageLabelWidth = CGRectGetWidth([[_window contentView] frame]) - inset.left - inset.right;
@@ -468,18 +448,18 @@ var bottomHeight = 71;
 */
 - (void)_layoutInformativeView
 {
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
+    var inset = [self currentValueForThemeAttribute:@"content-inset"],
+        defaultElementsMargin = [self currentValueForThemeAttribute:@"default-elements-margin"],
         sizeWithFontCorrection = 6.0,
         informativeLabelWidth,
         informativeLabelOriginY,
         informativeLabelTextSize;
 
-    [_informativeLabel setTextColor:[_themeView currentValueForThemeAttribute:@"informative-text-color"]];
-    [_informativeLabel setFont:[_themeView currentValueForThemeAttribute:@"informative-text-font"]];
-    [_informativeLabel setTextShadowColor:[_themeView currentValueForThemeAttribute:@"informative-text-shadow-color"]];
-    [_informativeLabel setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"informative-text-shadow-offset"]];
-    [_informativeLabel setAlignment:[_themeView currentValueForThemeAttribute:@"informative-text-alignment"]];
+    [_informativeLabel setTextColor:[self currentValueForThemeAttribute:@"informative-text-color"]];
+    [_informativeLabel setFont:[self currentValueForThemeAttribute:@"informative-text-font"]];
+    [_informativeLabel setTextShadowColor:[self currentValueForThemeAttribute:@"informative-text-shadow-color"]];
+    [_informativeLabel setTextShadowOffset:[self currentValueForThemeAttribute:@"informative-text-shadow-offset"]];
+    [_informativeLabel setAlignment:[self currentValueForThemeAttribute:@"informative-text-alignment"]];
     [_informativeLabel setLineBreakMode:CPLineBreakByWordWrapping];
 
     informativeLabelWidth = CGRectGetWidth([[_window contentView] frame]) - inset.left - inset.right;
@@ -497,8 +477,8 @@ var bottomHeight = 71;
     if (!_accessoryView)
         return;
 
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
+    var inset = [self currentValueForThemeAttribute:@"content-inset"],
+        defaultElementsMargin = [self currentValueForThemeAttribute:@"default-elements-margin"],
         accessoryViewWidth = CGRectGetWidth([[_window contentView] frame]) - inset.left - inset.right,
         accessoryViewOriginY = CGRectGetMaxY([_informativeLabel frame]) + defaultElementsMargin;
 
@@ -514,16 +494,16 @@ var bottomHeight = 71;
     if (!_showSuppressionButton)
         return;
 
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        suppressionViewXOffset = [_themeView currentValueForThemeAttribute:@"suppression-button-x-offset"],
-        suppressionViewYOffset = [_themeView currentValueForThemeAttribute:@"suppression-button-y-offset"],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
+    var inset = [self currentValueForThemeAttribute:@"content-inset"],
+        suppressionViewXOffset = [self currentValueForThemeAttribute:@"suppression-button-x-offset"],
+        suppressionViewYOffset = [self currentValueForThemeAttribute:@"suppression-button-y-offset"],
+        defaultElementsMargin = [self currentValueForThemeAttribute:@"default-elements-margin"],
         suppressionButtonViewOriginY = CGRectGetMaxY([(_accessoryView || _informativeLabel) frame]) + defaultElementsMargin + suppressionViewYOffset;
 
-    [_suppressionButton setTextColor:[_themeView currentValueForThemeAttribute:@"suppression-button-text-color"]];
-    [_suppressionButton setFont:[_themeView currentValueForThemeAttribute:@"suppression-button-text-font"]];
-    [_suppressionButton setTextShadowColor:[_themeView currentValueForThemeAttribute:@"suppression-button-text-shadow-color"]];
-    [_suppressionButton setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"suppression-button-text-shadow-offset"]];
+    [_suppressionButton setTextColor:[self currentValueForThemeAttribute:@"suppression-button-text-color"]];
+    [_suppressionButton setFont:[self currentValueForThemeAttribute:@"suppression-button-text-font"]];
+    [_suppressionButton setTextShadowColor:[self currentValueForThemeAttribute:@"suppression-button-text-shadow-color"]];
+    [_suppressionButton setTextShadowOffset:[self currentValueForThemeAttribute:@"suppression-button-text-shadow-offset"]];
     [_suppressionButton sizeToFit];
 
     [_suppressionButton setFrameOrigin:CGPointMake(inset.left + suppressionViewXOffset, suppressionButtonViewOriginY)];
@@ -535,12 +515,12 @@ var bottomHeight = 71;
 */
 - (CGSize)_layoutButtonsFromView:(CPView)lastView
 {
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        minimumSize = [_themeView currentValueForThemeAttribute:@"size"],
-        buttonOffset = [_themeView currentValueForThemeAttribute:@"button-offset"],
-        helpLeftOffset = [_themeView currentValueForThemeAttribute:@"help-image-left-offset"],
+    var inset = [self currentValueForThemeAttribute:@"content-inset"],
+        minimumSize = [self currentValueForThemeAttribute:@"size"],
+        buttonOffset = [self currentValueForThemeAttribute:@"button-offset"],
+        helpLeftOffset = [self currentValueForThemeAttribute:@"help-image-left-offset"],
         aRepresentativeButton = [_buttons objectAtIndex:0],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
+        defaultElementsMargin = [self currentValueForThemeAttribute:@"default-elements-margin"],
         panelSize = [[_window contentView] frame].size,
         buttonsOriginY,
         buttonMarginY,
@@ -561,13 +541,13 @@ var bottomHeight = 71;
     switch ([_window styleMask])
     {
         case _CPModalWindowMask:
-            buttonMarginY = [_themeView currentValueForThemeAttribute:@"modal-window-button-margin-y"];
-            buttonMarginX = [_themeView currentValueForThemeAttribute:@"modal-window-button-margin-x"];
+            buttonMarginY = [self currentValueForThemeAttribute:@"modal-window-button-margin-y"];
+            buttonMarginX = [self currentValueForThemeAttribute:@"modal-window-button-margin-x"];
             break;
 
         default:
-            buttonMarginY = [_themeView currentValueForThemeAttribute:@"standard-window-button-margin-y"];
-            buttonMarginX = [_themeView currentValueForThemeAttribute:@"standard-window-button-margin-x"];
+            buttonMarginY = [self currentValueForThemeAttribute:@"standard-window-button-margin-y"];
+            buttonMarginX = [self currentValueForThemeAttribute:@"standard-window-button-margin-x"];
             break;
     }
 
@@ -588,8 +568,8 @@ var bottomHeight = 71;
 
     if (_showHelp)
     {
-        var helpImage = [_themeView currentValueForThemeAttribute:@"help-image"],
-            helpImagePressed = [_themeView currentValueForThemeAttribute:@"help-image-pressed"],
+        var helpImage = [self currentValueForThemeAttribute:@"help-image"],
+            helpImagePressed = [self currentValueForThemeAttribute:@"help-image-pressed"],
             helpImageSize = helpImage ? [helpImage size] : CGSizeMakeZero(),
             helpFrame = CGRectMake(helpLeftOffset, buttonsOriginY, helpImageSize.width, helpImageSize.height);
 
@@ -614,7 +594,7 @@ var bottomHeight = 71;
     if (!_window)
         [self _createWindowWithStyle:nil];
 
-    var iconOffset = [_themeView currentValueForThemeAttribute:@"image-offset"],
+    var iconOffset = [self currentValueForThemeAttribute:@"image-offset"],
         theImage = _icon,
         finalSize;
 
@@ -622,13 +602,13 @@ var bottomHeight = 71;
         switch (_alertStyle)
         {
             case CPWarningAlertStyle:
-                theImage = [_themeView currentValueForThemeAttribute:@"warning-image"];
+                theImage = [self currentValueForThemeAttribute:@"warning-image"];
                 break;
             case CPInformationalAlertStyle:
-                theImage = [_themeView currentValueForThemeAttribute:@"information-image"];
+                theImage = [self currentValueForThemeAttribute:@"information-image"];
                 break;
             case CPCriticalAlertStyle:
-                theImage = [_themeView currentValueForThemeAttribute:@"error-image"];
+                theImage = [self currentValueForThemeAttribute:@"error-image"];
                 break;
         }
 
@@ -750,7 +730,7 @@ var bottomHeight = 71;
 - (void)_createWindowWithStyle:(int)forceStyle
 {
     var frame = CGRectMakeZero();
-    frame.size = [_themeView currentValueForThemeAttribute:@"size"];
+    frame.size = [self currentValueForThemeAttribute:@"size"];
 
     _window = [[CPPanel alloc] initWithContentRect:frame styleMask:forceStyle || _defaultWindowStyle];
     [_window setLevel:CPStatusWindowLevel];
