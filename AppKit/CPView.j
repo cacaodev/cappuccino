@@ -501,7 +501,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (void)setToolTip:(CPString)aToolTip
 {
-    if (_toolTip == aToolTip)
+    if (_toolTip === aToolTip)
         return;
 
     if (aToolTip && ![aToolTip isKindOfClass:CPString])
@@ -659,7 +659,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     [[self window] _dirtyKeyViewLoop];
 
     // If this is already one of our subviews, remove it.
-    if (aSubview._superview == self)
+    if (aSubview._superview === self)
     {
         var index = [_subviews indexOfObjectIdenticalTo:aSubview];
 
@@ -958,7 +958,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     do
     {
-        if (view == aView)
+        if (view === aView)
             return YES;
     } while(view = [view superview])
 
@@ -1073,7 +1073,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
 - (CPView)viewWithTag:(CPInteger)aTag
 {
-    if ([self tag] == aTag)
+    if ([self tag] === aTag)
         return self;
 
     var index = 0,
@@ -1125,7 +1125,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [[self superview] viewFrameChanged:[[CPNotification alloc] initWithName:CPViewFrameDidChangeNotification object:self userInfo:nil]];
 
     if (!_inhibitUpdateTrackingAreas)
-        [self _updateTrackingAreas];
+        [self _updateTrackingAreasWithRecursion:YES];
 }
 
 /*!
@@ -1198,7 +1198,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 #endif
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
-        [self _updateTrackingAreas];
+        [self _updateTrackingAreasWithRecursion:YES];
 }
 
 /*!
@@ -1354,7 +1354,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [[self superview] viewFrameChanged:[[CPNotification alloc] initWithName:CPViewFrameDidChangeNotification object:self userInfo:nil]];
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
-        [self _updateTrackingAreas];
+        [self _updateTrackingAreasWithRecursion:!_autoresizesSubviews];
 }
 
 /*!
@@ -1403,7 +1403,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [[self superview] viewBoundsChanged:[[CPNotification alloc] initWithName:CPViewBoundsDidChangeNotification object:self userInfo:nil]];
 
     if (!_inhibitUpdateTrackingAreas)
-        [self _updateTrackingAreas];
+        [self _updateTrackingAreasWithRecursion:YES];
 }
 
 /*!
@@ -1471,7 +1471,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [[self superview] viewBoundsChanged:[[CPNotification alloc] initWithName:CPViewBoundsDidChangeNotification object:self userInfo:nil]];
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
-        [self _updateTrackingAreas];
+        [self _updateTrackingAreasWithRecursion:YES];
 }
 
 /*!
@@ -1515,7 +1515,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [[self superview] viewBoundsChanged:[[CPNotification alloc] initWithName:CPViewBoundsDidChangeNotification object:self userInfo:nil]];
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
-        [self _updateTrackingAreas];
+        [self _updateTrackingAreasWithRecursion:YES];
 }
 
 
@@ -1527,7 +1527,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 {
     var mask = [self autoresizingMask];
 
-    if (mask == CPViewNotSizable)
+    if (mask === CPViewNotSizable)
         return;
 
     var frame = _superview._frame,
@@ -1712,7 +1712,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         {
             do
             {
-               if (self == view)
+               if (self === view)
                {
                   [_window makeFirstResponder:[self nextValidKeyView]];
                   break;
@@ -1838,7 +1838,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (void)setAlphaValue:(float)anAlphaValue
 {
-    if (_opacity == anAlphaValue)
+    if (_opacity === anAlphaValue)
         return;
 
     _opacity = anAlphaValue;
@@ -2063,10 +2063,10 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (void)setBackgroundColor:(CPColor)aColor
 {
-    if (_backgroundColor == aColor)
+    if (_backgroundColor === aColor)
         return;
 
-    if (aColor == [CPNull null])
+    if (aColor === [CPNull null])
         aColor = nil;
 
     _backgroundColor = aColor;
@@ -2109,7 +2109,7 @@ var CPViewHighDPIDrawingEnabled = YES;
             var image = slices[i],
                 size = [image size];
 
-            if (!size || (size.width == 0 && size.height == 0))
+            if (!size || (size.width === 0 && size.height === 0))
                 size = nil;
 
             _DOMImageSizes[i] = size;
@@ -2164,10 +2164,12 @@ var CPViewHighDPIDrawingEnabled = YES;
             CPDOMDisplayServerSetStyleSize(_DOMImageParts[0], size.width, size.height);
         }
         else
+        {
             _DOMElement.style.background = colorCSS;
 
             if (patternImage)
                 CPDOMDisplayServerSetStyleBackgroundSize(_DOMElement, [patternImage size].width + "px", [patternImage size].height + "px");
+        }
     }
     else
     {
@@ -2201,7 +2203,7 @@ var CPViewHighDPIDrawingEnabled = YES;
             partIndex++;
         }
 
-        if (_backgroundType == BackgroundNinePartImage)
+        if (_backgroundType === BackgroundNinePartImage)
         {
             var left = _DOMImageSizes[0] ? _DOMImageSizes[0].width : 0,
                 right = _DOMImageSizes[2] ? _DOMImageSizes[2].width : 0,
@@ -2262,7 +2264,7 @@ var CPViewHighDPIDrawingEnabled = YES;
                 CPDOMDisplayServerSetStyleRightBottom(_DOMImageParts[partIndex], NULL, 0.0, 0.0);
             }
         }
-        else if (_backgroundType == BackgroundVerticalThreePartImage)
+        else if (_backgroundType === BackgroundVerticalThreePartImage)
         {
             var top = _DOMImageSizes[0] ? _DOMImageSizes[0].height : 0,
                 bottom = _DOMImageSizes[2] ? _DOMImageSizes[2].height : 0;
@@ -2294,7 +2296,7 @@ var CPViewHighDPIDrawingEnabled = YES;
                 CPDOMDisplayServerSetStyleSize(_DOMImageParts[partIndex], frameSize.width, bottom);
             }
         }
-        else if (_backgroundType == BackgroundHorizontalThreePartImage)
+        else if (_backgroundType === BackgroundHorizontalThreePartImage)
         {
             var left = _DOMImageSizes[0] ? _DOMImageSizes[0].width : 0,
                 right = _DOMImageSizes[2] ? _DOMImageSizes[2].width : 0;
@@ -3264,7 +3266,7 @@ setBoundsOrigin:
 */
 - (void)setLayer:(CALayer)aLayer
 {
-    if (_layer == aLayer)
+    if (_layer === aLayer)
         return;
 
     if (_layer)
@@ -3725,21 +3727,21 @@ setBoundsOrigin:
     [_trackingAreas removeObjectIdenticalTo:trackingArea];
 }
 
-- (void)_updateTrackingAreas
+- (void)_updateTrackingAreasWithRecursion:(BOOL)shouldCallRecursively
 {
     _inhibitUpdateTrackingAreas = YES;
 
-    [self _recursivelyUpdateTrackingAreas];
-
-    _inhibitUpdateTrackingAreas = NO;
-}
-
-- (void)_recursivelyUpdateTrackingAreas
-{
     [self _updateTrackingAreasForOwners:[self _calcTrackingAreaOwners]];
 
-    for (var i = 0; i < _subviews.length; i++)
-        [_subviews[i] _recursivelyUpdateTrackingAreas];
+    if (shouldCallRecursively)
+    {
+        // Now, call _updateTrackingAreasWithRecursion on subviews
+
+        for (var i = 0; i < _subviews.length; i++)
+            [_subviews[i] _updateTrackingAreasWithRecursion:YES];
+    }
+
+    _inhibitUpdateTrackingAreas = NO;
 }
 
 - (CPArray)_calcTrackingAreaOwners
