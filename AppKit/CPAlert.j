@@ -71,7 +71,6 @@ var bottomHeight = 71;
 
 @end
 
-
 @implementation _CPAlertThemeView : CPView
 
 + (CPString)defaultThemeClass
@@ -148,7 +147,6 @@ var bottomHeight = 71;
 
     CPAlertStyle            _alertStyle                 @accessors(property=alertStyle);
     CPString                _title                      @accessors(property=title);
-    CPView                  _accessoryView              @accessors(property=accessoryView);
     CPImage                 _icon                       @accessors(property=icon);
 
     CPArray                 _buttons                    @accessors(property=buttons, readonly);
@@ -164,9 +162,10 @@ var bottomHeight = 71;
     CPWindow                _window                     @accessors(property=window, readonly);
     int                     _defaultWindowStyle;
 
-    CPImageView             _alertImageView;
+    CPTextField             _messageLabel @accessors(getter=messageLabel);
     CPTextField             _informativeLabel;
-    CPTextField             _messageLabel;
+    CPImageView             _alertImageView;
+    CPView                  _accessoryView              @accessors(property=accessoryView);
     CPButton                _alertHelpButton;
 
     BOOL                    _needsLayout;
@@ -231,16 +230,32 @@ var bottomHeight = 71;
         _buttons            = [];
         _alertStyle         = CPWarningAlertStyle;
         _showHelp           = NO;
+        _showSuppressionButton = NO;
         _needsLayout        = YES;
         _defaultWindowStyle = _CPModalWindowMask;
         _themeView          = [_CPAlertThemeView new];
 
         _messageLabel       = [CPTextField labelWithTitle:@"Alert"];
-        _alertImageView     = [[CPImageView alloc] init];
-        _informativeLabel   = [[CPTextField alloc] init];
-        _suppressionButton  = [CPCheckBox checkBoxWithTitle:@"Do not show this message again"];
+        [_messageLabel setIdentifier:@"message"];
+        [_messageLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
 
-        _alertHelpButton    = [[CPButton alloc] initWithFrame:CGRectMake(0.0, 0.0, 16.0, 16.0)];
+        _informativeLabel   = [[CPTextField alloc] init];
+        [_informativeLabel setIdentifier:@"info"];
+        [_informativeLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+        _alertImageView     = [[CPImageView alloc] init];
+        [_informativeLabel setIdentifier:@"image"];
+        [_alertImageView setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+        _accessoryView = nil;
+
+        _suppressionButton  = [CPCheckBox checkBoxWithTitle:@"Do not show this message again"];
+        [_suppressionButton setIdentifier:@"suppressionButton"];
+        [_suppressionButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+        _alertHelpButton    = [[CPButton alloc] initWithFrame:CGRectMakeZero()];
+        [_alertHelpButton setIdentifier:@"alertHelpButton"];
+        [_alertHelpButton setTranslatesAutoresizingMaskIntoConstraints:NO];
         [_alertHelpButton setTarget:self];
         [_alertHelpButton setAction:@selector(_showHelp:)];
     }
@@ -309,6 +324,10 @@ var bottomHeight = 71;
     [_themeView setValue:aValue forThemeAttribute:aName inState:aState];
 }
 
+- (id)currentValueForThemeAttribute:(CPString)aName
+{
+    return [_themeView currentValueForThemeAttribute:aName];
+}
 
 /*! @deprecated */
 - (void)setWindowStyle:(int)style
@@ -334,7 +353,6 @@ var bottomHeight = 71;
 - (void)setMessageText:(CPString)text
 {
     [_messageLabel setStringValue:text];
-    _needsLayout = YES;
 }
 
 /*!
@@ -355,7 +373,6 @@ var bottomHeight = 71;
 - (void)setInformativeText:(CPString)text
 {
     [_informativeLabel setStringValue:text];
-    _needsLayout = YES;
 }
 
 /*!
@@ -388,7 +405,7 @@ var bottomHeight = 71;
 - (void)setAccessoryView:(CPView)aView
 {
     _accessoryView = aView;
-    _needsLayout = YES;
+    [[_window contentView] setNeedsUpdateConstraints:YES];
 }
 
 /*!
@@ -398,8 +415,11 @@ var bottomHeight = 71;
 */
 - (void)setShowsSuppressionButton:(BOOL)shouldShowSuppressionButton
 {
-    _showSuppressionButton = shouldShowSuppressionButton;
-    _needsLayout = YES;
+    if (shouldShowSuppressionButton !== _showSuppressionButton)
+    {
+       _showSuppressionButton = shouldShowSuppressionButton;
+       [[_window contentView] setNeedsUpdateConstraints:YES];
+    }
 }
 
 #pragma mark Accessing Buttons
@@ -423,6 +443,8 @@ var bottomHeight = 71;
 
         button = [[CPButton alloc] initWithFrame:CGRectMakeZero()];
 
+    [button setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [button setIdentifier:aTitle];
     [button setTitle:aTitle];
     [button setTag:count];
     [button setTarget:self];
@@ -436,232 +458,7 @@ var bottomHeight = 71;
         [button setKeyEquivalent:CPEscapeFunctionKey];
 
     [_buttons insertObject:button atIndex:0];
-}
-
-#pragma mark Layout
-
-/*!
-    @ignore
-*/
-- (void)_layoutMessageView
-{
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        sizeWithFontCorrection = 6.0,
-        messageLabelWidth,
-        messageLabelTextSize;
-
-    [_messageLabel setTextColor:[_themeView currentValueForThemeAttribute:@"message-text-color"]];
-    [_messageLabel setFont:[_themeView currentValueForThemeAttribute:@"message-text-font"]];
-    [_messageLabel setTextShadowColor:[_themeView currentValueForThemeAttribute:@"message-text-shadow-color"]];
-    [_messageLabel setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"message-text-shadow-offset"]];
-    [_messageLabel setAlignment:[_themeView currentValueForThemeAttribute:@"message-text-alignment"]];
-    [_messageLabel setLineBreakMode:CPLineBreakByWordWrapping];
-
-    messageLabelWidth = CGRectGetWidth([[_window contentView] frame]) - inset.left - inset.right;
-    messageLabelTextSize = [[_messageLabel stringValue] sizeWithFont:[_messageLabel font] inWidth:messageLabelWidth];
-
-    [_messageLabel setFrame:CGRectMake(inset.left, inset.top, messageLabelTextSize.width, messageLabelTextSize.height + sizeWithFontCorrection)];
-}
-
-/*!
-    @ignore
-*/
-- (void)_layoutInformativeView
-{
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
-        sizeWithFontCorrection = 6.0,
-        informativeLabelWidth,
-        informativeLabelOriginY,
-        informativeLabelTextSize;
-
-    [_informativeLabel setTextColor:[_themeView currentValueForThemeAttribute:@"informative-text-color"]];
-    [_informativeLabel setFont:[_themeView currentValueForThemeAttribute:@"informative-text-font"]];
-    [_informativeLabel setTextShadowColor:[_themeView currentValueForThemeAttribute:@"informative-text-shadow-color"]];
-    [_informativeLabel setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"informative-text-shadow-offset"]];
-    [_informativeLabel setAlignment:[_themeView currentValueForThemeAttribute:@"informative-text-alignment"]];
-    [_informativeLabel setLineBreakMode:CPLineBreakByWordWrapping];
-
-    informativeLabelWidth = CGRectGetWidth([[_window contentView] frame]) - inset.left - inset.right;
-    informativeLabelOriginY = [_messageLabel frameOrigin].y + [_messageLabel frameSize].height + defaultElementsMargin;
-    informativeLabelTextSize = [[_informativeLabel stringValue] sizeWithFont:[_informativeLabel font] inWidth:informativeLabelWidth];
-
-    [_informativeLabel setFrame:CGRectMake(inset.left, informativeLabelOriginY, informativeLabelTextSize.width, informativeLabelTextSize.height + sizeWithFontCorrection)];
-}
-
-/*!
-    @ignore
-*/
-- (void)_layoutAccessoryView
-{
-    if (!_accessoryView)
-        return;
-
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
-        accessoryViewWidth = CGRectGetWidth([[_window contentView] frame]) - inset.left - inset.right,
-        accessoryViewOriginY = CGRectGetMaxY([_informativeLabel frame]) + defaultElementsMargin;
-
-    [_accessoryView setFrameOrigin:CGPointMake(inset.left, accessoryViewOriginY)];
-    [[_window contentView] addSubview:_accessoryView];
-}
-
-/*!
-    @ignore
-*/
-- (void)_layoutSuppressionButton
-{
-    if (!_showSuppressionButton)
-        return;
-
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        suppressionViewXOffset = [_themeView currentValueForThemeAttribute:@"suppression-button-x-offset"],
-        suppressionViewYOffset = [_themeView currentValueForThemeAttribute:@"suppression-button-y-offset"],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
-        suppressionButtonViewOriginY = CGRectGetMaxY([(_accessoryView || _informativeLabel) frame]) + defaultElementsMargin + suppressionViewYOffset;
-
-    [_suppressionButton setTextColor:[_themeView currentValueForThemeAttribute:@"suppression-button-text-color"]];
-    [_suppressionButton setFont:[_themeView currentValueForThemeAttribute:@"suppression-button-text-font"]];
-    [_suppressionButton setTextShadowColor:[_themeView currentValueForThemeAttribute:@"suppression-button-text-shadow-color"]];
-    [_suppressionButton setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"suppression-button-text-shadow-offset"]];
-    [_suppressionButton sizeToFit];
-
-    [_suppressionButton setFrameOrigin:CGPointMake(inset.left + suppressionViewXOffset, suppressionButtonViewOriginY)];
-    [[_window contentView] addSubview:_suppressionButton];
-}
-
-/*!
-    @ignore
-*/
-- (CGSize)_layoutButtonsFromView:(CPView)lastView
-{
-    var inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
-        minimumSize = [_themeView currentValueForThemeAttribute:@"size"],
-        buttonOffset = [_themeView currentValueForThemeAttribute:@"button-offset"],
-        helpLeftOffset = [_themeView currentValueForThemeAttribute:@"help-image-left-offset"],
-        aRepresentativeButton = [_buttons objectAtIndex:0],
-        defaultElementsMargin = [_themeView currentValueForThemeAttribute:@"default-elements-margin"],
-        panelSize = [[_window contentView] frame].size,
-        buttonsOriginY,
-        buttonMarginY,
-        buttonMarginX,
-        theme = [self theme],
-        offsetX;
-
-    [aRepresentativeButton setTheme:[self theme]];
-    [aRepresentativeButton sizeToFit];
-
-    panelSize.height = CGRectGetMaxY([lastView frame]) + defaultElementsMargin + [aRepresentativeButton frameSize].height;
-    if (panelSize.height < minimumSize.height)
-        panelSize.height = minimumSize.height;
-
-    buttonsOriginY = panelSize.height - [aRepresentativeButton frameSize].height + buttonOffset;
-    offsetX = panelSize.width - inset.right;
-
-    switch ([_window styleMask])
-    {
-        case _CPModalWindowMask:
-            buttonMarginY = [_themeView currentValueForThemeAttribute:@"modal-window-button-margin-y"];
-            buttonMarginX = [_themeView currentValueForThemeAttribute:@"modal-window-button-margin-x"];
-            break;
-
-        default:
-            buttonMarginY = [_themeView currentValueForThemeAttribute:@"standard-window-button-margin-y"];
-            buttonMarginX = [_themeView currentValueForThemeAttribute:@"standard-window-button-margin-x"];
-            break;
-    }
-
-    for (var i = [_buttons count] - 1; i >= 0 ; i--)
-    {
-        var button = _buttons[i];
-        [button setTheme:[self theme]];
-        [button sizeToFit];
-
-        var buttonFrame = [button frame],
-            width = MAX(80.0, CGRectGetWidth(buttonFrame)),
-            height = CGRectGetHeight(buttonFrame);
-
-        offsetX -= width;
-        [button setFrame:CGRectMake(offsetX + buttonMarginX, buttonsOriginY + buttonMarginY, width, height)];
-        offsetX -= 10;
-    }
-
-    if (_showHelp)
-    {
-        var helpImage = [_themeView currentValueForThemeAttribute:@"help-image"],
-            helpImagePressed = [_themeView currentValueForThemeAttribute:@"help-image-pressed"],
-            helpImageSize = helpImage ? [helpImage size] : CGSizeMakeZero(),
-            helpFrame = CGRectMake(helpLeftOffset, buttonsOriginY, helpImageSize.width, helpImageSize.height);
-
-        [_alertHelpButton setImage:helpImage];
-        [_alertHelpButton setAlternateImage:helpImagePressed];
-        [_alertHelpButton setBordered:NO];
-        [_alertHelpButton setFrame:helpFrame];
-    }
-
-    panelSize.height += [aRepresentativeButton frameSize].height + inset.bottom + buttonOffset;
-    return panelSize;
-}
-
-/*!
-    @ignore
-*/
-- (void)layout
-{
-    if (!_needsLayout)
-        return;
-
-    if (!_window)
-        [self _createWindowWithStyle:nil];
-
-    var iconOffset = [_themeView currentValueForThemeAttribute:@"image-offset"],
-        theImage = _icon,
-        finalSize;
-
-    if (!theImage)
-        switch (_alertStyle)
-        {
-            case CPWarningAlertStyle:
-                theImage = [_themeView currentValueForThemeAttribute:@"warning-image"];
-                break;
-            case CPInformationalAlertStyle:
-                theImage = [_themeView currentValueForThemeAttribute:@"information-image"];
-                break;
-            case CPCriticalAlertStyle:
-                theImage = [_themeView currentValueForThemeAttribute:@"error-image"];
-                break;
-        }
-
-    [_alertImageView setImage:theImage];
-
-    var imageSize = theImage ? [theImage size] : CGSizeMakeZero();
-    [_alertImageView setFrame:CGRectMake(iconOffset.x, iconOffset.y, imageSize.width, imageSize.height)];
-
-    [self _layoutMessageView];
-    [self _layoutInformativeView];
-    [self _layoutAccessoryView];
-    [self _layoutSuppressionButton];
-
-    var lastView = _informativeLabel;
-    if (_showSuppressionButton)
-        lastView = _suppressionButton;
-    else if (_accessoryView)
-        lastView = _accessoryView;
-
-    finalSize = [self _layoutButtonsFromView:lastView];
-    if ([_window styleMask] & CPDocModalWindowMask)
-        finalSize.height -= 26; // adjust the absence of title bar
-
-    [_window setFrameSize:finalSize];
-    [_window center];
-
-    if ([_window styleMask] & _CPModalWindowMask || [_window styleMask] & CPHUDBackgroundWindowMask)
-    {
-        [_window setMovable:YES];
-        [_window setMovableByWindowBackground:YES];
-    }
-
-    _needsLayout = NO;
+    [[_window contentView] setNeedsUpdateConstraints:YES];
 }
 
 #pragma mark Displaying Alerts
@@ -679,7 +476,7 @@ var bottomHeight = 71;
         [self _createWindowWithStyle:_defaultWindowStyle];
     }
 
-    [self layout];
+    [self _layoutAppearanceIfNeeded];
     [CPApp runModalForWindow:_window];
 }
 
@@ -710,7 +507,7 @@ var bottomHeight = 71;
         [self _createWindowWithStyle:CPDocModalWindowMask];
     }
 
-    [self layout];
+    [self _layoutAppearanceIfNeeded];
 
     _modalDelegate = modalDelegate;
     _didEndSelector = alertDidEndSelector;
@@ -743,38 +540,6 @@ var bottomHeight = 71;
 }
 
 #pragma mark Private
-
-/*!
-    @ignore
-*/
-- (void)_createWindowWithStyle:(int)forceStyle
-{
-    var frame = CGRectMakeZero();
-    frame.size = [_themeView currentValueForThemeAttribute:@"size"];
-
-    _window = [[CPPanel alloc] initWithContentRect:frame styleMask:forceStyle || _defaultWindowStyle];
-    [_window setLevel:CPStatusWindowLevel];
-    [_window setPlatformWindow:[[CPApp keyWindow] platformWindow]];
-
-    if (_title)
-        [_window setTitle:_title];
-
-    var contentView = [_window contentView],
-        count = [_buttons count];
-
-    if (count)
-        while (count--)
-            [contentView addSubview:_buttons[count]];
-    else
-        [self addButtonWithTitle:@"OK"];
-
-    [contentView addSubview:_messageLabel];
-    [contentView addSubview:_alertImageView];
-    [contentView addSubview:_informativeLabel];
-
-    if (_showHelp)
-        [contentView addSubview:_alertHelpButton];
-}
 
 /*!
     @ignore
@@ -832,8 +597,329 @@ var bottomHeight = 71;
     }
 }
 
+/*!
+    @ignore
+*/
+- (void)_createWindowWithStyle:(int)forceStyle
+{
+    // The height will be inferred by the layout engine based on the width and content.
+    var frame = CGRectMake(0, 0, [_themeView currentValueForThemeAttribute:@"size"].width, 0);
+
+    _window = [[CPPanel alloc] initWithContentRect:frame styleMask:forceStyle || _defaultWindowStyle];
+    [_window setLevel:CPStatusWindowLevel];
+    [_window setPlatformWindow:[[CPApp keyWindow] platformWindow]];
+
+    var contentView = [[_CPAlertContentView alloc] initWithAlert:self];
+    [contentView setIdentifier:@"contentView"];
+    [_window setContentView:contentView];
+
+    if (_title)
+        [_window setTitle:_title];
+
+    var count = [_buttons count];
+
+    if (count)
+        while (count--)
+            [contentView addSubview:_buttons[count]];
+    else
+        [self addButtonWithTitle:@"OK"];
+
+    [contentView addSubview:_alertImageView];
+    [contentView addSubview:_messageLabel];
+    [contentView addSubview:_informativeLabel];
+
+    if (_accessoryView)
+        [contentView addSubview:_accessoryView];
+
+    if (_showSuppressionButton)
+        [contentView addSubview:_suppressionButton];
+
+    if (_showHelp)
+        [contentView addSubview:_alertHelpButton];
+}
+
+#pragma mark Layout Appearance
+- (void)_layoutAppearanceIfNeeded
+{
+    if (!_needsLayout)
+        return;
+
+    if (!_window)
+        [self _createWindowWithStyle:nil];
+
+    [_messageLabel setTextColor:[_themeView currentValueForThemeAttribute:@"message-text-color"]];
+    [_messageLabel setFont:[_themeView currentValueForThemeAttribute:@"message-text-font"]];
+    [_messageLabel setTextShadowColor:[_themeView currentValueForThemeAttribute:@"message-text-shadow-color"]];
+    [_messageLabel setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"message-text-shadow-offset"]];
+    [_messageLabel setAlignment:[_themeView currentValueForThemeAttribute:@"message-text-alignment"]];
+    [_messageLabel setLineBreakMode:CPLineBreakByWordWrapping];
+
+    [_informativeLabel setTextColor:[_themeView currentValueForThemeAttribute:@"informative-text-color"]];
+    [_informativeLabel setFont:[_themeView currentValueForThemeAttribute:@"informative-text-font"]];
+    [_informativeLabel setTextShadowColor:[_themeView currentValueForThemeAttribute:@"informative-text-shadow-color"]];
+    [_informativeLabel setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"informative-text-shadow-offset"]];
+    [_informativeLabel setAlignment:[_themeView currentValueForThemeAttribute:@"informative-text-alignment"]];
+    [_informativeLabel setLineBreakMode:CPLineBreakByWordWrapping];
+
+    if (_showSuppressionButton)
+    {
+        [_suppressionButton setTextColor:[_themeView currentValueForThemeAttribute:@"suppression-button-text-color"]];
+        [_suppressionButton setFont:[_themeView currentValueForThemeAttribute:@"suppression-button-text-font"]];
+        [_suppressionButton setTextShadowColor:[_themeView currentValueForThemeAttribute:@"suppression-button-text-shadow-color"]];
+        [_suppressionButton setTextShadowOffset:[_themeView currentValueForThemeAttribute:@"suppression-button-text-shadow-offset"]];
+    }
+
+    if (_showHelp)
+    {
+        var helpImage = [_themeView currentValueForThemeAttribute:@"help-image"],
+            helpImagePressed = [_themeView currentValueForThemeAttribute:@"help-image-pressed"];
+
+        [_alertHelpButton setImage:helpImage];
+        [_alertHelpButton setAlternateImage:helpImagePressed];
+        [_alertHelpButton setBordered:NO];
+    }
+
+    [_buttons enumerateObjectsUsingBlock:function(button, idx, stop)
+    {
+        [button setTheme:[self theme]];
+    }];
+
+    if ([_window styleMask] & _CPModalWindowMask || [_window styleMask] & CPHUDBackgroundWindowMask)
+    {
+        [_window setMovable:YES];
+        [_window setMovableByWindowBackground:YES];
+    }
+
+    [_window center];
+
+    _needsLayout = NO;
+}
+
+- (CGSize)_createWarningImageIfNeeded
+{
+    var theImage = _icon;
+
+    if (!theImage)
+    {
+        var attr = [@[@"warning-image", @"information-image", @"error-image"] objectAtIndex:_alertStyle];
+        theImage = [self currentValueForThemeAttribute:attr];
+    }
+
+    [_alertImageView setImage:theImage];
+
+    return [theImage size];
+}
+
+#pragma mark Layout geometry
+
+- (CPArray)_generateConstraintsIntoContentView:(CPView)aContentView
+{
+    var iconOffset = [self currentValueForThemeAttribute:@"image-offset"],
+        inset = [self currentValueForThemeAttribute:@"content-inset"],
+        result = @[],
+        imageSize = [self _createWarningImageIfNeeded];
+
+// Image View constraints
+    var leftImage = [[_alertImageView leftAnchor] constraintEqualToAnchor:[aContentView leftAnchor] constant:iconOffset.x],
+        topImage = [[_alertImageView topAnchor] constraintEqualToAnchor:[aContentView topAnchor] constant:iconOffset.y],
+        widthImage = [[_alertImageView widthAnchor] constraintEqualToConstant:imageSize.width],
+        heightImage = [[_alertImageView heightAnchor] constraintEqualToConstant:imageSize.height];
+
+    [result addObjectsFromArray:@[leftImage, topImage, widthImage, heightImage]];
+
+// Message text constraints
+    var leftmessage = [[_messageLabel leftAnchor] constraintEqualToAnchor:[_alertImageView rightAnchor] constant:iconOffset.x],
+    //var topmessage = [[_messageLabel topAnchor] constraintEqualToAnchor:[aContentView topAnchor] constant:inset.top];
+        rightmessage = [[aContentView rightAnchor] constraintEqualToAnchor:[_messageLabel rightAnchor] constant:inset.right],
+        centermessage = [[_messageLabel centerYAnchor] constraintEqualToAnchor:[_alertImageView centerYAnchor]];
+    [centermessage setPriority:600];
+    //[topmessage setPriority:250];
+    [result addObjectsFromArray:@[leftmessage, /*topmessage,*/ centermessage, rightmessage]];
+
+// Informative Text constraints
+    var leftInfo = [[_informativeLabel leftAnchor] constraintEqualToAnchor:[_alertImageView rightAnchor] constant:iconOffset.x],
+        topInfo = [[_informativeLabel topAnchor] constraintEqualToAnchor:[_messageLabel bottomAnchor] constant:8],
+        rightInfo = [[aContentView rightAnchor] constraintEqualToAnchor:[_informativeLabel rightAnchor] constant:inset.right];
+
+    [result addObjectsFromArray:@[leftInfo, topInfo, rightInfo]];
+    var lastView = _informativeLabel;
+
+// Accessory View constrainst
+    if (_accessoryView)
+    {
+        var leftAccessory = [[_accessoryView leftAnchor] constraintEqualToAnchor:[_alertImageView rightAnchor] constant:iconOffset.x],
+            topAccessory = [[_accessoryView topAnchor] constraintEqualToAnchor:[_informativeLabel bottomAnchor] constant:8],
+            rightAccessory = [[aContentView rightAnchor] constraintEqualToAnchor:[_accessoryView rightAnchor] constant:inset.right],
+            minheight = [[_accessoryView heightAnchor] constraintGreaterThanOrEqualToConstant:0];
+
+        [result addObjectsFromArray:@[leftAccessory, topAccessory, rightAccessory, minheight]];
+        lastView = _accessoryView;
+    }
+
+// Suppression Button constraints
+    if (_showSuppressionButton)
+    {
+        var suppressionLeft = [[_suppressionButton leftAnchor] constraintEqualToAnchor:[lastView leftAnchor]],
+            suppressionTop = [[_suppressionButton topAnchor] constraintEqualToAnchor:[lastView bottomAnchor] constant:8],
+            suppressionRight = [[aContentView rightAnchor] constraintEqualToAnchor:[_suppressionButton rightAnchor] constant:inset.right];
+
+        [result addObjectsFromArray:@[suppressionLeft, suppressionTop, suppressionRight]];
+        lastView = _suppressionButton;
+    }
+// helpButton constraints
+    if (_showHelp)
+    {
+        var helpLeft = [[_alertHelpButton leftAnchor] constraintEqualToAnchor:[_alertImageView leftAnchor]],
+            helpBottom  = [[aContentView bottomAnchor] constraintEqualToAnchor:[_alertHelpButton bottomAnchor] constant:20],
+            // TODO: Fix button intrinsic size with image.
+            helpSize = [[_alertHelpButton image] size],
+            helpWidth = [[_alertHelpButton widthAnchor] constraintEqualToConstant:helpSize.width],
+            helpHeight = [[_alertHelpButton heightAnchor] constraintEqualToConstant:helpSize.height];
+
+        [result addObjectsFromArray:@[helpLeft, helpBottom, helpWidth, helpHeight]];
+    }
+
+// Buttons constraints
+    var count = [_buttons count],
+        previousButton = nil;
+
+    [_buttons enumerateObjectsUsingBlock:function(button, idx, stop)
+    {
+        // The default button
+        if (idx == count - 1)
+        {
+            var right = [[aContentView rightAnchor] constraintEqualToAnchor:[button rightAnchor] constant:20];
+            [result addObject:right];
+
+            var top = [[button topAnchor] constraintEqualToAnchor:[lastView bottomAnchor] constant:20];
+            [result addObject:top];
+        }
+
+        if (idx == 0 && count > 2)
+        {
+            var left = [[button leftAnchor] constraintEqualToAnchor:[lastView leftAnchor]];
+            [result addObject:left];
+        }
+
+        if (idx > 0 && count < 3 || idx > 1)
+        {
+            var interspace = [[button leftAnchor] constraintEqualToAnchor:[previousButton rightAnchor] constant:8];
+            [result addObject:interspace];
+        }
+
+        if (idx > 0)
+        {
+            var width = [[button widthAnchor] constraintEqualToAnchor:[previousButton widthAnchor]];
+            [width setPriority:900];
+            [result addObject:width];
+        }
+
+        var bottom = [[aContentView bottomAnchor] constraintEqualToAnchor:[button bottomAnchor] constant:20];
+        [result addObject:bottom];
+
+        previousButton = button;
+    }];
+
+    return result;
+}
+
+- (CPArray)_generateHeightConstraints
+{
+    var result = @[];
+
+    var messageLabelHeight = [self _heightConstraintForWrappingTextField:_messageLabel],
+        informativeLabelHeight = [self _heightConstraintForWrappingTextField:_informativeLabel];
+
+    [result addObjectsFromArray:@[messageLabelHeight, informativeLabelHeight]];
+
+    return result;
+}
+
+- (CPLayoutConstraint)_heightConstraintForWrappingTextField:(CPTextField)aTextField
+{
+    var str = [aTextField stringValue],
+        height = 0;
+
+    if ([str length] > 0)
+    {
+        var width = [aTextField _variableWidth].valueOf(),
+        //var width = CGRectGetWidth([aTextField frame]),
+            sizeWithFontCorrection = 6.0,
+            size = [str sizeWithFont:[aTextField font] inWidth:width];
+
+        height += size.height + sizeWithFontCorrection;
+    }
+
+    return [[aTextField heightAnchor] constraintEqualToConstant:height];
+}
+
 @end
 
+@implementation _CPAlertContentView : CPView
+{
+    CPArray  _alertConstraints;
+    CPArray  _heightConstraints;
+    CPAlert  _alert;
+    BOOL     _sizeContraintsUpdated;
+}
+
+- (id)initWithAlert:(CPAlert)parentAlert
+{
+    self = [super initWithFrame:CGRectMakeZero()];
+
+    if (self)
+    {
+        _alertConstraints = @[];
+        _heightConstraints = @[];
+        _alert = parentAlert;
+        _sizeContraintsUpdated = NO;
+        [self setTranslatesAutoresizingMaskIntoConstraints:YES];
+    }
+
+    return self;
+}
+
+- (void)updateSizeContraintsIfNeeded
+{
+    if (_sizeContraintsUpdated == NO)
+    {
+        var size = [_alert currentValueForThemeAttribute:@"size"];
+        var wcst = [[self widthAnchor] constraintEqualToConstant:size.width];
+        [CPLayoutConstraint activateConstraints:@[wcst]];
+
+        _sizeContraintsUpdated = YES;
+    }
+}
+
+- (void)_updateWithOldConstraints:(CPArray)oldConstraints newConstraints:(CPArray)newConstraints
+{
+    var constraintsToAdd = [newConstraints arrayByExcludingObjectsInArray:oldConstraints],
+        constraintsToRemove = [oldConstraints arrayByExcludingObjectsInArray:newConstraints];
+
+    [CPLayoutConstraint deactivateConstraints:constraintsToRemove];
+    [oldConstraints removeObjectsInArray:constraintsToRemove];
+
+    [CPLayoutConstraint activateConstraints:constraintsToAdd];
+    [oldConstraints addObjectsFromArray:constraintsToAdd];
+}
+
+- (void)updateConstraints
+{
+    [super updateConstraints];
+    [self updateSizeContraintsIfNeeded];
+
+    //CPLog.debug([[self _layoutEngine] description]);
+    var newConstraints = [_alert _generateConstraintsIntoContentView:self];
+    [self _updateWithOldConstraints:_alertConstraints newConstraints:newConstraints];
+
+    // Layout once to get the desired width, then compute the height and set it as a constraint.
+    [self layoutSubtreeIfNeeded];
+
+    var newHConstraints = [_alert _generateHeightConstraints];
+    [self _updateWithOldConstraints:_heightConstraints newConstraints:newHConstraints];
+}
+
+@end
 
 @implementation CPAlert (CPAlertDelegate)
 
@@ -859,6 +945,18 @@ var bottomHeight = 71;
         return YES;
 
     return [_delegate alertShowHelp:self];
+}
+
+@end
+
+@implementation CPArray (arrayByExcludingObjectsInArray)
+
+- (CPArray)arrayByExcludingObjectsInArray:(CPArray)anArray
+{
+    var result = [CPArray arrayWithArray:self];
+    [result removeObjectsInArray:anArray];
+
+    return result;
 }
 
 @end

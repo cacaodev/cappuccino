@@ -7,7 +7,9 @@
  */
 
 @import <Foundation/CPObject.j>
+@import "../CPTrace.j"
 
+CPLogRegister(CPLogConsole);
 
 @implementation AppController : CPObject
 {
@@ -21,13 +23,16 @@
 
 - (void)_init
 {
+    CPTrace([_CPAlertContentView class], "updateConstraints");
+    CPTrace([CPAlert class], "runModal");
+
     messages = [
         [@"Are you sure you want to theorise before you have data?",
          @"Invariably, you end up twisting facts to suit theories, instead of theories to suit facts.",
-         "Theorise", "Cancel"],
+         "Theorise", "Cancel", "Other"],
         [@"Snakes. Why did it have to be snakes?",
          nil,
-         "Torch"],
+         "Torch", "Cancel"],
         [@"Sometimes a message can be really long and just appear to go on and on. It could be a speech. It could be the television.",
          nil]
     ];
@@ -83,7 +88,7 @@
     [self showNextAlertVariation];
 }
 
-- (void)alertDidEnd:(CPAlert)anAlert returnCode:(CPInteger)returnCode
+- (void)alertDidEnd:(_CPAlert)anAlert returnCode:(CPInteger)returnCode
 {
     CPLog.info("%s alert = %s, code = %d", _cmd, [anAlert description], returnCode);
 
@@ -95,7 +100,7 @@
     [self showNextAlertVariation];
 }
 
-- (void)customDidEnd:(CPAlert)anAlert code:(id)code context:(id)context
+- (void)customDidEnd:(_CPAlert)anAlert code:(id)code context:(id)context
 {
     CPLog.info("%s alert = %s, code = %d, context = %s", _cmd, [anAlert description], code, context);
 }
@@ -117,11 +122,20 @@
     [alert setMessageText:message[0] || @""];
     [alert setInformativeText:message[1] || @""];
 
+    [alert setShowsSuppressionButton:YES];
+    [alert setShowsHelp:YES];
+    var accessory = [[CPView alloc] initWithFrame:CGRectMakeZero()];
+    [accessory setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [alert setAccessoryView:accessory];
+
     if (message.length > 2)
         [alert addButtonWithTitle:message[2]];
 
     if (message.length > 3)
         [alert addButtonWithTitle:message[3]];
+
+    if (message.length > 4)
+        [alert addButtonWithTitle:message[4]];
 
     [alert setTheme:(windowStyle === CPHUDBackgroundWindowMask) ? [CPTheme defaultHudTheme] : [CPTheme defaultTheme]];
     [alert setAlertStyle:variation[1]];
