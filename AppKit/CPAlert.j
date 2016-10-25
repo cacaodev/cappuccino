@@ -782,8 +782,8 @@ var bottomHeight = 71;
 // Buttons constraints
     var count = [_buttons count],
         previousButton = nil;
-
-    [_buttons enumerateObjectsUsingBlock:function(button, idx, stop)
+// Enumerate from right to left
+    [_buttons enumerateObjectsWithOptions:CPEnumerationReverse usingBlock:function(button, idx, stop)
     {
         // The default button
         if (idx == count - 1)
@@ -794,25 +794,28 @@ var bottomHeight = 71;
             var top = [[button topAnchor] constraintEqualToAnchor:[lastView bottomAnchor] constant:20];
             [result addObject:top];
         }
+        else
+        {
+            var interspace = [[previousButton leftAnchor] constraintEqualToAnchor:[button rightAnchor] constant:8];
+            var p = (idx == count - 3) ? 200 : CPLayoutPriorityRequired;
+            [interspace setPriority:p];
+            [result addObject:interspace];
 
+            var eqwidth = [[button widthAnchor] constraintEqualToAnchor:[previousButton widthAnchor]];
+            [eqwidth setPriority:200]; // Lower than the default hugging priority
+            [result addObject:eqwidth];
+        }
+
+        //Anchor the last button to the left if count > 2
         if (idx == 0 && count > 2)
         {
             var left = [[button leftAnchor] constraintEqualToAnchor:[lastView leftAnchor]];
             [result addObject:left];
         }
 
-        if (idx > 0 && count < 3 || idx > 1)
-        {
-            var interspace = [[button leftAnchor] constraintEqualToAnchor:[previousButton rightAnchor] constant:8];
-            [result addObject:interspace];
-        }
-
-        if (idx > 0)
-        {
-            var width = [[button widthAnchor] constraintEqualToAnchor:[previousButton widthAnchor]];
-            [width setPriority:900];
-            [result addObject:width];
-        }
+        var minwidth = [[button widthAnchor] constraintGreaterThanOrEqualToConstant:50];
+        [minwidth setPriority:450]; // Button can break this if the window is too small (window width priority = 500).
+        [result addObject:minwidth];
 
         var bottom = [[aContentView bottomAnchor] constraintEqualToAnchor:[button bottomAnchor] constant:20];
         [result addObject:bottom];
@@ -885,6 +888,7 @@ var bottomHeight = 71;
     {
         var size = [_alert currentValueForThemeAttribute:@"size"];
         var wcst = [[self widthAnchor] constraintEqualToConstant:size.width];
+        [wcst setPriority:CPLayoutPriorityWindowSizeStayPut];
         [CPLayoutConstraint activateConstraints:@[wcst]];
 
         _sizeContraintsUpdated = YES;
