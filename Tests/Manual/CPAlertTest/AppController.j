@@ -7,7 +7,6 @@
  */
 
 @import <Foundation/CPObject.j>
-@import "../CPTrace.j"
 
 CPLogRegister(CPLogConsole);
 
@@ -23,9 +22,6 @@ CPLogRegister(CPLogConsole);
 
 - (void)_init
 {
-    CPTrace([_CPAlertContentView class], "updateConstraints");
-    CPTrace([CPAlert class], "runModal");
-
     messages = [
         [@"Are you sure you want to theorise before you have data?",
          @"Invariably, you end up twisting facts to suit theories, instead of theories to suit facts.",

@@ -9,7 +9,8 @@
  *     - Make it conform to style guidelines, general cleanup and enhancements
  * 11/10/2010 Antoine Mercadal
  *     - Enhancements, better compliance with Cocoa API
- *
+ * 11/10/2016 cacaodev
+ *     - Layout the window using Autolayout
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -60,8 +61,6 @@ CPInformationalAlertStyle   = 1;
     @group CPAlertStyle
 */
 CPCriticalAlertStyle        = 2;
-
-var bottomHeight = 71;
 
 @protocol CPAlertDelegate <CPObject>
 
@@ -322,11 +321,6 @@ var bottomHeight = 71;
 - (void)setValue:(id)aValue forThemeAttribute:(CPString)aName inState:(ThemeState)aState
 {
     [_themeView setValue:aValue forThemeAttribute:aName inState:aState];
-}
-
-- (id)currentValueForThemeAttribute:(CPString)aName
-{
-    return [_themeView currentValueForThemeAttribute:aName];
 }
 
 /*! @deprecated */
@@ -702,7 +696,7 @@ var bottomHeight = 71;
     if (!theImage)
     {
         var attr = [@[@"warning-image", @"information-image", @"error-image"] objectAtIndex:_alertStyle];
-        theImage = [self currentValueForThemeAttribute:attr];
+        theImage = [_themeView currentValueForThemeAttribute:attr];
     }
 
     [_alertImageView setImage:theImage];
@@ -714,8 +708,8 @@ var bottomHeight = 71;
 
 - (CPArray)_generateConstraintsIntoContentView:(CPView)aContentView
 {
-    var iconOffset = [self currentValueForThemeAttribute:@"image-offset"],
-        inset = [self currentValueForThemeAttribute:@"content-inset"],
+    var iconOffset = [_themeView currentValueForThemeAttribute:@"image-offset"],
+        inset = [_themeView currentValueForThemeAttribute:@"content-inset"],
         result = @[],
         imageSize = [self _createWarningImageIfNeeded];
 
