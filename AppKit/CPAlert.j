@@ -824,6 +824,9 @@ CPCriticalAlertStyle        = 2;
 {
     var result = @[];
 
+    [_messageLabel layoutSubtreeIfNeeded];
+    [_informativeLabel layoutSubtreeIfNeeded];
+
     var messageLabelHeight = [self _heightConstraintForWrappingTextField:_messageLabel],
         informativeLabelHeight = [self _heightConstraintForWrappingTextField:_informativeLabel];
 
@@ -839,8 +842,7 @@ CPCriticalAlertStyle        = 2;
 
     if ([str length] > 0)
     {
-        var width = [aTextField _variableWidth].valueOf(),
-        //var width = CGRectGetWidth([aTextField frame]),
+        var width = CGRectGetWidth([aTextField frame]),
             sizeWithFontCorrection = 6.0,
             size = [str sizeWithFont:[aTextField font] inWidth:width];
 
@@ -912,8 +914,6 @@ CPCriticalAlertStyle        = 2;
     [self _updateWithOldConstraints:_alertConstraints newConstraints:newConstraints];
 
     // Layout once to get the desired width, then compute the height and set it as a constraint.
-    [self layoutSubtreeIfNeeded];
-
     var newHConstraints = [_alert _generateHeightConstraints];
     [self _updateWithOldConstraints:_heightConstraints newConstraints:newHConstraints];
 }
