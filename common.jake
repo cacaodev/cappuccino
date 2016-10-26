@@ -653,3 +653,14 @@ task ("clobberrelease", ['clobber-release']);
 
 task ("clobber-all", ["clobber-debug", "clobber-release"]);
 task ("clobberall", ["clobber-all"]);
+
+task ("appkit", function()
+{
+    subjake("AppKit", ["build-appkit-only"]);
+});
+
+task ("appkit-debug", function()
+{
+    SYSTEM.env["CONFIG"] = "Debug";
+    subjake("AppKit", ["build-appkit-only"]);
+});
