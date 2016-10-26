@@ -267,8 +267,8 @@ var CPWindowActionMessageKeys = [
     BOOL                                _autolayoutEnabled @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
     // An autoresize or contentSize contraint needs update in one or more subviews of this window.
     BOOL                                _subviewsNeedUpdateConstraints @accessors;
-    BOOL                                _needsLayout;
-    BOOL                                _layoutLock @accessors(setter=setLayoutLock:);
+    BOOL                                _needsLayout @accessors;
+    BOOL                                _layoutLock @accessors;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
