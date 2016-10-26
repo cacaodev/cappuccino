@@ -2905,6 +2905,9 @@ setBoundsOrigin:
 
 - (void)layoutSubviews
 {
+    if ([self _layoutEngine] == nil)
+        return;
+
     [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
     {
         [subview _updateGeometryIfNeeded];
