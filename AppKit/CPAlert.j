@@ -880,7 +880,7 @@ CPCriticalAlertStyle        = 2;
 {
     if (_sizeContraintsUpdated == NO)
     {
-        var size = [_alert currentValueForThemeAttribute:@"size"];
+        var size = [[_alert themeView] currentValueForThemeAttribute:@"size"];
         var wcst = [[self widthAnchor] constraintEqualToConstant:size.width];
         [wcst setPriority:CPLayoutPriorityWindowSizeStayPut];
         [CPLayoutConstraint activateConstraints:@[wcst]];
