@@ -4667,8 +4667,8 @@ Updates the constraints for the receiving view and its subviews.
 //CPLog.debug([self debugID] + " " +  _cmd);
     if (_needsUpdateConstraints)
     {
-        [self updateConstraints];
         _needsUpdateConstraints = NO;
+        [self updateConstraints];
     }
     //CPLog.debug([self identifier] + ": no need to update constraints");
 }
@@ -4815,6 +4815,21 @@ Updates the layout of the receiving view and its subviews based on the current v
 @note Subclasses should not override this method.
 */
 - (void)layoutSubtreeIfNeeded
+{
+    var engine = [self _layoutEngine];
+
+    if (engine == nil)
+    {
+        CPLog.warn(@"The view does not have a layout engine yet. This is certainly because it has not been added to the window");
+        return;
+    }
+    [self updateConstraintsForSubtreeIfNeeded];
+    [engine solve];
+
+    [self _updateSubtreeGeometryIfNeeded];
+}
+
+- (void)layoutSubtreeAtWindowLevelIfNeeded
 {
     if ([self _updateConstraintsAtWindowLevelIfNeeded] || _subviewsNeedSolvingInEngine)
         [[self _layoutEngine] solve];

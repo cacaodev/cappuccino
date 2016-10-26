@@ -2132,7 +2132,7 @@ CPTexturedBackgroundWindowMask
 
     [[CPApp keyWindow] resignKeyWindow];
     [self becomeKeyWindow];
-    
+
     // ConstraintBasedLayout
     [self _engageAutolayoutIfNeeded];
 }
@@ -4419,7 +4419,7 @@ Subclasses should not override this method.
         [engine stopEditing];
         [self _updateWindowContentSizeConstraints];
 
-        [_windowView layoutSubtreeIfNeeded];
+        [_windowView layoutSubtreeAtWindowLevelIfNeeded];
 
         [_windowView _updateGeometry];
         [self _updateFrameFromCurrentWindowViewFrame];
