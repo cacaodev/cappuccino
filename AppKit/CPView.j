@@ -4474,6 +4474,9 @@ Adds multiple constraints on the layout of the receiving view or its subviews.
 */
 - (void)addConstraints:(CPArray)constraints
 {
+    // We don't want to layout anything until we finish this.
+    [_CPDisplayServer lock];
+
     var engine = [self _layoutEngine],
         constraintsIndexes = [CPIndexSet indexSet],
         contentSizeIndexes = [CPIndexSet indexSet];
@@ -4513,6 +4516,8 @@ Adds multiple constraints on the layout of the receiving view or its subviews.
         [_contentSizeConstraints addObjectsFromArray:[constraints objectsAtIndexes:contentSizeIndexes]];
         [self didChangeValueForKey:@"constraints"];
     }
+
+    [_CPDisplayServer unlock];
 }
 
 /*!
