@@ -62,4 +62,6 @@ task ("Theme", [$BUILD_CJS_CAPPUCCINO_APPKIT], function()
 
 task ("build", ["AppKit", $BUILD_CJS_CAPPUCCINO_APPKIT, "Theme"]);
 
+task ("build-appkit-only", [$BUILD_CJS_CAPPUCCINO_APPKIT]);
+
 CLOBBER.include($BUILD_CJS_CAPPUCCINO_APPKIT);
