@@ -117,6 +117,70 @@
     XCTAssertEqual([[[view constraints] firstObject] constant], 50);
 }
 
+- (void)testAddConstraintInDetachedView
+{
+    var constraintView = [[CPView alloc] initWithFrame:CGRectMakeZero()];
+    [constraintView setIdentifier:@"constraintView"];
+    [constraintView setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [[[constraintView leftAnchor] constraintEqualToConstant:10] setActive:YES];
+    [[[constraintView topAnchor] constraintEqualToConstant:20] setActive:YES];
+    [[[constraintView widthAnchor] constraintEqualToConstant:30] setActive:YES];
+    [[[constraintView heightAnchor] constraintEqualToConstant:40] setActive:YES];
+
+    XCTAssertEqual([[constraintView constraints] count], 4);
+    // The view has no window but a local engine
+    var localEngine = [constraintView _layoutEngineIfExists];
+    XCTAssertTrue(localEngine !== nil);
+
+    // Layout the view
+    [constraintView layoutSubtreeIfNeeded];
+
+    // The frame have been constrained.
+    XCTAssertTrue(CGRectEqualToRect([constraintView frame], CGRectMake(10, 20, 30, 40)));
+
+    // Now we add the view to a window.
+    // The window does not have any engine yet.
+    XCTAssertTrue([contentView _layoutEngineIfExists] == nil);
+
+    [contentView addSubview:constraintView];
+
+    XCTAssertTrue([contentView _layoutEngineIfExists] == localEngine);
+    XCTAssertTrue([constraintView _localEngineIfExists] == nil);
+    XCTAssertTrue([contentView _layoutEngine] == [constraintView _layoutEngine]);
+}
+
+- (void)testMergeEngines
+{
+    var constraintView = [[CPView alloc] initWithFrame:CGRectMakeZero()];
+    [constraintView setIdentifier:@"constraintView"];
+    [constraintView setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [[[constraintView leftAnchor] constraintEqualToConstant:10] setActive:YES];
+    [[[constraintView topAnchor] constraintEqualToConstant:20] setActive:YES];
+    [[[constraintView widthAnchor] constraintEqualToConstant:30] setActive:YES];
+    [[[constraintView heightAnchor] constraintEqualToConstant:40] setActive:YES];
+
+    XCTAssertEqual([[constraintView constraints] count], 4);
+    // The view has no window but a local engine
+    var localEngine = [constraintView _layoutEngineIfExists];
+    XCTAssertTrue(localEngine !== nil);
+
+    [[contentView window] orderFront:nil];
+    // Force layout because we are in the console.
+    [[contentView window] layout];
+    var windowEngine = [contentView _layoutEngineIfExists];
+    XCTAssertTrue(windowEngine !== nil);
+
+    [contentView addSubview:constraintView];
+
+    XCTAssertTrue([contentView _layoutEngineIfExists] !== localEngine);
+    XCTAssertTrue([constraintView _localEngineIfExists] == nil);
+    XCTAssertTrue([contentView _layoutEngine] == [constraintView _layoutEngine]);
+
+    [constraintView layoutSubtreeIfNeeded];
+    // The frame have been constrained.
+    XCTAssertTrue(CGRectEqualToRect([constraintView frame], CGRectMake(10, 20, 30, 40)));
+}
+
 - (void)observeValueForKeyPath:(CPString)keyPath ofObject:(id)object change:(CPDictionary)change                        context:(void)context
 {
     _didReceiveKVONotification = YES;
