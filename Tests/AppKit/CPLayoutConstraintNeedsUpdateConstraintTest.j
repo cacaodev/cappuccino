@@ -40,6 +40,13 @@
     XCTAssertTrue([view needsUpdateConstraints]);
 }
 
+- (void)testNeedsUpdateConstraintsWithNoTranslateAutoresizingMask
+{
+    var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+    [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+    XCTAssertFalse([view needsUpdateConstraints]);
+}
+
 - (void)testNeedsUpdateConstraintsAfterTranslateAutoresizingMask
 {
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
