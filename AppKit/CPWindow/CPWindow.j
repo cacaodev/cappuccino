@@ -4474,11 +4474,16 @@ Subclasses should not override this method.
 
 - (void)_engageAutolayoutIfNeeded
 {
-    if (_autolayoutEnabled == NO && [_contentView translatesAutoresizingMaskIntoConstraints])
+    if (_autolayoutEnabled == NO && [self _shouldEngageAutolayout])
     {
         _autolayoutEnabled = YES;
         [self setNeedsLayout];
     }
+}
+
+- (BOOL)_shouldEngageAutolayout
+{
+    return [_contentView translatesAutoresizingMaskIntoConstraints];
 }
 
 @end

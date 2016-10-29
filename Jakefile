@@ -428,3 +428,9 @@ function buildCmd(arrayOfCommands)
         return cmd.map(OS.enquote).join(" ");
     }).join(" && ");
 }
+
+task ("appkit-debug", function()
+{
+    SYSTEM.env["CONFIG"] = "Debug";
+    subjake("AppKit", "build-appkit-only");
+});

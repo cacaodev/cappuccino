@@ -1,7 +1,10 @@
 @import <Foundation/Foundation.j>
 @import <AppKit/AppKit.j>
 
-#define XCTAssertEqual(a,b) [self assert:b equals:a]
+#define XCTAssertEqual(a, b) [self assert:b equals:a];
+#define XCTAssertTrue(a) [self assertTrue:a]
+#define XCTAssertFalse(a) [self assertFalse:a]
+#define XCTAssertApprox(a, b, c) [self assertTrue:(ABS(a - b) <= c) message:"Expected " + b + " but was " + a];
 
 [CPApplication sharedApplication];
 
@@ -28,11 +31,11 @@
 - (void)setUp
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 1000, 1000) styleMask:CPResizableWindowMask];
-
-    [theWindow setAutolayoutEnabled:YES];
-
     contentView = [theWindow contentView];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
+    [theWindow orderFront:YES];
+    [theWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     leftView = [[FlippedView alloc] initWithFrame:CGRectMake(10, 10, 100, 100)];
     [leftView _setAlignmentRectInsets:CGInsetMake(10, 10, 10, 10)];

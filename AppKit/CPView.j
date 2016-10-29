@@ -264,6 +264,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     CPDictionary        _animationsDictionary;
 
     // ConstraintBasedLayout support
+    CPLayoutConstraintEngine _localEngine;
     CPArray  _constraintsArray @accessors(property=_constraintsArray);
     CPArray  _autoresizingConstraints @accessors;
     CPArray  _internalConstraints @accessors(property=_internalConstraints);
@@ -946,6 +947,9 @@ var CPViewHighDPIDrawingEnabled = YES;
     {
         [_window _setSubviewsNeedUpdateConstraints];
     }
+
+    if ([_window _shouldEngageAutolayout] && _localEngine !== nil)
+        [self _promoteLocalEngineToWindowEngine];
 }
 
 /*!
@@ -979,6 +983,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (void)viewDidMoveToWindow
 {
+
 }
 
 /*!
@@ -2169,7 +2174,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
             if (patternImage)
                 CPDOMDisplayServerSetStyleBackgroundSize(_DOMElement, [patternImage size].width + "px", [patternImage size].height + "px");
-        }
+    }
     }
     else
     {
@@ -2905,7 +2910,7 @@ setBoundsOrigin:
 
 - (void)layoutSubviews
 {
-    if ([self _layoutEngine] == nil)
+    if (![_window isAutolayoutEnabled])
         return;
 
     [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
@@ -3737,12 +3742,12 @@ setBoundsOrigin:
     [self _updateTrackingAreasForOwners:[self _calcTrackingAreaOwners]];
 
     if (shouldCallRecursively)
-    {
+{
         // Now, call _updateTrackingAreasWithRecursion on subviews
 
-        for (var i = 0; i < _subviews.length; i++)
+    for (var i = 0; i < _subviews.length; i++)
             [_subviews[i] _updateTrackingAreasWithRecursion:YES];
-    }
+}
 
     _inhibitUpdateTrackingAreas = NO;
 }
@@ -4054,6 +4059,7 @@ Returns whether the receiver depends on the constraint-based layout system.
 
 - (void)_initConstraintsIvars
 {
+    _localEngine = nil;
     _viewIsConstraintBased = NO;
     _viewHasConstraintBasedSubviews = NO;
     _isSettingFrameFromEngine = NO;
@@ -4101,7 +4107,47 @@ Returns whether the receiver depends on the constraint-based layout system.
 
 - (CPLayoutConstraintEngine)_layoutEngine
 {
-    return [[self window] _layoutEngine];
+    var engine = nil;
+
+    if (_window == nil)
+        // Lazilly creates a local engine
+        engine = [self _localEngine];
+    else
+        // Lazylly create a window engine if needed.
+        engine = [_window _layoutEngine];
+
+    return engine;
+}
+
+- (CPLayoutConstraintEngine)_localEngineIfExists
+{
+    return _localEngine;
+}
+
+- (CPLayoutConstraintEngine)_layoutEngineIfExists
+{
+    if (_window == nil)
+        return [self _localEngineIfExists];
+    else
+        return [_window _layoutEngineIfExists];
+}
+
+
+- (void)_promoteLocalEngineToWindowEngine
+{
+    var windowEngine = [_window _layoutEngineIfExists];
+
+    if (windowEngine)
+    {
+        [windowEngine _addConstraintsFromEngine:_localEngine];
+    }
+    else
+    {
+        [_window _setLayoutEngine:_localEngine];
+        [_localEngine _setDelegate:_window];
+    }
+
+    _localEngine = nil;
 }
 
 // DEBUG
@@ -4479,11 +4525,12 @@ Adds multiple constraints on the layout of the receiving view or its subviews.
 */
 - (void)addConstraints:(CPArray)constraints
 {
-    // We don't want to layout anything until we finish this.
+    // We don't want to layout anything, and especially not the window until we finish this.
     [_CPDisplayServer lock];
 
-    var engine = [self _layoutEngine],
-        constraintsIndexes = [CPIndexSet indexSet],
+    var engine = [self _layoutEngine];
+
+    var constraintsIndexes = [CPIndexSet indexSet],
         contentSizeIndexes = [CPIndexSet indexSet];
 
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
@@ -4523,6 +4570,24 @@ Adds multiple constraints on the layout of the receiving view or its subviews.
     }
 
     [_CPDisplayServer unlock];
+}
+
+- (CPLayoutConstraintEngine)_localEngine
+{
+    if (_localEngine == nil)
+    {
+        _localEngine = [[CPLayoutConstraintEngine alloc] initWithDelegate:self];
+    }
+
+    return _localEngine;
+}
+
+- (void)engine:(CPLayoutConstraintEngine)anEngine constraintDidChangeInContainer:(id)aContainer
+{
+    var superitem = [aContainer _superitem],
+        v = superitem || self;
+
+    [v _informContainerThatSubviewsNeedSolvingInEngine];
 }
 
 /*!
@@ -4828,11 +4893,6 @@ Updates the layout of the receiving view and its subviews based on the current v
 {
     var engine = [self _layoutEngine];
 
-    if (engine == nil)
-    {
-        CPLog.warn(@"The view does not have a layout engine yet. This is certainly because it has not been added to the window");
-        return;
-    }
     [self updateConstraintsForSubtreeIfNeeded];
     [engine solve];
 
@@ -4858,6 +4918,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (void)_engineDidChangeVariableOfType:(int)axisOrDimension
 {
     _geometryDirtyMask |= axisOrDimension;
+//CPLog.debug([self debugID] + " " + _cmd + " mask="+_geometryDirtyMask);
     [_superview setNeedsLayout];
 }
 
@@ -4909,7 +4970,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (void)_updateGeometry
 {
     _isSettingFrameFromEngine = YES;
-//    CPLog.debug(_cmd + " " + [self debugID] + " " + [[self leftAnchor] valueInEngine:engine] + " " + [[self topAnchor] valueInEngine:engine]);
+//CPLog.debug([self debugID] + " " + _cmd + " " + [[self leftAnchor] valueInEngine:nil] + " " + [[self topAnchor] valueInEngine:nil]);
     if (_geometryDirtyMask & 2)
         [self setFrameOrigin:CGPointMake([self _variableMinX].valueOf(), [self _variableMinY].valueOf())];
 

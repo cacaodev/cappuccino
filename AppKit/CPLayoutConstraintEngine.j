@@ -14,10 +14,10 @@ var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
 @implementation CPLayoutConstraintEngine : CPObject
 {
     SimplexSolver _simplexSolver;
-    Map           _constraintToOwnerMap;
-    Map           _variableToOwnerMap;
+    Map           _constraintToOwnerMap @accessors(readonly);
+    Map           _variableToOwnerMap @accessors(readonly);
     CPArray       _editingVariables;
-    id            _delegate @accessors(getter=delegate);
+    id            _delegate @accessors(getter=delegate, setter=_setDelegate:);
 }
 
 + (CPArray)_engineConstraintsFromConstraint:(CPLayoutConstraint)aConstraint
@@ -205,6 +205,35 @@ var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
     }];
 
 //CPLog.debug(_cmd + "=" + result);
+    return result;
+}
+
+- (BOOL)_addConstraintsFromEngine:(CPLayoutConstraintEngine)anEngine
+{
+    var aConstraintToOwnerMap = [anEngine _constraintToOwnerMap],
+        aVariableToOwnerMap = [anEngine _variableToOwnerMap],
+        result = YES;
+
+    var onerror = function(error, constraint)
+    {
+        CPLog.warn("Unable to simultaneously satisfy constraints.\nThe following constraint conflicts with an existing constraint.\n" + constraint.toString() + "\nYou can fix the problem by changing the current required priority to a lower priority.");
+    };
+
+    aConstraintToOwnerMap.forEach(function(TypeAndContainer, engine_constraint)
+    {
+        var onsuccess = function(constraint)
+        {
+            _constraintToOwnerMap.set(constraint, {"Type":TypeAndContainer.Type, "Container":TypeAndContainer.Container});
+        };
+
+        result &= AddConstraint(_simplexSolver, engine_constraint, onsuccess, onerror);
+    });
+
+    aVariableToOwnerMap.forEach(function(owner, variable)
+    {
+        _variableToOwnerMap.set(variable, owner);
+    });
+
     return result;
 }
 
