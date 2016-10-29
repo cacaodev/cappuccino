@@ -32,7 +32,7 @@
 
 @implementation CPLayoutConstraintIntrinsicSizeTest : OJTestCase
 {
-    CPWindow           window;
+    CPWindow           theWindow;
     IntrinsicView      intrinsicView;
     CPLayoutConstraint left;
     CPLayoutConstraint right;
@@ -47,26 +47,29 @@
 
 - (void)setUp
 {
-    window = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
-    [window setAutolayoutEnabled:YES];
-    [[window contentView] setIdentifier:@"ContentView"];
+    theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
+    [[theWindow contentView] setIdentifier:@"ContentView"];
+    [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     intrinsicView = [[IntrinsicView alloc] initWithFrame:CGRectMakeZero()];
     [intrinsicView setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [[window contentView] addSubview:intrinsicView];
+    [[theWindow contentView] addSubview:intrinsicView];
 
     left = [CPLayoutConstraint constraintWithItem:intrinsicView
-                                                            attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:[window contentView] attribute:CPLayoutAttributeLeft multiplier:1 constant:100];
+                                                            attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:[theWindow contentView] attribute:CPLayoutAttributeLeft multiplier:1 constant:100];
 
-    right = [CPLayoutConstraint constraintWithItem:[window contentView]
+    right = [CPLayoutConstraint constraintWithItem:[theWindow contentView]
                                                              attribute:CPLayoutAttributeRight
                                                              relatedBy:CPLayoutRelationEqual toItem:intrinsicView attribute:CPLayoutAttributeRight multiplier:1 constant:100];
 
-     var top = [CPLayoutConstraint constraintWithItem:intrinsicView
+    var top = [CPLayoutConstraint constraintWithItem:intrinsicView
                                                              attribute:CPLayoutAttributeTop
-                                                             relatedBy:CPLayoutRelationEqual toItem:[window contentView] attribute:CPLayoutAttributeTop multiplier:1 constant:100];
+                                                             relatedBy:CPLayoutRelationEqual toItem:[theWindow contentView] attribute:CPLayoutAttributeTop multiplier:1 constant:100];
 
     [top setActive:YES];
+    [theWindow orderFront:YES];
+    [theWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 }
 
 - (void)testAntiCompression1
@@ -88,22 +91,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testAntiCompression2
@@ -125,22 +126,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testAntiCompression3
@@ -162,22 +161,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
 }
 
@@ -200,22 +197,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testAntiCompression5
@@ -237,22 +232,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 }
 
 - (void)testAntiCompression6
@@ -274,22 +267,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 }
 
 - (void)testAntiCompression7
@@ -311,22 +302,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testAntiCompression8
@@ -348,22 +337,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testHugging1
@@ -384,22 +371,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 }
 
 - (void)testHugging2
@@ -421,22 +406,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 }
 
 - (void)testHugging3
@@ -458,22 +441,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testHugging4
@@ -495,22 +476,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testHugging5
@@ -532,22 +511,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testHugging6
@@ -570,22 +547,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testHugging7
@@ -608,22 +583,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 300, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 300, 2);
 }
 
 - (void)testHugging8
@@ -646,22 +619,20 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [[window contentView] layoutSubtreeIfNeeded];
-    [[CPRunLoop mainRunLoop] limitDateForMode:CPDefaultRunLoopMode];
+    [theWindow layout];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
-    XCTAssertApprox(CGRectGetWidth([[window contentView] frame]), 400, 2);
+    XCTAssertApprox(CGRectGetWidth([[theWindow contentView] frame]), 400, 2);
 }
 
 @end

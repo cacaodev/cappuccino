@@ -31,11 +31,11 @@
 - (void)setUp
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 1000, 1000) styleMask:CPResizableWindowMask];
-
-    [theWindow setAutolayoutEnabled:YES];
-
     contentView = [theWindow contentView];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
+    [theWindow orderFront:YES];
+    [theWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     leftView = [[FlippedView alloc] initWithFrame:CGRectMake(10, 10, 100, 100)];
     [leftView _setAlignmentRectInsets:CGInsetMake(10, 10, 10, 10)];

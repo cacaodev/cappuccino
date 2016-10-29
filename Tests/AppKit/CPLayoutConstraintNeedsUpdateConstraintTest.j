@@ -9,7 +9,7 @@
 
 [CPApplication sharedApplication];
 
-@implementation IntrinsicView : CPView
+@implementation IntrinsicView2 : CPView
 {
     float intrinsicContentWidth @accessors;
 }
@@ -51,12 +51,16 @@
 
 - (void)testNeedsUpdateConstraintsAfterInvalidateIntrinsicSize
 {
-    var window = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
-    [window setAutolayoutEnabled:YES];
+    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
+    [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
+
+    [theWindow orderFront:YES];
+    [theWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
-    [[window contentView] addSubview:view];
-    [window layout];
+    [[theWindow contentView] addSubview:view];
+    [theWindow layout];
     XCTAssertFalse([view needsUpdateConstraints]);
 
     [view invalidateIntrinsicContentSize];
@@ -65,25 +69,33 @@
 
 - (void)testNeedsUpdateConstraintsAfterLayout
 {
-    var window = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
-    [window setAutolayoutEnabled:YES];
+    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
+    [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
+
+    [theWindow orderFront:YES];
+    [theWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
-    [[window contentView] addSubview:view];
+    [[theWindow contentView] addSubview:view];
     XCTAssertTrue([view needsUpdateConstraints]);
-    [window layout];
+    [theWindow layout];
     XCTAssertFalse([view needsUpdateConstraints]);
 }
 
 - (void)testNeedsUpdateConstraintsAfterLayoutAfterInvalidateIntrinsicSize
 {
-    var window = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
-    [window setAutolayoutEnabled:YES];
+    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 300, 300) styleMask:CPTitledWindowMask];
+    [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
+
+    [theWindow orderFront:YES];
+    [theWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
-    [[window contentView] addSubview:view];
+    [[theWindow contentView] addSubview:view];
     XCTAssertTrue([view needsUpdateConstraints]);
-    [window layout];
+    [theWindow layout];
     XCTAssertFalse([view needsUpdateConstraints]);
     [view invalidateIntrinsicContentSize];
     XCTAssertTrue([view needsUpdateConstraints]);

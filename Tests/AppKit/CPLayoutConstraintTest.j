@@ -27,9 +27,12 @@
 - (void)setUp
 {
     var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 200, 200) styleMask:CPResizableWindowMask];
-    [theWindow setAutolayoutEnabled:YES];
-
     contentView = [theWindow contentView];
+    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
+
+    [theWindow orderFront:YES];
+    [theWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     _didReceiveKVONotification = NO;
 }

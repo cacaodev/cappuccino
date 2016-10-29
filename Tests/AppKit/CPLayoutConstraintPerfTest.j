@@ -32,8 +32,6 @@
     var constraintsWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 600, 600) styleMask:CPResizableWindowMask],
         constraintContentView = [constraintsWindow contentView];
 
-    [autoSizeWindow setAutolayoutEnabled:NO];
-    [constraintsWindow setAutolayoutEnabled:YES];
     [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [constraintContentView setIdentifier:@"ContentView"];
 
@@ -68,9 +66,11 @@
     }];
 
     [autoSizeWindow orderFront:self];
-    [constraintsWindow orderFront:self];
-    [constraintsWindow setNeedsLayout];
-    [[CPRunLoop mainRunLoop] performSelectors];
+    [constraintsWindow orderFront:YES];
+    [constraintsWindow _engageAutolayoutIfNeeded];
+    XCTAssertTrue([constraintsWindow isAutolayoutEnabled]);
+
+    [constraintsWindow layout];
 
     var start = new Date();
 
