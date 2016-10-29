@@ -2,6 +2,11 @@
 @import <AppKit/CPLayoutConstraintEngine.j>
 @import <Foundation/Foundation.j>
 
+#define XCTAssertEqual(a, b) [self assert:b equals:a];
+#define XCTAssertTrue(a) [self assertTrue:a]
+#define XCTAssertFalse(a) [self assertFalse:a]
+#define XCTAssertApprox(a, b, c) [self assertTrue:(ABS(a - b) <= c) message:"Expected " + b + " but was " + a];
+
 [CPApplication sharedApplication];
 
 @implementation CPLayoutConstraintPerfTest : OJTestCase
