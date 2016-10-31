@@ -228,15 +228,17 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 
     if (shouldActivate)
     {
-        var container = [CPLayoutConstraint _findCommonAncestorOfItem:[self firstItem] andItem:[self secondItem]];
+        var container = _container;
 
-        if (container !== nil)
-        {
-            [container addConstraint:self];
-        }
+        if (container == nil)
+            container = [CPLayoutConstraint _findCommonAncestorOfItem:[self firstItem] andItem:[self secondItem]];
+
+        if (container == nil)
+            [CPException raise:CPGenericException format:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", [self firstItem], [self secondItem]];
         else
         {
-            [CPException raise:CPGenericException format:@"Unable to activate constraint with items %@ and %@ because they have no common ancestor. Does the constraint reference items in different view hierarchies ? That's illegal.", [self firstItem], [self secondItem]];
+            [self _setContainer:container];
+            [container addConstraint:self];
         }
     }
     else

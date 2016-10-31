@@ -208,7 +208,7 @@ var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
     return result;
 }
 
-- (BOOL)_addConstraintsFromEngine:(CPLayoutConstraintEngine)anEngine
+- (BOOL)_addConstraintsFromEngine:(CPLayoutConstraintEngine)anEngine passingTest:(Function/* cst, type, owner */)predicateFunction
 {
     var aConstraintToOwnerMap = [anEngine _constraintToOwnerMap],
         aVariableToOwnerMap = [anEngine _variableToOwnerMap],
@@ -221,6 +221,9 @@ var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
 
     aConstraintToOwnerMap.forEach(function(TypeAndContainer, engine_constraint)
     {
+        if (!predicateFunction(engine_constraint, TypeAndContainer.Type, TypeAndContainer.Container))
+            return;
+
         var onsuccess = function(constraint)
         {
             _constraintToOwnerMap.set(constraint, {"Type":TypeAndContainer.Type, "Container":TypeAndContainer.Container});
@@ -235,6 +238,20 @@ var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
     });
 
     return result;
+}
+
+- (void)_discard
+{
+    _constraintToOwnerMap.forEach(function(TypeAndContainer, engine_constraint)
+    {
+        _simplexSolver.removeConstraint(engine_constraint);
+    });
+
+    _constraintToOwnerMap = nil;
+    _variableToOwnerMap = nil;
+    _simplexSolver = nil;
+    _delegate = nil;
+    _editingVariables = nil;
 }
 
 - (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
@@ -367,7 +384,9 @@ var AddConstraint = function(solver, constraint, onsuccess, onerror)
     }
     catch (e)
     {
-        onerror(e, constraint);
+        if (onerror)
+            onerror(e, constraint);
+
         result = false;
     }
     finally
@@ -388,7 +407,9 @@ var RemoveConstraint = function(solver, constraint, onsuccess, onerror)
     }
     catch (e)
     {
-        onerror(e, constraint);
+        if (onerror)
+            onerror(e, constraint);
+
         result = false;
     }
     finally
