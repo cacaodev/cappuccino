@@ -44,7 +44,7 @@
 {
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
     [view setTranslatesAutoresizingMaskIntoConstraints:NO];
-    XCTAssertFalse([view needsUpdateConstraints]);
+    XCTAssertTrue([view needsUpdateConstraints]);
 }
 
 - (void)testNeedsUpdateConstraintsAfterTranslateAutoresizingMask
