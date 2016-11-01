@@ -34,7 +34,6 @@
     contentView = [theWindow contentView];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     leftView = [[FlippedView alloc] initWithFrame:CGRectMake(10, 10, 100, 100)];

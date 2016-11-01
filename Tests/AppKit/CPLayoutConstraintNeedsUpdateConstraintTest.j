@@ -62,7 +62,6 @@
     [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
@@ -80,7 +79,6 @@
     [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
@@ -96,7 +94,6 @@
     [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];

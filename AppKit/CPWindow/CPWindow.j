@@ -970,6 +970,10 @@ CPTexturedBackgroundWindowMask
 - (void)orderFront:(id)aSender
 {
     [self orderWindow:CPWindowAbove relativeTo:0];
+#if !PLATFORM(DOM)
+    // In DOM, this happens in -makeKeyWindow. 
+    [self _engageAutolayoutIfNeeded];
+#endif
 }
 
 - (void)_orderFront

@@ -31,7 +31,6 @@
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     _didReceiveKVONotification = NO;
