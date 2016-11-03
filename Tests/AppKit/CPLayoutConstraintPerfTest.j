@@ -67,7 +67,6 @@
 
     [autoSizeWindow orderFront:self];
     [constraintsWindow orderFront:YES];
-    [constraintsWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([constraintsWindow isAutolayoutEnabled]);
 
     [constraintsWindow layout];

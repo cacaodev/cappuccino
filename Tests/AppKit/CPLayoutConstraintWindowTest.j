@@ -24,7 +24,6 @@
     [contentView setIdentifier:@"contentView"];
 
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     leftView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];

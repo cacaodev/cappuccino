@@ -2,10 +2,10 @@
 @import <AppKit/CPLayoutConstraintEngine.j>
 @import <Foundation/Foundation.j>
 
-#define XCTAssertEqual(a, b) [self assert:b equals:a];
+#define XCTAssertEqual(a, b) [self assert:b equals:a]
 #define XCTAssertTrue(a) [self assertTrue:a]
 #define XCTAssertFalse(a) [self assertFalse:a]
-#define XCTAssertApprox(a, b, c) [self assertTrue:(ABS(a - b) <= c) message:"Expected " + b + " but was " + a];
+#define XCTAssertApprox(a, b, c) [self assertTrue:(ABS(a - b) <= c) message:"Expected " + b + " but was " + a]
 
 [CPApplication sharedApplication];
 
@@ -31,7 +31,6 @@
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 
     _didReceiveKVONotification = NO;
@@ -149,20 +148,21 @@
     XCTAssertTrue([contentView _layoutEngine] == [constraintView _layoutEngine]);
 }
 
-- (void)testMergeEngines
+- (void)testMergeLocalEngineIntoWindowEngine
 {
-    var constraintView = [[CPView alloc] initWithFrame:CGRectMakeZero()];
+    var constraintView = [[CPView alloc] initWithFrame:CGRectMake(10,10,200,200)];
     [constraintView setIdentifier:@"constraintView"];
-    [constraintView setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [[[constraintView leftAnchor] constraintEqualToConstant:10] setActive:YES];
-    [[[constraintView topAnchor] constraintEqualToConstant:20] setActive:YES];
-    [[[constraintView widthAnchor] constraintEqualToConstant:30] setActive:YES];
-    [[[constraintView heightAnchor] constraintEqualToConstant:40] setActive:YES];
+    [constraintView setAutoresizingMask:CPViewWidthSizable|CPViewHeightSizable];
+    [constraintView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
-    XCTAssertEqual([[constraintView constraints] count], 4);
+    [constraintView layoutSubtreeIfNeeded];
+
     // The view has no window but a local engine
     var localEngine = [constraintView _layoutEngineIfExists];
     XCTAssertTrue(localEngine !== nil);
+
+    // The view have been constrained assuming the Autoresizing Mask is 0.
+    XCTAssertTrue(CGRectEqualToRect([constraintView frame], CGRectMake(10, 10, 200, 200)));
 
     [[contentView window] orderFront:nil];
     // Force layout because we are in the console.
@@ -176,9 +176,43 @@
     XCTAssertTrue([constraintView _localEngineIfExists] == nil);
     XCTAssertTrue([contentView _layoutEngine] == [constraintView _layoutEngine]);
 
+    // Resize the window
+    [[constraintView window] setFrame:CGRectMake(0, 0, 400, 400)];
+    [[constraintView window] layout];
+
+    // layout again the view
     [constraintView layoutSubtreeIfNeeded];
-    // The frame have been constrained.
-    XCTAssertTrue(CGRectEqualToRect([constraintView frame], CGRectMake(10, 20, 30, 40)));
+
+    // The frame have been constrained and resized according to its original AutoresizingMask.
+    XCTAssertTrue(CGRectEqualToRect([constraintView frame], CGRectMake(10, 10, 400, 400)));
+}
+
+- (void)testLayoutSubtreeIfNeededWithoutWindow
+{
+    var topView = [[CPView alloc] initWithFrame:CGRectMake(30,30,300,300)];
+    //[[[topView widthAnchor] constraintEqualToConstant:300] setActive:YES];
+    [topView setIdentifier:@"topView"];
+
+    var subView = [[CPView alloc] initWithFrame:CGRectMake(20,20,200,200)];
+    [subView setIdentifier:@"subView"];
+
+    var subsubView = [[CPView alloc] initWithFrame:CGRectMake(10,10,100,100)];
+    [subsubView setIdentifier:@"subsubView"];
+
+    [subView addSubview:subsubView];
+    [topView addSubview:subView];
+
+    [[[subView widthAnchor] constraintGreaterThanOrEqualToConstant:10] setActive:YES];
+    [topView layoutSubtreeIfNeeded];
+
+    // there is one layout engine and it is hosted by he top level view.
+    XCTAssertTrue([subView _layoutEngine] == [topView _layoutEngineIfExists]);
+    XCTAssertTrue([subsubView _layoutEngine] == [topView _layoutEngineIfExists]);
+
+    // The subviews frames have been constrained.
+    XCTAssertTrue(CGRectEqualToRect([topView frame], CGRectMake(30, 30, 300, 300)));
+    XCTAssertTrue(CGRectEqualToRect([subView frame], CGRectMake(20, 20, 200, 200)));
+    XCTAssertTrue(CGRectEqualToRect([subsubView frame], CGRectMake(10, 10, 100, 100)));
 }
 
 - (void)observeValueForKeyPath:(CPString)keyPath ofObject:(id)object change:(CPDictionary)change                        context:(void)context

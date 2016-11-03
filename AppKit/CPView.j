@@ -285,6 +285,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL     _isSettingFrameFromEngine;
     BOOL     _viewIsConstraintBased;
     BOOL     _viewHasConstraintBasedSubviews;
+    BOOL     _topLevelViewExtraConstraintsAdded;
 
     CPView         _layoutGuides;
     CPLayoutAnchor _leftAnchor;
@@ -948,6 +949,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [_window _setSubviewsNeedUpdateConstraints];
     }
 
+    // The local engine is created on the top level view only.
     if ([_window _shouldEngageAutolayout] && _localEngine !== nil)
         [self _promoteLocalEngineToWindowEngine];
 }
@@ -4065,6 +4067,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     _isSettingFrameFromEngine = NO;
     _subviewsNeedSolvingInEngine = NO;
     _needsUpdateConstraints = YES;
+    _topLevelViewExtraConstraintsAdded = NO;
     _geometryDirtyMask = 0;
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
@@ -4109,14 +4112,42 @@ Returns whether the receiver depends on the constraint-based layout system.
 {
     var engine = nil;
 
-    if (_window == nil)
-        // Lazilly creates a local engine
-        engine = [self _localEngine];
-    else
-        // Lazylly create a window engine if needed.
+    if (_window !== nil)
+        // Lazilly create a window engine if needed.
         engine = [_window _layoutEngine];
+    else
+        // Lazilly creates a local engine if needed on the top level view.
+        engine = [[self topLevelView] _localEngine];
 
     return engine;
+}
+
+- (CPLayoutConstraintEngine)_localEngine
+{
+    if (_superview !== nil)
+    {
+        [CPException raise:CPInternalInconsistencyException format:@"The local engine exists only for detached views."];
+    }
+
+    if (_localEngine == nil)
+    {
+        _localEngine = [[CPLayoutConstraintEngine alloc] initWithDelegate:self];
+    }
+
+    return _localEngine;
+}
+
+- (CPView)topLevelView
+{
+    var result = self,
+        superview;
+
+    while ((superview = [result superview]) !== nil)
+    {
+        result = superview;
+    }
+
+    return result;
 }
 
 - (CPLayoutConstraintEngine)_localEngineIfExists
@@ -4124,14 +4155,23 @@ Returns whether the receiver depends on the constraint-based layout system.
     return _localEngine;
 }
 
-- (CPLayoutConstraintEngine)_layoutEngineIfExists
+- (BOOL)_hasLocalEngine
 {
-    if (_window == nil)
-        return [self _localEngineIfExists];
-    else
-        return [_window _layoutEngineIfExists];
+    var result = (_localEngine !== nil);
+
+    if (result && _superview !== nil)
+        [CPException raise:CPInternalInconsistencyException format:@"The view %@ has a local engine but is not a top level view. This should never happen.", self];
+
+    return result;
 }
 
+- (CPLayoutConstraintEngine)_layoutEngineIfExists
+{
+    if (_window !== nil)
+        return [_window _layoutEngineIfExists];
+    else
+        return [self _localEngineIfExists];
+}
 
 - (void)_promoteLocalEngineToWindowEngine
 {
@@ -4139,7 +4179,14 @@ Returns whether the receiver depends on the constraint-based layout system.
 
     if (windowEngine)
     {
-        [windowEngine _addConstraintsFromEngine:_localEngine];
+        [windowEngine _addConstraintsFromEngine:_localEngine passingTest:function(engine_constraint, type, owner)
+        {
+            // Do not add the extra Autoresizing Constraints we added previously.
+            return !(owner == self && _topLevelViewExtraConstraintsAdded && type == "AutoresizingConstraint");
+        }];
+
+        [_localEngine _discard];
+        // TODO: We may need to solve if there was a change in engine constraints.
     }
     else
     {
@@ -4572,16 +4619,6 @@ Adds multiple constraints on the layout of the receiving view or its subviews.
     [_CPDisplayServer unlock];
 }
 
-- (CPLayoutConstraintEngine)_localEngine
-{
-    if (_localEngine == nil)
-    {
-        _localEngine = [[CPLayoutConstraintEngine alloc] initWithDelegate:self];
-    }
-
-    return _localEngine;
-}
-
 - (void)engine:(CPLayoutConstraintEngine)anEngine constraintDidChangeInContainer:(id)aContainer
 {
     var superitem = [aContainer _superitem],
@@ -4771,6 +4808,14 @@ Update constraints for the view.
 
 - (BOOL)_updateAutoresizingConstraints
 {
+    if ([self superview] == nil)
+    {
+#if (DEBUG)
+        CPLog.debug("Autoresizing Constraints could not be added to the engine because " + [self debugID] + " does not have a superview. Aborting.");
+#endif
+        return;
+    }
+
     var autoresizingConstraints = [self _autoresizingConstraints];
 
     if (autoresizingConstraints == nil)
@@ -4891,7 +4936,22 @@ Updates the layout of the receiving view and its subviews based on the current v
 */
 - (void)layoutSubtreeIfNeeded
 {
+    // If the view has no window, this will lazilly create an engine on the top level view.
     var engine = [self _layoutEngine];
+
+    if ([self _hasLocalEngine] && _translatesAutoresizingMaskIntoConstraints && !_topLevelViewExtraConstraintsAdded)
+    {
+        var frame = [self frame],
+            left = [CPAutoresizingMaskLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeLeft relatedBy:CPLayoutRelationEqual toItem:nil attribute:0 multiplier:1 constant:CGRectGetMinX(frame)],
+            top = [CPAutoresizingMaskLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:nil attribute:0 multiplier:1 constant:CGRectGetMinY(frame)],
+            width = [CPAutoresizingMaskLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeWidth relatedBy:CPLayoutRelationEqual toItem:nil attribute:0 multiplier:1 constant:CGRectGetWidth(frame)],
+            height = [CPAutoresizingMaskLayoutConstraint constraintWithItem:self attribute:CPLayoutAttributeHeight relatedBy:CPLayoutRelationEqual toItem:nil attribute:0 multiplier:1 constant:CGRectGetHeight(frame)];
+
+        var constraints = @[left, top, width, height];
+        [constraints makeObjectsPerformSelector:@selector(_setContainer:) withObject:self];
+        [engine addConstraints:constraints];
+        _topLevelViewExtraConstraintsAdded = YES;
+    }
 
     [self updateConstraintsForSubtreeIfNeeded];
     [engine solve];

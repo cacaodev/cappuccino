@@ -68,7 +68,6 @@
 
     [top setActive:YES];
     [theWindow orderFront:YES];
-    [theWindow _engageAutolayoutIfNeeded];
     XCTAssertTrue([theWindow isAutolayoutEnabled]);
 }
 
