@@ -399,7 +399,12 @@ CPCriticalAlertStyle        = 2;
 - (void)setAccessoryView:(CPView)aView
 {
     _accessoryView = aView;
-    [[_window contentView] setNeedsUpdateConstraints:YES];
+
+    [_accessoryView setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [_accessoryView layoutSubtreeIfNeeded];
+
+    _window = nil;
+    _needsLayout = YES;
 }
 
 /*!
@@ -742,11 +747,11 @@ CPCriticalAlertStyle        = 2;
     if (_accessoryView)
     {
         var leftAccessory = [[_accessoryView leftAnchor] constraintEqualToAnchor:[_alertImageView rightAnchor] constant:iconOffset.x],
-            topAccessory = [[_accessoryView topAnchor] constraintEqualToAnchor:[_informativeLabel bottomAnchor] constant:8],
+            topAccessory = [[_accessoryView topAnchor] constraintEqualToAnchor:[lastView bottomAnchor] constant:8],
             rightAccessory = [[aContentView rightAnchor] constraintEqualToAnchor:[_accessoryView rightAnchor] constant:inset.right],
-            minheight = [[_accessoryView heightAnchor] constraintGreaterThanOrEqualToConstant:0];
+            heightAccessory = [[_accessoryView heightAnchor] constraintEqualToConstant:CGRectGetHeight([_accessoryView frame])];
 
-        [result addObjectsFromArray:@[leftAccessory, topAccessory, rightAccessory, minheight]];
+        [result addObjectsFromArray:@[leftAccessory, topAccessory, rightAccessory, heightAccessory]];
         lastView = _accessoryView;
     }
 

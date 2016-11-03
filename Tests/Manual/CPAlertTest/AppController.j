@@ -120,8 +120,7 @@ CPLogRegister(CPLogConsole);
 
     [alert setShowsSuppressionButton:YES];
     [alert setShowsHelp:YES];
-    var accessory = [[CPView alloc] initWithFrame:CGRectMakeZero()];
-    [accessory setTranslatesAutoresizingMaskIntoConstraints:NO];
+    var accessory = [[ColorView alloc] initWithFrame:CGRectMake(0, 0, 0, 100)];
     [alert setAccessoryView:accessory];
 
     if (message.length > 2)
@@ -157,6 +156,29 @@ CPLogRegister(CPLogConsole);
             }];
     else
         [alert runModal];
+}
+
+@end
+
+@implementation ColorView : CPView
+{
+    CPColor color;
+}
+
+- (id)initWithFrame:(CGRect)aRect
+{
+    self = [super initWithFrame:aRect];
+
+    color = [CPColor randomColor];
+
+    return self;
+}
+
+- (void)drawRect:(CGRect)aRect
+{
+    var ctx = [[CPGraphicsContext currentContext] graphicsPort];
+    [color set];
+    CGContextFillRect(ctx, [self bounds]);
 }
 
 @end
