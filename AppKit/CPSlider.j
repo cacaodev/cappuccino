@@ -263,15 +263,15 @@ CPCircularSlider    = 1;
         width = CGRectGetWidth(bounds),
         height = CGRectGetHeight(bounds);
 
-    _isVertical = width < height ? 1 : (width > height ? 0 : -1);
+    _isVertical = width < height;
 
-    if (_isVertical === 1)
+    if (_isVertical)
         [self setThemeState:CPThemeStateVertical];
-    else if (_isVertical === 0)
+    else
         [self unsetThemeState:CPThemeStateVertical];
 }
 
-- (int)isVertical
+- (BOOL)isVertical
 {
     return _isVertical;
 }
@@ -426,28 +426,36 @@ CPCircularSlider    = 1;
 {
     if ([self hasThemeState:CPThemeStateCircular])
         return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
-    else if ([self isVertical] === 1)
+    else if ([self hasThemeState:CPThemeStateVertical])
         return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultLow);
     else
-        return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultHigh);
-}
-
-- (CGSize)_contentCompressionResistancePriorities
-{
-    return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
+        return [super _contentHuggingPriorities];
 }
 
 - (CGSize)intrinsicContentSize
 {
-// TODO: min/max-size needed in themes.
+    var size = [self currentValueForThemeAttribute:@"knob-size"],
+        result;
+
     if ([self hasThemeState:CPThemeStateCircular])
-        return CGSizeMake(30.0, 30.0);
-    else if ([self isVertical] === 1)
-        return CGSizeMake(24.0, CPViewNoInstrinsicMetric);
+        return [[[self currentValueForThemeAttribute:@"track-color"] patternImage] size];
+    else if ([self hasThemeState:CPThemeStateVertical])
+        return CGSizeMake(size.width, CPViewNoInstrinsicMetric);
     else
-        return CGSizeMake(CPViewNoInstrinsicMetric, 24.0);
+        return CGSizeMake(CPViewNoInstrinsicMetric, size.height);
 }
 
+/*
+- (CGInset)alignmentRectInsets
+{
+    var bounds = [self bounds];
+
+    var knobSize = [self currentValueForThemeAttribute:@"knob-size"],
+        inset = (CGRectGetHeight(bounds) - knobSize.height) / 2;
+
+    return CGInsetMake(0, 0, 0, 0);
+}
+*/
 @end
 
 var CPSliderMinValueKey             = "CPSliderMinValueKey",
