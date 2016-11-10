@@ -359,6 +359,11 @@ var _CPColorWellDidBecomeExclusiveNotification = @"_CPColorWellDidBecomeExclusiv
     return CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
 }
 
+- (CGSize)intrinsicContentSize
+{
+    return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
+}
+
 @end
 
 @implementation CPColorWellValueBinder : CPBinder
