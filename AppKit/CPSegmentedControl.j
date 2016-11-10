@@ -745,18 +745,8 @@ CPSegmentSwitchTrackingMomentary = 2;
     if (aSegment < 0 || (segmentCount > 0 && aSegment >= segmentCount))
         return;
 
-    var width = 0;
-
-    if (segmentCount > 0)
-    {
-        // Invalidate frames for segments on the right. They will be lazily computed by -frameForSegment:.
-        for (var i = aSegment; i < segmentCount; i++)
-            [_segments[i] setFrame:CGRectMakeZero()];
-
-        width = CGRectGetMaxX([self frameForSegment:(segmentCount - 1)]);
-    }
-
-    [self setFrameSize:CGSizeMake(width, CGRectGetHeight([self frame]))];
+    var intrinsicSize = [self intrinsicContentSize];
+    [self setFrameSize:CGSizeMake(intrinsicSize.width, CGRectGetHeight([self frame]))];
 
     [self setNeedsLayout];
     [self setNeedsDisplay:YES];
@@ -935,6 +925,32 @@ CPSegmentSwitchTrackingMomentary = 2;
     [super setFont:aFont];
 
     [self tile];
+}
+
+@end
+
+@implementation CPSegmentedControl (ConstraintBasedLayout)
+
++ (CGSize)_defaultHuggingPriorities
+{
+    return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
+}
+
+- (CGSize)intrinsicContentSize
+{
+    var width = 0,
+        segmentCount = [self segmentCount];
+
+    if (segmentCount > 0)
+    {
+        // Invalidate frames for segments on the right. They will be lazily computed by -frameForSegment:.
+        for (var i = 0; i < segmentCount; i++)
+            [_segments[i] setFrame:CGRectMakeZero()];
+
+        width = CGRectGetMaxX([self frameForSegment:(segmentCount - 1)]);
+    }
+
+    return CGSizeMake(width, [self currentValueForThemeAttribute:@"min-size"].height);
 }
 
 @end
