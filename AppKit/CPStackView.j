@@ -993,14 +993,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 - (CPInteger)countOfGravities
 {
-    var result = 0;
-
-    [self _enumerateGravitiesUsingBlock:function(g, idx)
-    {
-        result++;
-    }];
-
-    return result;
+    return (_gravitiesMask & 2 !== 0) + (_gravitiesMask & 4 !== 0) + (_gravitiesMask & 8 !== 0);
 }
 
 - (CPString)_nameForGravity:(CPStackViewGravity)aGravity
