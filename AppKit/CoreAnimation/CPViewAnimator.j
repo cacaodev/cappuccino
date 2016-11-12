@@ -1,38 +1,20 @@
 
 @import "_CPObjectAnimator.j"
 @import "CPView.j"
+@import "CPCompatibility.j"
 
 @implementation CPViewAnimator : _CPObjectAnimator
 {
+    BOOL    _wantsPeriodicFrameUpdates  @accessors(property=wantsPeriodicFrameUpdates);
 }
 
-- (void)viewWillMoveToSuperview:(CPView)aSuperview
+- (id)initWithTarget:(id)aTarget
 {
-    var orderInAnim = [self animationForKey:@"CPAnimationTriggerOrderIn"];
+    self = [super initWithTarget:aTarget];
 
-    if (orderInAnim && [orderInAnim isKindOfClass:[CAPropertyAnimation class]])
-    {
-        [_target setValue:[orderInAnim fromValue] forKeyPath:[orderInAnim keyPath]];
-    }
+    _wantsPeriodicFrameUpdates = NO;
 
-    [_target viewWillMoveToSuperview:aSuperview];
-}
-
-- (void)viewDidMoveToSuperview
-{
-    var orderInAnim = [self animationForKey:@"CPAnimationTriggerOrderIn"];
-
-    if (orderInAnim && [orderInAnim isKindOfClass:[CAPropertyAnimation class]])
-    {
-        [self _setTargetValue:YES withKeyPath:@"CPAnimationTriggerOrderIn" fallback:nil completion:function()
-        {
-            [_target setValue:[orderInAnim toValue] forKeyPath:[orderInAnim keyPath]];
-        }];
-    }
-    else
-    {
-        [_target viewDidMoveToSuperview];
-    }
+    return self;
 }
 
 - (void)removeFromSuperview
@@ -105,16 +87,6 @@
 
 @end
 
-var transformOrigin = function(start, current)
-{
-    return "translate(" + (current.x - start.x) + "px," + (current.y - start.y) + "px)";
-};
-
-var transformFrameToTranslate = function(start, current)
-{
-    return transformOrigin(start.origin, current.origin);
-};
-
 var transformFrameToWidth = function(start, current)
 {
     return current.size.width + "px";
@@ -135,34 +107,53 @@ var transformSizeToHeight = function(start, current)
     return current.height + "px";
 };
 
+var CSSStringFromCGAffineTransform = function(anAffineTransform)
+{
+    return "matrix(" + anAffineTransform.a + ", " + anAffineTransform.b + ", " + anAffineTransform.c + ", " + anAffineTransform.d + ", " + anAffineTransform.tx + (CPBrowserIsEngine(CPGeckoBrowserEngine) ? "px, " : ", ") + anAffineTransform.ty + (CPBrowserIsEngine(CPGeckoBrowserEngine) ? "px)" : ")");
+};
+
+var frameOriginToCSSTransformMatrix = function(start, current)
+{
+    var affine = CGAffineTransformMakeTranslation(current.x - start.x, current.y - start.y);
+
+    return CSSStringFromCGAffineTransform(affine);
+};
+
+var frameToCSSTranslationTransformMatrix = function(start, current)
+{
+    var affine = CGAffineTransformMakeTranslation(current.origin.x - start.origin.x, current.origin.y - start.origin.y);
+
+    return CSSStringFromCGAffineTransform(affine);
+};
+
 var DEFAULT_CSS_PROPERTIES = nil;
 
 @implementation CPView (CPAnimatablePropertyContainer)
 
-+ (CPDictionary)defaultCSSProperties
++ (CPDictionary)_defaultCSSProperties
 {
     if (DEFAULT_CSS_PROPERTIES == nil)
     {
         var transformProperty = CPBrowserCSSProperty("transform");
 
         DEFAULT_CSS_PROPERTIES =  @{
-            "backgroundColor"  : [@{"property":"background", "value":function(sv, val){return [val cssString];}}],
-            "alphaValue"       : [@{"property":"opacity"}],
-            "frame"            : [@{"property":transformProperty, "value":transformFrameToTranslate},
-                                  @{"property":"width", "value":transformFrameToWidth},
-                                  @{"property":"height", "value":transformFrameToHeight}],
-            "frameOrigin"      : [@{"property":transformProperty, "value":transformOrigin}],
-            "frameSize"        : [@{"property":"width", "value":transformSizeToWidth},
-                                  @{"property":"height", "value":transformSizeToHeight}]
-        };
+                                    "backgroundColor"  : [@{"property":"background", "value":function(sv, val){return [val cssString];}}],
+                                    "alphaValue"       : [@{"property":"opacity"}],
+                                    "frame"            : [@{"property":transformProperty, "value":frameToCSSTranslationTransformMatrix},
+                                                          @{"property":"width", "value":transformFrameToWidth},
+                                                          @{"property":"height", "value":transformFrameToHeight}],
+                                    "frameOrigin"      : [@{"property":transformProperty, "value":frameOriginToCSSTransformMatrix}],
+                                    "frameSize"        : [@{"property":"width", "value":transformSizeToWidth},
+                                                          @{"property":"height", "value":transformSizeToHeight}]
+                                    };
     }
 
     return DEFAULT_CSS_PROPERTIES;
 }
 
-+ (CPArray)cssPropertiesForKeyPath:(CPString)aKeyPath
++ (CPArray)_cssPropertiesForKeyPath:(CPString)aKeyPath
 {
-    return [[self defaultCSSProperties] objectForKey:aKeyPath];
+    return [[self _defaultCSSProperties] objectForKey:aKeyPath];
 }
 
 + (Class)animatorClass
@@ -190,7 +181,14 @@ var DEFAULT_CSS_PROPERTIES = nil;
 
 + (CAAnimation)defaultAnimationForKey:(CPString)aKey
 {
-    if ([self cssPropertiesForKeyPath:aKey] !== nil)
+    // TODO: remove when supported.
+    if (aKey == @"CPAnimationTriggerOrderIn")
+    {
+        CPLog.warn("CPView animated key path CPAnimationTriggerOrderIn is not supported yet.");
+        return nil;
+    }
+
+    if ([self _cssPropertiesForKeyPath:aKey] !== nil)
         return [CAAnimation animation];
 
     return nil;
