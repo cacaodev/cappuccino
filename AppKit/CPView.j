@@ -4043,13 +4043,14 @@ Returns whether the receiver depends on the constraint-based layout system.
 */
 + (BOOL)requiresConstraintBasedLayout
 {
+//    return [self instancesImplementSelector:@selector(updateConstraints)];
     return NO;
 }
 
 /*!
     Tells the Autolayout system to stop constraint updating in the subtree.
 
-    @discussion Subclasses should return YES when subviews honnor the autoresizingMask and need to be managed by the Autosize layout system.
+    @discussion Subclasses should return YES when subviews honor the autoresizingMask and need to be managed by the Autosize layout system.
     Defaults to NO.
 */
 + (BOOL)refusesConstraintBasedLayout
