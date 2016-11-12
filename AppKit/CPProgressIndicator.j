@@ -234,6 +234,7 @@ var CPProgressIndicatorSpinningStyleColors = [];
     _controlSize = aControlSize;
 
     [self updateBackgroundColor];
+    [self invalidateIntrinsicContentSize];
 }
 
 /*!
@@ -495,6 +496,26 @@ var CPProgressIndicatorSpinningStyleColors = [];
 
 @end
 
+@implementation CPProgressIndicator (ConstraintBasedLayout)
+
+- (CGSize)_contentHuggingPriorities
+{
+    if (_style == CPProgressIndicatorSpinningStyle)
+        return CGSizeMake(CPLayoutPriorityDefaultHigh, CPLayoutPriorityDefaultHigh);
+
+    return [super _contentHuggingPriorities];
+}
+
+- (CGSize)intrinsicContentSize
+{
+    if (_style == CPProgressIndicatorSpinningStyle)
+        return [[CPProgressIndicatorSpinningStyleColors[_controlSize] patternImage] size];
+
+    return CGSizeMake(CPViewNoInstrinsicMetric, [self valueForThemeAttribute:@"default-height"]);
+}
+
+
+@end
 
 @implementation CPProgressIndicator (CPCoding)
 

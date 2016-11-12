@@ -4334,9 +4334,6 @@ The insets (in points) from the view’s frame that define its content rectangle
 */
 - (CGInset)alignmentRectInsets
 {
-    if ([self hasThemeAttribute:@"bezel-inset"])
-        return [self currentValueForThemeAttribute:@"bezel-inset"];
-
     return CGInsetMakeZero();
 }
 
