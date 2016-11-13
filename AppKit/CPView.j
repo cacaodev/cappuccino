@@ -289,7 +289,6 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL     _viewHasConstraintBasedSubviews;
     BOOL     _topLevelViewExtraConstraintsAdded;
 
-    CPView         _layoutGuides;
     CPLayoutAnchor _leftAnchor;
     CPLayoutAnchor _rightAnchor;
     CPLayoutAnchor _topAnchor;
@@ -2928,11 +2927,6 @@ setBoundsOrigin:
     {
         [subview _updateGeometryIfNeeded];
     }];
-
-    [_layoutGuides enumerateObjectsUsingBlock:function(guide, idx, stop)
-    {
-        [guide _updateGeometryIfNeeded];
-    }];
 }
 
 /*!
@@ -4083,7 +4077,6 @@ Returns whether the receiver depends on the constraint-based layout system.
     _contentSizeConstraints = @[];
     _constraintsArray = @[];
     _storedIntrinsicContentSize = CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
-    _layoutGuides = @[];
 
     _centerYAnchor = nil;
     _centerXAnchor = nil;
@@ -5060,24 +5053,6 @@ Updates the layout of the receiving view and its subviews based on the current v
     }];
 
     [self _updateGeometryIfNeeded];
-}
-
-// LayoutGuides support
-- (CPArra)layoutGuides
-{
-    return [CPArray arrayWithArray:_layoutGuides];
-}
-
-- (void)addLayoutGuide:(CPLayoutGuide)aGuide
-{
-    [aGuide setOwningView:self];
-    [_layoutGuides addObject:aGuide];
-}
-
-- (void)removeLayoutGuide:(CPLayoutGuide)aGuide
-{
-    [aGuide setOwningView:nil];
-    [_layoutGuides removeObject:aGuide];
 }
 
 // CPLayoutAnchor Support

@@ -74,7 +74,6 @@
 @import "CPKeyBinding.j"
 @import "CPLayoutAnchor.j"
 @import "CPLayoutConstraint.j"
-@import "CPLayoutGuide.j"
 @import "CPLayoutPoint.j"
 @import "CPLayoutRect.j"
 @import "CPLevelIndicator.j"
