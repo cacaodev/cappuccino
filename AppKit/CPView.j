@@ -952,7 +952,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (_window && _needsUpdateConstraints)
     {
         [_window _setSubviewsNeedUpdateConstraints];
-}
+    }
 
     // The local engine is created on the top level view only.
     if ([_window _shouldEngageAutolayout] && _localEngine !== nil)
@@ -2921,7 +2921,7 @@ setBoundsOrigin:
 
 - (void)layoutSubviews
 {
-    if (![_window isAutolayoutEnabled])
+    if ([self _layoutEngineIfExists] == nil)
         return;
 
     [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
@@ -4960,10 +4960,15 @@ Updates the layout of the receiving view and its subviews based on the current v
         _topLevelViewExtraConstraintsAdded = YES;
     }
 
+    // Todo: Solve only if needed
     [self updateConstraintsForSubtreeIfNeeded];
     [engine solve];
 
-    [self _updateSubtreeGeometryIfNeeded];
+    if (_superview)
+        [self layout];
+    else
+    // -layout operates on subviews. If we are the top level view, just update directly the frame.
+        [self _updateSubtreeGeometryIfNeeded];
 }
 
 - (void)layoutSubtreeAtWindowLevelIfNeeded

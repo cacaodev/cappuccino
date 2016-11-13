@@ -23,9 +23,10 @@
 
 - (IBAction)fitAll:(id)sender
 {
+    var contentView = [theWindow contentView];
     var p = [sender state] ? CPLayoutPriorityDefaultLow : CPLayoutPriorityRequired;
 
-    [[[theWindow contentView] subviews] enumerateObjectsUsingBlock:function(view, idx, stop)
+    [[contentView subviews] enumerateObjectsUsingBlock:function(view, idx, stop)
     {
         [[view constraints] enumerateObjectsUsingBlock:function(cst, idx, stop)
         {
@@ -34,13 +35,12 @@
                       && [view intrinsicContentSize].height != CPViewNoInstrinsicMetric))
             {
                 [cst setPriority:p];
-                [view setNeedsUpdateConstraints:YES];
             }
         }];
     }];
 
-    [theWindow setNeedsLayout];
-    [[theWindow contentView] setNeedsDisplay:YES];
+    [contentView layoutSubtreeIfNeeded];
+    [contentView setNeedsDisplay:YES];
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
