@@ -4920,10 +4920,6 @@ Perform layout in concert with the constraint-based layout system.
 
 @note You must call [super layout] as part of your implementation.
 */
-- (void)layout
-{
-    [self layoutSubviews];
-}
 
 /*!
 Updates the layout of the receiving view and its subviews based on the current views and constraints.
