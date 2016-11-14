@@ -954,8 +954,14 @@ var CPViewHighDPIDrawingEnabled = YES;
     }
 
     // The local engine is created on the top level view only.
-    if ([_window _shouldEngageAutolayout] && _localEngine !== nil)
-        [self _promoteLocalEngineToWindowEngine];
+    if (_localEngine !== nil)
+    {
+        if ([_window _shouldEngageAutolayout])
+            [self _promoteLocalEngineToWindowEngine];
+
+        // TODO: if we don't enable autolayout, local engine variables should be reseted.
+        _localEngine = nil;
+    }
 }
 
 /*!
@@ -4196,8 +4202,6 @@ Returns whether the receiver depends on the constraint-based layout system.
         [_window _setLayoutEngine:_localEngine];
         [_localEngine _setDelegate:_window];
     }
-
-    _localEngine = nil;
 }
 
 // DEBUG
