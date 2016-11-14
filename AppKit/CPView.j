@@ -2889,19 +2889,6 @@ setBoundsOrigin:
     return _needsLayout;
 }
 
-- (void)layout
-{
-    _needsLayout = NO;
-
-    if (_viewClassFlags & CPViewHasCustomViewWillLayout)
-        [self viewWillLayout];
-
-    if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
-        [self layoutSubviews];
-
-    [self viewDidLayout];
-}
-
 - (void)layoutIfNeeded
 {
     if (_needsLayout)
@@ -4925,6 +4912,19 @@ Perform layout in concert with the constraint-based layout system.
 
 @note You must call [super layout] as part of your implementation.
 */
+
+- (void)layout
+{
+    _needsLayout = NO;
+
+    if (_viewClassFlags & CPViewHasCustomViewWillLayout)
+        [self viewWillLayout];
+
+    if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
+        [self layoutSubviews];
+
+    [self viewDidLayout];
+}
 
 /*!
 Updates the layout of the receiving view and its subviews based on the current views and constraints.
