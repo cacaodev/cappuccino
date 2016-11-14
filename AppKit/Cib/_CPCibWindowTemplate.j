@@ -112,7 +112,8 @@
 
     [_windowView setAutoresizesSubviews:NO];
 
-    var constraints = [_windowView constraints];
+    var constraints = [_windowView _constraintsArray];
+
     [constraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
     {
         var firstItem = [aConstraint firstItem];
