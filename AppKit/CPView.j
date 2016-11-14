@@ -4081,6 +4081,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     _geometryDirtyMask = 0;
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
+    _internalConstraints = nil;
     _constraintsArray = @[];
     _storedIntrinsicContentSize = CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
 

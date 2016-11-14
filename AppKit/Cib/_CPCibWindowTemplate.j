@@ -188,6 +188,13 @@ var _CPCibWindowTemplateMinSizeKey                          = @"_CPCibWindowTemp
         _windowTitle = [aCoder decodeObjectForKey:_CPCibWindowTemplateWindowTitleKey];
         _windowView = [aCoder decodeObjectForKey:_CPCibWindowTemplateWindowViewKey];
 
+        // If the content view does not have archived constraints, assume this window
+        // does not want to enable Autolayout. By switching the contentView translate flag
+        // from the default YES to NO, we tell the window to not engage Autolayout
+        // see CPWindow -engageAutolayoutIfNeeded.
+        if ([_windowView _internalConstraints] == nil)
+            [_windowView setTranslatesAutoresizingMaskIntoConstraints:NO];
+
         _windowAutorecalculatesKeyViewLoop = [aCoder decodeBoolForKey:_CPCibWindowTemplateWindowAutorecalculatesKeyViewLoop];
         _windowIsFullPlatformWindow = [aCoder decodeBoolForKey:_CPCibWindowTemplateWindowIsFullPlatformWindowKey];
     }
