@@ -130,11 +130,8 @@ var _CPCibCustomViewClassNameKey = @"_CPCibCustomViewClassNameKey";
         [view setBackgroundColor:[self backgroundColor]];
         [view _setInternalConstraints:[self _internalConstraints]];
 
-        [view setContentHuggingPriority:[self contentHuggingPriorityForOrientation:0] forOrientation:0];
-        [view setContentHuggingPriority:[self contentHuggingPriorityForOrientation:1] forOrientation:1];
-
-        [view setContentCompressionResistancePriority:[self contentCompressionResistancePriorityForOrientation:0] forOrientation:0];
-        [view setContentCompressionResistancePriority:[self contentCompressionResistancePriorityForOrientation:1] forOrientation:1];
+        [view _setHuggingPriorities:[self _huggingPriorities]];
+        [view _setCompressionPriorities:[self _compressionPriorities]];
     }
 
     return view;
