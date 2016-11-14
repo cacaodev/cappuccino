@@ -971,7 +971,7 @@ CPTexturedBackgroundWindowMask
 {
     [self orderWindow:CPWindowAbove relativeTo:0];
 #if !PLATFORM(DOM)
-    // In DOM, this happens in -makeKeyWindow. 
+    // In DOM, this happens in -makeKeyWindow.
     [self _engageAutolayoutIfNeeded];
 #endif
 }

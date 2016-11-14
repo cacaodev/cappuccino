@@ -267,18 +267,18 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     // ConstraintBasedLayout support
     CPLayoutConstraintEngine _localEngine;
-    CPArray  _constraintsArray @accessors(property=_constraintsArray);
-    CPArray  _autoresizingConstraints @accessors;
-    CPArray  _internalConstraints @accessors(property=_internalConstraints);
-    CPArray  _contentSizeConstraints @accessors(property=_contentSizeConstraints);
+    CPArray  _constraintsArray                  @accessors(property=_constraintsArray);
+    CPArray  _autoresizingConstraints           @accessors;
+    CPArray  _internalConstraints               @accessors(property=_internalConstraints);
+    CPArray  _contentSizeConstraints            @accessors(property=_contentSizeConstraints);
 
-    CGSize   _huggingPriorities;
-    CGSize   _compressionPriorities;
+    CGSize   _huggingPriorities                 @accessors;
+    CGSize   _compressionPriorities             @accessors;
     BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 
-    CGSize   _storedIntrinsicContentSize @accessors(property=storedIntrinsicContentSize);
+    CGSize   _storedIntrinsicContentSize                @accessors(property=storedIntrinsicContentSize);
 
-    BOOL     _needsUpdateConstraints    @accessors(property=needsUpdateConstraints);
+    BOOL     _needsUpdateConstraints                    @accessors(property=needsUpdateConstraints);
     // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
     BOOL     _subviewsNeedSolvingInEngine;
     // Is the view geometry dirty and does it need to set its frame from the current engine variables ?
