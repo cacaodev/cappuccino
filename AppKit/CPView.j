@@ -1219,6 +1219,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:YES];
+
+    if (!_isSettingFrameFromEngine && _viewIsConstraintBased)
+        _FrameDidExplicitChangeInConstraintBasedLayout(self, _autoresizingConstraints, YES, NO);
 }
 
 /*!
@@ -1252,7 +1255,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         [self resizeSubviewsWithOldSize:oldSize];
 
     if (!_isSettingFrameFromEngine || _viewClassFlags & CPViewHasCustomLayoutSubviews)
-    [self setNeedsLayout];
+        [self setNeedsLayout];
 
     [self setNeedsDisplay:YES];
 
@@ -1375,6 +1378,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:!_autoresizesSubviews];
+
+    if (!_isSettingFrameFromEngine && _viewIsConstraintBased)
+        _FrameDidExplicitChangeInConstraintBasedLayout(self, _autoresizingConstraints, NO, YES);
 }
 
 /*!
@@ -4149,7 +4155,7 @@ Returns whether the receiver depends on the constraint-based layout system.
 
 - (CPLayoutConstraintEngine)_localEngineIfExists
 {
-    return _localEngine;
+    return [[self topLevelView] _localEngine];
 }
 
 - (BOOL)_hasLocalEngine
@@ -4988,6 +4994,11 @@ Updates the layout of the receiving view and its subviews based on the current v
     [_superview setNeedsLayout];
 }
 
+- (void)_updateGeometryDirtyMask:(int)aMask
+{
+    _geometryDirtyMask |= aMask;
+}
+
 - (void)_updateGeometryIfNeeded
 {
 //CPLog.debug([self debugID] + " " + _cmd);
@@ -5204,6 +5215,27 @@ Updates the layout of the receiving view and its subviews based on the current v
 }
 
 @end
+
+var _FrameDidExplicitChangeInConstraintBasedLayout = function(view, autoResizingConstraints, updateOrigin, updateSize)
+{
+    var mask = (updateOrigin * 2) | (updateSize * 4);
+    [view _updateGeometryDirtyMask:mask];
+
+    if (autoResizingConstraints !== nil)
+    {
+        // regenerate the constraints with the new frame
+        // TODO: just update the constants in autoResizingConstraints
+        [view _setAutoresizingConstraints:nil];
+
+        var engine = [view _layoutEngineIfExists];
+
+        if (engine)
+        {
+            [engine removeConstraints:autoResizingConstraints];
+            [view _updateAutoresizingConstraints];
+        }
+    }
+};
 
 function _CPLayoutItemAnchorForAttribute(anItem, anAttribute)
 {
