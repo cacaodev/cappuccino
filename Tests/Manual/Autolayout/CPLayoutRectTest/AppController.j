@@ -14,18 +14,14 @@ CPLogRegister(CPLogConsole);
 @implementation AppController : CPObject
 {
     @outlet CPWindow    theWindow;
-    CPLayoutRect insideLayoutRect @accessors;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
     var contentView = [theWindow contentView],
-        contentLayoutRect = [CPLayoutRect layoutRectWithLeadingAnchor:[contentView leadingAnchor] topAnchor:[contentView topAnchor] widthAnchor:[contentView widthAnchor] heightAnchor:[contentView heightAnchor]],
-        insetLayoutRect = [contentLayoutRect layoutRectByInsettingTop:50 leading:100 bottom:-50 trailing:-100];
+        contentLayoutRect = [[contentView layoutRect] layoutRectByInsettingWithConstant:100];
 
-    insideLayoutRect = [CPLayoutRect layoutRectWithAnchorsNamed:@["x", "y", "w", "h"] inItem:contentView];
-    var constraints = [insideLayoutRect constraintsEqualToLayoutRect:insetLayoutRect];
-
+    var constraints = [[contentView layoutRectangle] constraintsEqualToLayoutRect:contentLayoutRect];
     [CPLayoutConstraint activateConstraints:constraints];
 }
 
@@ -42,16 +38,16 @@ CPLogRegister(CPLogConsole);
 
 @end
 
-
 @implementation ColorView : CPView
 {
     CPColor color;
+    CPLayoutRect layoutRectangle @accessors;
 }
 
-- (void)awakeFromCib
+- (id)viewDidMoveToWindow
 {
     color = [CPColor randomColor];
-    [self setNeedsDisplay:YES];
+    layoutRectangle = [CPLayoutRect layoutRectWithName:@"rectangle" inItem:self];
 }
 
 - (void)drawRect:(CGRect)aRect
@@ -61,20 +57,10 @@ CPLogRegister(CPLogConsole);
     CGContextFillRect(ctx, [self bounds]);
 
     [[CPColor blackColor] set];
-    var insideLayoutRect = [[CPApp delegate] insideLayoutRect],
-        constrainedRect = [insideLayoutRect valueInItem:self];
+    var constrainedRect = [layoutRectangle valueInItem:self];
 
     [[CPBezierPath bezierPathWithOvalInRect:constrainedRect] stroke];
     [[CPBezierPath bezierPathWithRect:constrainedRect] stroke];
-}
-
-@end
-
-@implementation CPLayoutRect (Blurp)
-
-+ (CPLayoutRect)layoutRectWithAnchorsNamed:(CPArray)names inItem:(id)anItem
-{
-    return [CPLayoutRect layoutRectWithLeadingAnchor:[CPLayoutXAxisAnchor anchorNamed:[names objectAtIndex:0] inItem:anItem] topAnchor:[CPLayoutYAxisAnchor anchorNamed:[names objectAtIndex:1] inItem:anItem] widthAnchor:[CPLayoutDimension anchorNamed:[names objectAtIndex:2] inItem:anItem] heightAnchor:[CPLayoutDimension anchorNamed:[names objectAtIndex:3] inItem:anItem]];
 }
 
 @end
