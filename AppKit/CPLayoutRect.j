@@ -152,11 +152,11 @@
 
     var bottomAnchor = [self bottomAnchor];
     if (arg3 != 0.0)
-        bottomAnchor = [bottomAnchor anchorByOffsettingWithConstant:arg3];
+        bottomAnchor = [bottomAnchor anchorByOffsettingWithConstant:-arg3];
 
     var trailingAnchor = [self trailingAnchor];
     if (arg4 != 0.0)
-        trailingAnchor = [trailingAnchor anchorByOffsettingWithConstant:arg4];
+        trailingAnchor = [trailingAnchor anchorByOffsettingWithConstant:-arg4];
 
     return [[self class] layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor trailingAnchor:trailingAnchor bottomAnchor:bottomAnchor];
 }
