@@ -1,12 +1,14 @@
 @import "CPLayoutAnchor.j"
+@import "CPView.j"
 
 @class CPLayoutPoint
+
 @implementation CPLayoutRect : CPObject
 {
     CPLayoutXAxisAnchor _leadingAnchor @accessors(getter=leadingAnchor);
     CPLayoutYAxisAnchor _topAnchor     @accessors(getter=topAnchor);
-    CPLayoutDimension   _heightAnchor  @accessors(getter=heightAnchor);
     CPLayoutDimension   _widthAnchor   @accessors(getter=widthAnchor);
+    CPLayoutDimension   _heightAnchor  @accessors(getter=heightAnchor);
     CPString            _name          @accessors(getter=name);
     id                  _superItem;
 }
@@ -37,6 +39,11 @@
     return [self layoutRectWithCenterXAnchor:[arg1 xAxisAnchor] centerYAnchor:[arg1 yAxisAnchor] widthAnchor:arg2 heightAnchor:arg3];
 }
 
++ (id)layoutRectWithName:(CPString)aName inItem:(id)superItem
+{
+    return [[self alloc] initWithName:aName inItem:superItem];
+}
+
 - (id)initWithLeadingAnchor:(id)arg1 topAnchor:(id)arg2 widthAnchor:(id)constant heightAnchor:(id)arg4
 {
     return [self initWithLeadingAnchor:arg1 topAnchor:arg2 widthAnchor:constant heightAnchor:arg4 name:nil];
@@ -58,6 +65,9 @@
 
 - (id)initWithName:(id)aName inItem:(id)superItem
 {
+    if (aName == nil || superItem == nil)
+        [CPException raise:CPInvalidArgumentException format:@"CPLayoutRect " + _cmd + " argument name or item cannot be nil."];
+
     self = [super init];
 
     _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.leading", aName] inItem:superItem];
@@ -180,6 +190,11 @@
         trailingAnchor = [trailingAnchor anchorByOffsettingWithDimension:arg4 multiplier:-1 constant:0];
 
     return [[self class] layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor trailingAnchor:trailingAnchor bottomAnchor:bottomAnchor];
+}
+
+- (id)layoutRectByInsettingWithConstant:(double)arg1
+{
+    return [self layoutRectByInsettingTop:arg1 leading:arg1 bottom:arg1 trailing:arg1];
 }
 
 - (id)_rectangleBySlicingWithDimension:(id)aDimension plusConstant:(float)aConstant fromEdge:(int)anEdge
@@ -409,6 +424,15 @@
 - (CGRect)frame
 {
     return CGRectMakeZero();
+}
+
+@end
+
+@implementation CPView (CPLayoutRect)
+
+- (CPLayoutRect)layoutRect
+{
+    return [CPLayoutRect layoutRectWithLeadingAnchor:[self leadingAnchor] topAnchor:[self topAnchor] widthAnchor:[self widthAnchor] heightAnchor:[self heightAnchor]];
 }
 
 @end
