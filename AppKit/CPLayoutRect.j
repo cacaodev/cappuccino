@@ -60,10 +60,10 @@
 {
     self = [super init];
 
-    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:"leading" inItem:self];
-    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:@"top" inItem:self];
-    _widthAnchor = [CPLayoutDimension anchorNamed:@"width" inItem:self];
-    _heightAnchor = [CPLayoutDimension anchorNamed:@"height" inItem:self];
+    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.leading", aName] inItem:superItem];
+    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.top", aName] inItem:superItem];
+    _widthAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.width", aName] inItem:superItem];
+    _heightAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.height", aName] inItem:superItem];
     _name = [aName copy];
     _superItem = superItem;
 
@@ -95,32 +95,12 @@
     return [super description];
 }
 
-- (id)centerYAnchor
-{
-    var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:0.5 constant:0];
-
-    if (_name)
-        [result _setName:@"centerY"];
-
-    return result;
-}
-
 - (id)bottomAnchor
 {
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:"bottom"];
-
-    return result;
-}
-
-- (id)centerXAnchor
-{
-    var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:0.5 constant:0];
-
-    if (_name)
-        [result _setName:@"centerX"];
+        [result _setName:[CPString stringWithFormat:"%@.bottom", _name]];
 
     return result;
 }
@@ -130,7 +110,27 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:@"trailing"];
+        [result _setName:[CPString stringWithFormat:"%@.trailing", _name]];
+
+    return result;
+}
+
+- (id)centerXAnchor
+{
+    var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:0.5 constant:0];
+
+    if (_name)
+        [result _setName:[CPString stringWithFormat:"%@.centerX", _name]];
+
+    return result;
+}
+
+- (id)centerYAnchor
+{
+    var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:0.5 constant:0];
+
+    if (_name)
+        [result _setName:[CPString stringWithFormat:"%@.centerY", _name]];
 
     return result;
 }
