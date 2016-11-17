@@ -312,6 +312,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
 {
+    if (arg1 == 0)
+        return [self copy];
+
     return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:arg1];
 }
 
