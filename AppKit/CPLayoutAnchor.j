@@ -772,13 +772,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (Expression)expressionInContext:(id)aContext
 {
-    var exp1 = [_firstLayoutDimension expressionInContext:aContext],
-        exp2 = [_secondLayoutDimension expressionInContext:aContext];
+    var exp1 = [_firstLayoutDimension expressionInContext:aContext];
 
     if (_secondLayoutDimensionMultiplier == 0)
         return exp1;
 
-    return new c.plus(exp1, exp2.times(_secondLayoutDimensionMultiplier));
+    var exp2 = [_secondLayoutDimension expressionInContext:aContext];
+
+    return c.plus(exp1, exp2.times(_secondLayoutDimensionMultiplier));
 }
 
 - (id)_referenceItem
@@ -874,10 +875,18 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_rootLayoutDimension _nearestAncestorLayoutItem];
 }
 
-- (id)_expressionInContext:(id)arg1
+- (Expression)expressionInContext:(id)arg1
 {
-    var rootExp = [_rootLayoutDimension _expressionInContext:arg1];
-    return c.times(rootExp, _multiplier).plus(_constant);
+    var constantExp = new c.Expression.fromConstant(_constant);
+
+    if (_multiplier == 0)
+        return constantExp;
+
+    var rootExp = [_rootLayoutDimension expressionInContext:arg1];
+
+    return c.times(rootExp, _multiplier).plus(constantExp);
+}
+
 - (CPString)descriptionEquation
 {
     if ([self name])
