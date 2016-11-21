@@ -7,6 +7,8 @@
 
 @class CPLayoutConstraint
 @class _CPCibCustomView
+
+@global _CPLayoutItemIsDescendantOf
 @typedef Expression
 @typedef Variable
 
@@ -730,7 +732,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @end
 
-@implementation CPCompositeLayoutDimension : CPLayoutAnchor
+@implementation CPCompositeLayoutDimension : CPLayoutDimension
 {
     CPLayoutDimension _firstLayoutDimension;
     float             _secondLayoutDimensionMultiplier;
@@ -862,7 +864,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (float)valueInEngine:(id)arg1
 {
-    return [_rootLayoutDimension _valueInEngine:arg1] * _multiplier + _constant;
+    return [_rootLayoutDimension valueInEngine:arg1] * _multiplier + _constant;
+}
+
+- (float)valueInItem:(id)arg1
+{
+    return [_rootLayoutDimension valueInItem:arg1] * _multiplier + _constant;
+}
+
+- (float)valueInLayoutSpace
+{
+    return [_rootLayoutDimension valueInLayoutSpace] * _multiplier + _constant;
 }
 
 - (CPArray)_childAnchors
@@ -901,13 +913,13 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @implementation CPDistanceLayoutDimension : CPLayoutDimension
 {
-    CPLayoutAnchor _minAnchor;
-    CPLayoutAnchor _maxAnchor;
+    CPLayoutAnchor _minAnchor @accessors(getter=minAnchor);
+    CPLayoutAnchor _maxAnchor @accessors(getter=maxAnchor);
 }
 
 + (id)distanceFromAnchor:(id)arg1 toAnchor:(id)arg2
 {
-    return [[CPDistanceLayoutDimension alloc] initWithMinAnchor:arg1 maxAnchor:arg2];
+    return [[[self class] alloc] initWithMinAnchor:arg1 maxAnchor:arg2];
 }
 
 - (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2
@@ -948,12 +960,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (float)valueInItem:(id)arg1
 {
-    return ABS([_maxAnchor valueInItem:arg1] - [_minAnchor valueInItem:arg1]);
+    return [_maxAnchor valueInItem:arg1] - [_minAnchor valueInItem:arg1];
 }
 
 - (float)valueInEngine:(id)arg1
 {
-    return ABS([_maxAnchor valueInEngine:arg1] - [_minAnchor valueInEngine:arg1]);
+    return [_maxAnchor valueInEngine:arg1] - [_minAnchor valueInEngine:arg1];
+}
+
+- (float)valueInLayoutSpace
+{
+    return [_maxAnchor valueInLayoutSpace] - [_minAnchor valueInLayoutSpace];
 }
 
 - (Expression)expressionInContext:(id)arg1
