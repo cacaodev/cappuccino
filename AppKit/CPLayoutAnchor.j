@@ -514,6 +514,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (id)copy
 {
     return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:[self attribute] name:[self name]];
+- (CPString)description
+{
+    return [CPString stringWithFormat:@"%@.%@", [[self item] debugID], [self name]];
 }
 
 @end
@@ -612,7 +615,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if ([self name])
         return [super descriptionEquation];
 
-    return [CPString stringWithFormat:@"{%@ + %@x%@ + %@}",[[self axisAnchor] descriptionEquation], [_dimension descriptionEquation], _dimensionMultiplier, _constant];
+    return [CPString stringWithFormat:@"(%@ + %@x%@ + %@)",[[self axisAnchor] descriptionEquation], [_dimension descriptionEquation], _dimensionMultiplier, _constant];
 }
 
 // CPLayoutAnchor creation
@@ -801,6 +804,16 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return @[_firstLayoutDimension, _secondLayoutDimension];
 }
 
+- (CPString)descriptionEquation
+{
+    if ([self name])
+        return [super descriptionEquation];
+
+    var add_sign = (_secondLayoutDimensionMultiplier >= 0) ? "+" : "-";
+
+    return [CPString stringWithFormat:@"%@ %@ %d x (%@)", [_firstLayoutDimension descriptionEquation], add_sign, ABS(_secondLayoutDimensionMultiplier), [_secondLayoutDimension descriptionEquation]];
+}
+
 @end
 
 @implementation CPArithmeticLayoutDimension : CPLayoutDimension
@@ -863,6 +876,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     var rootExp = [_rootLayoutDimension _expressionInContext:arg1];
     return c.times(rootExp, _multiplier).plus(_constant);
+- (CPString)descriptionEquation
+{
+    if ([self name])
+        return [super descriptionEquation];
+
+    var add_sign = (_constant >= 0) ? "+" : "-";
+
+    return [CPString stringWithFormat:@"%d x (%@) %@ %d", _multiplier, _rootLayoutDimension, add_sign, ABS(_constant)];
 }
 
 @end
@@ -907,7 +928,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPString)descriptionEquation
 {
-    return [CPString stringWithFormat:@"[%@-%@]", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
+    if ([self name])
+        return [super descriptionEquation];
+
+    return [CPString stringWithFormat:@"[%@ -> %@]", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
 }
 
 - (float)valueInItem:(id)arg1
