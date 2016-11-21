@@ -739,7 +739,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)initWithDimension:(id)firstDimension plusDimension:(id)secondDimension times:(float)multiplier
 {
-    self = [super init];
+    self = [super initWithItem:[firstDimension _referenceItem] attribute:-1 name:nil];
 
     _firstLayoutDimension = [firstDimension copy];
     _secondLayoutDimension = [secondDimension copy];
@@ -842,7 +842,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 */
 - (id)initWithMultiplier:(float)arg1 dimension:(id)arg2 constant:(float)arg3
 {
-    self = [super init];
+    self = [super initWithItem:[arg2 _referenceItem] attribute:-1 name:nil];
 
     if ( self )
     {
@@ -903,9 +903,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2
 {
-    var name = [CPString stringWithFormat:@"[%@-%@]", [arg1 name], [arg2 name]];
-
-    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:name];
+    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:nil];
 
     _minAnchor = [arg1 copy];
     _maxAnchor = [arg2 copy];
