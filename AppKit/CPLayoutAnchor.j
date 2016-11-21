@@ -513,7 +513,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:[self attribute] name:[self name]];
+    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+}
+
 - (CPString)description
 {
     return [CPString stringWithFormat:@"%@.%@", [[self item] debugID], [self name]];
@@ -748,7 +750,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithDimension:_firstLayoutDimension plusDimension:_secondLayoutDimension times:_secondLayoutDimensionMultiplier];
+    return [[CPCompositeLayoutDimension alloc] initWithDimension:_firstLayoutDimension plusDimension:_secondLayoutDimension times:_secondLayoutDimensionMultiplier];
 }
 
 - (CPInteger)_anchorType
@@ -913,7 +915,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[CPDistanceLayoutDimension alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor];
+    var copy = [[[self class] alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor];
+    [copy _setName:_name];
+
+    return copy;
 }
 
 - (CPInteger)_anchorType
