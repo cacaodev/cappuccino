@@ -919,25 +919,23 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 + (id)distanceFromAnchor:(id)arg1 toAnchor:(id)arg2
 {
-    return [[[self class] alloc] initWithMinAnchor:arg1 maxAnchor:arg2];
+    return [[[self class] alloc] initWithMinAnchor:arg1 maxAnchor:arg2 name:nil];
 }
 
-- (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2
+- (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2 name:(CPString)aName
 {
-    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:nil];
+    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:aName];
 
     _minAnchor = [arg1 copy];
     _maxAnchor = [arg2 copy];
+    _name = [aName copy];
 
     return self;
 }
 
 - (id)copy
 {
-    var copy = [[[self class] alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor];
-    [copy _setName:_name];
-
-    return copy;
+    return [[[self class] alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor name:_name];
 }
 
 - (CPInteger)_anchorType
@@ -955,12 +953,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if ([self name])
         return [super descriptionEquation];
 
-    return [CPString stringWithFormat:@"[%@ -> %@]", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
-}
-
-- (float)valueInItem:(id)arg1
-{
-    return [_maxAnchor valueInItem:arg1] - [_minAnchor valueInItem:arg1];
+    return [CPString stringWithFormat:@"(%@ - %@)", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
 }
 
 - (float)valueInEngine:(id)arg1
