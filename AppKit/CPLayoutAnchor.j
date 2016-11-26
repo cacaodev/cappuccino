@@ -132,12 +132,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [self variable].valueOf();
 }
 
-// Default for dimension
-- (float)valueInItem:(id)anItem
-{
-    return [self valueInEngine:nil];
-}
-
 - (float)valueInLayoutSpace
 {
     return 0.0;
@@ -426,11 +420,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return CGRectGetMinX([[self item] frame]);
 }
 
-- (float)valueInItem:(id)anItem
-{
-    return [self valueInEngine:nil] - CGRectGetMinX([anItem frame]);
-}
-
 // CPLayoutAnchor creation
 
 - (CPCompositeLayoutXAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
@@ -447,11 +436,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (float)valueInLayoutSpace
 {
     return CGRectGetMinY([[self item] frame]);
-}
-
-- (float)valueInItem:(id)anItem
-{
-    return [self valueInEngine:nil] - CGRectGetMinY([anItem frame]);
 }
 
 // CPLayoutAnchor creation
@@ -481,11 +465,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     var frame = [[self item] frame];
     return (_attribute == CPLayoutAttributeWidth) ? CGRectGetWidth(frame) : CGRectGetHeight(frame);
-}
-
-- (float)valueInItem:(id)anItem
-{
-    return [self variable].valueOf();
 }
 
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
@@ -592,11 +571,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (float)valueInLayoutSpace
 {
     return [_axisAnchor valueInLayoutSpace] + _dimensionMultiplier * [_dimension valueInLayoutSpace] + _constant;
-}
-
-- (float)valueInItem:(id)anItem
-{
-    return [_axisAnchor valueInItem:anItem] + (_dimensionMultiplier * [_dimension valueInItem:anItem]) + _constant;
 }
 
 - (float)valueInEngine:(id)anEngine
@@ -794,11 +768,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_firstLayoutDimension valueInLayoutSpace] + _secondLayoutDimensionMultiplier * [_secondLayoutDimension valueInLayoutSpace];
 }
 
-- (float)valueInItem:(id)anItem
-{
-    return [_firstLayoutDimension valueInItem:anItem] + _secondLayoutDimensionMultiplier * [_secondLayoutDimension valueInItem:anItem];
-}
-
 - (float)valueInEngine:(id)anEngine
 {
     return [_firstLayoutDimension valueInEngine:anEngine] + _secondLayoutDimensionMultiplier * [_secondLayoutDimension valueInEngine:anEngine];
@@ -865,11 +834,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (float)valueInEngine:(id)arg1
 {
     return [_rootLayoutDimension valueInEngine:arg1] * _multiplier + _constant;
-}
-
-- (float)valueInItem:(id)arg1
-{
-    return [_rootLayoutDimension valueInItem:arg1] * _multiplier + _constant;
 }
 
 - (float)valueInLayoutSpace

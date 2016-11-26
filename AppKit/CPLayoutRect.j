@@ -312,22 +312,6 @@
     var dimension = [anchor anchorByMultiplyingByConstant:arg1];
     return [[self class] layoutRectBySlicingWithDimension:dimension fromEdge:arg2];
 }
-/*
-- (id)observableValueInItem:(id)arg1
-{
-    return [CPLayoutRectObservable observableForRect:self inItem:arg1];
-}
-*/
-
-- (CGRect)valueInItem:(id)arg1
-{
-    var x = [_leadingAnchor valueInItem:arg1],
-        y = [_topAnchor valueInItem:arg1],
-        w = [_widthAnchor valueInItem:arg1],
-        h = [_heightAnchor valueInItem:arg1];
-
-    return CGRectMake(x, y, w, h);
-}
 
 - (CGRect)valueInEngine:(id)arg1
 {
