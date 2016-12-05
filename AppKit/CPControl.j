@@ -1089,10 +1089,20 @@ var CPControlBlackColor = [CPColor blackColor];
 
 - (CGSize)intrinsicContentSize
 {
-    if ([self hasThemeAttribute:@"min-size"])
+    if ([self respondsToSelector:@selector(_minimumFrameSize)])
+        return [self _minimumFrameSize];
+    else if ([self hasThemeAttribute:@"min-size"])
         return [self currentValueForThemeAttribute:@"min-size"];
 
     return [super intrinsicContentSize];
+}
+
+- (CGInset)alignmentRectInsets
+{
+    if ([self hasThemeAttribute:@"bezel-inset"])
+        return [self currentValueForThemeAttribute:@"bezel-inset"];
+
+    return CGInsetMakeZero();
 }
 
 @end

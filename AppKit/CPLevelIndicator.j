@@ -326,6 +326,16 @@ CPRatingLevelIndicatorStyle                 = 3;
 
 @end
 
+@implementation CPLevelIndicator (ConstraintBasedLayout)
+
+- (CGSize)intrinsicContentSize
+{
+    // TODO: get height from theme attribute
+    return CGSizeMake(CPViewNoInstrinsicMetric, 18.0);
+}
+
+@end
+
 var CPLevelIndicatorStyleKey                    = "CPLevelIndicatorStyleKey",
     CPLevelIndicatorMinValueKey                 = "CPLevelIndicatorMinValueKey",
     CPLevelIndicatorMaxValueKey                 = "CPLevelIndicatorMaxValueKey",

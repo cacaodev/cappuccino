@@ -1510,6 +1510,14 @@ Notifies the delegate when the scroll view has finished scrolling.
 
 @end
 
+@implementation CPScrollView (ConstraintBasedLayout)
+
++ (BOOL)refusesConstraintBasedLayout
+{
+    return YES;
+}
+
+@end
 
 var CPScrollViewContentViewKey          = @"CPScrollViewContentView",
     CPScrollViewHeaderClipViewKey       = @"CPScrollViewHeaderClipViewKey",

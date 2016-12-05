@@ -7,6 +7,8 @@
 
 @class CPLayoutConstraint
 @class _CPCibCustomView
+
+@global _CPLayoutItemIsDescendantOf
 @typedef Expression
 @typedef Variable
 
@@ -92,7 +94,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         var item = [self _referenceItem],
             prefix = [item UID],
             engine = [item _layoutEngine];
-
+#if DEBUG
+            prefix += "-" + [item debugID];
+#endif
         _variable = [engine variableWithPrefix:prefix name:[self name] value:[self valueInLayoutSpace] owner:self];
     }
 
@@ -126,12 +130,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (float)valueInEngine:(id)anEngine
 {
     return [self variable].valueOf();
-}
-
-// Default for dimension
-- (float)valueInItem:(id)anItem
-{
-    return [self valueInEngine:nil];
 }
 
 - (float)valueInLayoutSpace
@@ -310,6 +308,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
 {
+    if (arg1 == 0)
+        return [self copy];
+
     return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:arg1];
 }
 
@@ -419,11 +420,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return CGRectGetMinX([[self item] frame]);
 }
 
-- (float)valueInItem:(id)anItem
-{
-    return [self valueInEngine:nil] - CGRectGetMinX([anItem frame]);
-}
-
 // CPLayoutAnchor creation
 
 - (CPCompositeLayoutXAxisAnchor)anchorByOffsettingWithDimension:(CPLayoutDimension)distance multiplier:(float)multiplier constant:(float)constant
@@ -440,11 +436,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (float)valueInLayoutSpace
 {
     return CGRectGetMinY([[self item] frame]);
-}
-
-- (float)valueInItem:(id)anItem
-{
-    return [self valueInEngine:nil] - CGRectGetMinY([anItem frame]);
 }
 
 // CPLayoutAnchor creation
@@ -476,11 +467,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return (_attribute == CPLayoutAttributeWidth) ? CGRectGetWidth(frame) : CGRectGetHeight(frame);
 }
 
-- (float)valueInItem:(id)anItem
-{
-    return [self variable].valueOf();
-}
-
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
 {
     [[self _referenceItem] _engineDidChangeVariableOfType:4];
@@ -508,7 +494,12 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:[self attribute] name:[self name]];
+    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+}
+
+- (CPString)description
+{
+    return [CPString stringWithFormat:@"%@.%@", [[self item] debugID], [self name]];
 }
 
 @end
@@ -582,11 +573,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_axisAnchor valueInLayoutSpace] + _dimensionMultiplier * [_dimension valueInLayoutSpace] + _constant;
 }
 
-- (float)valueInItem:(id)anItem
-{
-    return [_axisAnchor valueInItem:anItem] + (_dimensionMultiplier * [_dimension valueInItem:anItem]) + _constant;
-}
-
 - (float)valueInEngine:(id)anEngine
 {
     return [_axisAnchor valueInEngine:anEngine] + _dimensionMultiplier * [_dimension valueInEngine:anEngine] + _constant;
@@ -607,7 +593,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if ([self name])
         return [super descriptionEquation];
 
-    return [CPString stringWithFormat:@"{%@ + %@x%@ + %@}",[[self axisAnchor] descriptionEquation], [_dimension descriptionEquation], _dimensionMultiplier, _constant];
+    return [CPString stringWithFormat:@"(%@ + %@x%@ + %@)",[[self axisAnchor] descriptionEquation], [_dimension descriptionEquation], _dimensionMultiplier, _constant];
 }
 
 // CPLayoutAnchor creation
@@ -720,7 +706,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @end
 
-@implementation CPCompositeLayoutDimension : CPLayoutAnchor
+@implementation CPCompositeLayoutDimension : CPLayoutDimension
 {
     CPLayoutDimension _firstLayoutDimension;
     float             _secondLayoutDimensionMultiplier;
@@ -729,7 +715,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)initWithDimension:(id)firstDimension plusDimension:(id)secondDimension times:(float)multiplier
 {
-    self = [super init];
+    self = [super initWithItem:[firstDimension _referenceItem] attribute:-1 name:nil];
 
     _firstLayoutDimension = [firstDimension copy];
     _secondLayoutDimension = [secondDimension copy];
@@ -740,7 +726,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithDimension:_firstLayoutDimension plusDimension:_secondLayoutDimension times:_secondLayoutDimensionMultiplier];
+    return [[CPCompositeLayoutDimension alloc] initWithDimension:_firstLayoutDimension plusDimension:_secondLayoutDimension times:_secondLayoutDimensionMultiplier];
 }
 
 - (CPInteger)_anchorType
@@ -762,13 +748,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (Expression)expressionInContext:(id)aContext
 {
-    var exp1 = [_firstLayoutDimension expressionInContext:aContext],
-        exp2 = [_secondLayoutDimension expressionInContext:aContext];
+    var exp1 = [_firstLayoutDimension expressionInContext:aContext];
 
     if (_secondLayoutDimensionMultiplier == 0)
         return exp1;
 
-    return new c.plus(exp1, exp2.times(_secondLayoutDimensionMultiplier));
+    var exp2 = [_secondLayoutDimension expressionInContext:aContext];
+
+    return c.plus(exp1, exp2.times(_secondLayoutDimensionMultiplier));
 }
 
 - (id)_referenceItem
@@ -781,11 +768,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_firstLayoutDimension valueInLayoutSpace] + _secondLayoutDimensionMultiplier * [_secondLayoutDimension valueInLayoutSpace];
 }
 
-- (float)valueInItem:(id)anItem
-{
-    return [_firstLayoutDimension valueInItem:anItem] + _secondLayoutDimensionMultiplier * [_secondLayoutDimension valueInItem:anItem];
-}
-
 - (float)valueInEngine:(id)anEngine
 {
     return [_firstLayoutDimension valueInEngine:anEngine] + _secondLayoutDimensionMultiplier * [_secondLayoutDimension valueInEngine:anEngine];
@@ -794,6 +776,16 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (CPArray)_childAnchors
 {
     return @[_firstLayoutDimension, _secondLayoutDimension];
+}
+
+- (CPString)descriptionEquation
+{
+    if ([self name])
+        return [super descriptionEquation];
+
+    var add_sign = (_secondLayoutDimensionMultiplier >= 0) ? "+" : "-";
+
+    return [CPString stringWithFormat:@"%@ %@ %d x (%@)", [_firstLayoutDimension descriptionEquation], add_sign, ABS(_secondLayoutDimensionMultiplier), [_secondLayoutDimension descriptionEquation]];
 }
 
 @end
@@ -822,7 +814,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 */
 - (id)initWithMultiplier:(float)arg1 dimension:(id)arg2 constant:(float)arg3
 {
-    self = [super init];
+    self = [super initWithItem:[arg2 _referenceItem] attribute:-1 name:nil];
 
     if ( self )
     {
@@ -841,7 +833,12 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (float)valueInEngine:(id)arg1
 {
-    return [_rootLayoutDimension _valueInEngine:arg1] * _multiplier + _constant;
+    return [_rootLayoutDimension valueInEngine:arg1] * _multiplier + _constant;
+}
+
+- (float)valueInLayoutSpace
+{
+    return [_rootLayoutDimension valueInLayoutSpace] * _multiplier + _constant;
 }
 
 - (CPArray)_childAnchors
@@ -854,40 +851,55 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_rootLayoutDimension _nearestAncestorLayoutItem];
 }
 
-- (id)_expressionInContext:(id)arg1
+- (Expression)expressionInContext:(id)arg1
 {
-    var rootExp = [_rootLayoutDimension _expressionInContext:arg1];
-    return c.times(rootExp, _multiplier).plus(_constant);
+    var constantExp = new c.Expression.fromConstant(_constant);
+
+    if (_multiplier == 0)
+        return constantExp;
+
+    var rootExp = [_rootLayoutDimension expressionInContext:arg1];
+
+    return c.times(rootExp, _multiplier).plus(constantExp);
+}
+
+- (CPString)descriptionEquation
+{
+    if ([self name])
+        return [super descriptionEquation];
+
+    var add_sign = (_constant >= 0) ? "+" : "-";
+
+    return [CPString stringWithFormat:@"%d x (%@) %@ %d", _multiplier, _rootLayoutDimension, add_sign, ABS(_constant)];
 }
 
 @end
 
 @implementation CPDistanceLayoutDimension : CPLayoutDimension
 {
-    CPLayoutAnchor _minAnchor;
-    CPLayoutAnchor _maxAnchor;
+    CPLayoutAnchor _minAnchor @accessors(getter=minAnchor);
+    CPLayoutAnchor _maxAnchor @accessors(getter=maxAnchor);
 }
 
 + (id)distanceFromAnchor:(id)arg1 toAnchor:(id)arg2
 {
-    return [[CPDistanceLayoutDimension alloc] initWithMinAnchor:arg1 maxAnchor:arg2];
+    return [[[self class] alloc] initWithMinAnchor:arg1 maxAnchor:arg2 name:nil];
 }
 
-- (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2
+- (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2 name:(CPString)aName
 {
-    var name = [CPString stringWithFormat:@"[%@-%@]", [arg1 name], [arg2 name]];
-
-    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:name];
+    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:aName];
 
     _minAnchor = [arg1 copy];
     _maxAnchor = [arg2 copy];
+    _name = [aName copy];
 
     return self;
 }
 
 - (id)copy
 {
-    return [[CPDistanceLayoutDimension alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor];
+    return [[[self class] alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor name:_name];
 }
 
 - (CPInteger)_anchorType
@@ -902,17 +914,20 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (CPString)descriptionEquation
 {
-    return [CPString stringWithFormat:@"[%@-%@]", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
-}
+    if ([self name])
+        return [super descriptionEquation];
 
-- (float)valueInItem:(id)arg1
-{
-    return ABS([_maxAnchor valueInItem:arg1] - [_minAnchor valueInItem:arg1]);
+    return [CPString stringWithFormat:@"(%@ - %@)", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
 }
 
 - (float)valueInEngine:(id)arg1
 {
-    return ABS([_maxAnchor valueInEngine:arg1] - [_minAnchor valueInEngine:arg1]);
+    return [_maxAnchor valueInEngine:arg1] - [_minAnchor valueInEngine:arg1];
+}
+
+- (float)valueInLayoutSpace
+{
+    return [_maxAnchor valueInLayoutSpace] - [_minAnchor valueInLayoutSpace];
 }
 
 - (Expression)expressionInContext:(id)arg1

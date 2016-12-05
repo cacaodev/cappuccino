@@ -55,11 +55,6 @@
     return [self layoutPointByOffsettingWithXOffsetDimension:arg1 yOffsetDimension:arg2];
 }
 
-- (CGPoint)valueInItem:(id)arg1
-{
-    return CGPointMake([_xAxisAnchor valueInItem:arg1], [_yAxisAnchor valueInItem:arg1]);
-}
-
 - (CGPoint)valueInEngine:(id)arg1
 {
     return CGPointMake([_xAxisAnchor valueInEngine:arg1], [_yAxisAnchor valueInEngine:arg1]);

@@ -1,12 +1,14 @@
 @import "CPLayoutAnchor.j"
+@import "CPView.j"
 
 @class CPLayoutPoint
+
 @implementation CPLayoutRect : CPObject
 {
     CPLayoutXAxisAnchor _leadingAnchor @accessors(getter=leadingAnchor);
     CPLayoutYAxisAnchor _topAnchor     @accessors(getter=topAnchor);
-    CPLayoutDimension   _heightAnchor  @accessors(getter=heightAnchor);
     CPLayoutDimension   _widthAnchor   @accessors(getter=widthAnchor);
+    CPLayoutDimension   _heightAnchor  @accessors(getter=heightAnchor);
     CPString            _name          @accessors(getter=name);
     id                  _superItem;
 }
@@ -37,6 +39,11 @@
     return [self layoutRectWithCenterXAnchor:[arg1 xAxisAnchor] centerYAnchor:[arg1 yAxisAnchor] widthAnchor:arg2 heightAnchor:arg3];
 }
 
++ (id)layoutRectWithName:(CPString)aName inItem:(id)superItem
+{
+    return [[self alloc] initWithName:aName inItem:superItem];
+}
+
 - (id)initWithLeadingAnchor:(id)arg1 topAnchor:(id)arg2 widthAnchor:(id)constant heightAnchor:(id)arg4
 {
     return [self initWithLeadingAnchor:arg1 topAnchor:arg2 widthAnchor:constant heightAnchor:arg4 name:nil];
@@ -58,12 +65,15 @@
 
 - (id)initWithName:(id)aName inItem:(id)superItem
 {
+    if (aName == nil || superItem == nil)
+        [CPException raise:CPInvalidArgumentException format:@"CPLayoutRect " + _cmd + " argument name or item cannot be nil."];
+
     self = [super init];
 
-    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:"leading" inItem:self];
-    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:@"top" inItem:self];
-    _widthAnchor = [CPLayoutDimension anchorNamed:@"width" inItem:self];
-    _heightAnchor = [CPLayoutDimension anchorNamed:@"height" inItem:self];
+    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.leading", aName] inItem:superItem];
+    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.top", aName] inItem:superItem];
+    _widthAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.width", aName] inItem:superItem];
+    _heightAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.height", aName] inItem:superItem];
     _name = [aName copy];
     _superItem = superItem;
 
@@ -95,32 +105,12 @@
     return [super description];
 }
 
-- (id)centerYAnchor
-{
-    var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:0.5 constant:0];
-
-    if (_name)
-        [result _setName:@"centerY"];
-
-    return result;
-}
-
 - (id)bottomAnchor
 {
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:"bottom"];
-
-    return result;
-}
-
-- (id)centerXAnchor
-{
-    var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:0.5 constant:0];
-
-    if (_name)
-        [result _setName:@"centerX"];
+        [result _setName:[CPString stringWithFormat:"%@.bottom", _name]];
 
     return result;
 }
@@ -130,7 +120,27 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:@"trailing"];
+        [result _setName:[CPString stringWithFormat:"%@.trailing", _name]];
+
+    return result;
+}
+
+- (id)centerXAnchor
+{
+    var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:0.5 constant:0];
+
+    if (_name)
+        [result _setName:[CPString stringWithFormat:"%@.centerX", _name]];
+
+    return result;
+}
+
+- (id)centerYAnchor
+{
+    var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:0.5 constant:0];
+
+    if (_name)
+        [result _setName:[CPString stringWithFormat:"%@.centerY", _name]];
 
     return result;
 }
@@ -152,11 +162,11 @@
 
     var bottomAnchor = [self bottomAnchor];
     if (arg3 != 0.0)
-        bottomAnchor = [bottomAnchor anchorByOffsettingWithConstant:arg3];
+        bottomAnchor = [bottomAnchor anchorByOffsettingWithConstant:-arg3];
 
     var trailingAnchor = [self trailingAnchor];
     if (arg4 != 0.0)
-        trailingAnchor = [trailingAnchor anchorByOffsettingWithConstant:arg4];
+        trailingAnchor = [trailingAnchor anchorByOffsettingWithConstant:-arg4];
 
     return [[self class] layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor trailingAnchor:trailingAnchor bottomAnchor:bottomAnchor];
 }
@@ -180,6 +190,11 @@
         trailingAnchor = [trailingAnchor anchorByOffsettingWithDimension:arg4 multiplier:-1 constant:0];
 
     return [[self class] layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor trailingAnchor:trailingAnchor bottomAnchor:bottomAnchor];
+}
+
+- (id)layoutRectByInsettingWithConstant:(double)arg1
+{
+    return [self layoutRectByInsettingTop:arg1 leading:arg1 bottom:arg1 trailing:arg1];
 }
 
 - (id)_rectangleBySlicingWithDimension:(id)aDimension plusConstant:(float)aConstant fromEdge:(int)anEdge
@@ -297,22 +312,6 @@
     var dimension = [anchor anchorByMultiplyingByConstant:arg1];
     return [[self class] layoutRectBySlicingWithDimension:dimension fromEdge:arg2];
 }
-/*
-- (id)observableValueInItem:(id)arg1
-{
-    return [CPLayoutRectObservable observableForRect:self inItem:arg1];
-}
-*/
-
-- (CGRect)valueInItem:(id)arg1
-{
-    var x = [_leadingAnchor valueInItem:arg1],
-        y = [_topAnchor valueInItem:arg1],
-        w = [_widthAnchor valueInItem:arg1],
-        h = [_heightAnchor valueInItem:arg1];
-
-    return CGRectMake(x, y, w, h);
-}
 
 - (CGRect)valueInEngine:(id)arg1
 {
@@ -409,6 +408,15 @@
 - (CGRect)frame
 {
     return CGRectMakeZero();
+}
+
+@end
+
+@implementation CPView (CPLayoutRect)
+
+- (CPLayoutRect)layoutRect
+{
+    return [CPLayoutRect layoutRectWithLeadingAnchor:[self leadingAnchor] topAnchor:[self topAnchor] widthAnchor:[self widthAnchor] heightAnchor:[self heightAnchor]];
 }
 
 @end

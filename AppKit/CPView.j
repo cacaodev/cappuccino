@@ -262,21 +262,23 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     id                  _animator;
     CPDictionary        _animationsDictionary;
+    BOOL                _inhibitDOMUpdates      @accessors(setter=_setInhibitDOMUpdates);
+    BOOL                _forceUpdates           @accessors(setter=_setForceUpdates);
 
     // ConstraintBasedLayout support
     CPLayoutConstraintEngine _localEngine;
-    CPArray  _constraintsArray @accessors(property=_constraintsArray);
-    CPArray  _autoresizingConstraints @accessors;
-    CPArray  _internalConstraints @accessors(property=_internalConstraints);
-    CPArray  _contentSizeConstraints @accessors(property=_contentSizeConstraints);
+    CPArray  _constraintsArray                  @accessors(property=_constraintsArray);
+    CPArray  _autoresizingConstraints           @accessors;
+    CPArray  _internalConstraints               @accessors(property=_internalConstraints);
+    CPArray  _contentSizeConstraints            @accessors(property=_contentSizeConstraints);
 
-    CGSize   _huggingPriorities;
-    CGSize   _compressionPriorities;
+    CGSize   _huggingPriorities                 @accessors;
+    CGSize   _compressionPriorities             @accessors;
     BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 
-    CGSize   _storedIntrinsicContentSize @accessors(property=storedIntrinsicContentSize);
+    CGSize   _storedIntrinsicContentSize                @accessors(property=storedIntrinsicContentSize);
 
-    BOOL     _needsUpdateConstraints    @accessors(property=needsUpdateConstraints);
+    BOOL     _needsUpdateConstraints                    @accessors(property=needsUpdateConstraints);
     // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
     BOOL     _subviewsNeedSolvingInEngine;
     // Is the view geometry dirty and does it need to set its frame from the current engine variables ?
@@ -287,7 +289,6 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL     _viewHasConstraintBasedSubviews;
     BOOL     _topLevelViewExtraConstraintsAdded;
 
-    CPView         _layoutGuides;
     CPLayoutAnchor _leftAnchor;
     CPLayoutAnchor _rightAnchor;
     CPLayoutAnchor _topAnchor;
@@ -485,6 +486,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 
         [self _setupViewFlags];
         [self _loadThemeAttributes];
+
+        _inhibitDOMUpdates = NO;
+        _forceUpdates = NO;
 
         [self _initConstraintsIvars];
 
@@ -950,8 +954,14 @@ var CPViewHighDPIDrawingEnabled = YES;
     }
 
     // The local engine is created on the top level view only.
-    if ([_window _shouldEngageAutolayout] && _localEngine !== nil)
-        [self _promoteLocalEngineToWindowEngine];
+    if (_localEngine !== nil)
+    {
+        if ([_window _shouldEngageAutolayout])
+            [self _promoteLocalEngineToWindowEngine];
+
+        // TODO: if we don't enable autolayout, local engine variables should be reseted.
+        _localEngine = nil;
+    }
 }
 
 /*!
@@ -1115,7 +1125,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 */
 - (void)setFrame:(CGRect)aFrame
 {
-    if (CGRectEqualToRect(_frame, aFrame))
+    if (CGRectEqualToRect(_frame, aFrame) && !_forceUpdates)
         return;
 
     _inhibitFrameAndBoundsChangedNotifications = YES;
@@ -1186,7 +1196,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 {
     var origin = _frame.origin;
 
-    if (!aPoint || CGPointEqualToPoint(origin, aPoint))
+    if (!aPoint || (CGPointEqualToPoint(origin, aPoint) && !_forceUpdates))
         return;
 
     origin.x = aPoint.x;
@@ -1199,13 +1209,19 @@ var CPViewHighDPIDrawingEnabled = YES;
         [[self superview] viewFrameChanged:[[CPNotification alloc] initWithName:CPViewFrameDidChangeNotification object:self userInfo:nil]];
 
 #if PLATFORM(DOM)
-    var transform = _superview ? _superview._boundsTransform : NULL;
+    if (!_inhibitDOMUpdates)
+    {
+        var transform = _superview ? _superview._boundsTransform : NULL;
 
-    CPDOMDisplayServerSetStyleLeftTop(_DOMElement, transform, origin.x, origin.y);
+        CPDOMDisplayServerSetStyleLeftTop(_DOMElement, transform, origin.x, origin.y);
+    }
 #endif
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:YES];
+
+    if (!_isSettingFrameFromEngine && _viewIsConstraintBased)
+        _FrameDidExplicitChangeInConstraintBasedLayout(self, _autoresizingConstraints, YES, NO);
 }
 
 /*!
@@ -1218,7 +1234,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 {
     var size = _frame.size;
 
-    if (!aSize || CGSizeEqualToSize(size, aSize))
+    if (!aSize || (CGSizeEqualToSize(size, aSize) && !_forceUpdates))
         return;
 
     var oldSize = CGSizeMakeCopy(size);
@@ -1362,6 +1378,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:!_autoresizesSubviews];
+
+    if (!_isSettingFrameFromEngine && _viewIsConstraintBased)
+        _FrameDidExplicitChangeInConstraintBasedLayout(self, _autoresizingConstraints, NO, YES);
 }
 
 /*!
@@ -1374,7 +1393,8 @@ var CPViewHighDPIDrawingEnabled = YES;
 #if PLATFORM(DOM)
     var scale = [self scaleSize];
 
-    CPDOMDisplayServerSetStyleSize(_DOMElement, aSize.width * 1 / scale.width, aSize.height * 1 / scale.height);
+    if (!_inhibitDOMUpdates)
+        CPDOMDisplayServerSetStyleSize(_DOMElement, aSize.width * 1 / scale.width, aSize.height * 1 / scale.height);
 
     if (_DOMContentsElement)
     {
@@ -1578,7 +1598,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         var subview = _subviews[count];
         if (![subview _needsConstraintBasedLayout])
             [subview resizeWithOldSuperviewSize:aSize];
-    }
+}
 }
 
 /*!
@@ -2875,19 +2895,6 @@ setBoundsOrigin:
     return _needsLayout;
 }
 
-- (void)layout
-{
-    _needsLayout = NO;
-
-    if (_viewClassFlags & CPViewHasCustomViewWillLayout)
-        [self viewWillLayout];
-
-    if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
-        [self layoutSubviews];
-
-    [self viewDidLayout];
-}
-
 - (void)layoutIfNeeded
 {
     if (_needsLayout)
@@ -2912,17 +2919,12 @@ setBoundsOrigin:
 
 - (void)layoutSubviews
 {
-    if (![_window isAutolayoutEnabled])
+    if ([self _layoutEngineIfExists] == nil)
         return;
 
     [_subviews enumerateObjectsUsingBlock:function(subview, idx, stop)
     {
         [subview _updateGeometryIfNeeded];
-    }];
-
-    [_layoutGuides enumerateObjectsUsingBlock:function(guide, idx, stop)
-    {
-        [guide _updateGeometryIfNeeded];
     }];
 }
 
@@ -4045,13 +4047,14 @@ Returns whether the receiver depends on the constraint-based layout system.
 */
 + (BOOL)requiresConstraintBasedLayout
 {
+//    return [self instancesImplementSelector:@selector(updateConstraints)];
     return NO;
 }
 
 /*!
     Tells the Autolayout system to stop constraint updating in the subtree.
 
-    @discussion Subclasses should return YES when subviews honnor the autoresizingMask and need to be managed by the Autosize layout system.
+    @discussion Subclasses should return YES when subviews honor the autoresizingMask and need to be managed by the Autosize layout system.
     Defaults to NO.
 */
 + (BOOL)refusesConstraintBasedLayout
@@ -4071,9 +4074,9 @@ Returns whether the receiver depends on the constraint-based layout system.
     _geometryDirtyMask = 0;
     _autoresizingConstraints = nil;
     _contentSizeConstraints = @[];
+    _internalConstraints = nil;
     _constraintsArray = @[];
     _storedIntrinsicContentSize = CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
-    _layoutGuides = @[];
 
     _centerYAnchor = nil;
     _centerXAnchor = nil;
@@ -4152,7 +4155,7 @@ Returns whether the receiver depends on the constraint-based layout system.
 
 - (CPLayoutConstraintEngine)_localEngineIfExists
 {
-    return _localEngine;
+    return [[self topLevelView] _localEngine];
 }
 
 - (BOOL)_hasLocalEngine
@@ -4193,8 +4196,6 @@ Returns whether the receiver depends on the constraint-based layout system.
         [_window _setLayoutEngine:_localEngine];
         [_localEngine _setDelegate:_window];
     }
-
-    _localEngine = nil;
 }
 
 // DEBUG
@@ -4324,9 +4325,6 @@ The insets (in points) from the view’s frame that define its content rectangle
 */
 - (CGInset)alignmentRectInsets
 {
-    if ([self hasThemeAttribute:@"bezel-inset"])
-        return [self currentValueForThemeAttribute:@"bezel-inset"];
-
     return CGInsetMakeZero();
 }
 
@@ -4920,9 +4918,18 @@ Perform layout in concert with the constraint-based layout system.
 
 @note You must call [super layout] as part of your implementation.
 */
+
 - (void)layout
 {
-    [self layoutSubviews];
+    _needsLayout = NO;
+
+    if (_viewClassFlags & CPViewHasCustomViewWillLayout)
+        [self viewWillLayout];
+
+    if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
+        [self layoutSubviews];
+
+    [self viewDidLayout];
 }
 
 /*!
@@ -4953,10 +4960,15 @@ Updates the layout of the receiving view and its subviews based on the current v
         _topLevelViewExtraConstraintsAdded = YES;
     }
 
+    // Todo: Solve only if needed
     [self updateConstraintsForSubtreeIfNeeded];
     [engine solve];
 
-    [self _updateSubtreeGeometryIfNeeded];
+    if (_superview)
+        [self layout];
+    else
+    // -layout operates on subviews. If we are the top level view, just update directly the frame.
+        [self _updateSubtreeGeometryIfNeeded];
 }
 
 - (void)layoutSubtreeAtWindowLevelIfNeeded
@@ -4980,6 +4992,11 @@ Updates the layout of the receiving view and its subviews based on the current v
     _geometryDirtyMask |= axisOrDimension;
 //CPLog.debug([self debugID] + " " + _cmd + " mask="+_geometryDirtyMask);
     [_superview setNeedsLayout];
+}
+
+- (void)_updateGeometryDirtyMask:(int)aMask
+{
+    _geometryDirtyMask |= aMask;
 }
 
 - (void)_updateGeometryIfNeeded
@@ -5048,24 +5065,6 @@ Updates the layout of the receiving view and its subviews based on the current v
     }];
 
     [self _updateGeometryIfNeeded];
-}
-
-// LayoutGuides support
-- (CPArra)layoutGuides
-{
-    return [CPArray arrayWithArray:_layoutGuides];
-}
-
-- (void)addLayoutGuide:(CPLayoutGuide)aGuide
-{
-    [aGuide setOwningView:self];
-    [_layoutGuides addObject:aGuide];
-}
-
-- (void)removeLayoutGuide:(CPLayoutGuide)aGuide
-{
-    [aGuide setOwningView:nil];
-    [_layoutGuides removeObject:aGuide];
 }
 
 // CPLayoutAnchor Support
@@ -5216,6 +5215,27 @@ Updates the layout of the receiving view and its subviews based on the current v
 }
 
 @end
+
+var _FrameDidExplicitChangeInConstraintBasedLayout = function(view, autoResizingConstraints, updateOrigin, updateSize)
+{
+    var mask = (updateOrigin * 2) | (updateSize * 4);
+    [view _updateGeometryDirtyMask:mask];
+
+    if (autoResizingConstraints !== nil)
+    {
+        // regenerate the constraints with the new frame
+        // TODO: just update the constants in autoResizingConstraints
+        [view _setAutoresizingConstraints:nil];
+
+        var engine = [view _layoutEngineIfExists];
+
+        if (engine)
+        {
+            [engine removeConstraints:autoResizingConstraints];
+            [view _updateAutoresizingConstraints];
+        }
+    }
+};
 
 function _CPLayoutItemAnchorForAttribute(anItem, anAttribute)
 {

@@ -222,6 +222,7 @@ CPBelowBottom = 6;
 
     _boxType = aBoxType;
     [self setNeedsDisplay:YES];
+    [self invalidateIntrinsicContentSize];
 }
 
 - (CPColor)borderColor
@@ -333,6 +334,7 @@ CPBelowBottom = 6;
     _title = aTitle;
 
     [self _manageTitlePositioning];
+    [self invalidateIntrinsicContentSize];
 }
 
 - (void)setTitlePosition:(int)aTitlePotisition
@@ -343,6 +345,7 @@ CPBelowBottom = 6;
     _titlePosition = aTitlePotisition;
 
     [self _manageTitlePositioning];
+    [self invalidateIntrinsicContentSize];
 }
 
 - (CPFont)titleFont
@@ -353,6 +356,7 @@ CPBelowBottom = 6;
 - (void)setTitleFont:(CPFont)aFont
 {
     [_titleView setFont:aFont];
+    [self invalidateIntrinsicContentSize];
 }
 
 /*!
@@ -438,6 +442,11 @@ CPBelowBottom = 6;
         [super setValue:aValue forKey:aKey];
 }
 
+- (BOOL)_separatorBoxIsHorizontal
+{
+    return CGRectGetHeight([self bounds]) === 5.0;
+}
+
 - (void)drawRect:(CGRect)rect
 {
     var bounds = [self bounds];
@@ -447,10 +456,10 @@ CPBelowBottom = 6;
         case CPBoxSeparator:
             // NSBox does not include a horizontal flag for the separator type. We have to determine
             // the type of separator to draw by the width and height of the frame.
-            if (CGRectGetWidth(bounds) === 5.0)
-                return [self _drawVerticalSeparatorInRect:bounds];
-            else if (CGRectGetHeight(bounds) === 5.0)
+            if ([self _separatorBoxIsHorizontal])
                 return [self _drawHorizontalSeparatorInRect:bounds];
+            else
+                return [self _drawVerticalSeparatorInRect:bounds];
 
             break;
     }
@@ -590,6 +599,39 @@ CPBelowBottom = 6;
 
     CGContextSetFillColor(context, [self fillColor]);
     CGContextFillRect(context, aRect);
+}
+
+@end
+
+@implementation CPBox (ConstraintBasedLayout)
+
+- (CGSize)intrinsicContentSize
+{
+    if (_boxType == CPBoxSeparator)
+    {
+        var borderWidth = [self borderWidth];
+        return ([self _separatorBoxIsHorizontal]) ? CGSizeMake(CPViewNoInstrinsicMetric, borderWidth) : CGSizeMake(borderWidth, CPViewNoInstrinsicMetric);
+    }
+
+    if (_titlePosition == CPNoTitle || _boxType == CPBoxCustom)
+        return CGSizeMake(CPViewNoInstrinsicMetric, CPViewNoInstrinsicMetric);
+
+    return [CPString sizeOfString:_title withFont:[self titleFont] forWidth:[self frameSize].width];
+}
+
++ (CGSize)_defaultHuggingPriorities
+{
+    var result = CGSizeMake(CPLayoutPriorityDefaultLow, CPLayoutPriorityDefaultLow);
+
+    if (_boxType == CPBoxSeparator)
+    {
+        if ([self _separatorBoxIsHorizontal])
+            result.height = CPLayoutPriorityDefaultHigh;
+        else
+            result.width = CPLayoutPriorityDefaultHigh;
+    }
+
+    return result;
 }
 
 @end

@@ -2445,6 +2445,14 @@ TODO: implement
 
 @end
 
+@implementation CPRuleEditor (ConstraintBasedLayout)
+
+- (CGSize)intrinsicContentSize
+{
+    return CGSizeMake(CPViewNoInstrinsicMetric, _sliceHeight * [self numberOfRows]);
+}
+
+@end
 
 var CPRuleEditorAlignmentGridWidthKey       = @"CPRuleEditorAlignmentGridWidth",
     CPRuleEditorSliceHeightKey              = @"CPRuleEditorSliceHeight",

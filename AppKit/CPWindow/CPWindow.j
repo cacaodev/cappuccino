@@ -971,7 +971,7 @@ CPTexturedBackgroundWindowMask
 {
     [self orderWindow:CPWindowAbove relativeTo:0];
 #if !PLATFORM(DOM)
-    // In DOM, this happens in -makeKeyWindow. 
+    // In DOM, this happens in -makeKeyWindow.
     [self _engageAutolayoutIfNeeded];
 #endif
 }
@@ -4480,6 +4480,9 @@ Subclasses should not override this method.
 {
     if (_autolayoutEnabled == NO && [self _shouldEngageAutolayout])
     {
+#if (DEBUG)
+        console.warn('%c [Engine]: Autolayout is now engaged in Window ' + [self description], 'color:purple; font-weight:bold;font-family:"SF Mono";font-size:"16px"');
+#endif
         _autolayoutEnabled = YES;
         [self setNeedsLayout];
     }
