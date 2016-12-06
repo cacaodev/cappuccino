@@ -215,6 +215,34 @@
     XCTAssertTrue(CGRectEqualToRect([subsubView frame], CGRectMake(10, 10, 100, 100)));
 }
 
+- (void)testLocalEngine
+{
+    var topView = [[CPView alloc] initWithFrame:CGRectMake(30,30,300,300)];
+    [[[topView widthAnchor] constraintEqualToConstant:300] setActive:YES];
+    [topView setIdentifier:@"topView"];
+
+    var subView = [[CPView alloc] initWithFrame:CGRectMake(20,20,200,200)];
+    [subView setIdentifier:@"subView"];
+
+    var subsubView = [[CPView alloc] initWithFrame:CGRectMake(10,10,100,100)];
+    [subsubView setIdentifier:@"subsubView"];
+
+    [subView addSubview:subsubView];
+    [topView addSubview:subView];
+
+    [[[subView widthAnchor] constraintGreaterThanOrEqualToConstant:10] setActive:YES];
+    [topView layoutSubtreeIfNeeded];
+
+    // there is one layout engine and it is hosted by he topmost view.
+    XCTAssertTrue([subView _layoutEngine] == [topView _layoutEngineIfExists]);
+    XCTAssertTrue([subsubView _layoutEngine] == [topView _layoutEngineIfExists]);
+    // The subviews frames have been constrained.
+    // TODO: the top view autoresizing constraints are not in the engine. They are normally added to the superview.
+    XCTAssertTrue(CGRectEqualToRect([subView frame], CGRectMake(20, 20, 200, 200)));
+    XCTAssertTrue(CGRectEqualToRect([subsubView frame], CGRectMake(10, 10, 100, 100)));
+    CPLog.warn([topView _layoutEngine]);
+}
+
 - (void)observeValueForKeyPath:(CPString)keyPath ofObject:(id)object change:(CPDictionary)change                        context:(void)context
 {
     _didReceiveKVONotification = YES;
