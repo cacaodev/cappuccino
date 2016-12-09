@@ -121,12 +121,12 @@ CPLogRegister(CPLogConsole);
     [[[gravityPopup leftAnchor] constraintEqualToAnchor:[testButton2 rightAnchor] constant:10] setActive:YES];
 
     var views = @[],
-        i = 1,
+        i = 0,
         p = 253;
 
-    for (; i <= 3; i++)
+    for (; i < 3; i++)
     {
-        var view = [[ColorView alloc] initWithInstrinsicSize:CGSizeMake(50 * i, 200)];
+        var view = [[ColorView alloc] initWithInstrinsicSize:CGSizeMake(50 * (i + 1), 200)];
         [view setContentHuggingPriority:(p - i) forOrientation:0];
         [view setContentHuggingPriority:(p - i) forOrientation:1];
         [view setIdentifier:("View_" + CPStackViewGravityLeading + "_" + i)];
@@ -328,7 +328,7 @@ CPLogRegister(CPLogConsole);
 - (void)mouseDown:(CPEvent)anEvent
 {
     CPLog.debug("StackView\n" + [[self constraints] description]);
-    CPLog.debug("WindowView\ı" + [[[[self window] _windowView] constraints] description]);
+    CPLog.debug("WindowView\n" + [[[[self window] _windowView] constraints] description]);
     CPLog.debug("ContentView\n" + [[[[self window] contentView] constraints] description]);
     [[self views] enumerateObjectsUsingBlock:function(aView, idx, stop)
     {
