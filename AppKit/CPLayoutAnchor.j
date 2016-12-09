@@ -719,9 +719,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @implementation CPCompositeLayoutDimension : CPLayoutDimension
 {
-    CPLayoutDimension _firstLayoutDimension;
-    float             _secondLayoutDimensionMultiplier;
-    CPLayoutDimension _secondLayoutDimension;
+    CPLayoutDimension _firstLayoutDimension            @accessors(getter=firstLayoutDimension);
+    float             _secondLayoutDimensionMultiplier @accessors(getter=secondLayoutDimensionMultiplier);
+    CPLayoutDimension _secondLayoutDimension           @accessors(getter=secondLayoutDimension);
 }
 
 - (id)initWithDimension:(id)firstDimension plusDimension:(id)secondDimension times:(float)multiplier
@@ -950,7 +950,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if ([self name])
         return [super descriptionEquation];
 
-    return [CPString stringWithFormat:@"(%@ - %@)", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
+    return [CPString stringWithFormat:@"❮%@ ⤑ %@❯", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
 }
 
 - (float)valueInEngine:(id)arg1
