@@ -84,7 +84,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:[self attribute] name:[self name]];
+    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
 }
 
 - (Variable)variable
