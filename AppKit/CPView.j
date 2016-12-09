@@ -5079,7 +5079,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)rightAnchor
 {
     if (!_rightAnchor)
+    {
         _rightAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeRight];
+#if !(DEBUG)
+        [_rightAnchor _setName:@"trailing"];
+#endif
+    }
 
     return _rightAnchor;
 }
@@ -5095,7 +5100,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)bottomAnchor
 {
     if (!_bottomAnchor)
+    {
         _bottomAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeBottom];
+#if !(DEBUG)
+        [_bottomAnchor _setName:@"bottom"];
+#endif
+    }
 
     return _bottomAnchor;
 }
@@ -5150,7 +5160,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)centerXAnchor
 {
     if (!_centerXAnchor)
+    {
         _centerXAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterX];
+#if !(DEBUG)
+        [_centerXAnchor _setName:@"centerX"];
+#endif
+    }
 
     return _centerXAnchor;
 }
@@ -5158,7 +5173,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)centerYAnchor
 {
     if (!_centerYAnchor)
+    {
         _centerYAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterY];
+#if !(DEBUG)
+        [_centerYAnchor _setName:@"centerY"];
+#endif
+    }
 
     return _centerYAnchor;
 }
