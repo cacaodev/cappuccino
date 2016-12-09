@@ -966,8 +966,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (Expression)expressionInContext:(id)arg1
 {
-    var expMax = [_maxAnchor expressionInContext:arg1],
-        expMin = [_minAnchor expressionInContext:arg1];
+    var expMax = [_maxAnchor expressionInContext:_minAnchor],
+        expMin = [_minAnchor expressionInContext:_maxAnchor];
 
     return c.plus(expMax, expMin.times(-1));
 }
