@@ -156,7 +156,7 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
     if (anObject === self)
         return YES;
 
-    if (!anObject || [anObject class] !== [self class] || ![[anObject firstAnchor] isEqual:_firstAnchor] || ![[anObject secondAnchor] isEqual:_secondAnchor] || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
+    if (!anObject || [anObject class] !== [self class] || ([anObject firstAnchor] !== _firstAnchor && ![[anObject firstAnchor] isEqual:_firstAnchor]) || ([anObject secondAnchor] !== _secondAnchor && ![[anObject secondAnchor] isEqual:_secondAnchor]) || [anObject relation] !== _relation || [anObject multiplier] !== _coefficient || [anObject constant] !== _constant || [anObject priority] !== _priority)
         return NO;
 
     return YES;
