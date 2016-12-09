@@ -142,7 +142,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (otherAnchor === self)
         return YES;
 
-    if ([otherAnchor class] !== [self class] || [otherAnchor _referenceItem] !== [self _referenceItem] || [otherAnchor attribute] !== _attribute)
+    if ([otherAnchor class] !== [self class] || [otherAnchor _referenceItem] !== [self _referenceItem] || [otherAnchor attribute] !== _attribute || [otherAnchor name] !== [self name])
         return NO;
 
     return YES;
