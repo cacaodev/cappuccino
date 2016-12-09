@@ -33,7 +33,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     id        _item                     @accessors(getter=item);
     CPInteger _attribute                @accessors(getter=attribute, setter=_setAttribute:);
-    CPString  _name                     @accessors(setter=_setName:);
+    CPString  _name                     @accessors(getter=_name, setter=_setName:);
     Variable  _variable                 @accessors(setter=_setVariable:);
     CPSet     _referencedLayoutItems;
     CPArray   _constituentAnchors;
