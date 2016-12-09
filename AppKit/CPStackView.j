@@ -991,7 +991,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 - (CPStackViewGravity)_gravityForName:(CPString)aName
 {
     var s = [CPScanner scannerWithString:aName];
-    [s setScanLocation:[aName length] - 1];
+    [s scanString:@"StackView.gravity-" intoString:NULL];
 
     return [s scanInt];
 }
@@ -1017,7 +1017,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 - (CPString)_nameForGravity:(CPStackViewGravity)aGravity
 {
-    return [CPString stringWithFormat:@"gravity.%d", aGravity];
+    return [CPString stringWithFormat:@"gravity-%d", aGravity];
 }
 
 - (CPArray)_mutableViewsInGravity:(CPStackViewGravity)aGravity
@@ -1036,7 +1036,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 - (CPLayoutRect)_layoutRectForGravity:(CPStackViewGravity)aGravity
 {
-    var layoutRectKey = [CPString stringWithFormat:@"gravity.%@", aGravity],
+    var layoutRectKey = [self _nameForGravity:aGravity],
         result = [_gravityLayoutRects objectForKey:layoutRectKey];
 
     if (result == nil)
