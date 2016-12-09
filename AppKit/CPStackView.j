@@ -696,7 +696,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     [CPLayoutConstraint activateConstraints:constraintsToAdd];
     [_stackConstraints addObjectsFromArray:constraintsToAdd];
 #if (DEBUG)
-    CPLog.debug("Added " + [constraintsToAdd description] + " constraints.\nRemoved " + [constraintsToRemove count] + " constraints.")
+    CPLog.debug("Added " + [constraintsToAdd description] + " constraints.\nRemoved " + [constraintsToRemove description] + " constraints.")
 #endif
 }
 
@@ -1079,16 +1079,16 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 @end
 
-var CPStackViewAlignment = "CPStackViewAlignment",
-    CPStackViewAlignmentPriority = "CPStackViewAlignmentPriority",
-    CPStackViewOrientation = "CPStackViewOrientation",
-    CPStackViewDistributionKey = "CPStackViewDistribution",
-    CPStackViewSpacing = "CPStackViewSpacing",
-    CPStackViewEdgeInsets = "CPStackViewEdgeInsets",
+var CPStackViewAlignment                    = @"CPStackViewAlignment",
+    CPStackViewAlignmentPriority            = @"CPStackViewAlignmentPriority",
+    CPStackViewOrientation                  = @"CPStackViewOrientation",
+    CPStackViewDistributionKey              = @"CPStackViewDistribution",
+    CPStackViewSpacing                      = @"CPStackViewSpacing",
+    CPStackViewEdgeInsets                   = @"CPStackViewEdgeInsets",
     CPStackViewHorizontalClippingResistance = @"CPStackViewHorizontalClippingResistance",
-    CPStackViewVerticalClippingResistance = @"CPStackViewVerticalClippingResistance",
-    CPStackViewHorizontalHugging = "CPStackViewHorizontalHugging",
-    CPStackViewVerticalHugging = "CPStackViewVerticalHugging";
+    CPStackViewVerticalClippingResistance   = @"CPStackViewVerticalClippingResistance",
+    CPStackViewHorizontalHugging            = @"CPStackViewHorizontalHugging",
+    CPStackViewVerticalHugging              = @"CPStackViewVerticalHugging";
 
 @implementation CPStackView (CPCoding)
 
@@ -1101,12 +1101,14 @@ var CPStackViewAlignment = "CPStackViewAlignment",
     _alignment = [aCoder decodeIntForKey:CPStackViewAlignment];
     _alignmentPriority = [aCoder decodeIntForKey:CPStackViewAlignmentPriority];
     _spacing = [aCoder decodeFloatForKey:CPStackViewSpacing] || 0.0;
+
     if ([aCoder containsValueForKey:CPStackViewEdgeInsets])
     {
         var insets = [aCoder decodeObjectForKey:CPStackViewEdgeInsets];
         _edgeInsets = CGInsetMake(insets[0], insets[1], insets[2], insets[3]);
     }
-    else {
+    else
+    {
         _edgeInsets = CGInsetMakeZero();
     }
 
@@ -1130,10 +1132,12 @@ var CPStackViewAlignment = "CPStackViewAlignment",
     [aCoder encodeInt:_distribution forKey:CPStackViewDistributionKey];
     [aCoder encodeInt:_alignment forKey:CPStackViewAlignment];
     [aCoder encodeInt:_alignmentPriority forKey:CPStackViewAlignmentPriority];
+
     if (_spacing !== 0)
         [aCoder encodeFloat:_spacing forKey:CPStackViewSpacing];
     if (!CGInsetEqualToInset(_edgeInsets, CGInsetMakeZero()))
         [aCoder encodeObject:@[_edgeInsets.top, _edgeInsets.right, _edgeInsets.bottom, _edgeInsets.left] forKey:CPStackViewEdgeInsets];
+
     [aCoder encodeInt:_horizontalHuggingPriority forKey:CPStackViewHorizontalHugging];
     [aCoder encodeInt:_verticalHuggingPriority forKey:CPStackViewVerticalHugging];
     [aCoder encodeInt:_horizontalClippingResistancePriority forKey:CPStackViewHorizontalClippingResistance];
