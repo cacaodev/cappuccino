@@ -517,6 +517,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithAnchor:_axisAnchor plusDimension:_dimension times:_dimensionMultiplier plus:_constant name:_name attribute:_attribute];
 }
 
+- (BOOL)isEqual:(id)otherAnchor
+{
+    if (otherAnchor === self)
+        return YES;
+
+    if ([otherAnchor class] !== [self class] || ![[otherAnchor axisAnchor] isEqual:_axisAnchor] || ![[otherAnchor dimension] isEqual:_dimension] || [otherAnchor constant] !== _constant || [otherAnchor dimensionMultiplier] !== _dimensionMultiplier)
+        return NO;
+
+    return YES;
+}
+
 - (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
@@ -729,6 +740,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[CPCompositeLayoutDimension alloc] initWithDimension:_firstLayoutDimension plusDimension:_secondLayoutDimension times:_secondLayoutDimensionMultiplier];
 }
 
+- (BOOL)isEqual:(id)otherAnchor
+{
+    if (otherAnchor === self)
+        return YES;
+
+    if ([otherAnchor class] !== [self class] || ![[otherAnchor firstLayoutDimension] isEqual:_firstLayoutDimension] || ![[otherAnchor secondLayoutDimension] isEqual:_secondLayoutDimension] || [otherAnchor secondLayoutDimensionMultiplier] !== _secondLayoutDimensionMultiplier)
+        return NO;
+
+    return YES;
+}
+
 - (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
@@ -895,6 +917,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _name = [aName copy];
 
     return self;
+}
+
+- (BOOL)isEqual:(id)otherAnchor
+{
+    if (otherAnchor === self)
+        return YES;
+
+    if ([otherAnchor class] !== [self class] || ![[otherAnchor minAnchor] isEqual:_minAnchor] || ![[otherAnchor maxAnchor] isEqual:_maxAnchor] || [otherAnchor _name] !== _name)
+        return NO;
+
+    return YES;
 }
 
 - (id)copy
