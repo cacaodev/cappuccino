@@ -70,10 +70,10 @@
 
     self = [super init];
 
-    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.leading", aName] inItem:self];
-    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.top", aName] inItem:self];
-    _widthAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.width", aName] inItem:self];
-    _heightAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.height", aName] inItem:self];
+    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:@"leading" inItem:self];
+    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:@"top" inItem:self];
+    _widthAnchor = [CPLayoutDimension anchorNamed:@"width" inItem:self];
+    _heightAnchor = [CPLayoutDimension anchorNamed:@"height" inItem:self];
     _name = [aName copy];
     _superItem = superItem;
 
@@ -110,7 +110,7 @@
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:[CPString stringWithFormat:"%@.bottom", _name]];
+        [result _setName:@"bottom"];
 
     return result;
 }
@@ -120,7 +120,7 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:[CPString stringWithFormat:"%@.trailing", _name]];
+        [result _setName:@"trailing"];
 
     return result;
 }
@@ -130,7 +130,7 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:0.5 constant:0];
 
     if (_name)
-        [result _setName:[CPString stringWithFormat:"%@.centerX", _name]];
+        [result _setName:@"centerX"];
 
     return result;
 }
@@ -140,7 +140,7 @@
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:0.5 constant:0];
 
     if (_name)
-        [result _setName:[CPString stringWithFormat:"%@.centerY", _name]];
+        [result _setName:@"centerY"];
 
     return result;
 }
