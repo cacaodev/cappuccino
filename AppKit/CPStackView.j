@@ -991,7 +991,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 - (CPStackViewGravity)_gravityForName:(CPString)aName
 {
     var s = [CPScanner scannerWithString:aName];
-    [s scanString:@"StackView.gravity-" intoString:NULL];
+    [s scanString:@"gravity-" intoString:NULL];
 
     return [s scanInt];
 }
