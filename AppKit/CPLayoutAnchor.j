@@ -910,11 +910,12 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2 name:(CPString)aName
 {
-    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:aName];
+    self = [super initWithItem:nil attribute:-1 name:aName];
 
     _minAnchor = [arg1 copy];
     _maxAnchor = [arg2 copy];
     _name = [aName copy];
+    _item = [self _nearestAncestorLayoutItem];
 
     return self;
 }
