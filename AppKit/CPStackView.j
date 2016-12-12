@@ -141,7 +141,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 //    BOOL                 _baselineRelativeArrangement;
 //    BOOL                 _stackViewShouldNotAddConstraints;
 //    BOOL                 _stackViewFinishedDecoding;
-//    BOOL                 _stackViewDecodedWantingFlatHierarchy;
+    BOOL                 _stackViewDecodedWantingFlatHierarchy;
 //    BOOL                 _finishedFirstUpdateConstraintsPass;
 }
 
@@ -183,7 +183,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     {
         _orientation = orientation;
         _idealSizeForGravity = @{};
-        _alignment = _orientation ? CPLayoutAttributeCenterX : CPLayoutAttributeCenterY;
+        _alignment = _orientation ? CPLayoutAttributeTop : CPLayoutAttributeLeading;
         [self setNeedsUpdateConstraints:YES];
         [self setNeedsLayout];
     }
@@ -218,7 +218,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 */
 - (void)setDistribution:(CPInteger)dist
 {
-    if (dist < 0 || dist > 4)
+    if (dist < -1 || dist > 4)
         [CPException raise:CPInvalidArgumentException format:@"Unknown distribution %d", dist];
 
     if (dist !== _distribution)
@@ -637,7 +637,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     if (self)
     {
         _orientation = CPLayoutConstraintOrientationHorizontal;
-        _distribution = CPStackViewDistributionFill;
+        _distribution = CPStackViewDistributionGravityAreas;
         _alignment = CPLayoutAttributeCenterY;
         _spacing = 8.0;
         _alignmentPriority = CPStackViewDistributionPriority;
@@ -646,6 +646,8 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         _horizontalClippingResistancePriority = CPLayoutPriorityRequired;
         _verticalHuggingPriority = CPLayoutPriorityDefaultLow;
         _horizontalHuggingPriority = CPLayoutPriorityDefaultLow;
+        _stackViewDecodedWantingFlatHierarchy = NO;
+        _viewsInGravity = @{};
 
         [self _init];
     }
@@ -657,7 +659,6 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 {
     _stackConstraints = @[];
 //    _stackConstraintsDictionary = @{};
-    _viewsInGravity = @{};
     _gravityLayoutRects = @{};
     _idealSizeForGravity = @{};
     _gravitiesMask = 0;
@@ -732,8 +733,6 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             gravityTrailingAnchor = [gravityRect layoutAnchorForAttribute:trailing_attr],
             gravityAlignmentLeadingAnchor = [gravityRect layoutAnchorForAttribute:leading_perp_attr],
             gravityAlignmentTrailingAnchor = [gravityRect layoutAnchorForAttribute:trailing_perp_attr];
-
-        var leading;
 
         if (idx == 0)
         {
@@ -1088,19 +1087,39 @@ var CPStackViewAlignment                    = @"CPStackViewAlignment",
     CPStackViewHorizontalClippingResistance = @"CPStackViewHorizontalClippingResistance",
     CPStackViewVerticalClippingResistance   = @"CPStackViewVerticalClippingResistance",
     CPStackViewHorizontalHugging            = @"CPStackViewHorizontalHugging",
-    CPStackViewVerticalHugging              = @"CPStackViewVerticalHugging";
+    CPStackViewVerticalHugging              = @"CPStackViewVerticalHugging",
+    CPStackViewGravityViews                 = @"CPStackViewGravityViews",
+    CPStackViewHasFlatViewHierarchy         = @"CPStackViewHasFlatViewHierarchy";
 
 @implementation CPStackView (CPCoding)
+
+- (void)_cibDidFinishLoadingWithOwner:(id)anOwner
+{
+    [_viewsInGravity enumerateKeysAndObjectsUsingBlock:function(key, views, stop)
+    {
+        var gravity = [self _gravityForName:key];
+        [self setViews:views inGravity:gravity];
+    }];
+}
 
 - (id)initWithCoder:(CPCoder)aCoder
 {
     self = [super initWithCoder:aCoder];
 
     _orientation = [aCoder decodeIntForKey:CPStackViewOrientation];
-    _distribution = [aCoder decodeIntForKey:CPStackViewDistributionKey];
-    _alignment = [aCoder decodeIntForKey:CPStackViewAlignment];
+
+    if ([aCoder containsValueForKey:CPStackViewDistributionKey])
+        _distribution = [aCoder decodeIntForKey:CPStackViewDistributionKey];
+    else
+        _distribution = CPStackViewDistributionGravityAreas;
+
+    if ([aCoder containsValueForKey:CPStackViewAlignment])
+        _alignment = [aCoder decodeIntForKey:CPStackViewAlignment];
+    else
+        _alignment = CPLayoutAttributeTop;
+
     _alignmentPriority = [aCoder decodeIntForKey:CPStackViewAlignmentPriority];
-    _spacing = [aCoder decodeFloatForKey:CPStackViewSpacing] || 0.0;
+    _spacing = [aCoder decodeFloatForKey:CPStackViewSpacing];
 
     if ([aCoder containsValueForKey:CPStackViewEdgeInsets])
     {
@@ -1116,10 +1135,11 @@ var CPStackViewAlignment                    = @"CPStackViewAlignment",
     _verticalClippingResistancePriority = [aCoder decodeIntForKey:CPStackViewVerticalClippingResistance];
     _horizontalHuggingPriority = [aCoder decodeIntForKey:CPStackViewHorizontalHugging];
     _verticalHuggingPriority = [aCoder decodeIntForKey:CPStackViewVerticalHugging];
+    _stackViewDecodedWantingFlatHierarchy = [aCoder decodeBoolForKey:CPStackViewHasFlatViewHierarchy];
 
     [self _init];
 
-    [self setViews:[self subviews] inGravity:CPStackViewGravityLeading];
+    _viewsInGravity = [aCoder decodeObjectForKey:CPStackViewGravityViews];
 
     return self;
 }
@@ -1129,12 +1149,18 @@ var CPStackViewAlignment                    = @"CPStackViewAlignment",
     [super encodeWithCoder:aCoder];
 
     [aCoder encodeInt:_orientation forKey:CPStackViewOrientation];
-    [aCoder encodeInt:_distribution forKey:CPStackViewDistributionKey];
-    [aCoder encodeInt:_alignment forKey:CPStackViewAlignment];
+
+    if (_distribution !== CPStackViewDistributionGravityAreas)
+        [aCoder encodeInt:_distribution forKey:CPStackViewDistributionKey];
+
+    if (_alignment !== CPLayoutAttributeTop)
+        [aCoder encodeInt:_alignment forKey:CPStackViewAlignment];
+
     [aCoder encodeInt:_alignmentPriority forKey:CPStackViewAlignmentPriority];
 
     if (_spacing !== 0)
         [aCoder encodeFloat:_spacing forKey:CPStackViewSpacing];
+
     if (!CGInsetEqualToInset(_edgeInsets, CGInsetMakeZero()))
         [aCoder encodeObject:@[_edgeInsets.top, _edgeInsets.right, _edgeInsets.bottom, _edgeInsets.left] forKey:CPStackViewEdgeInsets];
 
@@ -1142,6 +1168,9 @@ var CPStackViewAlignment                    = @"CPStackViewAlignment",
     [aCoder encodeInt:_verticalHuggingPriority forKey:CPStackViewVerticalHugging];
     [aCoder encodeInt:_horizontalClippingResistancePriority forKey:CPStackViewHorizontalClippingResistance];
     [aCoder encodeInt:_verticalClippingResistancePriority forKey:CPStackViewVerticalClippingResistance];
+
+    [aCoder encodeObject:_viewsInGravity forKey:CPStackViewGravityViews];
+    [aCoder encodeBool:_stackViewDecodedWantingFlatHierarchy forKey:CPStackViewHasFlatViewHierarchy];
 }
 
 @end
