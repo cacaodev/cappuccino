@@ -1012,7 +1012,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 - (CPInteger)countOfGravities
 {
-    return (_gravitiesMask & 2 !== 0) + (_gravitiesMask & 4 !== 0) + (_gravitiesMask & 8 !== 0);
+    return (_gravitiesMask & 2) / 2 + (_gravitiesMask & 4) / 4 + (_gravitiesMask & 8) / 8;
 }
 
 - (CPString)_nameForGravity:(CPStackViewGravity)aGravity
