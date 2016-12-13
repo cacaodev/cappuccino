@@ -881,12 +881,17 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         else if (_distribution == CPStackViewDistributionFillProportionally)
         {
             var intrinsicSize = [aView intrinsicContentSize],
-                coeff = _orientation ? intrinsicSize.height : intrinsicSize.width,
-                anchor = [aView layoutAnchorForAttribute:dimension_attr];
+                coeff = _orientation ? intrinsicSize.height : intrinsicSize.width;
 
-            var sizeConstraint = [anchor constraintEqualToAnchor:[self _idealSizeLayoutDimensionInGravity:aGravity] multiplier:coeff constant:0];
-            [sizeConstraint setPriority:CPStackViewDistributionPriority];
-            [result addObject:sizeConstraint];
+            if (coeff !== -1)
+            {
+                var anchor = [aView layoutAnchorForAttribute:dimension_attr],
+                    idealAnchor = [self _idealSizeLayoutDimensionInGravity:aGravity];
+
+                var sizeConstraint = [anchor constraintEqualToAnchor:idealAnchor multiplier:coeff constant:0];
+                [sizeConstraint setPriority:CPStackViewDistributionPriority];
+                [result addObject:sizeConstraint];
+            }
         }
 
         previousView = aView;

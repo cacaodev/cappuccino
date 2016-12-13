@@ -66,6 +66,8 @@
     [stackBellow setDistribution:dist];
 
     [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
+    [stackBellow setNeedsDisplay:YES];
 }
 
 - (IBAction)setContentHuggingPriority:(id)sender
