@@ -78,8 +78,35 @@ CPLogRegister(CPLogConsole);
     [huggingPopup setTarget:self]
     [huggingPopup setAction:@selector(setHugging:)];
     [contentView addSubview:huggingPopup];
-    [[[huggingPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
-    [[[huggingPopup leftAnchor] constraintEqualToAnchor:[slider rightAnchor] constant:10] setActive:YES];
+    [[[huggingPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:50] setActive:YES];
+    [[[huggingPopup leftAnchor] constraintEqualToAnchor:[segmented leftAnchor] constant:0] setActive:YES];
+
+    var huggingPopupV = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
+    [huggingPopupV setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [huggingPopupV addItemsWithTitles:[@"↴ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [huggingPopupV setTarget:self]
+    [huggingPopupV setAction:@selector(setHuggingV:)];
+    [contentView addSubview:huggingPopupV];
+    [[[huggingPopupV topAnchor] constraintEqualToAnchor:[huggingPopup topAnchor] constant:0] setActive:YES];
+    [[[huggingPopupV leftAnchor] constraintEqualToAnchor:[huggingPopup rightAnchor] constant:10] setActive:YES];
+
+    var clippingPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
+    [clippingPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [clippingPopup addItemsWithTitles:[@"PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [clippingPopup setTarget:self]
+    [clippingPopup setAction:@selector(setClipping:)];
+    [contentView addSubview:clippingPopup];
+    [[[clippingPopup topAnchor] constraintEqualToAnchor:[huggingPopupV topAnchor] constant:0] setActive:YES];
+    [[[clippingPopup leftAnchor] constraintEqualToAnchor:[huggingPopupV rightAnchor] constant:10] setActive:YES];
+
+    var clippingPopupV = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
+    [clippingPopupV setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [clippingPopupV addItemsWithTitles:[@"↴ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [clippingPopupV setTarget:self]
+    [clippingPopupV setAction:@selector(setClippingV:)];
+    [contentView addSubview:clippingPopupV];
+    [[[clippingPopupV topAnchor] constraintEqualToAnchor:[clippingPopup topAnchor] constant:0] setActive:YES];
+    [[[clippingPopupV leftAnchor] constraintEqualToAnchor:[clippingPopup rightAnchor] constant:10] setActive:YES];
 
     var alignPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [alignPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -89,8 +116,8 @@ CPLogRegister(CPLogConsole);
     [alignPopup setAction:@selector(setAlignment:)];
     [alignPopup setTag:2];
     [contentView addSubview:alignPopup];
-    [[[alignPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
-    [[[alignPopup leftAnchor] constraintEqualToAnchor:[huggingPopup rightAnchor] constant:10] setActive:YES];
+    [[[alignPopup topAnchor] constraintEqualToAnchor:[clippingPopupV topAnchor] constant:0] setActive:YES];
+    [[[alignPopup leftAnchor] constraintEqualToAnchor:[clippingPopupV rightAnchor] constant:10] setActive:YES];
 
     var testButton = [[CPButton alloc] initWithFrame:CGRectMakeZero()];
     [testButton setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -98,8 +125,8 @@ CPLogRegister(CPLogConsole);
     [testButton setTarget:self];
     [testButton setAction:@selector(test:)];
     [contentView addSubview:testButton];
-    [[[testButton topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
-    [[[testButton leftAnchor] constraintEqualToAnchor:[alignPopup rightAnchor] constant:10] setActive:YES];
+    [[[testButton topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:100] setActive:YES];
+    [[[testButton leftAnchor] constraintEqualToAnchor:[segmented leftAnchor] constant:0] setActive:YES];
 
     var testButton2 = [[CPButton alloc] initWithFrame:CGRectMakeZero()];
     [testButton2 setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -107,7 +134,7 @@ CPLogRegister(CPLogConsole);
     [testButton2 setTarget:self];
     [testButton2 setAction:@selector(test2:)];
     [contentView addSubview:testButton2];
-    [[[testButton2 topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
+    [[[testButton2 topAnchor] constraintEqualToAnchor:[testButton topAnchor] constant:0] setActive:YES];
     [[[testButton2 leftAnchor] constraintEqualToAnchor:[testButton rightAnchor] constant:10] setActive:YES];
     [[[testButton2 heightAnchor] constraintEqualToAnchor:[testButton heightAnchor]] setActive:YES];
 
@@ -117,7 +144,7 @@ CPLogRegister(CPLogConsole);
     [gravityPopup selectItemAtIndex:0];
     [gravityPopup setTag:3];
     [contentView addSubview:gravityPopup];
-    [[[gravityPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:10] setActive:YES];
+    [[[gravityPopup topAnchor] constraintEqualToAnchor:[testButton2 topAnchor] constant:0] setActive:YES];
     [[[gravityPopup leftAnchor] constraintEqualToAnchor:[testButton2 rightAnchor] constant:10] setActive:YES];
 
     var views = @[],
@@ -136,16 +163,17 @@ CPLogRegister(CPLogConsole);
     stackView = [StackView stackViewWithViews:views];
     [stackView setAlignment:CPLayoutAttributeCenterY];
     [stackView setEdgeInsets:CGInsetMake(10, 10, 10, 10)];
-    [stackView setHuggingPriority:255 forOrientation:0];
-    [stackView setHuggingPriority:255 forOrientation:1];
+    [stackView setHuggingPriority:250 forOrientation:0];
+    [stackView setHuggingPriority:250 forOrientation:1];
+    [stackView setClippingResistancePriority:250 forOrientation:0];
+    [stackView setClippingResistancePriority:250 forOrientation:1];
     [contentView addSubview:stackView];
 
     var stack1 = [[stackView leftAnchor] constraintEqualToAnchor:[contentView leftAnchor] constant:100],
-        stack2 = [[stackView topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:100],
+        stack2 = [[stackView topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:150],
         stack3 = [[stackView rightAnchor] constraintEqualToAnchor:[contentView rightAnchor] constant:-100],
         stack4 = [[stackView bottomAnchor] constraintEqualToAnchor:[contentView bottomAnchor] constant:-100];
 
-//    [stack3 setPriority:490];
     [CPLayoutConstraint activateConstraints:[stack1, stack2, stack3, stack4]];
 
     [theWindow orderFront:self];
@@ -208,6 +236,30 @@ CPLogRegister(CPLogConsole);
     [stackView setNeedsDisplay:YES];
 }
 
+- (void)setHuggingV:(id)sender
+{
+    var p = ([sender indexOfSelectedItem] + 1) * 250;
+    [stackView setHuggingPriority:p forOrientation:(1 - [stackView orientation])];
+    [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
+}
+
+- (void)setClipping:(id)sender
+{
+    var p = ([sender indexOfSelectedItem] + 1) * 250;
+    [stackView setClippingResistancePriority:p forOrientation:[stackView orientation]];
+    [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
+}
+
+- (void)setClippingV:(id)sender
+{
+    var p = ([sender indexOfSelectedItem] + 1) * 250;
+    [stackView setClippingResistancePriority:p forOrientation:(1 - [stackView orientation])];
+    [theWindow setNeedsLayout];
+    [stackView setNeedsDisplay:YES];
+}
+
 - (void)distribute:(id)sender
 {
     var d = [sender selectedSegment];
@@ -228,6 +280,7 @@ CPLogRegister(CPLogConsole);
     [alignPopup removeAllItems];
     [alignPopup addItemsWithTitles:items];
     [alignPopup selectItemAtIndex:1];
+    [self setAlignment:alignPopup];
 
     [[stackView views] enumerateObjectsUsingBlock:function(view, idx, stop)
     {

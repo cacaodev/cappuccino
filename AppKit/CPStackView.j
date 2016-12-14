@@ -721,8 +721,12 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     var leadingInset = [self _leadingInsetForOrientation:_orientation],
         trailingInset = [self _trailingInsetForOrientation:_orientation],
         alignmentLeadingInset = [self _leadingInsetForOrientation:(1 - _orientation)],
-        alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)],
-        huggingPriority = [self huggingPriorityForOrientation:_orientation];
+        alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)];
+
+    var huggingPriority = [self huggingPriorityForOrientation:_orientation],
+        alignmentHuggingPriority = [self huggingPriorityForOrientation:(1 - _orientation)],
+        clippingPriority = [self clippingResistancePriorityForOrientation:_orientation],
+        alignmentClippingPriority = [self clippingResistancePriorityForOrientation:(1 - _orientation)];
 
     var previousTrailingAnchor = nil;
 
@@ -737,16 +741,26 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
         if (idx == 0)
         {
-            var leading = [gravityLeadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset];
-            [result addObject:leading];
+            var addLeadingMin = (_distribution <= CPStackViewDistributionFillProportionally);
+
+            if (addLeadingMin)
+            {
+                var leadingMin = [gravityLeadingAnchor constraintGreaterThanOrEqualToAnchor:stackLeadingAnchor];
+                [result addObject:leadingMin];
+            }
+
+            var leadingEqual = [gravityLeadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset];
+            var priority = addLeadingMin ? CPLayoutPriorityDefaultHigh : CPLayoutPriorityRequired;
+            [leadingEqual setPriority:priority];
+
+            [result addObject:leadingEqual];
         }
         else
         {
             var min_spacing = [gravityLeadingAnchor constraintGreaterThanOrEqualToAnchor:previousTrailingAnchor constant:_spacing];
-            [min_spacing setPriority:CPLayoutPriorityRequired];
 
             var spacing = [gravityLeadingAnchor constraintEqualToAnchor:previousTrailingAnchor constant:_spacing];
-            [spacing setPriority:[self huggingPriorityForOrientation:_orientation]];
+            [spacing setPriority:huggingPriority];
 
             [result addObjectsFromArray:@[min_spacing, spacing]];
         }
@@ -760,14 +774,23 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             bottomMin = [stackAlignmentTrailingAnchor constraintGreaterThanOrEqualToAnchor:gravityAlignmentTrailingAnchor],
             bottom = [stackAlignmentTrailingAnchor constraintEqualToAnchor:gravityAlignmentTrailingAnchor constant:alignmentTrailingInset];
 
-        [top setPriority:huggingPriority];
-        [bottom setPriority:huggingPriority];
+        [topMin setPriority:alignmentClippingPriority];
+        [bottomMin setPriority:alignmentClippingPriority];
+        [top setPriority:alignmentHuggingPriority];
+        [bottom setPriority:alignmentHuggingPriority];
+
         [result addObjectsFromArray:@[topMin, top, bottomMin, bottom]];
 
         if (idx == count - 1)
         {
-            var trailing = [gravityTrailingAnchor constraintEqualToAnchor:stackTrailingAnchor constant:-trailingInset];
-            [result addObject:trailing];
+            var trailingMin = [stackTrailingAnchor constraintGreaterThanOrEqualToAnchor:gravityTrailingAnchor constant:trailingInset];
+            [trailingMin setPriority:clippingPriority];
+
+            var trailingMax = [stackTrailingAnchor constraintLessThanOrEqualToAnchor:gravityTrailingAnchor constant:trailingInset];
+            var priority = (_distribution <= CPStackViewDistributionFillProportionally) ? CPLayoutPriorityRequired : CPLayoutPriorityDefaultHigh;
+            [trailingMax setPriority:priority];
+
+            [result addObjectsFromArray:@[trailingMin, trailingMax]];
         }
 
         if (aGravity == CPStackViewGravityCenter && count == 3)
@@ -786,7 +809,6 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         [result addObjectsFromArray:viewConstraints];
     }];
 
-
     return result;
 }
 
@@ -798,10 +820,6 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     var views = [self viewsInGravity:aGravity],
         last = [views count] - 1,
         gravityRect = [self _layoutRectForGravity:aGravity];
-
-    var huggingPriority = [self huggingPriorityForOrientation:_orientation],
-        alignmentHuggingpriority = [self huggingPriorityForOrientation:(1 - _orientation)],
-        clippingPriority = [self clippingResistancePriorityForOrientation:_orientation];
 
     var leading_attr = CPLayoutAttributeLeading - 2 * _orientation,
         leading_perp_attr = CPLayoutAttributeTop + 2 * _orientation,
@@ -831,13 +849,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         if (idx == 0)
         {
             var leading = [leadingAnchor constraintEqualToAnchor:gravityLeadingAnchor];
-            var priority = (_distribution <= 2) ? CPLayoutPriorityRequired : CPLayoutPriorityDefaultHigh;
-            [leading setPriority:priority];
             [result addObject:leading];
-
-            var leadingClipping = [leadingAnchor constraintGreaterThanOrEqualToAnchor:gravityLeadingAnchor];
-            [leadingClipping setPriority:clippingPriority];
-            [result addObject:leadingClipping];
         }
         else
         {
@@ -864,14 +876,8 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
         if (idx == last)
         {
-            var trailingHugg = [trailingAnchor constraintEqualToAnchor:gravityTrailingAnchor];
-            var priority = (_distribution <= 2) ? CPLayoutPriorityRequired : CPStackViewDistributionPriority;
-            [trailingHugg setPriority:priority];
-            [result addObject:trailingHugg];
-
-            var trailingClipping = [trailingAnchor constraintLessThanOrEqualToAnchor:gravityTrailingAnchor];
-            [trailingClipping setPriority:clippingPriority];
-            [result addObject:trailingClipping];
+            var trailing = [trailingAnchor constraintEqualToAnchor:gravityTrailingAnchor];
+            [result addObject:trailing];
         }
 
         if (_distribution == CPStackViewDistributionFillEqually)
