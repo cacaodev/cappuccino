@@ -74,7 +74,7 @@ CPLogRegister(CPLogConsole);
 
     var huggingPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [huggingPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [huggingPopup addItemsWithTitles:[@"PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [huggingPopup addItemsWithTitles:[@"Hugging PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
     [huggingPopup setTarget:self]
     [huggingPopup setAction:@selector(setHugging:)];
     [contentView addSubview:huggingPopup];
@@ -83,7 +83,7 @@ CPLogRegister(CPLogConsole);
 
     var huggingPopupV = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [huggingPopupV setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [huggingPopupV addItemsWithTitles:[@"↴ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [huggingPopupV addItemsWithTitles:[@"Hugging↺ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
     [huggingPopupV setTarget:self]
     [huggingPopupV setAction:@selector(setHuggingV:)];
     [contentView addSubview:huggingPopupV];
@@ -92,7 +92,7 @@ CPLogRegister(CPLogConsole);
 
     var clippingPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [clippingPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [clippingPopup addItemsWithTitles:[@"PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [clippingPopup addItemsWithTitles:[@"Clipping PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
     [clippingPopup setTarget:self]
     [clippingPopup setAction:@selector(setClipping:)];
     [contentView addSubview:clippingPopup];
@@ -101,7 +101,7 @@ CPLogRegister(CPLogConsole);
 
     var clippingPopupV = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [clippingPopupV setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [clippingPopupV addItemsWithTitles:[@"↴ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [clippingPopupV addItemsWithTitles:[@"Clipping↺ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
     [clippingPopupV setTarget:self]
     [clippingPopupV setAction:@selector(setClippingV:)];
     [contentView addSubview:clippingPopupV];
