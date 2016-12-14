@@ -202,7 +202,7 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <stackView orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="BTK-CR-iYk" customClass="StackView">
+                    <stackView orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="247.99998474121094" verticalStackHuggingPriority="247.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="BTK-CR-iYk" customClass="StackView">
                         <rect key="frame" x="50" y="182" width="718" height="41"/>
                         <edgeInsets key="edgeInsets" left="10" right="10" top="10" bottom="10"/>
                         <beginningViews>
@@ -276,7 +276,7 @@
                             <real value="3.4028234663852886e+38"/>
                         </customSpacing>
                     </stackView>
-                    <stackView distribution="fillProportionally" orientation="horizontal" alignment="centerY" spacing="12" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="FDj-ox-Q6G" customClass="StackView">
+                    <stackView distribution="fillProportionally" orientation="horizontal" alignment="centerY" spacing="12" horizontalStackHuggingPriority="248" verticalStackHuggingPriority="247.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="FDj-ox-Q6G" customClass="StackView">
                         <rect key="frame" x="50" y="50" width="718" height="82"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="mhm-qs-qmH">

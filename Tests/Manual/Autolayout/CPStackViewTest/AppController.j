@@ -168,6 +168,7 @@ CPLogRegister(CPLogConsole);
     }
 
     [stackView setAlignment:attr];
+    [stackView setNeedsDisplay:YES];
 }
 
 - (void)test2:(id)sender

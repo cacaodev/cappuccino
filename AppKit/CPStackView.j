@@ -721,7 +721,8 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
     var leadingInset = [self _leadingInsetForOrientation:_orientation],
         trailingInset = [self _trailingInsetForOrientation:_orientation],
         alignmentLeadingInset = [self _leadingInsetForOrientation:(1 - _orientation)],
-        alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)];
+        alignmentTrailingInset = [self _trailingInsetForOrientation:(1 - _orientation)],
+        huggingPriority = [self huggingPriorityForOrientation:_orientation];
 
     var previousTrailingAnchor = nil;
 
@@ -750,10 +751,18 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             [result addObjectsFromArray:@[min_spacing, spacing]];
         }
 
-        var top = [gravityAlignmentLeadingAnchor constraintEqualToAnchor:stackAlignmentLeadingAnchor constant:alignmentLeadingInset],
-            bottom = [gravityAlignmentTrailingAnchor constraintEqualToAnchor:stackAlignmentTrailingAnchor constant:-alignmentTrailingInset];
+        var alignment = [CPLayoutConstraint constraintWithItem:self attribute:_alignment relatedBy:CPLayoutRelationEqual toItem:gravityRect attribute:_alignment multiplier:1 constant:0];
+        [alignment setPriority:_alignmentPriority];
+        [result addObject:alignment];
 
-        [result addObjectsFromArray:@[top, bottom]];
+        var topMin = [gravityAlignmentLeadingAnchor constraintGreaterThanOrEqualToAnchor:stackAlignmentLeadingAnchor],
+            top = [gravityAlignmentLeadingAnchor constraintEqualToAnchor:stackAlignmentLeadingAnchor constant:alignmentLeadingInset],
+            bottomMin = [stackAlignmentTrailingAnchor constraintGreaterThanOrEqualToAnchor:gravityAlignmentTrailingAnchor],
+            bottom = [stackAlignmentTrailingAnchor constraintEqualToAnchor:gravityAlignmentTrailingAnchor constant:alignmentTrailingInset];
+
+        [top setPriority:huggingPriority];
+        [bottom setPriority:huggingPriority];
+        [result addObjectsFromArray:@[topMin, top, bottomMin, bottom]];
 
         if (idx == count - 1)
         {
@@ -813,14 +822,10 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             alignmentLeadingAnchor = [aView layoutAnchorForAttribute:leading_perp_attr],
             alignmentTrailingAnchor = [aView layoutAnchorForAttribute:trailing_perp_attr];
 
-        var alignment = [CPLayoutConstraint constraintWithItem:aView attribute:_alignment relatedBy:CPLayoutRelationEqual toItem:[self _layoutRectForGravity:aGravity] attribute:_alignment multiplier:1 constant:0];
-        [alignment setPriority:_alignmentPriority];
-        [result addObject:alignment];
-
-        var alignmentLeading = [alignmentLeadingAnchor constraintGreaterThanOrEqualToAnchor:gravityAlignmentLeadingAnchor];
+        var alignmentLeading = [alignmentLeadingAnchor constraintEqualToAnchor:gravityAlignmentLeadingAnchor];
         [result addObject:alignmentLeading];
 
-        var alignmentTrailing = [alignmentTrailingAnchor constraintLessThanOrEqualToAnchor:gravityAlignmentTrailingAnchor];
+        var alignmentTrailing = [alignmentTrailingAnchor constraintEqualToAnchor:gravityAlignmentTrailingAnchor];
         [result addObject:alignmentTrailing];
 
         if (idx == 0)
@@ -1123,7 +1128,8 @@ var CPStackViewAlignment                    = @"CPStackViewAlignment",
     else
         _alignment = CPLayoutAttributeTop;
 
-    _alignmentPriority = [aCoder decodeIntForKey:CPStackViewAlignmentPriority];
+    _alignmentPriority = [aCoder decodeIntForKey:CPStackViewAlignmentPriority] || CPStackViewDistributionPriority;
+
     _spacing = [aCoder decodeFloatForKey:CPStackViewSpacing];
 
     if ([aCoder containsValueForKey:CPStackViewEdgeInsets])
