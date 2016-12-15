@@ -772,9 +772,9 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             bottomMin = [stackAlignmentTrailingAnchor constraintGreaterThanOrEqualToAnchor:gravityAlignmentTrailingAnchor],
             bottom = [stackAlignmentTrailingAnchor constraintEqualToAnchor:gravityAlignmentTrailingAnchor constant:alignmentTrailingInset];
 
-        [topMin setPriority:alignmentClippingPriority];
-        [bottomMin setPriority:alignmentClippingPriority];
+        [topMin setPriority:CPLayoutPriorityRequired];
         [top setPriority:alignmentHuggingPriority];
+        [bottomMin setPriority:alignmentClippingPriority];
         [bottom setPriority:alignmentHuggingPriority];
 
         [result addObjectsFromArray:@[topMin, top, bottomMin, bottom]];
