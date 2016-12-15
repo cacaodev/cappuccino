@@ -56,7 +56,7 @@ CPStackViewGravityCenter = 2; // The center gravity area, this is the center reg
 CPStackViewGravityBottom = 3; // The bottom-most gravity area, should only be used when orientation = CPLayoutConstraintOrientationVertical
 CPStackViewGravityTrailing = 3; // The trailing gravity area (as described by userInterfaceLayoutDirection), should only be used when orientation = CPLayoutConstraintOrientationHorizontal
 
-/* Distribution—the layout along the stacking axis.
+/* Distribution the layout along the stacking axis.
  All CPStackViewDistribution enum values fit first and last stacked views tightly to the container, except for CPStackViewDistributionGravityAreas.
  */
 
@@ -115,14 +115,14 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 @implementation CPStackView : CPView
 {
-    id                                  _delegate @accessors(getter=delegate);
+    id                                  _delegate       @accessors(getter=delegate);
     CPDictionary                        _viewsInGravity;
 //    CPArray                             _detachedViews @accessors(readonly, copy);
-    long long                           _distribution @accessors(getter=distribution);
-    CPLayoutConstraintOrientation       _orientation @accessors(getter=orientation);
-    CPLayoutAttribute                   _alignment @accessors(getter=alignment);
-    CGInset                             _edgeInsets @accessors(property=edgeInsets);
-    float                               _spacing @accessors(getter=spacing);
+    long long                           _distribution   @accessors(getter=distribution);
+    CPLayoutConstraintOrientation       _orientation    @accessors(getter=orientation);
+    CPLayoutAttribute                   _alignment      @accessors(getter=alignment);
+    CGInset                             _edgeInsets     @accessors(property=edgeInsets);
+    float                               _spacing        @accessors(getter=spacing);
 //    BOOL                                _detachesHiddenViews @accessors(getter=detachesHiddenViews);
 
     CPLayoutPriority     _verticalClippingResistancePriority;
@@ -568,7 +568,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 }
 
  // Getters will return the views that are contained by the corresponding gravity area, regardless of detach-status.
- - (CPArray)viewsInGravity:(CPStackViewGravity)aGravity
+- (CPArray)viewsInGravity:(CPStackViewGravity)aGravity
  {
      var result = @[];
 
@@ -667,8 +667,9 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 #if (DEBUG)
 - (void)drawRect:(CGRect)dirtyRect
 {
-    var ctx = [[CPGraphicsContext currentContext] graphicsPort];
-    var colors = @[[CPColor redColor], [CPColor blueColor], [CPColor greenColor]];
+    var ctx = [[CPGraphicsContext currentContext] graphicsPort],
+        colors = @[[CPColor redColor], [CPColor blueColor], [CPColor greenColor]];
+
     CGContextSetLineWidth(ctx, 3);
 
     [self _enumerateGravitiesUsingBlock:function(aGravity, idx)
@@ -704,7 +705,9 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 - (CPArray)_generateGravityConstraints
 {
     var result = @[],
-        count = [self countOfGravities];
+        count = [self countOfGravities],
+        previousTrailingAnchor = nil,
+        isFillDistribution = (_distribution <= CPStackViewDistributionFillProportionally);
 
     var leading_attr = CPLayoutAttributeLeading - 2 * _orientation,
         leading_perp_attr = CPLayoutAttributeTop + 2 * _orientation,
@@ -728,8 +731,6 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         clippingPriority = [self clippingResistancePriorityForOrientation:_orientation],
         alignmentClippingPriority = [self clippingResistancePriorityForOrientation:(1 - _orientation)];
 
-    var previousTrailingAnchor = nil;
-
     [self _enumerateGravitiesUsingBlock:function(aGravity, idx, stop)
     {
         var gravityRect = [self _layoutRectForGravity:aGravity];
@@ -741,27 +742,24 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
         if (idx == 0)
         {
-            var addLeadingMin = (_distribution <= CPStackViewDistributionFillProportionally);
-
-            if (addLeadingMin)
+            if (isFillDistribution)
             {
                 var leadingMin = [gravityLeadingAnchor constraintGreaterThanOrEqualToAnchor:stackLeadingAnchor];
                 [result addObject:leadingMin];
             }
 
-            var leadingEqual = [gravityLeadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset];
-            var priority = addLeadingMin ? CPLayoutPriorityDefaultHigh : CPLayoutPriorityRequired;
-            [leadingEqual setPriority:priority];
+            var leadingEqual = [gravityLeadingAnchor constraintEqualToAnchor:stackLeadingAnchor constant:leadingInset],
+                priority = isFillDistribution ? CPLayoutPriorityDefaultHigh : CPLayoutPriorityRequired;
 
+            [leadingEqual setPriority:priority];
             [result addObject:leadingEqual];
         }
         else
         {
-            var min_spacing = [gravityLeadingAnchor constraintGreaterThanOrEqualToAnchor:previousTrailingAnchor constant:_spacing];
+            var min_spacing = [gravityLeadingAnchor constraintGreaterThanOrEqualToAnchor:previousTrailingAnchor constant:_spacing],
+                spacing = [gravityLeadingAnchor constraintEqualToAnchor:previousTrailingAnchor constant:_spacing];
 
-            var spacing = [gravityLeadingAnchor constraintEqualToAnchor:previousTrailingAnchor constant:_spacing];
             [spacing setPriority:huggingPriority];
-
             [result addObjectsFromArray:@[min_spacing, spacing]];
         }
 
@@ -786,8 +784,8 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             var trailingMin = [stackTrailingAnchor constraintGreaterThanOrEqualToAnchor:gravityTrailingAnchor constant:trailingInset];
             [trailingMin setPriority:clippingPriority];
 
-            var trailingMax = [stackTrailingAnchor constraintLessThanOrEqualToAnchor:gravityTrailingAnchor constant:trailingInset];
-            var priority = (_distribution <= CPStackViewDistributionFillProportionally) ? CPLayoutPriorityRequired : CPLayoutPriorityDefaultHigh;
+            var trailingMax = [stackTrailingAnchor constraintLessThanOrEqualToAnchor:gravityTrailingAnchor constant:trailingInset],
+                priority = isFillDistribution ? CPLayoutPriorityRequired : CPLayoutPriorityDefaultHigh;
             [trailingMax setPriority:priority];
 
             [result addObjectsFromArray:@[trailingMin, trailingMax]];
@@ -853,8 +851,8 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         }
         else
         {
-            var previousViewTrailingAnchor = [previousView layoutAnchorForAttribute:trailing_attr];
-            var distance = [CPDistanceLayoutDimension distanceFromAnchor:previousViewTrailingAnchor toAnchor:leadingAnchor];
+            var previousViewTrailingAnchor = [previousView layoutAnchorForAttribute:trailing_attr],
+                distance = [CPDistanceLayoutDimension distanceFromAnchor:previousViewTrailingAnchor toAnchor:leadingAnchor];
 
             var minSpacing = [distance constraintGreaterThanOrEqualToConstant:_spacing];
             [result addObject:minSpacing];
@@ -867,9 +865,9 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             }
             else
             {
-                var spacing = [distance constraintEqualToConstant:_spacing];
-                var p = (_distribution == CPStackViewDistributionEqualCentering) ? CPStackViewDistributionPriority - 1 : CPLayoutPriorityRequired;
-                [spacing setPriority:p];
+                var spacing = [distance constraintEqualToConstant:_spacing],
+                    priority = (_distribution == CPStackViewDistributionEqualCentering) ? CPStackViewDistributionPriority - 1 : CPLayoutPriorityRequired;
+                [spacing setPriority:priority];
                 [result addObject:spacing];
             }
         }
@@ -950,8 +948,8 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
 - (CPLayoutDimension)_idealSizeLayoutDimensionInGravity:(CPStackViewGravity)aGravity
 {
-    var name = [CPString stringWithFormat:@"Ideal.%@", [self _nameForGravity:aGravity]];
-    var result = [_idealSizeForGravity objectForKey:name];
+    var name = [CPString stringWithFormat:@"Ideal.%@", [self _nameForGravity:aGravity]],
+        result = [_idealSizeForGravity objectForKey:name];
 
     if (result == nil)
     {

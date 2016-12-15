@@ -78,7 +78,7 @@ CPLogRegister(CPLogConsole);
     [huggingPopup setTarget:self]
     [huggingPopup setAction:@selector(setHugging:)];
     [contentView addSubview:huggingPopup];
-    [[[huggingPopup topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:50] setActive:YES];
+    [[[huggingPopup topAnchor] constraintEqualToAnchor:[segmented bottomAnchor] constant:10] setActive:YES];
     [[[huggingPopup leftAnchor] constraintEqualToAnchor:[segmented leftAnchor] constant:0] setActive:YES];
 
     var huggingPopupV = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
@@ -125,7 +125,7 @@ CPLogRegister(CPLogConsole);
     [testButton setTarget:self];
     [testButton setAction:@selector(test:)];
     [contentView addSubview:testButton];
-    [[[testButton topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:100] setActive:YES];
+    [[[testButton topAnchor] constraintEqualToAnchor:[huggingPopup bottomAnchor] constant:10] setActive:YES];
     [[[testButton leftAnchor] constraintEqualToAnchor:[segmented leftAnchor] constant:0] setActive:YES];
 
     var testButton2 = [[CPButton alloc] initWithFrame:CGRectMakeZero()];
@@ -405,3 +405,171 @@ CPLogRegister(CPLogConsole);
 }
 
 @end
+
+/*
+2016-12-15 09:34:05.733 NSStackView2[86403:2146200] stackConstraints Distribution 0 :
+stackView.height == + 100 @1000.000000
+left.centerY == stackView.centerY @260.000000
+middle.centerY == stackView.centerY @260.000000
+right.centerY == stackView.centerY @260.000000
+left.left == stackView.left + 7 @1000.000000
+left.top >= stackView.top @1000.000000
+left.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= left.bottom @verticalClippingResistance
+stackView.bottom == left.bottom + 9 @verticalHugging
+middle.top >= stackView.top @1000.000000
+middle.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= middle.bottom @verticalClippingResistance
+stackView.bottom == middle.bottom + 9 @verticalHugging
+right.top >= stackView.top @1000.000000
+right.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= right.bottom @verticalClippingResistance
+stackView.bottom == right.bottom + 9 @verticalHugging
+stackView.right >= right.right + 10 @horizontalClippingResistance
+stackView.right <= right.right + 10 @1000.000000
+middle.left == left.right + 11 @1000.000000
+right.left == middle.right + 11 @1000.000000
+
+2016-12-15 09:34:11.197 NSStackView2[86403:2146200] stackConstraints Distribution 1 :
+stackView.height == + 100 @1000.000000
+left.centerY == stackView.centerY @260.000000
+middle.centerY == stackView.centerY @260.000000
+right.centerY == stackView.centerY @260.000000
+left.left == stackView.left + 7 @1000.000000
+left.top >= stackView.top @1000.000000
+left.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= left.bottom @verticalClippingResistance
+stackView.bottom == left.bottom + 9 @verticalHugging
+middle.top >= stackView.top @1000.000000
+middle.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= middle.bottom @verticalClippingResistance
+stackView.bottom == middle.bottom + 9 @verticalHugging
+right.top >= stackView.top @1000.000000
+right.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= right.bottom @verticalClippingResistance
+stackView.bottom == right.bottom + 9 @verticalHugging
+stackView.right >= right.right + 10 @horizontalClippingResistance
+stackView.right <= right.right + 10 @1000.000000
+middle.left == left.right + 11 @1000.000000
+right.left == middle.right + 11 @1000.000000
+NSStackView.DistributionGuide.Ideal.width == left.width @260.000000
+NSStackView.DistributionGuide.Ideal.width == middle.width @260.000000
+NSStackView.DistributionGuide.Ideal.width == right.width @260.000000
+
+2016-12-15 09:34:42.900 NSStackView2[86403:2146200] stackConstraints Distribution 2 :
+stackView.height == + 100 @1000.000000
+left.centerY == stackView.centerY @260.000000
+middle.centerY == stackView.centerY @260.000000
+right.centerY == stackView.centerY @260.000000
+left.left == stackView.left + 7 @1000.000000
+left.top >= stackView.top @1000.000000
+left.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= left.bottom @verticalClippingResistance
+stackView.bottom == left.bottom + 9 @verticalHugging
+middle.top >= stackView.top @1000.000000
+middle.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= middle.bottom @verticalClippingResistance
+stackView.bottom == middle.bottom + 9 @verticalHugging
+right.top >= stackView.top @1000.000000
+right.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= right.bottom @verticalClippingResistance
+stackView.bottom == right.bottom + 9 @verticalHugging
+stackView.right >= right.right + 10 @horizontalClippingResistance
+stackView.right <= right.right + 10 @1000.000000
+middle.left == left.right + 11 @1000.000000
+right.left == middle.right + 11 @1000.000000
+left.width == 200*NSStackView.DistributionGuide.Ideal.width @260.000000
+middle.width == 200*NSStackView.DistributionGuide.Ideal.width @260.000000
+right.width == 200*NSStackView.DistributionGuide.Ideal.width @260.000000
+
+2016-12-15 09:34:51.901 NSStackView2[86403:2146200] stackConstraints Distribution 3 :
+stackView.height == + 100 @1000.000000
+left.centerY == stackView.centerY @260.000000
+middle.centerY == stackView.centerY @260.000000
+right.centerY == stackView.centerY @260.000000
+left.left >= stackView.left @1000.000000
+left.left == stackView.left + 7 @750.000000
+left.top >= stackView.top @1000.000000
+left.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= left.bottom @verticalClippingResistance
+stackView.bottom == left.bottom + 9 @verticalHugging
+middle.top >= stackView.top @1000.000000
+middle.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= middle.bottom @verticalClippingResistance
+stackView.bottom == middle.bottom + 9 @verticalHugging
+right.top >= stackView.top @1000.000000
+right.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= right.bottom @verticalClippingResistance
+stackView.bottom == right.bottom + 9 @verticalHugging
+stackView.right >= right.right + 10 @horizontalClippingResistance
+stackView.right <= right.right + 10 @750.000000
+middle.left >= left.right + 11 @1000.000000
+middle.left == left.right + 11 @horizontalHugging
+right.left >= middle.right + 11 @1000.000000
+right.left == middle.right + 11 @horizontalHugging
+left.right == NSStackView.DistributionGuide.0x6000001408f0.left @1000.000000
+NSStackView.DistributionGuide.0x6000001408f0.right == middle.left @1000.000000
+NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x6000001408f0.width @260.000000
+middle.right == NSStackView.DistributionGuide.0x608000140370.left @1000.000000
+NSStackView.DistributionGuide.0x608000140370.right == right.left @1000.000000
+NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x608000140370.width @260.000000
+
+2016-12-15 09:34:56.443 NSStackView2[86403:2146200] stackConstraints Distribution 4 :
+stackView.height == + 100 @1000.000000
+left.centerY == stackView.centerY @260.000000
+middle.centerY == stackView.centerY @260.000000
+right.centerY == stackView.centerY @260.000000
+left.left >= stackView.left @1000.000000
+left.left == stackView.left + 7 @750.000000
+left.top >= stackView.top @1000.000000
+left.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= left.bottom @verticalClippingResistance
+stackView.bottom == left.bottom + 9 @verticalHugging
+middle.top >= stackView.top @1000.000000
+middle.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= middle.bottom @verticalClippingResistance
+stackView.bottom == middle.bottom + 9 @verticalHugging
+right.top >= stackView.top @1000.000000
+right.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= right.bottom @verticalClippingResistance
+stackView.bottom == right.bottom + 9 @verticalHugging
+stackView.right >= right.right + 10 @horizontalClippingResistance
+stackView.right <= right.right + 10 @750.000000
+middle.left >= left.right + 11 @1000.000000
+middle.left == left.right + 11 @horizontalHugging
+right.left >= middle.right + 11 @1000.000000
+right.left == middle.right + 11 @horizontalHugging
+left.centerX == NSStackView.DistributionGuide.0x6000001408f0.left @1000.000000
+NSStackView.DistributionGuide.0x6000001408f0.right == middle.centerX @1000.000000
+NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x6000001408f0.width @260.000000
+middle.centerX == NSStackView.DistributionGuide.0x608000140370.left @1000.000000
+NSStackView.DistributionGuide.0x608000140370.right == right.centerX @1000.000000
+NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x608000140370.width @260.000000
+
+2016-12-15 10:05:58.415 NSStackView2[86829:2210980] stackConstraints Distribution -1 :
+stackView.height == + 100 @1000.000000
+left.centerY == stackView.centerY @260.000000
+middle.centerY == stackView.centerY @260.000000
+right.centerY == stackView.centerY @260.000000
+left.left >= stackView.left @1000.000000
+left.left == stackView.left + 7 @750.000000
+left.top >= stackView.top @1000.000000
+left.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= left.bottom @verticalClippingResistance
+stackView.bottom == left.bottom + 9 @verticalHugging
+middle.top >= stackView.top @1000.000000
+middle.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= middle.bottom @verticalClippingResistance
+stackView.bottom == middle.bottom + 9 @verticalHugging
+right.top >= stackView.top @1000.000000
+right.top == stackView.top + 8 @verticalHugging
+stackView.bottom >= right.bottom @verticalClippingResistance
+stackView.bottom == right.bottom + 9 @verticalHugging
+stackView.right >= right.right + 10 @horizontalClippingResistance
+stackView.right <= right.right + 10 @251.000000
+middle.left >= left.right + 11 @1000.000000
+middle.left == left.right + 11 @749.989990
+right.left >= middle.right + 11 @1000.000000
+right.left == middle.right + 11 @749.979980
+
+*/
