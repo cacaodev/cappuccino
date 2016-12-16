@@ -407,169 +407,219 @@ CPLogRegister(CPLogConsole);
 @end
 
 /*
-2016-12-15 09:34:05.733 NSStackView2[86403:2146200] stackConstraints Distribution 0 :
-stackView.height == + 100 @1000.000000
-left.centerY == stackView.centerY @260.000000
-middle.centerY == stackView.centerY @260.000000
-right.centerY == stackView.centerY @260.000000
-left.left == stackView.left + 7 @1000.000000
-left.top >= stackView.top @1000.000000
-left.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= left.bottom @verticalClippingResistance
-stackView.bottom == left.bottom + 9 @verticalHugging
-middle.top >= stackView.top @1000.000000
-middle.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= middle.bottom @verticalClippingResistance
-stackView.bottom == middle.bottom + 9 @verticalHugging
-right.top >= stackView.top @1000.000000
-right.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= right.bottom @verticalClippingResistance
-stackView.bottom == right.bottom + 9 @verticalHugging
-stackView.right >= right.right + 10 @horizontalClippingResistance
-stackView.right <= right.right + 10 @1000.000000
-middle.left == left.right + 11 @1000.000000
-right.left == middle.right + 11 @1000.000000
-
-2016-12-15 09:34:11.197 NSStackView2[86403:2146200] stackConstraints Distribution 1 :
-stackView.height == + 100 @1000.000000
-left.centerY == stackView.centerY @260.000000
-middle.centerY == stackView.centerY @260.000000
-right.centerY == stackView.centerY @260.000000
-left.left == stackView.left + 7 @1000.000000
-left.top >= stackView.top @1000.000000
-left.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= left.bottom @verticalClippingResistance
-stackView.bottom == left.bottom + 9 @verticalHugging
-middle.top >= stackView.top @1000.000000
-middle.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= middle.bottom @verticalClippingResistance
-stackView.bottom == middle.bottom + 9 @verticalHugging
-right.top >= stackView.top @1000.000000
-right.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= right.bottom @verticalClippingResistance
-stackView.bottom == right.bottom + 9 @verticalHugging
-stackView.right >= right.right + 10 @horizontalClippingResistance
-stackView.right <= right.right + 10 @1000.000000
-middle.left == left.right + 11 @1000.000000
-right.left == middle.right + 11 @1000.000000
-NSStackView.DistributionGuide.Ideal.width == left.width @260.000000
-NSStackView.DistributionGuide.Ideal.width == middle.width @260.000000
-NSStackView.DistributionGuide.Ideal.width == right.width @260.000000
-
-2016-12-15 09:34:42.900 NSStackView2[86403:2146200] stackConstraints Distribution 2 :
-stackView.height == + 100 @1000.000000
-left.centerY == stackView.centerY @260.000000
-middle.centerY == stackView.centerY @260.000000
-right.centerY == stackView.centerY @260.000000
-left.left == stackView.left + 7 @1000.000000
-left.top >= stackView.top @1000.000000
-left.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= left.bottom @verticalClippingResistance
-stackView.bottom == left.bottom + 9 @verticalHugging
-middle.top >= stackView.top @1000.000000
-middle.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= middle.bottom @verticalClippingResistance
-stackView.bottom == middle.bottom + 9 @verticalHugging
-right.top >= stackView.top @1000.000000
-right.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= right.bottom @verticalClippingResistance
-stackView.bottom == right.bottom + 9 @verticalHugging
-stackView.right >= right.right + 10 @horizontalClippingResistance
-stackView.right <= right.right + 10 @1000.000000
-middle.left == left.right + 11 @1000.000000
-right.left == middle.right + 11 @1000.000000
-left.width == 200*NSStackView.DistributionGuide.Ideal.width @260.000000
-middle.width == 200*NSStackView.DistributionGuide.Ideal.width @260.000000
-right.width == 200*NSStackView.DistributionGuide.Ideal.width @260.000000
-
-2016-12-15 09:34:51.901 NSStackView2[86403:2146200] stackConstraints Distribution 3 :
-stackView.height == + 100 @1000.000000
-left.centerY == stackView.centerY @260.000000
-middle.centerY == stackView.centerY @260.000000
-right.centerY == stackView.centerY @260.000000
-left.left >= stackView.left @1000.000000
-left.left == stackView.left + 7 @750.000000
-left.top >= stackView.top @1000.000000
-left.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= left.bottom @verticalClippingResistance
-stackView.bottom == left.bottom + 9 @verticalHugging
-middle.top >= stackView.top @1000.000000
-middle.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= middle.bottom @verticalClippingResistance
-stackView.bottom == middle.bottom + 9 @verticalHugging
-right.top >= stackView.top @1000.000000
-right.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= right.bottom @verticalClippingResistance
-stackView.bottom == right.bottom + 9 @verticalHugging
-stackView.right >= right.right + 10 @horizontalClippingResistance
-stackView.right <= right.right + 10 @750.000000
-middle.left >= left.right + 11 @1000.000000
-middle.left == left.right + 11 @horizontalHugging
-right.left >= middle.right + 11 @1000.000000
-right.left == middle.right + 11 @horizontalHugging
-left.right == NSStackView.DistributionGuide.0x6000001408f0.left @1000.000000
-NSStackView.DistributionGuide.0x6000001408f0.right == middle.left @1000.000000
-NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x6000001408f0.width @260.000000
-middle.right == NSStackView.DistributionGuide.0x608000140370.left @1000.000000
-NSStackView.DistributionGuide.0x608000140370.right == right.left @1000.000000
-NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x608000140370.width @260.000000
-
-2016-12-15 09:34:56.443 NSStackView2[86403:2146200] stackConstraints Distribution 4 :
-stackView.height == + 100 @1000.000000
-left.centerY == stackView.centerY @260.000000
-middle.centerY == stackView.centerY @260.000000
-right.centerY == stackView.centerY @260.000000
-left.left >= stackView.left @1000.000000
-left.left == stackView.left + 7 @750.000000
-left.top >= stackView.top @1000.000000
-left.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= left.bottom @verticalClippingResistance
-stackView.bottom == left.bottom + 9 @verticalHugging
-middle.top >= stackView.top @1000.000000
-middle.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= middle.bottom @verticalClippingResistance
-stackView.bottom == middle.bottom + 9 @verticalHugging
-right.top >= stackView.top @1000.000000
-right.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= right.bottom @verticalClippingResistance
-stackView.bottom == right.bottom + 9 @verticalHugging
-stackView.right >= right.right + 10 @horizontalClippingResistance
-stackView.right <= right.right + 10 @750.000000
-middle.left >= left.right + 11 @1000.000000
-middle.left == left.right + 11 @horizontalHugging
-right.left >= middle.right + 11 @1000.000000
-right.left == middle.right + 11 @horizontalHugging
-left.centerX == NSStackView.DistributionGuide.0x6000001408f0.left @1000.000000
-NSStackView.DistributionGuide.0x6000001408f0.right == middle.centerX @1000.000000
-NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x6000001408f0.width @260.000000
-middle.centerX == NSStackView.DistributionGuide.0x608000140370.left @1000.000000
-NSStackView.DistributionGuide.0x608000140370.right == right.centerX @1000.000000
-NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x608000140370.width @260.000000
-
-2016-12-15 10:05:58.415 NSStackView2[86829:2210980] stackConstraints Distribution -1 :
-stackView.height == + 100 @1000.000000
-left.centerY == stackView.centerY @260.000000
-middle.centerY == stackView.centerY @260.000000
-right.centerY == stackView.centerY @260.000000
-left.left >= stackView.left @1000.000000
-left.left == stackView.left + 7 @750.000000
-left.top >= stackView.top @1000.000000
-left.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= left.bottom @verticalClippingResistance
-stackView.bottom == left.bottom + 9 @verticalHugging
-middle.top >= stackView.top @1000.000000
-middle.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= middle.bottom @verticalClippingResistance
-stackView.bottom == middle.bottom + 9 @verticalHugging
-right.top >= stackView.top @1000.000000
-right.top == stackView.top + 8 @verticalHugging
-stackView.bottom >= right.bottom @verticalClippingResistance
-stackView.bottom == right.bottom + 9 @verticalHugging
-stackView.right >= right.right + 10 @horizontalClippingResistance
-stackView.right <= right.right + 10 @251.000000
-middle.left >= left.right + 11 @1000.000000
-middle.left == left.right + 11 @749.989990
-right.left >= middle.right + 11 @1000.000000
-right.left == middle.right + 11 @749.979980
-
+Distribution -1:
+: stackView.width == + 500 @1000.0
+: stackView.height == + 100 @1000.0
+NSStackView.Align.0: leading.0.centerY == stackView.centerY @260.0
+NSStackView.Align.1: center.0.centerY == stackView.centerY @260.0
+NSStackView.Align.2: center.1.centerY == stackView.centerY @260.0
+NSStackView.Align.3: trailing.0.centerY == stackView.centerY @260.0
+NSStackView.Edge.Leading.Min: leading.0.left >= stackView.left @1000.0
+NSStackView.Edge.Leading: leading.0.left == stackView.left @750.0
+NSStackView.Edge.Top.0.Min: leading.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.0: leading.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.0.Min: stackView.bottom >= leading.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.0: stackView.bottom == leading.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.1.Min: center.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.1: center.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.1.Min: stackView.bottom >= center.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.1: stackView.bottom == center.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.2.Min: center.1.top >= stackView.top @1000.0
+NSStackView.Edge.Top.2: center.1.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.2.Min: stackView.bottom >= center.1.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.2: stackView.bottom == center.1.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.3.Min: trailing.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.3: trailing.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.3.Min: stackView.bottom >= trailing.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.3: stackView.bottom == trailing.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Trailing.Min: stackView.right >= trailing.0.right @clippingResistancePriorityHorizontal
+NSStackView.Edge.Trailing.Min: stackView.right <= trailing.0.right @750.0
+NSStackView.Stack.0-1.Min: center.0.left >= leading.0.right + 8 @1000.0
+NSStackView.Stack.0-1: center.0.left == leading.0.right + 8 @huggingPriorityHorizontal
+NSStackView.Stack.1-2.Min: center.1.left >= center.0.right + 8 @1000.0
+NSStackView.Stack.1-2: center.1.left == center.0.right + 8 @749.98
+NSStackView.Stack.2-3.Min: trailing.0.left >= center.1.right + 8 @1000.0
+NSStackView.Stack.2-3: trailing.0.left == center.1.right + 8 @huggingPriorityHorizontal
+NSStackView.CenterGroup.FirstEdge: center.0.left == NSStackView.CenterGroup.left @1000.0
+NSStackView.CenterGroup.LastEdge: center.1.right == NSStackView.CenterGroup.right @1000.0
+NSStackView.CenterGroup.Center: NSStackView.CenterGroup.centerX == stackView.centerX @260.0
+Distribution 0:
+: stackView.width == + 500 @1000.0
+: stackView.height == + 100 @1000.0
+NSStackView.Align.0: leading.0.centerY == stackView.centerY @260.0
+NSStackView.Align.1: center.0.centerY == stackView.centerY @260.0
+NSStackView.Align.2: center.1.centerY == stackView.centerY @260.0
+NSStackView.Align.3: trailing.0.centerY == stackView.centerY @260.0
+NSStackView.Edge.Leading: leading.0.left == stackView.left @1000.0
+NSStackView.Edge.Top.0.Min: leading.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.0: leading.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.0.Min: stackView.bottom >= leading.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.0: stackView.bottom == leading.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.1.Min: center.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.1: center.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.1.Min: stackView.bottom >= center.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.1: stackView.bottom == center.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.2.Min: center.1.top >= stackView.top @1000.0
+NSStackView.Edge.Top.2: center.1.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.2.Min: stackView.bottom >= center.1.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.2: stackView.bottom == center.1.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.3.Min: trailing.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.3: trailing.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.3.Min: stackView.bottom >= trailing.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.3: stackView.bottom == trailing.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Trailing.Min: stackView.right >= trailing.0.right @clippingResistancePriorityHorizontal
+NSStackView.Edge.Trailing.Min: stackView.right <= trailing.0.right @1000.0
+NSStackView.Stack.0-1: center.0.left == leading.0.right + 8 @1000.0
+NSStackView.Stack.1-2: center.1.left == center.0.right + 8 @1000.0
+NSStackView.Stack.2-3: trailing.0.left == center.1.right + 8 @1000.0
+Distribution 1:
+: stackView.width == + 500 @1000.0
+: stackView.height == + 100 @1000.0
+NSStackView.Align.0: leading.0.centerY == stackView.centerY @260.0
+NSStackView.Align.1: center.0.centerY == stackView.centerY @260.0
+NSStackView.Align.2: center.1.centerY == stackView.centerY @260.0
+NSStackView.Align.3: trailing.0.centerY == stackView.centerY @260.0
+NSStackView.Edge.Leading: leading.0.left == stackView.left @1000.0
+NSStackView.Edge.Top.0.Min: leading.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.0: leading.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.0.Min: stackView.bottom >= leading.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.0: stackView.bottom == leading.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.1.Min: center.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.1: center.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.1.Min: stackView.bottom >= center.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.1: stackView.bottom == center.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.2.Min: center.1.top >= stackView.top @1000.0
+NSStackView.Edge.Top.2: center.1.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.2.Min: stackView.bottom >= center.1.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.2: stackView.bottom == center.1.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.3.Min: trailing.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.3: trailing.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.3.Min: stackView.bottom >= trailing.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.3: stackView.bottom == trailing.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Trailing.Min: stackView.right >= trailing.0.right @clippingResistancePriorityHorizontal
+NSStackView.Edge.Trailing.Min: stackView.right <= trailing.0.right @1000.0
+NSStackView.Stack.0-1: center.0.left == leading.0.right + 8 @1000.0
+NSStackView.Stack.1-2: center.1.left == center.0.right + 8 @1000.0
+NSStackView.Stack.2-3: trailing.0.left == center.1.right + 8 @1000.0
+NSStackView.Distribution.EqualSizing.0: NSStackView.DistributionGuide.Ideal.width == leading.0.width @260.0
+NSStackView.Distribution.EqualSizing.1: NSStackView.DistributionGuide.Ideal.width == center.0.width @260.0
+NSStackView.Distribution.EqualSizing.2: NSStackView.DistributionGuide.Ideal.width == center.1.width @260.0
+NSStackView.Distribution.EqualSizing.3: NSStackView.DistributionGuide.Ideal.width == trailing.0.width @260.0
+Distribution 2:
+: stackView.width == + 500 @1000.0
+: stackView.height == + 100 @1000.0
+NSStackView.Align.0: leading.0.centerY == stackView.centerY @260.0
+NSStackView.Align.1: center.0.centerY == stackView.centerY @260.0
+NSStackView.Align.2: center.1.centerY == stackView.centerY @260.0
+NSStackView.Align.3: trailing.0.centerY == stackView.centerY @260.0
+NSStackView.Edge.Leading: leading.0.left == stackView.left @1000.0
+NSStackView.Edge.Top.0.Min: leading.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.0: leading.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.0.Min: stackView.bottom >= leading.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.0: stackView.bottom == leading.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.1.Min: center.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.1: center.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.1.Min: stackView.bottom >= center.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.1: stackView.bottom == center.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.2.Min: center.1.top >= stackView.top @1000.0
+NSStackView.Edge.Top.2: center.1.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.2.Min: stackView.bottom >= center.1.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.2: stackView.bottom == center.1.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.3.Min: trailing.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.3: trailing.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.3.Min: stackView.bottom >= trailing.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.3: stackView.bottom == trailing.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Trailing.Min: stackView.right >= trailing.0.right @clippingResistancePriorityHorizontal
+NSStackView.Edge.Trailing.Min: stackView.right <= trailing.0.right @1000.0
+NSStackView.Stack.0-1: center.0.left == leading.0.right + 8 @1000.0
+NSStackView.Stack.1-2: center.1.left == center.0.right + 8 @1000.0
+NSStackView.Stack.2-3: trailing.0.left == center.1.right + 8 @1000.0
+NSStackView.Distribution.EqualProportionalSizing.0: leading.0.width == 100*NSStackView.DistributionGuide.Ideal.width @260.0
+NSStackView.Distribution.EqualProportionalSizing.1: center.0.width == 200*NSStackView.DistributionGuide.Ideal.width @260.0
+NSStackView.Distribution.EqualProportionalSizing.2: center.1.width == 50*NSStackView.DistributionGuide.Ideal.width @260.0
+NSStackView.Distribution.EqualProportionalSizing.3: trailing.0.width == 150*NSStackView.DistributionGuide.Ideal.width @260.0
+Distribution 3:
+: stackView.width == + 500 @1000.0
+: stackView.height == + 100 @1000.0
+NSStackView.Align.0: leading.0.centerY == stackView.centerY @260.0
+NSStackView.Align.1: center.0.centerY == stackView.centerY @260.0
+NSStackView.Align.2: center.1.centerY == stackView.centerY @260.0
+NSStackView.Align.3: trailing.0.centerY == stackView.centerY @260.0
+NSStackView.Edge.Leading.Min: leading.0.left >= stackView.left @1000.0
+NSStackView.Edge.Leading: leading.0.left == stackView.left @750.0
+NSStackView.Edge.Top.0.Min: leading.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.0: leading.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.0.Min: stackView.bottom >= leading.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.0: stackView.bottom == leading.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.1.Min: center.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.1: center.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.1.Min: stackView.bottom >= center.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.1: stackView.bottom == center.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.2.Min: center.1.top >= stackView.top @1000.0
+NSStackView.Edge.Top.2: center.1.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.2.Min: stackView.bottom >= center.1.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.2: stackView.bottom == center.1.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.3.Min: trailing.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.3: trailing.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.3.Min: stackView.bottom >= trailing.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.3: stackView.bottom == trailing.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Trailing.Min: stackView.right >= trailing.0.right @clippingResistancePriorityHorizontal
+NSStackView.Edge.Trailing.Min: stackView.right <= trailing.0.right @750.0
+NSStackView.Stack.0-1.Min: center.0.left >= leading.0.right + 8 @1000.0
+NSStackView.Stack.0-1: center.0.left == leading.0.right + 8 @huggingPriorityHorizontal
+NSStackView.Stack.1-2.Min: center.1.left >= center.0.right + 8 @1000.0
+NSStackView.Stack.1-2: center.1.left == center.0.right + 8 @huggingPriorityHorizontal
+NSStackView.Stack.2-3.Min: trailing.0.left >= center.1.right + 8 @1000.0
+NSStackView.Stack.2-3: trailing.0.left == center.1.right + 8 @huggingPriorityHorizontal
+NSStackView.Distribution.Stack.1.Leading: leading.0.right == NSStackView.DistributionGuide.0x7fbdf9441df0.left @1000.0
+NSStackView.Distribution.Stack.1.Trailing: NSStackView.DistributionGuide.0x7fbdf9441df0.right == center.0.left @1000.0
+NSStackView.Distribution.EqualSpacing.1: NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x7fbdf9441df0.width @260.0
+NSStackView.Distribution.Stack.2.Leading: center.0.right == NSStackView.DistributionGuide.0x7fbdf94493a0.left @1000.0
+NSStackView.Distribution.Stack.2.Trailing: NSStackView.DistributionGuide.0x7fbdf94493a0.right == center.1.left @1000.0
+NSStackView.Distribution.EqualSpacing.2: NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x7fbdf94493a0.width @260.0
+NSStackView.Distribution.Stack.3.Leading: center.1.right == NSStackView.DistributionGuide.0x7fbdf9723310.left @1000.0
+NSStackView.Distribution.Stack.3.Trailing: NSStackView.DistributionGuide.0x7fbdf9723310.right == trailing.0.left @1000.0
+NSStackView.Distribution.EqualSpacing.3: NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x7fbdf9723310.width @260.0
+Distribution 4:
+: stackView.width == + 500 @1000.0
+: stackView.height == + 100 @1000.0
+NSStackView.Align.0: leading.0.centerY == stackView.centerY @260.0
+NSStackView.Align.1: center.0.centerY == stackView.centerY @260.0
+NSStackView.Align.2: center.1.centerY == stackView.centerY @260.0
+NSStackView.Align.3: trailing.0.centerY == stackView.centerY @260.0
+NSStackView.Edge.Leading.Min: leading.0.left >= stackView.left @1000.0
+NSStackView.Edge.Leading: leading.0.left == stackView.left @750.0
+NSStackView.Edge.Top.0.Min: leading.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.0: leading.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.0.Min: stackView.bottom >= leading.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.0: stackView.bottom == leading.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.1.Min: center.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.1: center.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.1.Min: stackView.bottom >= center.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.1: stackView.bottom == center.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.2.Min: center.1.top >= stackView.top @1000.0
+NSStackView.Edge.Top.2: center.1.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.2.Min: stackView.bottom >= center.1.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.2: stackView.bottom == center.1.bottom @huggingPriorityVertical
+NSStackView.Edge.Top.3.Min: trailing.0.top >= stackView.top @1000.0
+NSStackView.Edge.Top.3: trailing.0.top == stackView.top @huggingPriorityVertical
+NSStackView.Edge.Bottom.3.Min: stackView.bottom >= trailing.0.bottom @clippingResistancePriorityVertical
+NSStackView.Edge.Bottom.3: stackView.bottom == trailing.0.bottom @huggingPriorityVertical
+NSStackView.Edge.Trailing.Min: stackView.right >= trailing.0.right @clippingResistancePriorityHorizontal
+NSStackView.Edge.Trailing.Min: stackView.right <= trailing.0.right @750.0
+NSStackView.Stack.0-1.Min: center.0.left >= leading.0.right + 8 @1000.0
+NSStackView.Stack.0-1: center.0.left == leading.0.right + 8 @huggingPriorityHorizontal
+NSStackView.Stack.1-2.Min: center.1.left >= center.0.right + 8 @1000.0
+NSStackView.Stack.1-2: center.1.left == center.0.right + 8 @huggingPriorityHorizontal
+NSStackView.Stack.2-3.Min: trailing.0.left >= center.1.right + 8 @1000.0
+NSStackView.Stack.2-3: trailing.0.left == center.1.right + 8 @huggingPriorityHorizontal
+NSStackView.Distribution.Stack.1.Leading: leading.0.centerX == NSStackView.DistributionGuide.0x7fbdf9441df0.left @1000.0
+NSStackView.Distribution.Stack.1.Trailing: NSStackView.DistributionGuide.0x7fbdf9441df0.right == center.0.centerX @1000.0
+NSStackView.Distribution.EqualSpacing.1: NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x7fbdf9441df0.width @260.0
+NSStackView.Distribution.Stack.2.Leading: center.0.centerX == NSStackView.DistributionGuide.0x7fbdf94493a0.left @1000.0
+NSStackView.Distribution.Stack.2.Trailing: NSStackView.DistributionGuide.0x7fbdf94493a0.right == center.1.centerX @1000.0
+NSStackView.Distribution.EqualSpacing.2: NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x7fbdf94493a0.width @260.0
+NSStackView.Distribution.Stack.3.Leading: center.1.centerX == NSStackView.DistributionGuide.0x7fbdf9723310.left @1000.0
+NSStackView.Distribution.Stack.3.Trailing: NSStackView.DistributionGuide.0x7fbdf9723310.right == trailing.0.centerX @1000.0
+NSStackView.Distribution.EqualSpacing.3: NSStackView.DistributionGuide.Ideal.width == NSStackView.DistributionGuide.0x7fbdf9723310.width @260.0
 */

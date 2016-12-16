@@ -713,7 +713,6 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         leading_perp_attr = CPLayoutAttributeTop + 2 * _orientation,
         trailing_attr = CPLayoutAttributeTrailing - 2 * _orientation,
         trailing_perp_attr = CPLayoutAttributeBottom + 2 * _orientation,
-        dimension_attr = CPLayoutAttributeWidth + _orientation,
         center_attr = CPLayoutAttributeCenterX + _orientation;
 
     var stackLeadingAnchor = [self layoutAnchorForAttribute:leading_attr],
@@ -740,7 +739,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             gravityAlignmentLeadingAnchor = [gravityRect layoutAnchorForAttribute:leading_perp_attr],
             gravityAlignmentTrailingAnchor = [gravityRect layoutAnchorForAttribute:trailing_perp_attr];
 
-        if (idx == 0)
+        if (aGravity == CPStackViewGravityLeading)
         {
             if (isFillDistribution)
             {
@@ -779,7 +778,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 
         [result addObjectsFromArray:@[topMin, top, bottomMin, bottom]];
 
-        if (idx == count - 1)
+        if (aGravity == CPStackViewGravityTrailing || (aGravity == CPStackViewGravityLeading && count == 1))
         {
             var trailingMin = [stackTrailingAnchor constraintGreaterThanOrEqualToAnchor:gravityTrailingAnchor constant:trailingInset];
             [trailingMin setPriority:clippingPriority];
@@ -791,13 +790,13 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             [result addObjectsFromArray:@[trailingMin, trailingMax]];
         }
 
-        if (aGravity == CPStackViewGravityCenter && count == 3)
+        if (aGravity == CPStackViewGravityCenter)
         {
             var gravityCenterAnchor = [gravityRect layoutAnchorForAttribute:center_attr],
                 stackCenterAnchor = [self layoutAnchorForAttribute:center_attr],
                 center = [gravityCenterAnchor constraintEqualToAnchor:stackCenterAnchor];
 
-            [center setPriority:CPLayoutPriorityDefaultLow];
+            [center setPriority:CPStackViewDistributionPriority];
             [result addObject:center];
         }
 
