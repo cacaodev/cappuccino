@@ -32,15 +32,16 @@ CPLogRegister(CPLogConsole);
                    @{"label" : "Low", "value"  : CPLayoutPriorityDefaultLow}];
 
     var segmented = [[CPSegmentedControl alloc] initWithFrame:CGRectMake(20, 10, 200, 32)];
-    [segmented setSegmentCount:5];
-    [segmented setLabel:@"Fill" forSegment:0];
-    [segmented setLabel:@"Fill Equally" forSegment:1];
-    [segmented setLabel:@"Fill Proportionally" forSegment:2];
-    [segmented setLabel:@"Equal Spacing" forSegment:3];
-    [segmented setLabel:@"Equal Centering" forSegment:4];
+    [segmented setSegmentCount:6];
+    [segmented setLabel:@"Gravity Areas" forSegment:0];
+    [segmented setLabel:@"Fill" forSegment:1];
+    [segmented setLabel:@"Fill Equally" forSegment:2];
+    [segmented setLabel:@"Fill Proportionally" forSegment:3];
+    [segmented setLabel:@"Equal Spacing" forSegment:4];
+    [segmented setLabel:@"Equal Centering" forSegment:5];
     [segmented setTarget:self];
     [segmented setAction:@selector(distribute:)];
-    [segmented setSelectedSegment:0];
+    [segmented setSelectedSegment:1];
     [contentView addSubview:segmented];
 
     var segmentedOrientation = [[CPSegmentedControl alloc] initWithFrame:CGRectMake(CGRectGetMaxX([segmented frame]) + 10,10,200,32)];
@@ -74,7 +75,7 @@ CPLogRegister(CPLogConsole);
 
     var huggingPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [huggingPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [huggingPopup addItemsWithTitles:[@"Hugging PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [huggingPopup addItemsWithTitles:[@"Hugging Low", @"Hugging 500", @"Hugging High", @"Hugging Required"]];
     [huggingPopup setTarget:self]
     [huggingPopup setAction:@selector(setHugging:)];
     [contentView addSubview:huggingPopup];
@@ -83,7 +84,7 @@ CPLogRegister(CPLogConsole);
 
     var huggingPopupV = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [huggingPopupV setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [huggingPopupV addItemsWithTitles:[@"Hugging↺ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [huggingPopupV addItemsWithTitles:[@"⤵︎ Hugging Low", @"⤵︎ Hugging 500", @"⤵︎ Hugging High", @"⤵︎ Hugging Required"]];
     [huggingPopupV setTarget:self]
     [huggingPopupV setAction:@selector(setHuggingV:)];
     [contentView addSubview:huggingPopupV];
@@ -92,7 +93,7 @@ CPLogRegister(CPLogConsole);
 
     var clippingPopup = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [clippingPopup setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [clippingPopup addItemsWithTitles:[@"Clipping PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [clippingPopup addItemsWithTitles:[@"Clipping Low", @"Clipping 500", @"Clipping High", @"Clipping Required"]];
     [clippingPopup setTarget:self]
     [clippingPopup setAction:@selector(setClipping:)];
     [contentView addSubview:clippingPopup];
@@ -101,7 +102,7 @@ CPLogRegister(CPLogConsole);
 
     var clippingPopupV = [[CPPopUpButton alloc] initWithFrame:CGRectMakeZero()];
     [clippingPopupV setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [clippingPopupV addItemsWithTitles:[@"Clipping↺ PriorityLow", @"Priority500", @"PriorityHigh", @"PriorityRequired"]];
+    [clippingPopupV addItemsWithTitles:[@"⤵︎ Clipping Low", @"⤵︎ Clipping 500", @"⤵︎ Clipping High", @"⤵︎ Clipping Required"]];
     [clippingPopupV setTarget:self]
     [clippingPopupV setAction:@selector(setClippingV:)];
     [contentView addSubview:clippingPopupV];
@@ -162,6 +163,7 @@ CPLogRegister(CPLogConsole);
 
     stackView = [StackView stackViewWithViews:views];
     [stackView setAlignment:CPLayoutAttributeCenterY];
+    [stackView setDistribution:CPStackViewDistributionFill];
     [stackView setEdgeInsets:CGInsetMake(10, 10, 10, 10)];
     [stackView setHuggingPriority:250 forOrientation:0];
     [stackView setHuggingPriority:250 forOrientation:1];
@@ -262,7 +264,7 @@ CPLogRegister(CPLogConsole);
 
 - (void)distribute:(id)sender
 {
-    var d = [sender selectedSegment];
+    var d = [sender selectedSegment] - 1;
     [stackView setDistribution:d];
     [theWindow setNeedsLayout];
     [stackView setNeedsDisplay:YES];
