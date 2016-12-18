@@ -621,10 +621,10 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
 {
     var result = @[];
 
-    [_viewsInGravity enumerateKeysAndObjectsUsingBlock:function(key, views, stop)
+    for (var g = CPStackViewGravityLeading; g <= CPStackViewGravityTrailing; g++)
     {
-        [result addObjectsFromArray:views];
-    }];
+        [result addObjectsFromArray:[self viewsInGravity:g]];
+    }
 
     return result;
 }
@@ -891,7 +891,7 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
             var intrinsicSize = [aView intrinsicContentSize],
                 coeff = _orientation ? intrinsicSize.height : intrinsicSize.width;
 
-            if (coeff !== -1)
+            if (coeff !== CPViewNoInstrinsicMetric)
             {
                 var anchor = [aView layoutAnchorForAttribute:dimension_attr],
                     idealAnchor = [self _idealSizeLayoutDimensionInGravity:aGravity];
