@@ -2,8 +2,12 @@
  * AppController.j
  * QuadrilateralDemo
  *
- * Created by You on August 4, 2016.
- * Copyright 2016, Your Company All rights reserved.
+ * Created by cacaodev on August 4, 2016.
+ * Copyright 2016.
+ *
+ * Based on the original QuadrilateralDemo by Greg J. Badros
+ * Refactored and optimized by Alex Russell
+ * http://infrequently.org/12/txjs/demos/cassowary/demos/quad/quaddemo.html
  */
 
 @import <Foundation/Foundation.j>
@@ -47,7 +51,7 @@ var EDIT_PRIORITY = 1000;
     [CPLayoutConstraint activateConstraints:@[left, top, right, bottom]];
 
 // Install edges points
- 
+
     var p1 = [self installLayoutPointAtLocation:CGPointMake(100, 100) inView:container priority:900];
     var p2 = [self installLayoutPointAtLocation:CGPointMake(1100, 100) inView:container priority:910];
     var p3 = [self installLayoutPointAtLocation:CGPointMake(1100, 500) inView:container priority:920];
@@ -158,12 +162,12 @@ var pNum;
     var anchorY = [CPLayoutYAxisAnchor anchorNamed:(@"y"+idx) inItem:owner];
 
     self = [super initWithXAxisAnchor:anchorX yAxisAnchor:anchorY];
-    
+
     xConstraint = [anchorX constraintEqualToConstant:aLocation.x];
     yConstraint = [anchorY constraintEqualToConstant:aLocation.y];
     [xConstraint setPriority:aPriority];
     [yConstraint setPriority:aPriority];
-    
+
     initialPriority = aPriority;
 
     return self;
@@ -251,7 +255,7 @@ var pNum;
 {
     var point = [[LayoutPoint alloc] initAtLocation:aLocation priority:priority owner:self];
     [layoutPoints addObject:point];
-    
+
     return point;
 }
 
@@ -400,7 +404,7 @@ var pNum;
 
     if (trackingPoint == nil)
         return NO;
-        
+
     [trackingPoint setPriority:CPLayoutPriorityRequired];
     currentLocation = locationInWindow;
 
@@ -414,7 +418,7 @@ var pNum;
 
     var locationInWindow = [anEvent locationInWindow],
         moveOffset = CGPointMake(locationInWindow.x - currentLocation.x, locationInWindow.y - currentLocation.y);
-        
+
     [trackingPoint moveByOffset:moveOffset];
     currentLocation = locationInWindow;
 
@@ -430,7 +434,7 @@ var pNum;
     {
         [point resetStayConstraints];
     }];
-    
+
     if (trackingPoint)
     {
         [trackingPoint resetPriority];
