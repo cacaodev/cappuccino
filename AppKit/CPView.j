@@ -490,7 +490,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         _inhibitDOMUpdates = NO;
         _forceUpdates = NO;
 
-        [self _initConstraintsIvars];
+        [self _initAutolayoutIvars];
 
         _translatesAutoresizingMaskIntoConstraints = YES;
         _huggingPriorities = nil;
@@ -3921,7 +3921,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [self setAppearance:[aCoder decodeObjectForKey:CPViewAppearanceKey]];
 
         //ConstraintBasedLayout
-        [self _initConstraintsIvars];
+        [self _initAutolayoutIvars];
 
         if ([aCoder containsValueForKey:CPViewConstraints])
             _internalConstraints = [aCoder decodeObjectForKey:CPViewConstraints];
@@ -4062,7 +4062,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     return NO;
 }
 
-- (void)_initConstraintsIvars
+- (void)_initAutolayoutIvars
 {
     _localEngine = nil;
     _viewIsConstraintBased = NO;
