@@ -137,15 +137,18 @@
     // The frame have been constrained.
     XCTAssertTrue(CGRectEqualToRect([constraintView frame], CGRectMake(10, 20, 30, 40)));
 
-    // Now we add the view to a window.
     // The window does not have any engine yet.
     XCTAssertTrue([contentView _layoutEngineIfExists] == nil);
 
+    // Now we add the view to a window.
     [contentView addSubview:constraintView];
 
+    // Now the view local engine have been promoted to window engine.
     XCTAssertTrue([contentView _layoutEngineIfExists] == localEngine);
-    XCTAssertTrue([constraintView _localEngineIfExists] == nil);
     XCTAssertTrue([contentView _layoutEngine] == [constraintView _layoutEngine]);
+
+    //The previous local engine have been nulled.
+    XCTAssertTrue([constraintView _localEngineIfExists] == nil);
 }
 
 - (void)testMergeLocalEngineIntoWindowEngine
@@ -205,7 +208,7 @@
     [[[subView widthAnchor] constraintGreaterThanOrEqualToConstant:10] setActive:YES];
     [topView layoutSubtreeIfNeeded];
 
-    // there is one layout engine and it is hosted by he top level view.
+    // there is one layout engine and it is hosted by the top level view.
     XCTAssertTrue([subView _layoutEngine] == [topView _layoutEngineIfExists]);
     XCTAssertTrue([subsubView _layoutEngine] == [topView _layoutEngineIfExists]);
 

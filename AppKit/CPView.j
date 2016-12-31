@@ -266,7 +266,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL                _forceUpdates           @accessors(setter=_setForceUpdates);
 
     // ConstraintBasedLayout support
-    CPLayoutConstraintEngine _localEngine;
+    CPLayoutConstraintEngine _localEngine       @accessors(getter=_localEngineIvar);
     CPArray  _constraintsArray                  @accessors(property=_constraintsArray);
     CPArray  _autoresizingConstraints           @accessors;
     CPArray  _internalConstraints               @accessors(property=_internalConstraints);
@@ -4155,7 +4155,7 @@ Returns whether the receiver depends on the constraint-based layout system.
 
 - (CPLayoutConstraintEngine)_localEngineIfExists
 {
-    return [[self topLevelView] _localEngine];
+    return [[self topLevelView] _localEngineIvar];
 }
 
 - (BOOL)_hasLocalEngine
