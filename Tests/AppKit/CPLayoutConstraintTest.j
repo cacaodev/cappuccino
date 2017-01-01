@@ -30,8 +30,7 @@
     contentView = [theWindow contentView];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
-    [theWindow orderFront:YES];
-    XCTAssertTrue([theWindow isAutolayoutEnabled]);
+    [theWindow orderFront:self];
 
     _didReceiveKVONotification = NO;
 }
