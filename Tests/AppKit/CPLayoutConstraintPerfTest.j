@@ -59,14 +59,13 @@
     var constraintSubviews = [self recursivelyAddNumViews:num toSuperview:constraintContentView maxDepth:maxDepth withBlock:function(num, rect, level, idx)
     {
         var view = autoSizeBlock(num, rect, level, idx);
-        // The default is currently NO, but YES in cocoa.
-        [view setTranslatesAutoresizingMaskIntoConstraints:YES];
-
         return view;
     }];
 
     [autoSizeWindow orderFront:self];
-    [constraintsWindow orderFront:YES];
+    [constraintsWindow orderFront:self];
+
+    XCTAssertFalse([autoSizeWindow isAutolayoutEnabled]);
     XCTAssertTrue([constraintsWindow isAutolayoutEnabled]);
 
     [constraintsWindow layout];

@@ -2136,9 +2136,6 @@ CPTexturedBackgroundWindowMask
 
     [[CPApp keyWindow] resignKeyWindow];
     [self becomeKeyWindow];
-
-    // ConstraintBasedLayout
-    [self _engageAutolayoutIfNeeded];
 }
 
 /*!

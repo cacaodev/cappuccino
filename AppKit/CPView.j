@@ -266,19 +266,19 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL                _forceUpdates           @accessors(setter=_setForceUpdates);
 
     // ConstraintBasedLayout support
-    CPLayoutConstraintEngine _localEngine;
-    CPArray  _constraintsArray @accessors(property=_constraintsArray);
-    CPArray  _autoresizingConstraints @accessors;
-    CPArray  _internalConstraints @accessors(property=_internalConstraints);
-    CPArray  _contentSizeConstraints @accessors(property=_contentSizeConstraints);
+    CPLayoutConstraintEngine _localEngine       @accessors(getter=_localEngineIvar);
+    CPArray  _constraintsArray                  @accessors(property=_constraintsArray);
+    CPArray  _autoresizingConstraints           @accessors;
+    CPArray  _internalConstraints               @accessors(property=_internalConstraints);
+    CPArray  _contentSizeConstraints            @accessors(property=_contentSizeConstraints);
 
     CGSize   _huggingPriorities                 @accessors;
     CGSize   _compressionPriorities             @accessors;
     BOOL     _translatesAutoresizingMaskIntoConstraints @accessors(property=translatesAutoresizingMaskIntoConstraints);
 
-    CGSize   _storedIntrinsicContentSize @accessors(property=storedIntrinsicContentSize);
+    CGSize   _storedIntrinsicContentSize                @accessors(property=storedIntrinsicContentSize);
 
-    BOOL     _needsUpdateConstraints    @accessors(property=needsUpdateConstraints);
+    BOOL     _needsUpdateConstraints                    @accessors(property=needsUpdateConstraints);
     // A regular contraint owned by a subview was added to the engine. The engine needs to solve.
     BOOL     _subviewsNeedSolvingInEngine;
     // Is the view geometry dirty and does it need to set its frame from the current engine variables ?
@@ -490,7 +490,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         _inhibitDOMUpdates = NO;
         _forceUpdates = NO;
 
-        [self _initConstraintsIvars];
+        [self _initAutolayoutIvars];
 
         _translatesAutoresizingMaskIntoConstraints = YES;
         _huggingPriorities = nil;
@@ -961,7 +961,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
         // TODO: if we don't enable autolayout, local engine variables should be reseted.
         _localEngine = nil;
-}
+    }
 }
 
 /*!
@@ -1211,9 +1211,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 #if PLATFORM(DOM)
     if (!_inhibitDOMUpdates)
     {
-    var transform = _superview ? _superview._boundsTransform : NULL;
+        var transform = _superview ? _superview._boundsTransform : NULL;
 
-    CPDOMDisplayServerSetStyleLeftTop(_DOMElement, transform, origin.x, origin.y);
+        CPDOMDisplayServerSetStyleLeftTop(_DOMElement, transform, origin.x, origin.y);
     }
 #endif
 
@@ -1394,7 +1394,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     var scale = [self scaleSize];
 
     if (!_inhibitDOMUpdates)
-    CPDOMDisplayServerSetStyleSize(_DOMElement, aSize.width * 1 / scale.width, aSize.height * 1 / scale.height);
+        CPDOMDisplayServerSetStyleSize(_DOMElement, aSize.width * 1 / scale.width, aSize.height * 1 / scale.height);
 
     if (_DOMContentsElement)
     {
@@ -1598,7 +1598,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         var subview = _subviews[count];
         if (![subview _needsConstraintBasedLayout])
             [subview resizeWithOldSuperviewSize:aSize];
-    }
+}
 }
 
 /*!
@@ -2196,7 +2196,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
             if (patternImage)
                 CPDOMDisplayServerSetStyleBackgroundSize(_DOMElement, [patternImage size].width + "px", [patternImage size].height + "px");
-    }
+        }
     }
     else
     {
@@ -3746,12 +3746,12 @@ setBoundsOrigin:
     [self _updateTrackingAreasForOwners:[self _calcTrackingAreaOwners]];
 
     if (shouldCallRecursively)
-{
+    {
         // Now, call _updateTrackingAreasWithRecursion on subviews
 
-    for (var i = 0; i < _subviews.length; i++)
+        for (var i = 0; i < _subviews.length; i++)
             [_subviews[i] _updateTrackingAreasWithRecursion:YES];
-}
+    }
 
     _inhibitUpdateTrackingAreas = NO;
 }
@@ -3921,7 +3921,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [self setAppearance:[aCoder decodeObjectForKey:CPViewAppearanceKey]];
 
         //ConstraintBasedLayout
-        [self _initConstraintsIvars];
+        [self _initAutolayoutIvars];
 
         if ([aCoder containsValueForKey:CPViewConstraints])
             _internalConstraints = [aCoder decodeObjectForKey:CPViewConstraints];
@@ -4062,7 +4062,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     return NO;
 }
 
-- (void)_initConstraintsIvars
+- (void)_initAutolayoutIvars
 {
     _localEngine = nil;
     _viewIsConstraintBased = NO;
@@ -4155,7 +4155,7 @@ Returns whether the receiver depends on the constraint-based layout system.
 
 - (CPLayoutConstraintEngine)_localEngineIfExists
 {
-    return [[self topLevelView] _localEngine];
+    return [[self topLevelView] _localEngineIvar];
 }
 
 - (BOOL)_hasLocalEngine
@@ -4927,7 +4927,7 @@ Perform layout in concert with the constraint-based layout system.
         [self viewWillLayout];
 
     if (_viewClassFlags & CPViewHasCustomLayoutSubviews || _viewHasConstraintBasedSubviews)
-    [self layoutSubviews];
+        [self layoutSubviews];
 
     [self viewDidLayout];
 }

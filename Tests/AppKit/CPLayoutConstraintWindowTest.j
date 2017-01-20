@@ -10,6 +10,7 @@
 
 @implementation CPLayoutConstraintWindowTest : OJTestCase
 {
+    CPWindow theWindow;
     CPView contentView;
     CPView leftView;
     CPLayoutConstraint rightConstraint;
@@ -18,13 +19,13 @@
 
 - (void)setUp
 {
-    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 200, 200) styleMask:CPResizableWindowMask];
+    theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 200, 200) styleMask:CPResizableWindowMask];
     contentView = [theWindow contentView];
+
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [contentView setIdentifier:@"contentView"];
 
-    [theWindow orderFront:YES];
-    XCTAssertTrue([theWindow isAutolayoutEnabled]);
+    [theWindow orderFront:self];
 
     leftView = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
     [leftView setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -44,6 +45,11 @@
     [contentView addSubview:leftView];
 
     [CPLayoutConstraint activateConstraints:@[leftConstraint, minWidthConstraint, rightConstraint, heightConstraint, topConstraint]];
+}
+
+- (void)testAutolayoutEngaged
+{
+    XCTAssertTrue([theWindow isAutolayoutEnabled]);
 }
 
 - (void)testWindowResizingAfterRightConstraintConstantChange

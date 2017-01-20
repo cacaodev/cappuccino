@@ -1506,6 +1506,9 @@ _CPPlatformWindowWillCloseNotification = @"_CPPlatformWindowWillCloseNotificatio
         [self _orderChildWindowsOf:aWindow furthestParent:[self _furthestParentOf:aWindow] layer:layer];
 
     [aWindow _setHasBeenOrderedIn:YES];
+
+    // ConstraintBasedLayout
+    [aWindow _engageAutolayoutIfNeeded];
 }
 
 - (CPWindow)_furthestParentOf:(CPWindow)aWindow
