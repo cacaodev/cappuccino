@@ -45,7 +45,7 @@ CPLogRegister(CPLogConsole);
 
 @end
 
-@implementation NoConstraintWindow : CPWindow
+@implementation AutosizeWindow : CPWindow
 {
 }
 
@@ -61,7 +61,7 @@ CPLogRegister(CPLogConsole);
 
 @end
 
-@implementation ConstraintWindow : CPWindow
+@implementation AutolayoutWindow : CPWindow
 {
 }
 
@@ -87,11 +87,15 @@ CPLogRegister(CPLogConsole);
         contentView = [theWindow contentView];
     [theWindow orderFront:self];
 
-    var autoSizeWindow = [[NoConstraintWindow alloc] initWithContentRect:CGRectMake(0, 20, 600, 600) styleMask:CPResizableWindowMask],
+    var autoSizeWindow = [[AutosizeWindow alloc] initWithContentRect:CGRectMake(0, 20, 600, 600) styleMask:CPResizableWindowMask],
         autosizeContentView = [autoSizeWindow contentView];
+    [autoSizeWindow setTitle:"Autosize"];
 
-    var constraintsWindow = [[ConstraintWindow alloc] initWithContentRect:CGRectMake(610, 20, 600, 600) styleMask:CPResizableWindowMask],
+    var constraintsWindow = [[AutolayoutWindow alloc] initWithContentRect:CGRectMake(610, 20, 600, 600) styleMask:CPResizableWindowMask],
         constraintContentView = [constraintsWindow contentView];
+    [constraintsWindow setTitle:"Autolayout"];
+
+    // Enable Autolayout on this window.
     [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [constraintContentView setIdentifier:@"ContentView"];
 
@@ -119,27 +123,21 @@ CPLogRegister(CPLogConsole);
     var constraintSubviews = [self recursivelyAddNumViews:num toSuperview:constraintContentView maxDepth:maxDepth withBlock:function(num, rect, level, idx)
     {
         var view = autoSizeBlock(num, rect, level, idx);
-        // The default is currently NO, but YES in cocoa.
-        [view setTranslatesAutoresizingMaskIntoConstraints:YES];
-
         return view;
     }];
 
-    [autoSizeWindow setTitle:"Autosize"];
-    [constraintsWindow setTitle:"Autolayout"];
-
     [autoSizeWindow orderFront:self];
     [constraintsWindow orderFront:self];
-
+CPLog.debug("Autolayout is " + [constraintsWindow isAutolayoutEnabled]);
     var avg = moving_averager(10),
         avg2 = moving_averager(10);
 
-    CPTrace("ConstraintWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
+    CPTrace("AutolayoutWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
     {
         console.log("%c Autolayout: setFrame: = " + duration + "(ms), average(20) =" + avg(duration) + "(ms)", 'color:green; font-weight:bold');
     });
 
-    CPTrace("NoConstraintWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
+    CPTrace("AutosizeWindow", "_setFrame:display:animate:constrainWidth:constrainHeight:", function(receiver, selector, args, duration)
     {
         console.log("%c Autosize: setFrame: = " + duration + " average(20) =" + avg2(duration) + "(ms)", 'color:gray; font-weight:bold');
     });

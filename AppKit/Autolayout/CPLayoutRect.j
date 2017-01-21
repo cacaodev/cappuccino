@@ -70,10 +70,10 @@
 
     self = [super init];
 
-    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.leading", aName] inItem:superItem];
-    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.top", aName] inItem:superItem];
-    _widthAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.width", aName] inItem:superItem];
-    _heightAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.height", aName] inItem:superItem];
+    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.leading", aName] inItem:self];
+    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:[CPString stringWithFormat:"%@.top", aName] inItem:self];
+    _widthAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.width", aName] inItem:self];
+    _heightAnchor = [CPLayoutDimension anchorNamed:[CPString stringWithFormat:"%@.height", aName] inItem:self];
     _name = [aName copy];
     _superItem = superItem;
 
@@ -331,11 +331,11 @@
 - (id)constraintsEqualToLayoutRect:(id)arg1
 {
     var leading = [[self leadingAnchor] constraintEqualToAnchor:[arg1 leadingAnchor]],
-        trailing = [[self trailingAnchor] constraintEqualToAnchor:[arg1 trailingAnchor]],
         top = [[self topAnchor] constraintEqualToAnchor:[arg1 topAnchor]],
-        bottom = [[self bottomAnchor] constraintEqualToAnchor:[arg1 bottomAnchor]];
+        width = [[self widthAnchor] constraintEqualToAnchor:[arg1 widthAnchor]],
+        height = [[self heightAnchor] constraintEqualToAnchor:[arg1 heightAnchor]];
 
-    return @[leading, trailing, top, bottom];
+    return @[leading, top, width, height];
 }
 
 - (id)constraintsContainingWithinLayoutRect:(id)arg1

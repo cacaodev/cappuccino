@@ -9,7 +9,7 @@
 @typedef SimplexSolver
 @typedef Map
 
-var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
+var SOLVER_DEFAULT_EDIT_STRENGTH;
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
@@ -18,6 +18,11 @@ var SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
     Map           _variableToOwnerMap @accessors(readonly);
     CPArray       _editingVariables;
     id            _delegate @accessors(getter=delegate, setter=_setDelegate:);
+}
+
++ (void)initialize
+{
+    SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
 }
 
 + (CPArray)_engineConstraintsFromConstraint:(CPLayoutConstraint)aConstraint

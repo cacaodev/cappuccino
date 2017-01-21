@@ -266,7 +266,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     BOOL                _forceUpdates           @accessors(setter=_setForceUpdates);
 
     // ConstraintBasedLayout support
-    CPLayoutConstraintEngine _localEngine;
+    CPLayoutConstraintEngine _localEngine       @accessors(getter=_localEngineIvar);
     CPArray  _constraintsArray                  @accessors(property=_constraintsArray);
     CPArray  _autoresizingConstraints           @accessors;
     CPArray  _internalConstraints               @accessors(property=_internalConstraints);
@@ -490,7 +490,7 @@ var CPViewHighDPIDrawingEnabled = YES;
         _inhibitDOMUpdates = NO;
         _forceUpdates = NO;
 
-        [self _initConstraintsIvars];
+        [self _initAutolayoutIvars];
 
         _translatesAutoresizingMaskIntoConstraints = YES;
         _huggingPriorities = nil;
@@ -3921,7 +3921,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [self setAppearance:[aCoder decodeObjectForKey:CPViewAppearanceKey]];
 
         //ConstraintBasedLayout
-        [self _initConstraintsIvars];
+        [self _initAutolayoutIvars];
 
         if ([aCoder containsValueForKey:CPViewConstraints])
             _internalConstraints = [aCoder decodeObjectForKey:CPViewConstraints];
@@ -4062,7 +4062,7 @@ Returns whether the receiver depends on the constraint-based layout system.
     return NO;
 }
 
-- (void)_initConstraintsIvars
+- (void)_initAutolayoutIvars
 {
     _localEngine = nil;
     _viewIsConstraintBased = NO;
@@ -4155,7 +4155,7 @@ Returns whether the receiver depends on the constraint-based layout system.
 
 - (CPLayoutConstraintEngine)_localEngineIfExists
 {
-    return [[self topLevelView] _localEngine];
+    return [[self topLevelView] _localEngineIvar];
 }
 
 - (BOOL)_hasLocalEngine
@@ -5079,7 +5079,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)rightAnchor
 {
     if (!_rightAnchor)
+    {
         _rightAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeRight];
+#if !(DEBUG)
+        [_rightAnchor _setName:@"trailing"];
+#endif
+    }
 
     return _rightAnchor;
 }
@@ -5095,7 +5100,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)bottomAnchor
 {
     if (!_bottomAnchor)
+    {
         _bottomAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeBottom];
+#if !(DEBUG)
+        [_bottomAnchor _setName:@"bottom"];
+#endif
+    }
 
     return _bottomAnchor;
 }
@@ -5150,7 +5160,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)centerXAnchor
 {
     if (!_centerXAnchor)
+    {
         _centerXAnchor = [CPCompositeLayoutXAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterX];
+#if !(DEBUG)
+        [_centerXAnchor _setName:@"centerX"];
+#endif
+    }
 
     return _centerXAnchor;
 }
@@ -5158,7 +5173,12 @@ Updates the layout of the receiving view and its subviews based on the current v
 - (id)centerYAnchor
 {
     if (!_centerYAnchor)
+    {
         _centerYAnchor = [CPCompositeLayoutYAxisAnchor anchorWithItem:self attribute:CPLayoutAttributeCenterY];
+#if !(DEBUG)
+        [_centerYAnchor _setName:@"centerY"];
+#endif
+    }
 
     return _centerYAnchor;
 }

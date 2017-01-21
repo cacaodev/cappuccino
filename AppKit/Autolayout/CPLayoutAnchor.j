@@ -33,7 +33,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     id        _item                     @accessors(getter=item);
     CPInteger _attribute                @accessors(getter=attribute, setter=_setAttribute:);
-    CPString  _name                     @accessors(setter=_setName:);
+    CPString  _name                     @accessors(getter=_name, setter=_setName:);
     Variable  _variable                 @accessors(setter=_setVariable:);
     CPSet     _referencedLayoutItems;
     CPArray   _constituentAnchors;
@@ -84,7 +84,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:[self attribute] name:[self name]];
+    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
 }
 
 - (Variable)variable
@@ -142,7 +142,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if (otherAnchor === self)
         return YES;
 
-    if ([otherAnchor class] !== [self class] || [otherAnchor _referenceItem] !== [self _referenceItem] || [otherAnchor attribute] !== _attribute)
+    if ([otherAnchor class] !== [self class] || [otherAnchor _referenceItem] !== [self _referenceItem] || [otherAnchor attribute] !== _attribute || [otherAnchor name] !== [self name])
         return NO;
 
     return YES;
@@ -517,6 +517,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithAnchor:_axisAnchor plusDimension:_dimension times:_dimensionMultiplier plus:_constant name:_name attribute:_attribute];
 }
 
+- (BOOL)isEqual:(id)otherAnchor
+{
+    if (otherAnchor === self)
+        return YES;
+
+    if ([otherAnchor class] !== [self class] || ![[otherAnchor axisAnchor] isEqual:_axisAnchor] || ![[otherAnchor dimension] isEqual:_dimension] || [otherAnchor constant] !== _constant || [otherAnchor dimensionMultiplier] !== _dimensionMultiplier)
+        return NO;
+
+    return YES;
+}
+
 - (CPInteger)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
@@ -708,9 +719,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @implementation CPCompositeLayoutDimension : CPLayoutDimension
 {
-    CPLayoutDimension _firstLayoutDimension;
-    float             _secondLayoutDimensionMultiplier;
-    CPLayoutDimension _secondLayoutDimension;
+    CPLayoutDimension _firstLayoutDimension            @accessors(getter=firstLayoutDimension);
+    float             _secondLayoutDimensionMultiplier @accessors(getter=secondLayoutDimensionMultiplier);
+    CPLayoutDimension _secondLayoutDimension           @accessors(getter=secondLayoutDimension);
 }
 
 - (id)initWithDimension:(id)firstDimension plusDimension:(id)secondDimension times:(float)multiplier
@@ -727,6 +738,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 - (id)copy
 {
     return [[CPCompositeLayoutDimension alloc] initWithDimension:_firstLayoutDimension plusDimension:_secondLayoutDimension times:_secondLayoutDimensionMultiplier];
+}
+
+- (BOOL)isEqual:(id)otherAnchor
+{
+    if (otherAnchor === self)
+        return YES;
+
+    if ([otherAnchor class] !== [self class] || ![[otherAnchor firstLayoutDimension] isEqual:_firstLayoutDimension] || ![[otherAnchor secondLayoutDimension] isEqual:_secondLayoutDimension] || [otherAnchor secondLayoutDimensionMultiplier] !== _secondLayoutDimensionMultiplier)
+        return NO;
+
+    return YES;
 }
 
 - (CPInteger)_anchorType
@@ -888,13 +910,25 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2 name:(CPString)aName
 {
-    self = [super initWithItem:[arg1 _referenceItem] attribute:-1 name:aName];
+    self = [super initWithItem:nil attribute:-1 name:aName];
 
     _minAnchor = [arg1 copy];
     _maxAnchor = [arg2 copy];
     _name = [aName copy];
+    _item = [self _nearestAncestorLayoutItem];
 
     return self;
+}
+
+- (BOOL)isEqual:(id)otherAnchor
+{
+    if (otherAnchor === self)
+        return YES;
+
+    if ([otherAnchor class] !== [self class] || ![[otherAnchor minAnchor] isEqual:_minAnchor] || ![[otherAnchor maxAnchor] isEqual:_maxAnchor] || [otherAnchor _name] !== _name)
+        return NO;
+
+    return YES;
 }
 
 - (id)copy
@@ -917,7 +951,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     if ([self name])
         return [super descriptionEquation];
 
-    return [CPString stringWithFormat:@"(%@ - %@)", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
+    return [CPString stringWithFormat:@"❮%@ ⤑ %@❯", [_minAnchor descriptionEquation], [_maxAnchor descriptionEquation]];
 }
 
 - (float)valueInEngine:(id)arg1
@@ -932,8 +966,8 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (Expression)expressionInContext:(id)arg1
 {
-    var expMax = [_maxAnchor expressionInContext:arg1],
-        expMin = [_minAnchor expressionInContext:arg1];
+    var expMax = [_maxAnchor expressionInContext:_minAnchor],
+        expMin = [_minAnchor expressionInContext:_maxAnchor];
 
     return c.plus(expMax, expMin.times(-1));
 }

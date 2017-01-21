@@ -57,10 +57,15 @@ CPLogRegister(CPLogConsole);
     CGContextFillRect(ctx, [self bounds]);
 
     [[CPColor blackColor] set];
-    var constrainedRect = [layoutRectangle valueInItem:self];
+    var constrainedRect = [layoutRectangle valueInEngine:nil];
 
     [[CPBezierPath bezierPathWithOvalInRect:constrainedRect] stroke];
     [[CPBezierPath bezierPathWithRect:constrainedRect] stroke];
+}
+
+- (void)mouseDown:(CPEvent)anEvent
+{
+    CPLog.debug("ContentView\n" + [[[[self window] contentView] constraints] description]);
 }
 
 @end
