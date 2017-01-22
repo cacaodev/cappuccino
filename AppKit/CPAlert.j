@@ -235,15 +235,15 @@ CPCriticalAlertStyle        = 2;
         _themeView          = [_CPAlertThemeView new];
 
         _messageLabel       = [CPTextField labelWithTitle:@"Alert"];
-        [_messageLabel setIdentifier:@"message"];
+        [_messageLabel setIdentifier:@"messageLabel"];
         [_messageLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
 
         _informativeLabel   = [[CPTextField alloc] init];
-        [_informativeLabel setIdentifier:@"info"];
+        [_informativeLabel setIdentifier:@"infoLabel"];
         [_informativeLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
 
         _alertImageView     = [[CPImageView alloc] init];
-        [_informativeLabel setIdentifier:@"image"];
+        [_alertImageView setIdentifier:@"alertImageView"];
         [_alertImageView setTranslatesAutoresizingMaskIntoConstraints:NO];
 
         _accessoryView = nil;
@@ -400,6 +400,7 @@ CPCriticalAlertStyle        = 2;
 {
     _accessoryView = aView;
 
+    [_accessoryView setIdentifier:@"accessoryView"];
     [_accessoryView setTranslatesAutoresizingMaskIntoConstraints:NO];
     [_accessoryView layoutSubtreeIfNeeded];
 
