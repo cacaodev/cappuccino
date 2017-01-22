@@ -830,8 +830,7 @@ CPCriticalAlertStyle        = 2;
 {
     var result = @[];
 
-    [_messageLabel layoutSubtreeIfNeeded];
-    [_informativeLabel layoutSubtreeIfNeeded];
+    [[_window contentView] layoutSubtreeIfNeeded];
 
     var messageLabelHeight = [self _heightConstraintForWrappingTextField:_messageLabel],
         informativeLabelHeight = [self _heightConstraintForWrappingTextField:_informativeLabel];
