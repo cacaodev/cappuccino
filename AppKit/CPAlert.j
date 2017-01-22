@@ -729,12 +729,12 @@ CPCriticalAlertStyle        = 2;
 
 // Message text constraints
     var leftmessage = [[_messageLabel leftAnchor] constraintEqualToAnchor:[_alertImageView rightAnchor] constant:iconOffset.x],
-    //var topmessage = [[_messageLabel topAnchor] constraintEqualToAnchor:[aContentView topAnchor] constant:inset.top];
         rightmessage = [[aContentView rightAnchor] constraintEqualToAnchor:[_messageLabel rightAnchor] constant:inset.right],
+        minTopMessage = [[_messageLabel topAnchor] constraintGreaterThanOrEqualToAnchor:[aContentView topAnchor] constant:inset.top],
         centermessage = [[_messageLabel centerYAnchor] constraintEqualToAnchor:[_alertImageView centerYAnchor]];
     [centermessage setPriority:600];
-    //[topmessage setPriority:250];
-    [result addObjectsFromArray:@[leftmessage, /*topmessage,*/ centermessage, rightmessage]];
+
+    [result addObjectsFromArray:@[leftmessage, minTopMessage, centermessage, rightmessage]];
 
 // Informative Text constraints
     var leftInfo = [[_informativeLabel leftAnchor] constraintEqualToAnchor:[_alertImageView rightAnchor] constant:iconOffset.x],
