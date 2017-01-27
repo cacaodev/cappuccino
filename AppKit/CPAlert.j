@@ -308,9 +308,15 @@ CPCriticalAlertStyle        = 2;
     else
         _defaultWindowStyle = CPTitledWindowMask;
 
-    _window = nil; // will be regenerated at next layout
+    [self _resetWindow]; // will be regenerated at next layout
     _needsLayout = YES;
     [_themeView setTheme:aTheme];
+}
+
+- (void)_resetWindow
+{
+    [[_window contentView] _removeAllConstraints];
+    _window = nil;
 }
 
 - (void)setValue:(id)aValue forThemeAttribute:(CPString)aName
@@ -404,7 +410,7 @@ CPCriticalAlertStyle        = 2;
     [_accessoryView setTranslatesAutoresizingMaskIntoConstraints:NO];
     [_accessoryView layoutSubtreeIfNeeded];
 
-    _window = nil;
+    [self _resetWindow];
     _needsLayout = YES;
 }
 
@@ -504,6 +510,7 @@ CPCriticalAlertStyle        = 2;
     if (!([_window styleMask] & CPDocModalWindowMask))
     {
         _needsLayout = YES;
+        [self _resetWindow];
         [self _createWindowWithStyle:CPDocModalWindowMask];
     }
 
@@ -907,6 +914,12 @@ CPCriticalAlertStyle        = 2;
 
     [CPLayoutConstraint activateConstraints:constraintsToAdd];
     [oldConstraints addObjectsFromArray:constraintsToAdd];
+}
+
+- (void)_removeAllConstraints
+{
+    [self _updateWithOldConstraints:_alertConstraints newConstraints:@[]];
+    [self _updateWithOldConstraints:_heightConstraints newConstraints:@[]];
 }
 
 - (void)updateConstraints
