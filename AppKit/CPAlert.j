@@ -404,6 +404,8 @@ CPCriticalAlertStyle        = 2;
 */
 - (void)setAccessoryView:(CPView)aView
 {
+    [CPLayoutConstraint deactivateConstraints:[aView constraints]];
+
     _accessoryView = aView;
 
     [_accessoryView setIdentifier:@"accessoryView"];
@@ -617,7 +619,6 @@ CPCriticalAlertStyle        = 2;
     [_window setPlatformWindow:[[CPApp keyWindow] platformWindow]];
 
     var contentView = [[_CPAlertContentView alloc] initWithAlert:self];
-    [contentView setIdentifier:@"contentView"];
     [_window setContentView:contentView];
 
     if (_title)
@@ -884,6 +885,7 @@ CPCriticalAlertStyle        = 2;
         _heightConstraints = @[];
         _alert = parentAlert;
         _sizeContraintsUpdated = NO;
+        [self setIdentifier:@"alertContentView"];
         [self setTranslatesAutoresizingMaskIntoConstraints:YES];
     }
 
@@ -914,6 +916,10 @@ CPCriticalAlertStyle        = 2;
 
     [CPLayoutConstraint activateConstraints:constraintsToAdd];
     [oldConstraints addObjectsFromArray:constraintsToAdd];
+
+#if (DEBUG)
+    CPLog.debug("REMOVED:\n" + [constraintsToRemove description] + "\nADDED:\n" + [constraintsToAdd description]);
+#endif
 }
 
 - (void)_removeAllConstraints
