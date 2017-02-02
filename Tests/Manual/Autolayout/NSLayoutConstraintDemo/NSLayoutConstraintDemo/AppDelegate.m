@@ -64,7 +64,7 @@
 
 @end
 
-@interface Window : NSWindow
+@interface MyWindow : NSWindow
 {
     CGRect _constraintRect;
 }
@@ -72,7 +72,7 @@
 @property(assign) CGRect constraintRect;
 @end
 
-@implementation Window
+@implementation MyWindow
 
 - (BOOL)canBecomeKeyWindow
 {
@@ -112,7 +112,8 @@
     self = [super init];
     
     self.currentController = nil;
-    webScriptObject = nil;
+    _webScriptObject = nil;
+    self.windowControllers = [NSMutableArray array];
     
     return self;
 }
@@ -186,23 +187,23 @@
 
     [self.currentController showWindow:nil];
 
-    Window * window = self.currentController.window;
-    [defaultCenter addObserver:self selector:@selector(updateCappuccinoFrame:) name:NSWindowDidResizeNotification object:window];
-    [defaultCenter addObserver:self selector:@selector(updateCappuccinoFrame:) name:NSWindowDidMoveNotification object:window];
+    MyWindow * theWindow = self.currentController.window;
+    [defaultCenter addObserver:self selector:@selector(updateCappuccinoFrame:) name:NSWindowDidResizeNotification object:theWindow];
+    [defaultCenter addObserver:self selector:@selector(updateCappuccinoFrame:) name:NSWindowDidMoveNotification object:theWindow];
     
-    [[self window] addChildWindow:window ordered:NSWindowAbove];
-    [self updateConstrainedRectForWindow:window];
+    [[self window] addChildWindow:theWindow ordered:NSWindowAbove];
+    [self updateConstrainedRectForWindow:theWindow];
     
     NSMutableString *description= [NSMutableString string];
-    [window.contentView getConstraintsDescriptionInWindow:window buffer:description];
+    [theWindow.contentView getConstraintsDescriptionInWindow:theWindow buffer:description];
     
     [consoleView setStringValue:description];
     
-    window.hasShadow = YES;
-    [window center];
-    [window becomeKeyWindow];
-    [window display];
-    window.title = [NSString stringWithFormat:@"cocoa - %@", self.currentController.windowNibName];
+    theWindow.hasShadow = YES;
+    [theWindow center];
+    [theWindow becomeKeyWindow];
+    [theWindow display];
+    theWindow.title = [NSString stringWithFormat:@"cocoa - %@", self.currentController.windowNibName];
 }
 
 - (void)showWindowCibName:(NSString*)aWindowCibName
@@ -229,7 +230,7 @@
     [[self webScriptObject] evaluateObjectiveJ:objj_msgSend];
 }
 
-- (void)updateConstrainedRectForWindow:(Window*)aWindow
+- (void)updateConstrainedRectForWindow:(MyWindow*)aWindow
 {
     CGRect baseWindowSpace = [[windowSpace superview] convertRectToBacking:[windowSpace frame]];
     aWindow.constraintRect  = [[self window] convertRectToScreen:baseWindowSpace];
@@ -237,7 +238,7 @@
 
 - (void)mainWindowDidMove:(NSNotification*)note
 {
-    Window *window = self.currentController.window;
+    MyWindow *window = self.currentController.window;
     
     if (!window)
         return;
@@ -248,10 +249,10 @@
 
 - (WebScriptObject*)webScriptObject
 {
-    if (!webScriptObject)
-        webScriptObject = [cappView windowScriptObject];
+    if (!_webScriptObject)
+        _webScriptObject = [cappView windowScriptObject];
     
-    return webScriptObject;
+    return _webScriptObject;
 }
 
 @end

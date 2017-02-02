@@ -33,12 +33,17 @@
     IBOutlet GridView *windowSpace;
     IBOutlet NSTextField *consoleView;
     IBOutlet NSPopUpButton *popUp;
+    
+    WebScriptObject *_webScriptObject;
+/*
     NSMutableArray *windowControllers;
     NSWindowController *currentController;
-    WebScriptObject *webScriptObject;
+*/
 }
 
 @property (assign) IBOutlet NSWindow *window;
 @property (retain) NSMutableArray *windowControllers;
 @property (assign) WindowController *currentController;
+@property (retain, nonatomic) WebScriptObject *webScriptObject;
+
 @end
