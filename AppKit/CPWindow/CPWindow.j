@@ -4441,7 +4441,7 @@ Subclasses should not override this method.
     windowFrame.size = CGSizeMakeCopy([_windowView frameSize]);
 
     _autolayoutEnabled = NO;
-    [self setFrame:windowFrame];
+    [self setFrame:windowFrame display:YES animate:NO];
     _autolayoutEnabled = YES;
 }
 

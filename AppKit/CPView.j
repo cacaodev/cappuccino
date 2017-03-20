@@ -4858,16 +4858,16 @@ Update constraints for the view.
 
 - (BOOL)_updateContentSizeConstraint:(CPContentSizeLayoutConstraint)original toConstraint:(CPContentSizeLayoutConstraint)destination
 {
-    var result = NO;
-
     if ((original == nil && destination == nil) || [original isEqual:destination])
-        return;
+        return NO;
 
     if (original !== nil && destination !== nil && ![original isActive])
     {
         [original _setConstant:[destination constant]];
-        return;
+        return NO;
     }
+
+    var result = NO;
 
     if (original !== nil)
         result |= [self removeConstraint:original];
