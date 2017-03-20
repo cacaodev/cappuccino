@@ -7,7 +7,6 @@
 @import "c.js"
 
 @typedef SimplexSolver
-@typedef Map
 
 var SOLVER_DEFAULT_EDIT_STRENGTH;
 
