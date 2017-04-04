@@ -88,7 +88,7 @@ CPLogRegister(CPLogConsole);
 
 @end
 
-@implementation Window : CPWindow
+@implementation MyWindow : CPWindow
 {
 }
 - (BOOL)canBecomeKeyWindow
