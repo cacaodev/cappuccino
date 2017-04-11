@@ -1,28 +1,60 @@
+#if ! defined (CASSOWARY_ENGINE) && ! defined (KIWI_ENGINE)
+#define CASSOWARY_ENGINE
+#endif
+
 @import <Foundation/CPObject.j>
 @import <Foundation/CPRunLoop.j>
 @import <Foundation/CPBundle.j>
 @import <Foundation/CPIndexSet.j>
 
 @import "CPLayoutConstraint.j"
+#if defined (CASSOWARY_ENGINE)
 @import "c.js"
+#elif defined (KIWI_ENGINE)
+@import "kiwi.js"
+#endif
 
+#if defined (CASSOWARY_ENGINE)
 @typedef SimplexSolver
-@typedef Map
+@global c
+#elif defined (KIWI_ENGINE)
+@typedef Solver
+@global kiwi
+#endif
+
+@global engine_expressionFromVariable
+@global engine_expressionFromConstant
+@global engine_plus
+@global engine_multiply
 
 var SOLVER_DEFAULT_EDIT_STRENGTH;
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
+#if defined (CASSOWARY_ENGINE)
     SimplexSolver _simplexSolver;
+#elif defined (KIWI_ENGINE)
+    Solver        _simplexSolver;
+#endif
     Map           _constraintToOwnerMap @accessors(readonly);
-    Map           _variableToOwnerMap @accessors(readonly);
+    Map           _variableToOwnerMap   @accessors(readonly);
     CPArray       _editingVariables;
-    id            _delegate @accessors(getter=delegate, setter=_setDelegate:);
+    id            _delegate             @accessors(getter=delegate, setter=_setDelegate:);
 }
 
 + (void)initialize
 {
+    if (self !== [CPLayoutConstraintEngine class])
+        return;
+
+#if defined (CASSOWARY_ENGINE)
     SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
+#elif defined (KIWI_ENGINE)
+#if !PLATFORM(DOM)
+    kiwi = module.exports;
+#endif
+    SOLVER_DEFAULT_EDIT_STRENGTH = kiwi.Strength.strong;
+#endif
 }
 
 + (CPArray)_engineConstraintsFromConstraint:(CPLayoutConstraint)aConstraint
@@ -44,6 +76,7 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     _editingVariables = nil;
     _delegate = aDelegate;
 
+#if defined (CASSOWARY_ENGINE)
     _simplexSolver = new c.SimplexSolver();
     _simplexSolver.autoSolve = false;
     _simplexSolver.onsolved = function(changes)
@@ -56,7 +89,14 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
             [owner valueOfVariable:variable didChangeInEngine:self];
         });
     };
-
+#elif defined (KIWI_ENGINE)
+    _simplexSolver = new kiwi.Solver();
+    _simplexSolver.onsolved = function(variable)
+    {
+        var container = _variableToOwnerMap.get(variable);
+        [container valueOfVariable:variable didChangeInEngine:self];
+    };
+#endif
     return self;
 }
 
@@ -71,7 +111,11 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     {
         variables.forEach(function(variable)
         {
+#if defined (CASSOWARY_ENGINE)
            _simplexSolver.addEditVar(variable, SOLVER_DEFAULT_EDIT_STRENGTH, 1);
+#elif defined (KIWI_ENGINE)
+           _simplexSolver.addEditVariable(variable, SOLVER_DEFAULT_EDIT_STRENGTH);
+#endif
         });
 
         _editingVariables = variables;
@@ -81,8 +125,11 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     {
         _simplexSolver.suggestValue(variable, values[idx]);
     });
-
+#if defined (CASSOWARY_ENGINE)
     _simplexSolver.resolve();
+#elif defined (KIWI_ENGINE)
+    _simplexSolver.updateVariables();
+#endif
 }
 
 - (void)stopEditing
@@ -92,7 +139,14 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
         var error = nil;
 
         try {
+#if defined (CASSOWARY_ENGINE)
             _simplexSolver.removeAllEditVars();
+#elif defined (KIWI_ENGINE)
+            _editingVariables.forEach(function(variable, idx)
+            {
+                _simplexSolver.removeEditVariable(variable);
+            });
+#endif
             _editingVariables = nil;
         }
         catch (e)
@@ -109,12 +163,20 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
 - (void)solve
 {
+#if defined (CASSOWARY_ENGINE)
     _simplexSolver.solve();
+#elif defined (KIWI_ENGINE)
+    _simplexSolver.updateVariables();
+#endif
 }
 
 - (void)resolve
 {
+#if defined (CASSOWARY_ENGINE)
     _simplexSolver.resolve();
+#elif defined (KIWI_ENGINE)
+    _simplexSolver.updateVariables();
+#endif
 }
 
 - (BOOL)addConstraints:(CPArray)constraints
@@ -269,18 +331,18 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
     _variableToOwnerMap.forEach(function(owner, variable)
     {
-        if (variable._prefix == aPrefix && variable.name == aName)
+        if (contextOfVariable(variable) == aPrefix && nameOfVariable(variable) == aName)
         {
             result = variable;
 #if (DEBUG)
-            EngineWarn([CPString stringWithFormat:"Reuse variable %@(%@)[%@]", aPrefix, [[owner _referenceItem] debugID], aName]);
+            EngineInfo([CPString stringWithFormat:"Reuse variable %@(%@)[%@]", aPrefix, [[owner _referenceItem] debugID], aName]);
 #endif
         }
     });
 
     if (result == nil)
     {
-        result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
+        result = newVariable(aPrefix, aName, aValue);
         _variableToOwnerMap.set(result, anOwner);
     }
 
@@ -301,13 +363,104 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
 @end
 
+engine_expressionFromConstant = function(cst)
+{
+#if defined (CASSOWARY_ENGINE)
+    return new c.Expression.fromConstant(cst);
+#elif defined (KIWI_ENGINE)
+    return new kiwi.Expression(cst);
+#endif
+};
+
+engine_expressionFromVariable = function(v)
+{
+#if defined (CASSOWARY_ENGINE)
+    return new c.Expression.fromVariable(v);
+#elif defined (KIWI_ENGINE)
+    return new kiwi.Expression(v);
+#endif
+};
+
+engine_plus = function(exp1, exp2)
+{
+#if defined (CASSOWARY_ENGINE)
+    return c.plus(exp1, exp2);
+#elif defined (KIWI_ENGINE)
+    return exp1.plus(exp2);
+#endif
+};
+
+engine_multiply = function(exp1, exp2)
+{
+#if defined (CASSOWARY_ENGINE)
+    return c.times(exp1, exp2);
+#elif defined (KIWI_ENGINE)
+    return exp1.multiply(exp2);
+#endif
+};
+
+var contextOfVariable = function(variable)
+{
+#if defined (CASSOWARY_ENGINE)
+    return variable._prefix;
+#elif defined (KIWI_ENGINE)
+    return variable.context();
+#endif
+};
+
+var nameOfVariable = function(variable)
+{
+#if defined (CASSOWARY_ENGINE)
+    return variable.name;
+#elif defined (KIWI_ENGINE)
+    return variable.name();
+#endif
+};
+
+var expressionIsConstant = function(exp)
+{
+#if defined (CASSOWARY_ENGINE)
+    return exp.isConstant;
+#elif defined (KIWI_ENGINE)
+    return exp.isConstant();
+#endif
+}
+
+var constantForExpression = function(exp)
+{
+#if defined (CASSOWARY_ENGINE)
+    return exp.constant;
+#elif defined (KIWI_ENGINE)
+    return exp.constant();
+#endif
+};
+
 var StrengthForPriority = function(p)
 {
+#if defined (CASSOWARY_ENGINE)
     if (p >= 1000)
         return {strength:c.Strength.required, weight:1};
 
     return {strength:c.Strength.medium, weight:p};
+#elif defined (KIWI_ENGINE)
+    if (p >= 1000)
+        return {strength:kiwi.Strength.required, weight:0};
+
+    return {strength:kiwi.Strength.create(0.0, 1.0, 0.0, p), weight:0};
+#endif
 };
+
+var newVariable = function(aPrefix, aName, aValue)
+{
+#if defined (CASSOWARY_ENGINE)
+    return new c.Variable({prefix:aPrefix, name:aName, value:aValue});
+#elif defined (KIWI_ENGINE)
+    var result = new kiwi.Variable(aName);
+    result.setValue(aValue);
+    result.setContext(aPrefix);
+    return result;
+#endif
+}
 
 var CreateConstraint = function(aConstraint)
 {
@@ -327,25 +480,34 @@ var CreateConstraint = function(aConstraint)
 
     if (secondAnchor == nil || multiplier == 0)
     {
-        rhs_term = new c.Expression.fromConstant(constant);
+        rhs_term = engine_expressionFromConstant(constant);
     }
     else
     {
         var secondExp = [secondAnchor expressionInContext:firstAnchor];
 
-        if (secondExp.isConstant)
+        if (expressionIsConstant(secondExp))
         {
-            rhs_term = new c.Expression.fromConstant(secondExp.constant * multiplier + constant);
+            rhs_term = engine_expressionFromConstant(constantForExpression(secondExp) * multiplier + constant);
         }
         else
         {
-            rhs_term = c.plus(c.times(secondExp, multiplier), constant);
+            rhs_term = engine_plus(engine_multiply(secondExp, multiplier), constant);
         }
     }
 
     if (lhs_term == nil || rhs_term == nil)
         [CPException raise:CPInvalidArgumentException format:"The lhs %@ or rhs %@ of an Equation cannot be nil", lhs_term, rhs_term];
 
+    var constraint = newConstraint(lhs_term, relation, rhs_term, sw);
+
+    return [constraint];
+};
+
+var newConstraint = function(lhs_term, relation, rhs_term, sw)
+{
+    var constraint;
+#if defined (CASSOWARY_ENGINE)
     switch(relation)
     {
         case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(lhs_term, c.LEQ, rhs_term, sw.strength, sw.weight);
@@ -355,8 +517,22 @@ var CreateConstraint = function(aConstraint)
         case CPLayoutRelationEqual              : constraint = new c.Equation(lhs_term, rhs_term, sw.strength, sw.weight);
             break;
     }
+#elif defined (KIWI_ENGINE)
+    var operator;
+    switch(relation)
+    {
+        case CPLayoutRelationLessThanOrEqual    : operator = kiwi.Operator.Le;
+            break;
+        case CPLayoutRelationGreaterThanOrEqual : operator = kiwi.Operator.Ge;
+            break;
+        case CPLayoutRelationEqual              : operator = kiwi.Operator.Eq;
+            break;
+    }
 
-    return [constraint];
+    constraint = new kiwi.Constraint(lhs_term, operator, rhs_term, sw.strength);
+#endif
+
+    return constraint;
 };
 
 var CreateSizeConstraints = function(aConstraint)
@@ -364,20 +540,31 @@ var CreateSizeConstraints = function(aConstraint)
     var variable         = [aConstraint variableForOrientation],
         huggingPriority  = [aConstraint huggingPriority],
         compressPriority = [aConstraint compressPriority],
-        constant         = [aConstraint constant],
-        hugg             = CreateInequality(variable, c.LEQ, constant, huggingPriority),
-        anticompr        = CreateInequality(variable, c.GEQ, constant, compressPriority);
+        constant         = [aConstraint constant];
+#if defined (CASSOWARY_ENGINE)
+    var leqOperator = c.LEQ,
+        geqOperator = c.GEQ;
+#elif defined (KIWI_ENGINE)
+    var leqOperator = kiwi.Operator.Le,
+        geqOperator = kiwi.Operator.Ge;
+#endif
+
+    var hugg             = CreateInequality(variable, leqOperator, constant, huggingPriority),
+        anticompr        = CreateInequality(variable, geqOperator, constant, compressPriority);
 
     return [hugg, anticompr];
 };
 
-var CreateInequality = function(variable, relation, constant, priority)
+var CreateInequality = function(variable, operator, constant, priority)
 {
-    var variableExp = new c.Expression.fromVariable(variable),
-        constantExp = new c.Expression.fromConstant(constant),
+    var variableExp = engine_expressionFromVariable(variable),
+        constantExp = engine_expressionFromConstant(constant),
                  sw = StrengthForPriority(priority);
-
-    return new c.Inequality(variableExp, relation, constantExp, sw.strength, sw.weight);
+#if defined (CASSOWARY_ENGINE)
+    return new c.Inequality(variableExp, operator, constantExp, sw.strength, sw.weight);
+#elif defined (KIWI_ENGINE)
+    return new kiwi.Constraint(variableExp, operator, constantExp, sw.strength);
+#endif
 };
 
 var AddConstraint = function(solver, constraint, onsuccess, onerror)
@@ -428,7 +615,16 @@ var RemoveConstraint = function(solver, constraint, onsuccess, onerror)
 
 var EngineLog = function(str)
 {
+#if PLATFORM(DOM)
     console.log('%c [Engine]: ' + str, 'color:darkblue; font-weight:bold');
+#endif
+};
+
+var EngineInfo = function(str)
+{
+#if PLATFORM(DOM)
+    console.log('%c [Engine]: ' + str, 'color:purple; font-weight:bold');
+#endif
 };
 
 var EngineWarn = function(str)
@@ -438,5 +634,5 @@ var EngineWarn = function(str)
 
 var EngineError = function(str)
 {
-    console.error('%c [Engine]: ' + str, 'color:darkred; font-weight:bold');
+    CPLog.error('%c [Engine]: ' + str, 'color:darkred; font-weight:bold');
 };
