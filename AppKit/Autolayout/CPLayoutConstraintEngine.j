@@ -349,6 +349,15 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     return result;
 }
 
+- (CPInteger)valueOfVariable:(Variable)aVariable
+{
+#if defined (CASSOWARY_ENGINE)
+    return aVariable.valueOf();
+#elif defined (KIWI_ENGINE)
+    return aVariable.value();
+#endif
+}
+
 - (CPString)description
 {
     var str = "Engine Constraints:\n";
