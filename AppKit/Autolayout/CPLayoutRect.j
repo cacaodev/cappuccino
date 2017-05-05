@@ -352,6 +352,18 @@
 
 @implementation CPLayoutRect (CPLayoutItemProtocol)
 
+- (void)addConstraints:(CPArray)theConstraints
+{
+    // TODO rewrite addConstrains in the context of a layoutRect and ignore superitem.
+    [[self _superitem] addConstraints:theConstraints];
+}
+
+- (void)removeConstraints:(CPArray)theConstraints
+{
+    // TODO rewrite removeConstraints in the context of a layoutRect and ignore superitem.
+    [[self _superitem] removeConstraints:theConstraints];
+}
+
 - (id)_superitem
 {
     if (_superItem !== nil)
