@@ -352,10 +352,20 @@
 
 @implementation CPLayoutRect (CPLayoutItemProtocol)
 
+- (void)addConstraint:(CPLayoutConstraint)aConstraint
+{
+    [self addConstraints:@[aConstraint]];
+}
+
 - (void)addConstraints:(CPArray)theConstraints
 {
     // TODO rewrite addConstrains in the context of a layoutRect and ignore superitem.
     [[self _superitem] addConstraints:theConstraints];
+}
+
+- (void)removeConstraint:(CPLayoutConstraint)aConstraint
+{
+    [self removeConstraints:@[aConstraint]];
 }
 
 - (void)removeConstraints:(CPArray)theConstraints
