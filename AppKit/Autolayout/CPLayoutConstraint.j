@@ -372,7 +372,7 @@ CPLayoutPriorityFittingSizeCompression = 50; // When you issue -[NSView fittingS
 {
     var lhs = [_firstAnchor descriptionEquation],
         rhs = (_secondAnchor && _coefficient) ? [CPString stringWithFormat:@"%@ x%@", [_secondAnchor descriptionEquation], _coefficient] : @"",
-        identifier = (_identifier) ? [CPString stringWithFormat:@" [%@]"] : @"",
+        identifier = _identifier ? [CPString stringWithFormat:@" [%@]", _identifier] : @"",
         plusMinus = (_constant < 0) ? "-" : "+",
         active = _active ? "":" [inactive]";
 
