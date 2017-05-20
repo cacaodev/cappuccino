@@ -2057,6 +2057,11 @@ CPTexturedBackgroundWindowMask
 
 - (void)_endLiveResize
 {
+    if (_autolayoutEnabled)
+    {
+        [self _updateWindowContentSizeConstraints];
+    }
+
     [[CPNotificationCenter defaultCenter]
         postNotificationName:CPWindowDidEndLiveResizeNotification
                       object:self];
