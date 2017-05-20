@@ -3124,7 +3124,7 @@ setBoundsOrigin:
 */
 - (BOOL)inLiveResize
 {
-    return _inLiveResize;
+    return [self window] && [[self window] _inLiveResize];
 }
 
 /*!
