@@ -4471,19 +4471,35 @@ Subclasses should not override this method.
 
     if (!CGSizeEqualToSize(newSize, oldSize))
     {
-        var constraintWidth = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.width huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:0],
-            constraintHeight = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.height huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:1];
+        var oldConstraints = [_windowView _contentSizeConstraints];
 
-        var oldConstraints = [_windowView _contentSizeConstraints],
-            newConstraints = @[constraintWidth, constraintHeight];
+        if (newSize.width !== oldSize.width)
+        {
+            [self _updateConstraintWithOrientation:CPLayoutConstraintOrientationHorizontal toValue:newSize.width inConstraints:oldConstraints];
+        }
 
-        if (oldConstraints)
-            [_windowView removeConstraints:oldConstraints];
-
-        [_windowView addConstraints:newConstraints];
+        if (newSize.height !== oldSize.height)
+        {
+            [self _updateConstraintWithOrientation:CPLayoutConstraintOrientationVertical toValue:newSize.height inConstraints:oldConstraints];
+        }
 
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
+}
+
+- (void)_updateConstraintWithOrientation:(CPLayoutConstraintOrientation)anOrientation toValue:(float)aValue inConstraints:(CPArray)oldConstraints
+{
+    [oldConstraints enumerateObjectsUsingBlock:function(oldConstraint, idx, stop)
+    {
+        if ([oldConstraint orientation] == anOrientation)
+        {
+            [_windowView removeConstraint:oldConstraint];
+            stop(YES);
+        }
+    }];
+
+    var newConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:aValue huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:anOrientation];
+    [_windowView addConstraint:newConstraint];
 }
 
 - (void)_setSubviewsNeedUpdateConstraints
