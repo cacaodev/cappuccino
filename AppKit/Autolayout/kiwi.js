@@ -1093,7 +1093,7 @@ var kiwi;
         /**
          * The 'required' symbolic strength.
          */
-        Strength.required = create(1000.0, 1000.0, 1000.0);
+        Strength.required = Math.pow(10, 21) + Math.pow(10, 18) + Math.pow(10, 15);
         /**
          * The 'strong' symbolic strength.
          */

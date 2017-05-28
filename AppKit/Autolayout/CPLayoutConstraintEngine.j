@@ -446,17 +446,28 @@ var constantForExpression = function(exp)
 
 var StrengthForPriority = function(p)
 {
+    var level;
+
+    if (p >= 1000)
 #if defined (CASSOWARY_ENGINE)
-    if (p >= 1000)
-        return {strength:c.Strength.required, weight:1};
-
-    return {strength:c.Strength.medium, weight:p};
+        return c.Strength.required;
 #elif defined (KIWI_ENGINE)
-    if (p >= 1000)
-        return {strength:kiwi.Strength.required, weight:0};
-
-    return {strength:kiwi.Strength.create(0.0, 1.0, 0.0, p), weight:0};
+        return kiwi.Strength.required;
 #endif
+    else if (p < 250)
+        level = 1;
+    else if (p < 490)
+        level = 2;
+    else if (p < 500)
+        level = 3;
+    else if (p < 510)
+        level = 4;
+    else if (p < 750)
+        level = 5;
+    else if (p < 1000)
+        level = 6;
+
+    return POW(10, level * 3) * p;
 };
 
 var newVariable = function(aPrefix, aName, aValue)
@@ -469,7 +480,7 @@ var newVariable = function(aPrefix, aName, aValue)
     result.setContext(aPrefix);
     return result;
 #endif
-}
+};
 
 var CreateConstraint = function(aConstraint)
 {
@@ -481,7 +492,7 @@ var CreateConstraint = function(aConstraint)
         multiplier        = [aConstraint multiplier],
         constant          = [aConstraint _frameBasedConstant],
         priority          = [aConstraint priority],
-        sw                = StrengthForPriority(priority),
+        strength          = StrengthForPriority(priority),
         constraint,
         rhs_term;
 
@@ -508,22 +519,22 @@ var CreateConstraint = function(aConstraint)
     if (lhs_term == nil || rhs_term == nil)
         [CPException raise:CPInvalidArgumentException format:"The lhs %@ or rhs %@ of an Equation cannot be nil", lhs_term, rhs_term];
 
-    var constraint = newConstraint(lhs_term, relation, rhs_term, sw);
+    var constraint = newConstraint(lhs_term, relation, rhs_term, strength);
 
     return [constraint];
 };
 
-var newConstraint = function(lhs_term, relation, rhs_term, sw)
+var newConstraint = function(lhs_term, relation, rhs_term, strength)
 {
     var constraint;
 #if defined (CASSOWARY_ENGINE)
     switch(relation)
     {
-        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(lhs_term, c.LEQ, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(lhs_term, c.LEQ, rhs_term, strength, 1);
             break;
-        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(lhs_term, c.GEQ, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(lhs_term, c.GEQ, rhs_term, strength, 1);
             break;
-        case CPLayoutRelationEqual              : constraint = new c.Equation(lhs_term, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationEqual              : constraint = new c.Equation(lhs_term, rhs_term, strength, 1);
             break;
     }
 #elif defined (KIWI_ENGINE)
@@ -538,7 +549,7 @@ var newConstraint = function(lhs_term, relation, rhs_term, sw)
             break;
     }
 
-    constraint = new kiwi.Constraint(lhs_term, operator, rhs_term, sw.strength);
+    constraint = new kiwi.Constraint(lhs_term, operator, rhs_term, strength);
 #endif
 
     return constraint;
@@ -568,11 +579,11 @@ var CreateInequality = function(variable, operator, constant, priority)
 {
     var variableExp = engine_expressionFromVariable(variable),
         constantExp = engine_expressionFromConstant(constant),
-                 sw = StrengthForPriority(priority);
+           strength = StrengthForPriority(priority);
 #if defined (CASSOWARY_ENGINE)
-    return new c.Inequality(variableExp, operator, constantExp, sw.strength, sw.weight);
+    return new c.Inequality(variableExp, operator, constantExp, strength, 1);
 #elif defined (KIWI_ENGINE)
-    return new kiwi.Constraint(variableExp, operator, constantExp, sw.strength);
+    return new kiwi.Constraint(variableExp, operator, constantExp, strength);
 #endif
 };
 
