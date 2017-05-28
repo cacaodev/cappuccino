@@ -237,13 +237,14 @@ CPLogRegister(CPLogConsole);
         equalWidthsCheck = [popView viewWithTag:102],
         equalHeightsCheck = [popView viewWithTag:103],
         ratioCheck = [popView viewWithTag:104],
-        alignCheck = [popView viewWithTag:105];
+        alignCheck = [popView viewWithTag:105],
+        priority = CPLayoutPriorityWindowSizeStayPut;
 
     if ([widthCheck state])
     {
         var width = [[popView viewWithTag:1000] floatValue];
 
-        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, width, CPLayoutPriorityRequired);
+        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, width, priority);
 
         [widthCheck setState:CPOffState];
         [constraint setActive:YES];
@@ -253,7 +254,7 @@ CPLogRegister(CPLogConsole);
     {
         var height = [[popView viewWithTag:1001] floatValue];
 
-        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeHeight, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, height, CPLayoutPriorityRequired);
+        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeHeight, CPLayoutRelationEqual, nil, CPLayoutAttributeNotAnAttribute, 1, height, priority);
 
         [heightCheck setState:CPOffState];
         [constraint setActive:YES];
@@ -264,7 +265,7 @@ CPLogRegister(CPLogConsole);
         var view1 = [_selectedViews objectAtIndex:0],
             view2 = [_selectedViews objectAtIndex:1];
 
-        var constraint = LayoutConstraint(view1, CPLayoutAttributeWidth, CPLayoutRelationEqual, view2, CPLayoutAttributeWidth, 1, 0, CPLayoutPriorityRequired);
+        var constraint = LayoutConstraint(view1, CPLayoutAttributeWidth, CPLayoutRelationEqual, view2, CPLayoutAttributeWidth, 1, 0, priority);
 
         [equalWidthsCheck setState:CPOffState];
         [constraint setActive:YES];
@@ -275,7 +276,7 @@ CPLogRegister(CPLogConsole);
         var view1 = [_selectedViews objectAtIndex:0],
             view2 = [_selectedViews objectAtIndex:1];
 
-        var constraint = LayoutConstraint(view1, CPLayoutAttributeHeight, CPLayoutRelationEqual, view2, CPLayoutAttributeHeight, 1, 0, CPLayoutPriorityRequired);
+        var constraint = LayoutConstraint(view1, CPLayoutAttributeHeight, CPLayoutRelationEqual, view2, CPLayoutAttributeHeight, 1, 0, priority);
 
         [equalHeightsCheck setState:CPOffState];
         [constraint setActive:YES];
@@ -286,7 +287,7 @@ CPLogRegister(CPLogConsole);
         var rect = [selectedView frame],
             ratio = CGRectGetWidth(rect) / CGRectGetHeight(rect);
 
-        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, selectedView, CPLayoutAttributeHeight, ratio, 0, CPLayoutPriorityRequired);
+        var constraint = LayoutConstraint(selectedView, CPLayoutAttributeWidth, CPLayoutRelationEqual, selectedView, CPLayoutAttributeHeight, ratio, 0, priority);
 
         [ratioCheck setState:CPOffState];
         [constraint setActive:YES];
@@ -298,7 +299,7 @@ CPLogRegister(CPLogConsole);
             view2 = [_selectedViews objectAtIndex:1],
             attr  = [[[popView viewWithTag:106] selectedItem] tag];
 
-        var constraint = LayoutConstraint(view1, attr, CPLayoutRelationEqual, view2, attr, 1, 0, CPLayoutPriorityRequired);
+        var constraint = LayoutConstraint(view1, attr, CPLayoutRelationEqual, view2, attr, 1, 0, priority);
 
         [alignCheck setState:CPOffState];
         [constraint setActive:YES];
@@ -315,7 +316,7 @@ CPLogRegister(CPLogConsole);
             if (attribute == CPLayoutAttributeBottom || attribute == CPLayoutAttributeRight)
                 constant = -constant;
 
-            var constraint = LayoutConstraint(selectedView, attribute, CPLayoutRelationEqual, selectedSuperview, attribute, 1, constant, CPLayoutPriorityRequired);
+            var constraint = LayoutConstraint(selectedView, attribute, CPLayoutRelationEqual, selectedSuperview, attribute, 1, constant, priority);
 
             [check setState:CPOffState];
             [constraint setActive:YES];
@@ -324,6 +325,7 @@ CPLogRegister(CPLogConsole);
 
     [addPopover performClose:sender];
     [constraintWindow setNeedsLayout];
+    [self updatePrioritySlider];
 }
 
 - (void)tableViewSelectionDidChange:(CPNotification)aNotification
