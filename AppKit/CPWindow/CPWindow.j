@@ -4499,12 +4499,14 @@ Subclasses should not override this method.
         if ([oldConstraint orientation] == anOrientation)
         {
             [_windowView removeConstraint:oldConstraint];
+            [oldConstraints removeObject:oldConstraint];
             stop(YES);
         }
     }];
 
     var newConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:aValue huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:anOrientation];
     [_windowView addConstraint:newConstraint];
+    [oldConstraints addObject:newConstraint];
 }
 
 - (void)_setSubviewsNeedUpdateConstraints
