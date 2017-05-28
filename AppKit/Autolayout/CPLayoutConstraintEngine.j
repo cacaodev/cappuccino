@@ -27,8 +27,6 @@
 @global engine_plus
 @global engine_multiply
 
-var SOLVER_DEFAULT_EDIT_STRENGTH;
-
 @implementation CPLayoutConstraintEngine : CPObject
 {
 #if defined (CASSOWARY_ENGINE)
@@ -47,13 +45,8 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     if (self !== [CPLayoutConstraintEngine class])
         return;
 
-#if defined (CASSOWARY_ENGINE)
-    SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
-#elif defined (KIWI_ENGINE)
 #if !PLATFORM(DOM)
     kiwi = module.exports;
-#endif
-    SOLVER_DEFAULT_EDIT_STRENGTH = kiwi.Strength.strong;
 #endif
 }
 
@@ -105,16 +98,16 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     _simplexSolver.onsolved = function(){};
 }
 
-- (void)suggestValues:(CPArray)values forVariables:(CPArray)variables withPriority:(CPLayoutPriority)priority
+- (void)suggestValues:(CPArray)values forVariables:(CPArray)variables withPriority:(CPLayoutPriority)aPriority
 {
     if (_editingVariables == nil)
     {
         variables.forEach(function(variable)
         {
 #if defined (CASSOWARY_ENGINE)
-           _simplexSolver.addEditVar(variable, SOLVER_DEFAULT_EDIT_STRENGTH, 1);
+           _simplexSolver.addEditVar(variable, StrengthForPriority(aPriority), 1);
 #elif defined (KIWI_ENGINE)
-           _simplexSolver.addEditVariable(variable, SOLVER_DEFAULT_EDIT_STRENGTH);
+           _simplexSolver.addEditVariable(variable, StrengthForPriority(aPriority));
 #endif
         });
 
