@@ -448,19 +448,29 @@ var StrengthForPriority = function(p)
         return kiwi.Strength.required;
 #endif
     else if (p < 250)
-        level = 1;
+    {
+        return kiwi.Strength.create(0, 0, 0, 0, 0, 1, p);
+    }
     else if (p < 490)
-        level = 2;
+    {
+        return kiwi.Strength.create(0, 0, 0, 0, 1, 0, p - 249);
+    }
     else if (p < 500)
-        level = 3;
+    {
+        return kiwi.Strength.create(0, 0, 0, 1, 0, 0, p - 489);
+    }
     else if (p < 510)
-        level = 4;
+    {
+        return kiwi.Strength.create(0, 0, 1, 0, 0, 0, p - 499);
+    }
     else if (p < 750)
-        level = 5;
+    {
+        return kiwi.Strength.create(0, 1, 0, 0, 0, 0, p - 509);
+    }
     else if (p < 1000)
-        level = 6;
-
-    return POW(10, level * 3) * p;
+    {
+        return kiwi.Strength.create(1, 0, 0, 0, 0, 0, p - 749);
+    }
 };
 
 var newVariable = function(aPrefix, aName, aValue)
