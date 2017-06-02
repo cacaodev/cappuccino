@@ -214,10 +214,14 @@
 
     var onerror = function(error, constraint)
     {
-        CPLog.warn("Unable to simultaneously satisfy constraints.\nThe following constraint conflicts with an existing constraint.\n" + [aConstraint description] + "\nYou can fix the problem by changing the current required priority to a lower priority.");
-#if (DEBUG)
-        EngineWarn(containerId + ": could not add " + type + " " + constraint.toString() + " with error " + error);
+#if defined (CASSOWARY_ENGINE)
+        if (error._name == "c.RequiredFailure")
+#elif defined (KIWI_ENGINE)
+        if (error.message == "unsatisfiable constraint")
 #endif
+            CPLog.warn("Unable to simultaneously satisfy constraints.\nThe following constraint conflicts with an existing constraint.\n" + [aConstraint description] + "\nYou can fix the problem by changing the current required priority to a lower priority.");
+        else
+            EngineWarn(containerId + ": could not add " + type + " " + constraint.toString() + " with error " + error);
     };
 
     var engine_constraints = [aConstraint _engineConstraints];
