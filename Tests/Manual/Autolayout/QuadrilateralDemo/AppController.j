@@ -38,13 +38,19 @@ var EDIT_PRIORITY = 1000;
     [contentView addSubview:container];
 
     var tf = [[CPTextField alloc] initWithFrame:CGRectMake(50, 10, 1200, 50)];
-    [tf setFont:[CPFont boldSystemFontOfSize:32]];
-    [tf setStringValue:@"cmd-click on a point to edit the priority of its constrained coordinates."];
+    [tf setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [tf setFont:[CPFont boldSystemFontOfSize:14]];
+    [tf setTextColor:[CPColor blueColor]];
+    [tf setStringValue:@"Right click on a point to edit the priority of its constrained coordinates."];
     [contentView addSubview:tf];
+
+    var tfCenter = [[tf centerXAnchor] constraintEqualToAnchor:[container centerXAnchor]],
+        tfBottom = [[tf topAnchor] constraintEqualToAnchor:[container bottomAnchor] constant:10];
+    [CPLayoutConstraint activateConstraints:@[tfCenter, tfBottom]];
 
 // Add constraints for the container view
     var left = [[container leftAnchor] constraintEqualToAnchor:[contentView leftAnchor] constant:50],
-        top  = [[container topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:100],
+        top  = [[container topAnchor] constraintEqualToAnchor:[contentView topAnchor] constant:50],
         right = [[container rightAnchor] constraintEqualToAnchor:[contentView rightAnchor] constant:-50],
         bottom = [[container bottomAnchor] constraintEqualToAnchor:[contentView bottomAnchor] constant:-50];
 
@@ -278,10 +284,10 @@ var pNum;
     var normal = [CPColor blackColor],
         selected = [CPColor blueColor];
 
-    [normal setStroke];
     var path = [CPBezierPath bezierPath];
     var rectanglePath = [CPBezierPath bezierPath];
     [path setLineWidth:3];
+    [rectanglePath setLineWidth:2];
 
     [layoutPoints enumerateObjectsUsingBlock:function(point, idx, stop)
     {
@@ -314,20 +320,36 @@ var pNum;
         }
     }];
 
-    [path stroke];
+    [normal setStroke];
+
+    if (!CPBrowserIsEngine(CPBlinkBrowserEngine))
+    {
+        [[CPColor colorWithWhite:0.5 alpha:0.2] setFill];
+        [rectanglePath fill];
+    }
+
     [rectanglePath stroke];
-    [[CPColor colorWithWhite:0.5 alpha:0.2] set];
-    [rectanglePath fill];
+    [path stroke];
 
     [layoutPoints enumerateObjectsUsingBlock:function(point, idx, stop)
     {
         var isSelected = (point == trackingPoint);
         var color =  isSelected ? selected : normal;
-        [color setFill];
 
         var p = [point location];
         var rect = CGRectMake(p.x - 25, p.y - 25, 50, 50);
-        [[CPBezierPath bezierPathWithOvalInRect:rect] fill];
+        var ovalPath = [CPBezierPath bezierPathWithOvalInRect:rect];
+        
+        if (CPBrowserIsEngine(CPBlinkBrowserEngine))
+        {
+            [color setStroke];
+            [ovalPath stroke];
+        }
+        else
+        {
+            [color setFill];
+            [ovalPath fill];
+        }
 
         var priority = isSelected ? EDIT_PRIORITY : [point initialPriority];
         [[CPColor whiteColor] setFill];
@@ -375,21 +397,30 @@ var pNum;
     [controller setPriority:priority];
 }
 
+- (void)rightMouseDown:(CPEvent)theEvent
+{
+    if ([theEvent type] !== CPRightMouseDown)
+        return;
+
+    var clickedPoint = [self layoutPointAtLocation:[self convertPointFromBase:[theEvent locationInWindow]]];
+
+    if (clickedPoint)
+    {
+        [[[self popover] contentViewController] setLayoutPoint:clickedPoint];
+
+        var p = [clickedPoint location];
+        [[self popover] showRelativeToRect:CGRectMake(p.x-25, p.y-25, 50, 50) ofView:self preferredEdge:1];
+    }
+}
+
 - (void)mouseDown:(CPEvent)theEvent
 {
     if ([theEvent type] !== CPLeftMouseDown)
         return;
 
-    if ([theEvent modifierFlags] & CPCommandKeyMask)
+    if ([theEvent modifierFlags] & CPControlKeyMask)
     {
-        var clickedPoint = [self layoutPointAtLocation:[self convertPointFromBase:[theEvent locationInWindow]]];
-        if (clickedPoint)
-        {
-            [[[self popover] contentViewController] setLayoutPoint:clickedPoint];
-
-            var p = [clickedPoint location];
-            [[self popover] showRelativeToRect:CGRectMake(p.x-25, p.y-25, 50, 50) ofView:self preferredEdge:1];
-        }
+        [self rightMouseDown:theEvent];
     }
     else
     {
