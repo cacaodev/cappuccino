@@ -804,13 +804,13 @@ CPTexturedBackgroundWindowMask
                 size.width = newSize.width;
                 size.height = newSize.height;
 
-            if (!_isAnimating)
-                size = [self _sendDelegateWindowWillResizeToSize:size];
+                if (!_isAnimating)
+                    size = [self _sendDelegateWindowWillResizeToSize:size];
 
-            [_windowView setFrameSize:size];
+                [_windowView setFrameSize:size];
 
-            if (_hasShadow)
-                [_shadowView setNeedsLayout];
+                if (_hasShadow)
+                    [_shadowView setNeedsLayout];
             }
 
             if (!_isAnimating)
@@ -971,7 +971,7 @@ CPTexturedBackgroundWindowMask
 {
     [self orderWindow:CPWindowAbove relativeTo:0];
 #if !PLATFORM(DOM)
-    // In DOM, this happens in -makeKeyWindow.
+    // In DOM, this happens in CPPlatformWindow - (void)order:window:relativeTo:
     [self _engageAutolayoutIfNeeded];
 #endif
 }

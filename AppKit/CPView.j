@@ -5052,22 +5052,22 @@ Updates the layout of the receiving view and its subviews based on the current v
     _isSettingFrameFromEngine = YES;
 //CPLog.debug([self debugID] + " " + _cmd + " " + [[self leftAnchor] valueInEngine:nil] + " " + [[self topAnchor] valueInEngine:nil]);
     if (_geometryDirtyMask & 2)
-{
+    {
 #if defined (CASSOWARY_ENGINE)
         [self setFrameOrigin:CGPointMake([self _variableMinX].valueOf(), [self _variableMinY].valueOf())];
 #elif defined (KIWI_ENGINE)
         [self setFrameOrigin:CGPointMake([self _variableMinX].value(), [self _variableMinY].value())];
 #endif
-}
+    }
 
     if (_geometryDirtyMask & 4)
-{
+    {
 #if defined (CASSOWARY_ENGINE)
         [self setFrameSize:CGSizeMake([self _variableWidth].valueOf(), [self _variableHeight].valueOf())];
 #elif defined (KIWI_ENGINE)
         [self setFrameSize:CGSizeMake([self _variableWidth].value(), [self _variableHeight].value())];
 #endif
-}
+    }
     _isSettingFrameFromEngine = NO;
 }
 
