@@ -40,13 +40,6 @@
 
 - (void)testSetContent
 {
-<<<<<<< HEAD
-    var collectionView = [[_CPCollectionViewWithHooks alloc] initWithFrame:CGRectMakeZero()],
-        content = [1, 2, 3],
-        reloadContentCount;
-
-    reloadContentCount = [collectionView reloadContentCallCount];
-    [collectionView setContent:content];
     [self assert:reloadContentCount + 1 equals:[collectionView reloadContentCallCount] message:@"first call to setContent should have called reloadContent once"];
 
     [content removeObjectAtIndex:0];
@@ -56,7 +49,7 @@
     reloadContentCount = [collectionView reloadContentCallCount];
     [collectionView setContent:content];
     [self assert:[collectionView reloadContentCallCount] equals:reloadContentCount + 1 message:@"subsequent calls to setContent should have called reloadContent once"];
-=======
+
     var content = [1, 2, 3];
 
     [_collectionView setContent:content];
@@ -100,7 +93,7 @@
     [_collectionView setContent:[content copy]];
 
     CPLog.warn("CPCollectionView : Inserted 1 item to 1000 items in " + (new Date() - d) + " ms");
->>>>>>> 806b48b90... FIXED: CPCollectionViewNibTest
+    [self assert:content equals:[collectionView content] message:@"collection view content should be equal to the content assigned"];
 }
 
 - (void)testSelectionIndexes
