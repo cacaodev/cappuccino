@@ -37,6 +37,8 @@ CPLogRegister(CPLogConsole);
 
 - (void)awakeFromCib
 {
+    [arrayController setPreservesSelection:YES];
+
     [self willChangeValueForKey:@"minItemWidth"];
     [self willChangeValueForKey:@"minItemHeight"];
     [collectionView setMinItemSize:CGSizeMake(100, 100)];
@@ -66,7 +68,7 @@ CPLogRegister(CPLogConsole);
 
     [newContent insertObject:newObject atIndex:insertIdx];
     [self setContent:newContent];
-    [arrayController setSelectionIndexes:[CPIndexSet indexSetWithIndex:insertIdx]];
+//    [arrayController setSelectionIndexes:[CPIndexSet indexSetWithIndex:insertIdx]];
 }
 
 -(IBAction)remove:(id)sender
@@ -194,8 +196,9 @@ CPLogRegister(CPLogConsole);
 
     if (aCollectionView == draggingSource)
     {
-        [destinationContent moveIndexes:dragIndexes toIndex:proposedIndex];
+        var destinationIndexes = [destinationContent moveIndexes:dragIndexes toIndex:proposedIndex];
         [aCollectionView setContent:destinationContent];
+        [arrayController setSelectionIndexes:destinationIndexes];
     }
     else
     {
@@ -278,11 +281,12 @@ CPLogRegister(CPLogConsole);
 
 @implementation CPArray (MoveIndexes)
 
-- (void)moveIndexes:(CPIndexSet)indexes toIndex:(int)insertIndex
+- (CPIndexSet)moveIndexes:(CPIndexSet)indexes toIndex:(int)insertIndex
 {
     var aboveCount = 0,
         object,
-        removeIndex;
+        removeIndex,
+        newIndexes = [CPIndexSet indexSet];
 
     var index = [indexes lastIndex];
 
@@ -302,9 +306,12 @@ CPLogRegister(CPLogConsole);
         object = [self objectAtIndex:removeIndex];
         [self removeObjectAtIndex:removeIndex];
         [self insertObject:object atIndex:insertIndex];
+        [newIndexes addIndex:insertIndex];
 
         index = [indexes indexLessThanIndex:index];
     }
+
+    return newIndexes;
 }
 
 @end

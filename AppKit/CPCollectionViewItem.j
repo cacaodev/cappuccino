@@ -21,6 +21,7 @@
  */
 
 @import "CPViewController.j"
+@import "CABasicAnimation.j"
 
 /*!
     Represents an object inside a CPCollectionView.
@@ -50,10 +51,25 @@
         // copy connections
     }
 
-    [copy setRepresentedObject:[self representedObject]];
+    [copy setRepresentedObject:[[self representedObject] copy]];
     [copy setSelected:_isSelected];
 
     return copy;
+}
+
+- (void)viewDidLoad
+{
+    var fadeIn = [CABasicAnimation animationWithKeyPath:@"alphaValue"];
+    [fadeIn setFromValue:0];
+    [fadeIn setToValue:1];
+    [fadeIn setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionLinear]];
+
+    var fadeOut = [CABasicAnimation animationWithKeyPath:@"alphaValue"];
+    [fadeOut setFromValue:1];
+    [fadeOut setToValue:0];
+    [fadeOut setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionLinear]];
+
+    [[self view] setAnimations:@{@"CPAnimationTriggerOrderIn":fadeIn, @"CPAnimationTriggerOrderOut":fadeOut}];
 }
 
 // Setting the Represented Object
