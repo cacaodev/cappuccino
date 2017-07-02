@@ -136,13 +136,17 @@ var HORIZONTAL_MARGIN = 2.0,
 
     BOOL                            _uniformSubviewsResizing @accessors(property=uniformSubviewsResizing);
 
-    BOOL                            _animate @accessors(property=animate);
+    BOOL                            _animates @accessors(getter=animates);
     BOOL                            _isAnimatingItems;
 
     CPInteger                       _currentDropIndex;
     CPDragOperation                 _currentDragOperation;
     BOOL                            _contentMaybeDidChange;
     BOOL                            _willChangeContent;
+
+    CPIndexSet                      _unchangedIndexes;
+    CPIndexSet                      _addedIndexes;
+    CPArray                         _removedItems;
 
     _CPCollectionViewDropIndicator  _dropView;
 }
@@ -153,6 +157,14 @@ var HORIZONTAL_MARGIN = 2.0,
         return [_CPCollectionViewContentBinder class];
 
     return [super _binderClassForBinding:aBinding];
+}
+
++ (BOOL)automaticallyNotifiesObserversForKey:(CPString)key
+{
+    if (key == @"content")
+        return NO;
+
+    return YES;
 }
 
 - (id)initWithFrame:(CGRect)aFrame
@@ -200,17 +212,19 @@ var HORIZONTAL_MARGIN = 2.0,
     _willChangeContent = NO;
 
     _isAnimatingItems = NO;
-    _animate = NO;
+    _animates = NO;
 
     _currentDropIndex      = -1;
     _currentDragOperation  = CPDragOperationNone;
     _dropView = nil;
 
+    _unchangedIndexes = [CPIndexSet indexSet],
+    _addedIndexes = [CPIndexSet indexSet],
+    _removedItems = [CPArray array];
+
     [self setAutoresizesSubviews:NO];
     [self setAutoresizingMask:0];
 }
-
-
 
 #pragma mark -
 #pragma mark Delegate
@@ -376,14 +390,6 @@ var HORIZONTAL_MARGIN = 2.0,
     @param anArray a content array
 */
 
-+ (BOOL)automaticallyNotifiesObserversForKey:(CPString)key
-{
-    if (key == @"content")
-        return NO;
-
-    return YES;
-}
-
 - (void)setContent:(CPArray)newContent
 {
     if (_willChangeContent == NO)
@@ -407,7 +413,7 @@ var HORIZONTAL_MARGIN = 2.0,
 
     _content = [newContent copy];
 
-    // Deselect items
+    // Deselect selected items
     if (!_willChangeContent)
         [self _applySelectionToItems:NO];
 
@@ -416,7 +422,7 @@ var HORIZONTAL_MARGIN = 2.0,
 }
 
 /*!
-    @deprecated  Use -setContent: to change the content and update the layout
+    Reloads the content.
 */
 - (void)reloadContent
 {
@@ -539,20 +545,24 @@ var HORIZONTAL_MARGIN = 2.0,
 
 - (void)resizeWithOldSuperviewSize:(CGSize)oldBoundsSize
 {
+    CPLog.debug(_cmd + " _items=" + _items);
     if (_isAnimatingItems)
         return;
 
     [self tile];
 }
 
+/*! @ignore */
 - (void)tile
 {
     var items = [CPArray arrayWithArray:_items];
     [self tileWithItems:items];
 }
 
+/*! @ignore */
 - (BOOL)tileWithItems:(CPArray)newItems
 {
+    CPLog.debug(_cmd + [newItems count]);
     var superview           = [self superview];
 
     // No need to tile if we are not yet placed in the view hierarchy.
@@ -578,7 +588,7 @@ var HORIZONTAL_MARGIN = 2.0,
     //CPLog.debug(_cmd + "_contentMaybeDidChange=" + _contentMaybeDidChange + " gridSizeDidChange=" + gridSizeDidChange + " itemSizeDidChange=" + !CGSizeEqualToSize(_itemSize, oldItemSize));
     if (_contentMaybeDidChange || gridSizeDidChange || !CGSizeEqualToSize(_itemSize, oldItemSize))
     {
-        var animate = _animate && ![[self window] _inLiveResize] && !_isAnimatingItems;
+        var animate = _animates && ![[self window] _inLiveResize] && !_isAnimatingItems;
         [self displayItems:newItems count:count animate:animate];
     }
 }
@@ -590,10 +600,10 @@ var HORIZONTAL_MARGIN = 2.0,
         itemSize            = CGSizeMakeCopy(_minItemSize),
         maxItemSizeWidth    = _maxItemSize.width,
         maxItemSizeHeight   = _maxItemSize.height,
-        itemsCount          = countRef(),
+        itemsCount          = @deref(countRef),
         numberOfRows,
         numberOfColumns;
-
+CPLog.debug(_cmd + itemsCount);
     numberOfColumns = FLOOR(width / itemSize.width);
 
     if (maxItemSizeWidth == 0)
@@ -633,14 +643,13 @@ var HORIZONTAL_MARGIN = 2.0,
     countRef(MIN(itemsCount, numberOfColumns * numberOfRows));
 }
 
+/*! @ignore */
 - (void)displayItems:(CPArray)displayItems count:(CPInteger)maxCount animate:(BOOL)shouldAnimate
 {
-    var duration = shouldAnimate ? ANIMATION_DURATION : 0,
-        unchangedIndexes = [CPIndexSet indexSet],
-        addedIndexes = [CPIndexSet indexSet],
-        removedItems = [CPArray array];
+    CPLog.debug(_cmd + " displayItems=" + [displayItems count]);
+    var duration = shouldAnimate ? ANIMATION_DURATION : 0;
 
-    [self _getItems:displayItems maxCount:maxCount unchanged:unchangedIndexes added:addedIndexes removed:removedItems];
+    [self _getItems:displayItems maxCount:maxCount unchanged:_unchangedIndexes added:_addedIndexes removed:_removedItems];
 
     [CPAnimationContext beginGrouping];
 
@@ -654,16 +663,20 @@ var HORIZONTAL_MARGIN = 2.0,
         [_items removeAllObjects];
         [_items addObjectsFromArray:displayItems];
 
-        [self _enqueueReusableItems:removedItems];
-        [removedItems makeObjectsPerformSelector:@selector(setSelected:) withObject:NO];
+        [self _enqueueReusableItems:_removedItems];
+        [_removedItems makeObjectsPerformSelector:@selector(setSelected:) withObject:NO];
+
+        [_unchangedIndexes removeAllIndexes];
+        [_addedIndexes removeAllIndexes];
+        [_removedItems removeAllObjects];
 
         if (_willChangeContent)
         {
             [self didChangeValueForKey:@"content"];
             _willChangeContent = NO;
 
-            var binderClass = [[self class] _binderClassForBinding:CPContentBinding];
-            [[binderClass getBinding:CPContentBinding forObject:self] reverseSetValueFor:@"content"];
+            //var binderClass = [[self class] _binderClassForBinding:CPContentBinding];
+            //[[binderClass getBinding:CPContentBinding forObject:self] reverseSetValueFor:@"content"];
 
             // Reselect selectionIndexes
             [self _applySelectionToItems:YES];
@@ -676,17 +689,17 @@ var HORIZONTAL_MARGIN = 2.0,
 
     _horizontalMargin = _uniformSubviewsResizing ? FLOOR((_storedFrameSize.width - _numberOfColumns * _itemSize.width) / (_numberOfColumns + 1)) : HORIZONTAL_MARGIN;
 
-    //CPLog.debug("CURRENT: " + [_items count] + " DISPLAY ITEMS " + [displayItems count] + " max:" + maxCount + " col:" + _numberOfColumns + " rows:" +  _numberOfRows + "\nremoved:" + [removedItems description] + "\nAdded:" + addedIndexes + "\nUnchanged:" + unchangedIndexes);
+    CPLog.debug("CURRENT: " + [_items count] + " DISPLAY ITEMS " + [displayItems count] + " max:" + maxCount + " col:" + _numberOfColumns + " rows:" +  _numberOfRows + "\nremoved:" + [_removedItems description] + "\nAdded:" + _addedIndexes + "\nUnchanged:" + _unchangedIndexes);
 
     // Remove what needs to be removed
-    [removedItems enumerateObjectsUsingBlock:function(anItem, idx, stop)
+    [_removedItems enumerateObjectsUsingBlock:function(anItem, idx, stop)
     {
         [[[anItem view] animator] removeFromSuperview];
         //CPLog.debug("Remove view " + [anItem view]);
     }];
 
     // Move what needs to be moved
-    [unchangedIndexes enumerateIndexesUsingBlock:function(idx, stop)
+    [_unchangedIndexes enumerateIndexesUsingBlock:function(idx, stop)
     {
         var item = [displayItems objectAtIndex:idx],
             view = [item view],
@@ -703,7 +716,7 @@ var HORIZONTAL_MARGIN = 2.0,
         }
     }];
     // Add what needs to be added.
-    [addedIndexes enumerateIndexesUsingBlock:function(idx, stop)
+    [_addedIndexes enumerateIndexesUsingBlock:function(idx, stop)
     {
         var view = [[displayItems objectAtIndex:idx] view],
             x = _horizontalMargin + (_itemSize.width + _horizontalMargin) * (idx % _numberOfColumns),
@@ -720,7 +733,7 @@ var HORIZONTAL_MARGIN = 2.0,
 
 - (void)_getItems:(CPArray)newItems maxCount:(CPInteger)maxCount unchanged:(CPIndexSet)unchanged added:(CPIndexSet)added removed:(CPArray)removed
 {
-    //CPLog.debug("_getItems: \nOLD ITEMS " + _items + "\nNEW ITEMS " + newItems);
+    CPLog.debug("_getItems: \nOLD ITEMS " + _items + "\nNEW ITEMS " + newItems);
 
     var orderedNewItems = @[];
 
@@ -795,6 +808,25 @@ var HORIZONTAL_MARGIN = 2.0,
 
 // Laying Out the Collection View
 /*!
+    Sets whether the collection view animates when setting content or modifies the grid size.
+    @param shouldAnimate Should the collection view animate.
+*/
+- (void)setAnimates:(BOOL)shouldAnimate
+{
+    if (shouldAnimate !== _animates)
+    {
+        if (!CPFeatureIsCompatible(CPCSSAnimationFeature))
+        {
+            CPLog.warn("Your browser is not compatible with the animation feature. Ignoring -setAnimates:");
+        }
+        else
+        {
+            _animates = shouldAnimate;
+        }
+    }
+}
+
+/*!
     Sets the maximum number of rows.
     @param aMaxNumberOfRows the new maximum number of rows
 */
@@ -827,7 +859,7 @@ var HORIZONTAL_MARGIN = 2.0,
 
     _maxNumberOfColumns = aMaxNumberOfColumns;
 
-    [self reloadContent];
+    [self tile];
 }
 
 /*!
@@ -849,7 +881,6 @@ var HORIZONTAL_MARGIN = 2.0,
 /*!
     Returns the current number of columns
 */
-
 - (unsigned)numberOfColumns
 {
     return _numberOfColumns;
@@ -929,12 +960,14 @@ var HORIZONTAL_MARGIN = 2.0,
     return _backgroundColors;
 }
 
+/*! @ignore */
 - (void)mouseUp:(CPEvent)anEvent
 {
     if ([_selectionIndexes count] && [anEvent clickCount] == 2)
         [self _sendDelegateDidDoubleClickOnItemAtIndex:[_selectionIndexes firstIndex]];
 }
 
+/*! @ignore */
 - (void)mouseDown:(CPEvent)anEvent
 {
     _mouseDownEvent = anEvent;
@@ -1012,11 +1045,9 @@ var HORIZONTAL_MARGIN = 2.0,
     [self reloadContent];
 }
 
-
 /*!
     Gets the collection view's current vertical spacing between elements.
 */
-
 - (float)verticalMargin
 {
     return _verticalMargin;
@@ -1127,6 +1158,7 @@ var HORIZONTAL_MARGIN = 2.0,
     [self addSubview:_dropView];
 }
 
+/*! @ignore */
 - (void)mouseDragged:(CPEvent)anEvent
 {
     // Don't crash if we never registered the intial click.
@@ -1176,6 +1208,7 @@ var HORIZONTAL_MARGIN = 2.0,
         slideBack:YES];
 }
 
+/*! @ignore */
 - (CPView)draggingViewForItemsAtIndexes:(CPIndexSet)indexes withEvent:(CPEvent)event offset:(CGPoint)dragImageOffset
 {
     var dragIndex = [indexes firstIndex];
@@ -1188,6 +1221,7 @@ var HORIZONTAL_MARGIN = 2.0,
     return [_itemForDragging view];
 }
 
+/*! @ignore */
 - (CPDragOperation)draggingEntered:(id)draggingInfo
 {
     var dropIndex = -1,
@@ -1203,6 +1237,7 @@ var HORIZONTAL_MARGIN = 2.0,
     return _currentDragOperation;
 }
 
+/*! @ignore */
 - (CPDragOperation)draggingUpdated:(id)draggingInfo
 {
     if (![self _dropIndexDidChange:draggingInfo])
@@ -1240,11 +1275,13 @@ var HORIZONTAL_MARGIN = 2.0,
     return result;
 }
 
+/*! @ignore */
 - (void)draggingExited:(id)draggingInfo
 {
     [self _updateDragAndDropStateWithDraggingInfo:draggingInfo newDragOperation:0 newDropIndex:-1 newDropOperation:1];
 }
 
+/*! @ignore */
 - (void)draggingEnded:(id)draggingInfo
 {
     [self _updateDragAndDropStateWithDraggingInfo:draggingInfo newDragOperation:0 newDropIndex:-1 newDropOperation:1];
@@ -1261,6 +1298,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
 }
 */
 
+/*! @ignore */
 - (BOOL)performDragOperation:(id)draggingInfo
 {
     var result = NO;
@@ -1408,6 +1446,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
         [self scrollRectToVisible:frame];
 }
 
+/*! @ignore */
 - (void)moveLeft:(id)sender
 {
     var index = [[self selectionIndexes] firstIndex];
@@ -1417,6 +1456,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     [self _modifySelectionWithNewIndex:index - 1 direction:-1 expand:NO];
 }
 
+/*! @ignore */
 - (void)moveLeftAndModifySelection:(id)sender
 {
     var index = [[self selectionIndexes] firstIndex];
@@ -1426,26 +1466,31 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     [self _modifySelectionWithNewIndex:index - 1 direction:-1 expand:YES];
 }
 
+/*! @ignore */
 - (void)moveRight:(id)sender
 {
     [self _modifySelectionWithNewIndex:[[self selectionIndexes] lastIndex] + 1 direction:1 expand:NO];
 }
 
+/*! @ignore */
 - (void)moveRightAndModifySelection:(id)sender
 {
     [self _modifySelectionWithNewIndex:[[self selectionIndexes] lastIndex] + 1 direction:1 expand:YES];
 }
 
+/*! @ignore */
 - (void)moveDown:(id)sender
 {
     [self _modifySelectionWithNewIndex:[[self selectionIndexes] lastIndex] + [self numberOfColumns] direction:1 expand:NO];
 }
 
+/*! @ignore */
 - (void)moveDownAndModifySelection:(id)sender
 {
     [self _modifySelectionWithNewIndex:[[self selectionIndexes] lastIndex] + [self numberOfColumns] direction:1 expand:YES];
 }
 
+/*! @ignore */
 - (void)moveUp:(id)sender
 {
     var index = [[self selectionIndexes] firstIndex];
@@ -1455,6 +1500,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     [self _modifySelectionWithNewIndex:index - [self numberOfColumns] direction:-1 expand:NO];
 }
 
+/*! @ignore */
 - (void)moveUpAndModifySelection:(id)sender
 {
     var index = [[self selectionIndexes] firstIndex];
@@ -1464,6 +1510,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     [self _modifySelectionWithNewIndex:index - [self numberOfColumns] direction:-1 expand:YES];
 }
 
+/*! @ignore */
 - (void)deleteBackward:(id)sender
 {
     if ([[self delegate] respondsToSelector:@selector(collectionView:shouldDeleteItemsAtIndexes:)])
@@ -1479,11 +1526,13 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     }
 }
 
+/*! @ignore */
 - (void)keyDown:(CPEvent)anEvent
 {
     [self interpretKeyEvents:[anEvent]];
 }
 
+/*! @ignore */
 - (void)setAutoresizingMask:(unsigned)aMask
 {
     [super setAutoresizingMask:0];
@@ -1494,6 +1543,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
 
 @implementation CPCollectionView (Deprecated)
 
+/*! @ignore */
 - (CGRect)rectForItemAtIndex:(int)anIndex
 {
     _CPReportLenientDeprecation([self class], _cmd, @selector(frameForItemAtIndex:));
@@ -1503,6 +1553,7 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
     return [self frameForItemAtIndex:anIndex];
 }
 
+/*! @ignore */
 - (CGRect)rectForItemsAtIndexes:(CPIndexSet)anIndexSet
 {
     _CPReportLenientDeprecation([self class], _cmd, @selector(frameForItemsAtIndexes:));
@@ -1511,7 +1562,6 @@ Not supported. Use -collectionView:dataForItemsAtIndexes:fortype:
 }
 
 @end
-
 
 @implementation CPCollectionView (CPCollectionViewDelegate)
 
@@ -1666,6 +1716,7 @@ var CPCollectionViewMinItemSizeKey              = @"CPCollectionViewMinItemSizeK
 
 @implementation CPCollectionView (CPCoding)
 
+/*! @ignore */
 - (id)initWithCoder:(CPCoder)aCoder
 {
     self = [super initWithCoder:aCoder];
@@ -1691,6 +1742,7 @@ var CPCollectionViewMinItemSizeKey              = @"CPCollectionViewMinItemSizeK
     return self;
 }
 
+/*! @ignore */
 - (void)encodeWithCoder:(CPCoder)aCoder
 {
     [super encodeWithCoder:aCoder];
