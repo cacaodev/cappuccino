@@ -981,23 +981,23 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @end
 
-var CPLayoutAnchorType      = @"CPLayoutAnchorType",
-    CPLayoutAnchorItem      = @"CPLayoutAnchorItem",
-    CPLayoutAnchorAttribute = @"CPLayoutAnchorAttribute";
+var CPLayoutAnchorTypeKey      = @"CPLayoutAnchorTypeKey",
+    CPLayoutAnchorItemKey      = @"CPLayoutAnchorItemKey",
+    CPLayoutAnchorAttributeKey = @"CPLayoutAnchorAttributeKey";
 
 @implementation CPLayoutAnchor (CPCoding)
 
 - (id)initWithCoder:(id)aCoder
 {
 /*
-    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorType];
-    var type = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorType] : 2; // simple or composite
+    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorTypeKey];
+    var type = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorTypeKey] : 2; // simple or composite
 */
 
-    var item = [aCoder decodeObjectForKey:CPLayoutAnchorItem];
+    var item = [aCoder decodeObjectForKey:CPLayoutAnchorItemKey];
 
-    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorAttribute],
-        attr = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorAttribute] : 0;
+    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorAttributeKey],
+        attr = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorAttributeKey] : 0;
 
     // The name will be lazily resolved.
     self = [self initWithItem:item attribute:attr name:nil];
@@ -1009,8 +1009,8 @@ var CPLayoutAnchorType      = @"CPLayoutAnchorType",
 {
     [super encodeWithCoder:aCoder];
 
-    [aCoder encodeConditionalObject:_item forKey:CPLayoutAnchorItem];
-    [aCoder encodeInt:_attribute forKey:CPLayoutAnchorAttribute];
+    [aCoder encodeConditionalObject:_item forKey:CPLayoutAnchorItemKey];
+    [aCoder encodeInt:_attribute forKey:CPLayoutAnchorAttributeKey];
 }
 
 @end
