@@ -48,6 +48,12 @@
 #if !PLATFORM(DOM)
     kiwi = module.exports;
 #endif
+
+#if defined (CASSOWARY_ENGINE)
+    EngineInfo("Using Cassowary engine.");
+#elif defined (KIWI_ENGINE)
+    EngineInfo("Using Kiwi engine.");
+#endif
 }
 
 + (CPArray)_engineConstraintsFromConstraint:(CPLayoutConstraint)aConstraint
@@ -104,10 +110,15 @@
     {
         variables.forEach(function(variable)
         {
+// It seems that Cassowary and Kiwi are not behaving the same when it comes to add editVars + suggest values.
+// Cassowary needs the strength of the edit var to be higher than anything (or at leat higher than the constraints
+// that already hold the variable edited) but not required.
+// Kiwi does not have this requirement, you can add an edit variable with a given strength and then solve the whole system.
+// For example, in Autolayout when the user resizes the window by dragging the corner, the priority is 510.
 #if defined (CASSOWARY_ENGINE)
            _simplexSolver.addEditVar(variable, c.Strength.strong, 1);
 #elif defined (KIWI_ENGINE)
-           _simplexSolver.addEditVariable(variable, kiwi.Strength.strong);
+           _simplexSolver.addEditVariable(variable, StrengthForPriority(aPriority));
 #endif
         });
 
@@ -454,6 +465,8 @@ var StrengthForPriority = function(p)
     else
         return c.Strength.medium;
 #elif defined (KIWI_ENGINE)
+    // FIXME: ideally,  stengths/weights should be treated with lexographic ordering.
+    // See https://github.com/nucleic/kiwi/issues/33
     else if (p < 250)
     {
         return kiwi.Strength.create(0, 0, 0, 0, 0, 1, p);
