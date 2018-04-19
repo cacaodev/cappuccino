@@ -377,7 +377,7 @@ CPLogRegister(CPLogConsole);
         }
     }
 }
-
+/*
 - (CPView)tableView:(CPTableView)tableView shouldSelectRow:(CPInteger)row
 {
     var view = [self selectedView],
@@ -385,7 +385,7 @@ CPLogRegister(CPLogConsole);
 
     return [constraint _constraintType] == "Constraint";
 }
-
+*/
 - (IBAction)layout:(id)sender
 {
     [constraintWindow layoutIfNeeded];
@@ -649,10 +649,10 @@ CPLogRegister(CPLogConsole);
 - (void)drawString:(CPString)aString inBounds:(CGRect)bounds
 {
     var ctx = [[CPGraphicsContext currentContext] graphicsPort];
-    ctx.font = [[CPFont boldSystemFontOfSize:20] cssString];
+    CGContextSelectFont(ctx, [CPFont boldSystemFontOfSize:20]);
     [[CPColor whiteColor] setFill];
     var metrics = ctx.measureText(aString);
-    ctx.fillText(aString, (CGRectGetWidth(bounds) - metrics.width)/2, CGRectGetHeight(bounds)/2);
+    CGContextShowTextAtPoint(ctx, (CGRectGetWidth(bounds) - metrics.width)/2, CGRectGetHeight(bounds)/2, aString);
 }
 
 - (void)drawConstraintsInRect:(CGRect)aRect
@@ -677,7 +677,7 @@ CPLogRegister(CPLogConsole);
         }
 
         if (_selected && [selectedConstraintIndexes containsIndex:idx])
-            color = [CPColor redColor];
+            color = [CPColor greenColor];
 
         [color setStroke];
         [path stroke];

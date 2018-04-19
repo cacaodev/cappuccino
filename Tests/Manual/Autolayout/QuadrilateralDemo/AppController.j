@@ -268,9 +268,10 @@ var pNum;
 - (void)drawString:(CPString)aString inRect:(CGRect)aRect
 {
     var ctx = [[CPGraphicsContext currentContext] graphicsPort];
-    ctx.font = [[CPFont boldSystemFontOfSize:20] cssString];
+
+    CGContextSelectFont(ctx, [CPFont boldSystemFontOfSize:20]);
     var metrics = ctx.measureText(aString);
-    ctx.fillText(aString, CGRectGetMinX(aRect) + (CGRectGetWidth(aRect) - metrics.width)/2, CGRectGetMaxY(aRect) -  (CGRectGetHeight(aRect) - 10)/2);
+    CGContextShowTextAtPoint(ctx, CGRectGetMinX(aRect) + (CGRectGetWidth(aRect) - metrics.width)/2, CGRectGetMaxY(aRect) -  (CGRectGetHeight(aRect))/2, aString);
 }
 
 - (void)drawRect:(CGRect)aRect
@@ -322,11 +323,8 @@ var pNum;
 
     [normal setStroke];
 
-    if (!CPBrowserIsEngine(CPBlinkBrowserEngine))
-    {
-        [[CPColor colorWithWhite:0.5 alpha:0.2] setFill];
-        [rectanglePath fill];
-    }
+    [[CPColor colorWithWhite:0.5 alpha:0.2] setFill];
+    [rectanglePath fill];
 
     [rectanglePath stroke];
     [path stroke];
@@ -339,17 +337,9 @@ var pNum;
         var p = [point location];
         var rect = CGRectMake(p.x - 25, p.y - 25, 50, 50);
         var ovalPath = [CPBezierPath bezierPathWithOvalInRect:rect];
-        
-        if (CPBrowserIsEngine(CPBlinkBrowserEngine))
-        {
-            [color setStroke];
-            [ovalPath stroke];
-        }
-        else
-        {
-            [color setFill];
-            [ovalPath fill];
-        }
+
+        [color setFill];
+        [ovalPath fill];
 
         var priority = isSelected ? EDIT_PRIORITY : [point initialPriority];
         [[CPColor whiteColor] setFill];
@@ -386,6 +376,8 @@ var pNum;
     [currentLayoutPoint setInitialPriority:priority];
     [controller setLayoutPoint:nil];
     [self setNeedsDisplay:YES];
+    // FIXME/ Why is this necessary ? Is it a problem with CPPopover ?
+    [[CPRunLoop currentRunLoop] performSelectors];
 }
 
 - (void)popoverWillShow:(CPPopover)aPopover

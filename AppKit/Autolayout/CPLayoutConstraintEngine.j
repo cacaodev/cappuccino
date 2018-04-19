@@ -259,7 +259,7 @@
 
     var onsuccess = function(constraint)
     {
-        _constraintToOwnerMap.delete(constraint);
+        _constraintToOwnerMap["delete"](constraint);
 #if (DEBUG)
         EngineLog("Removed " + type + " in " + containerId + " : " + constraint.toString());
 #endif

@@ -18,10 +18,12 @@ CPLogRegister(CPLogConsole);
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    var contentView = [theWindow contentView],
-        contentLayoutRect = [[contentView layoutRect] layoutRectByInsettingWithConstant:100];
+    var contentView = [theWindow contentView];
 
-    var constraints = [[contentView layoutRectangle] constraintsEqualToLayoutRect:contentLayoutRect];
+    var contentViewLayoutRect = [contentView layoutRect],
+        visibleLayoutRect = [[contentView layoutRectangle] layoutRectByInsettingWithConstant:-100],
+        constraints = [contentViewLayoutRect constraintsEqualToLayoutRect:visibleLayoutRect];
+
     [CPLayoutConstraint activateConstraints:constraints];
 }
 
@@ -56,7 +58,8 @@ CPLogRegister(CPLogConsole);
     [color set];
     CGContextFillRect(ctx, [self bounds]);
 
-    [[CPColor blackColor] set];
+    [[CPColor grayColor] set];
+    CGContextSetLineWidth(ctx, 2);
     var constrainedRect = [layoutRectangle valueInEngine:nil];
 
     [[CPBezierPath bezierPathWithOvalInRect:constrainedRect] stroke];
