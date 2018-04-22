@@ -322,7 +322,7 @@ function ThemeState(stateNames)
     var stateNameKeys = [];
     this._stateNames = {};
 
-    for (key in stateNames)
+    for (var key in stateNames)
     {
         if (!stateNames.hasOwnProperty(key))
             continue;
@@ -769,7 +769,7 @@ var ParentAttributeForCoder = nil;
             if ([aCoder containsValueForKey:@"state"])
                 state = [aCoder decodeObjectForKey:@"state"];
             else
-                state = CPThemeStateNormalString
+                state = CPThemeStateNormalString;
 
             [_values setObject:[aCoder decodeObjectForKey:"value"] forKey:state];
         }

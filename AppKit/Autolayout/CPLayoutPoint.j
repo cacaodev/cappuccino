@@ -1,4 +1,5 @@
 @import <Foundation/CPObject.j>
+@import "CPView.j"
 
 @implementation CPLayoutPoint : CPObject
 {
@@ -79,6 +80,16 @@
 }
 
 @end
+
+@implementation CPView (CPLayoutPoint)
+
+- (CPLayoutPoint)centerLayoutPoint
+{
+    return [CPLayoutPoint layoutPointWithXAxisAnchor:[self centerXAnchor] yAxisAnchor:[self centerYAnchor]];
+}
+
+@end
+
 /*
 @implementation CPLayoutPoint (CPCoding)
 

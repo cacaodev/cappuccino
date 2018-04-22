@@ -1,9 +1,12 @@
+#if ! defined (CASSOWARY_ENGINE) && ! defined (KIWI_ENGINE)
+#define CASSOWARY_ENGINE
+#endif
+
 @import <Foundation/CPObject.j>
 @import <Foundation/CPGeometry.j>
 @import <Foundation/CPSet.j>
 
-@import "CPLayoutConstraint.j"
-@import "c.js"
+@import "CPLayoutConstraintEngine.j"
 
 @class CPLayoutConstraint
 @class _CPCibCustomView
@@ -123,13 +126,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (Expression)expressionInContext:(id)otherAnchor
 {
-    return new c.Expression.fromVariable([self variable]); // Overrided by subclasses.
+    return engine_expressionFromVariable([self variable]); // Overrided by subclasses.
 }
 
 // Default for CPLayout(X|Y)AxisAnchor and CPLayoutDimension
 - (float)valueInEngine:(id)anEngine
 {
+#if defined (CASSOWARY_ENGINE)
     return [self variable].valueOf();
+#elif defined (KIWI_ENGINE)
+    return [self variable].value();
+#endif
 }
 
 - (float)valueInLayoutSpace
@@ -401,9 +408,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     // Are we the container ?
     if ([self _isParentOfAnchor:otherAnchor])
-        return new c.Expression.fromConstant(0);
+        return engine_expressionFromConstant(0);
 
-    return new c.Expression.fromVariable([self variable]);
+    return engine_expressionFromVariable([self variable]);
 }
 
 - (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
@@ -458,7 +465,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (Expression)expressionInContext:(id)otherAnchor
 {
-    return new c.Expression.fromVariable([self variable]);
+    return engine_expressionFromVariable([self variable]);
 }
 
 - (float)valueInLayoutSpace
@@ -554,16 +561,16 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         exp2 = [_dimension expressionInContext:otherAnchor];
 
         if (_dimensionMultiplier !== 1)
-            exp2 = exp2.times(_dimensionMultiplier);
+            exp2 = engine_multiply(exp2, _dimensionMultiplier);
     }
     else {
-        exp2 = new c.Expression.fromConstant(0);
+        exp2 = engine_expressionFromConstant(0);
     }
 
     if (_constant !== 0)
     {
-        var constantExp = new c.Expression.fromConstant(_constant);
-        exp2 = exp2.plus(constantExp);
+        var constantExp = engine_expressionFromConstant(_constant);
+        exp2 = engine_plus(exp2, constantExp);
     }
 
     if ([_axisAnchor _isParentOfAnchor:otherAnchor])
@@ -571,7 +578,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
     var exp1 = [_axisAnchor expressionInContext:otherAnchor];
 
-    return c.plus(exp1, exp2);
+    return engine_plus(exp1, exp2);
 }
 
 - (id)_referenceItem
@@ -777,7 +784,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
     var exp2 = [_secondLayoutDimension expressionInContext:aContext];
 
-    return c.plus(exp1, exp2.times(_secondLayoutDimensionMultiplier));
+    return engine_plus(exp1, engine_multiply(exp2, _secondLayoutDimensionMultiplier));
 }
 
 - (id)_referenceItem
@@ -875,14 +882,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (Expression)expressionInContext:(id)arg1
 {
-    var constantExp = new c.Expression.fromConstant(_constant);
+    var constantExp = engine_expressionFromConstant(_constant);
 
     if (_multiplier == 0)
         return constantExp;
 
     var rootExp = [_rootLayoutDimension expressionInContext:arg1];
 
-    return c.times(rootExp, _multiplier).plus(constantExp);
+    return engine_plus(engine_multiply(rootExp, _multiplier), constantExp);
 }
 
 - (CPString)descriptionEquation
@@ -969,28 +976,28 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     var expMax = [_maxAnchor expressionInContext:_minAnchor],
         expMin = [_minAnchor expressionInContext:_maxAnchor];
 
-    return c.plus(expMax, expMin.times(-1));
+    return engine_plus(expMax, engine_multiply(expMin, -1));
 }
 
 @end
 
-var CPLayoutAnchorType      = @"CPLayoutAnchorType",
-    CPLayoutAnchorItem      = @"CPLayoutAnchorItem",
-    CPLayoutAnchorAttribute = @"CPLayoutAnchorAttribute";
+var CPLayoutAnchorTypeKey      = @"CPLayoutAnchorTypeKey",
+    CPLayoutAnchorItemKey      = @"CPLayoutAnchorItemKey",
+    CPLayoutAnchorAttributeKey = @"CPLayoutAnchorAttributeKey";
 
 @implementation CPLayoutAnchor (CPCoding)
 
 - (id)initWithCoder:(id)aCoder
 {
 /*
-    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorType];
-    var type = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorType] : 2; // simple or composite
+    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorTypeKey];
+    var type = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorTypeKey] : 2; // simple or composite
 */
 
-    var item = [aCoder decodeObjectForKey:CPLayoutAnchorItem];
+    var item = [aCoder decodeObjectForKey:CPLayoutAnchorItemKey];
 
-    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorAttribute],
-        attr = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorAttribute] : 0;
+    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorAttributeKey],
+        attr = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorAttributeKey] : 0;
 
     // The name will be lazily resolved.
     self = [self initWithItem:item attribute:attr name:nil];
@@ -1002,8 +1009,8 @@ var CPLayoutAnchorType      = @"CPLayoutAnchorType",
 {
     [super encodeWithCoder:aCoder];
 
-    [aCoder encodeConditionalObject:_item forKey:CPLayoutAnchorItem];
-    [aCoder encodeInt:_attribute forKey:CPLayoutAnchorAttribute];
+    [aCoder encodeConditionalObject:_item forKey:CPLayoutAnchorItemKey];
+    [aCoder encodeInt:_attribute forKey:CPLayoutAnchorAttributeKey];
 }
 
 @end

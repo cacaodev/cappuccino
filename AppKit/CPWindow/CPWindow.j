@@ -55,6 +55,7 @@
 @class CPToolbar
 @class CPWindowController
 @class _CPWindowFrameAnimation
+@class _CPWindowFrameAnimationDelegate
 
 @global CPApp
 @global _CPPlatformWindowWillCloseNotification
@@ -178,7 +179,7 @@ var CPWindowActionMessageKeys = [
     BOOL                                _isVisible;
     BOOL                                _hasBeenOrderedIn @accessors;
     BOOL                                _isMiniaturized;
-    BOOL                                _isAnimating;
+    BOOL                                _isAnimating @accessors(setter=_setAnimating:);
     BOOL                                _hasShadow;
     BOOL                                _isMovableByWindowBackground;
     BOOL                                _isMovable;
@@ -261,6 +262,7 @@ var CPWindowActionMessageKeys = [
     CPWindow                            _parentView;
     BOOL                                _isSheet;
     _CPWindowFrameAnimation             _frameAnimation;
+    _CPWindowFrameAnimationDelegate     _frameAnimationDelegate;
 
 // CPConstraintBasedLayout
     CPLayoutConstraintEngine            _layoutEngine @accessors;
@@ -344,6 +346,8 @@ CPTexturedBackgroundWindowMask
         _isSheet = NO;
         _sheetContext = nil;
         _parentView = nil;
+        _frameAnimation = nil;
+        _frameAnimationDelegate = nil;
 
         // Set up our window number.
         _windowNumber = [CPApp._windows count];
@@ -763,7 +767,7 @@ CPTexturedBackgroundWindowMask
     {
         [_frameAnimation stopAnimation];
         _frameAnimation = [[_CPWindowFrameAnimation alloc] initWithWindow:self targetFrame:frame];
-
+        [_frameAnimation setDelegate:[self _frameAnimationDelegate]];
         [_frameAnimation startAnimation];
     }
     else
@@ -804,13 +808,13 @@ CPTexturedBackgroundWindowMask
                 size.width = newSize.width;
                 size.height = newSize.height;
 
-            if (!_isAnimating)
-                size = [self _sendDelegateWindowWillResizeToSize:size];
+                if (!_isAnimating)
+                    size = [self _sendDelegateWindowWillResizeToSize:size];
 
-            [_windowView setFrameSize:size];
+                [_windowView setFrameSize:size];
 
-            if (_hasShadow)
-                [_shadowView setNeedsLayout];
+                if (_hasShadow)
+                    [_shadowView setNeedsLayout];
             }
 
             if (!_isAnimating)
@@ -828,6 +832,13 @@ CPTexturedBackgroundWindowMask
         [_platformWindow setContentRect:aFrame];
 }
 
+- (id)_frameAnimationDelegate
+{
+    if (_frameAnimationDelegate == nil)
+        _frameAnimationDelegate = [[_CPWindowFrameAnimationDelegate alloc] initWithWindow:self];
+
+    return _frameAnimationDelegate;
+}
 /*
     Constrain a frame so that the window remains at least partially visible on screen,
     moving or resizing the frame as necessary.
@@ -971,7 +982,7 @@ CPTexturedBackgroundWindowMask
 {
     [self orderWindow:CPWindowAbove relativeTo:0];
 #if !PLATFORM(DOM)
-    // In DOM, this happens in -makeKeyWindow.
+    // In DOM, this happens in CPPlatformWindow - (void)order:window:relativeTo:
     [self _engageAutolayoutIfNeeded];
 #endif
 }
@@ -1922,7 +1933,7 @@ CPTexturedBackgroundWindowMask
                 // Make sure the browser doesn't try to do its own tab handling.
                 // This is important or the browser might blur the shared text field or token field input field,
                 // even that we just moved it to a new first responder.
-                [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:NO]
+                [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:NO];
 #endif
                 return;
             }
@@ -1936,7 +1947,7 @@ CPTexturedBackgroundWindowMask
                     // Make sure the browser doesn't try to do its own tab handling.
                     // This is important or the browser might blur the shared text field or token field input field,
                     // even that we just moved it to a new first responder.
-                    [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:NO]
+                    [[[anEvent window] platformWindow] _propagateCurrentDOMEvent:NO];
 #endif
 
                 }
@@ -2002,7 +2013,7 @@ CPTexturedBackgroundWindowMask
             var theWindow = [anEvent window],
                 selector = type == CPRightMouseDown ? @selector(rightMouseDown:) : @selector(mouseDown:);
 
-            if ([theWindow isKeyWindow] || ([theWindow becomesKeyOnlyIfNeeded] && ![_leftMouseDownView needsPanelToBecomeKey]))
+            if (([theWindow _isFrontmostWindow] && [theWindow isKeyWindow]) || ([theWindow becomesKeyOnlyIfNeeded] && ![_leftMouseDownView needsPanelToBecomeKey]))
                 return [_leftMouseDownView performSelector:selector withObject:anEvent];
             else
             {
@@ -2028,13 +2039,13 @@ CPTexturedBackgroundWindowMask
 
             if (type == CPRightMouseDragged)
             {
-                selector = @selector(rightMouseDragged:)
+                selector = @selector(rightMouseDragged:);
                 if (![_leftMouseDownView respondsToSelector:selector])
                     selector = nil;
             }
 
             if (!selector)
-                selector = @selector(mouseDragged:)
+                selector = @selector(mouseDragged:);
 
             return [_leftMouseDownView performSelector:selector withObject:anEvent];
 
@@ -2046,6 +2057,30 @@ CPTexturedBackgroundWindowMask
 
             [self _handleTrackingAreaEvent:anEvent];
     }
+}
+
+- (void)_startLiveResize
+{
+    [[CPNotificationCenter defaultCenter]
+        postNotificationName:CPWindowWillStartLiveResizeNotification
+                      object:self];
+}
+
+- (void)_endLiveResize
+{
+    if (_autolayoutEnabled)
+    {
+        [self _updateWindowContentSizeConstraints];
+    }
+
+    [[CPNotificationCenter defaultCenter]
+        postNotificationName:CPWindowDidEndLiveResizeNotification
+                      object:self];
+}
+
+- (BOOL)_inLiveResize
+{
+    return [_windowView _isTracking];
 }
 
 /*!
@@ -2112,6 +2147,23 @@ CPTexturedBackgroundWindowMask
 - (BOOL)isKeyWindow
 {
     return [CPApp keyWindow] == self;
+}
+
+/* @ignore */
+- (BOOL)_isFrontmostWindow
+{
+    if ([self isFullBridge])
+        return YES;
+
+    var orderedWindows = [CPApp orderedWindows];
+
+    if ([orderedWindows count] == 0)
+        return YES;
+
+    if ([orderedWindows objectAtIndex:0] === self)
+        return YES;
+
+    return NO;
 }
 
 /*!
@@ -3798,13 +3850,6 @@ var interpolate = function(fromValue, toValue, progress)
     return self;
 }
 
-- (void)startAnimation
-{
-    [super startAnimation];
-
-    _window._isAnimating = YES;
-}
-
 - (void)setCurrentProgress:(float)aProgress
 {
     [super setCurrentProgress:aProgress];
@@ -3812,7 +3857,7 @@ var interpolate = function(fromValue, toValue, progress)
     var value = [self currentValue];
 
     if (value == 1.0)
-        _window._isAnimating = NO;
+        [_window _setAnimating:NO];
 
     var newFrame = CGRectMake(
             interpolate(CGRectGetMinX(_startFrame), CGRectGetMinX(_targetFrame), value),
@@ -3825,6 +3870,41 @@ var interpolate = function(fromValue, toValue, progress)
 
 @end
 
+@implementation _CPWindowFrameAnimationDelegate : CPObject
+{
+    CPWindow _window;
+}
+
+- (id)initWithWindow:(CPWindow)aWindow
+{
+    self = [super init];
+
+    _window = aWindow;
+
+    return self;
+}
+
+- (BOOL)animationShouldStart:(CPAnimation)animation
+{
+    [_window _setAnimating:YES];
+    [_window _startLiveResize];
+
+    return YES;
+}
+
+- (void)animationDidStop:(CPAnimation)animation
+{
+    [_window _setAnimating:NO];
+    [_window _endLiveResize];
+}
+
+- (void)animationDidEnd:(CPAnimation)animation
+{
+    [_window _setAnimating:NO];
+    [_window _endLiveResize];
+}
+
+@end
 
 @implementation CPWindow (CPDraggingAdditions)
 
@@ -4452,19 +4532,37 @@ Subclasses should not override this method.
 
     if (!CGSizeEqualToSize(newSize, oldSize))
     {
-        var constraintWidth = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.width huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:0],
-            constraintHeight = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.height huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:1];
+        var oldConstraints = [_windowView _contentSizeConstraints];
 
-        var oldConstraints = [_windowView _contentSizeConstraints],
-            newConstraints = @[constraintWidth, constraintHeight];
+        if (newSize.width !== oldSize.width)
+        {
+            [self _updateConstraintWithOrientation:CPLayoutConstraintOrientationHorizontal toValue:newSize.width inConstraints:oldConstraints];
+        }
 
-        if (oldConstraints)
-            [_windowView removeConstraints:oldConstraints];
-
-        [_windowView addConstraints:newConstraints];
+        if (newSize.height !== oldSize.height)
+        {
+            [self _updateConstraintWithOrientation:CPLayoutConstraintOrientationVertical toValue:newSize.height inConstraints:oldConstraints];
+        }
 
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
+}
+
+- (void)_updateConstraintWithOrientation:(CPLayoutConstraintOrientation)anOrientation toValue:(float)aValue inConstraints:(CPArray)oldConstraints
+{
+    [oldConstraints enumerateObjectsUsingBlock:function(oldConstraint, idx, stop)
+    {
+        if ([oldConstraint orientation] == anOrientation)
+        {
+            [_windowView removeConstraint:oldConstraint];
+            [oldConstraints removeObject:oldConstraint];
+            stop(YES);
+        }
+    }];
+
+    var newConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:aValue huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:anOrientation];
+    [_windowView addConstraint:newConstraint];
+    [oldConstraints addObject:newConstraint];
 }
 
 - (void)_setSubviewsNeedUpdateConstraints
@@ -4478,7 +4576,7 @@ Subclasses should not override this method.
     if (_autolayoutEnabled == NO && [self _shouldEngageAutolayout])
     {
 #if (DEBUG)
-        console.warn('%c [Engine]: Autolayout is now engaged in Window ' + [self description], 'color:purple; font-weight:bold;font-family:"SF Mono";font-size:"16px"');
+        CPLog('%c [Engine]: Autolayout is now engaged in Window ' + [self description], 'color:purple; font-weight:bold;font-family:"Arial";font-size:"16px"');
 #endif
         _autolayoutEnabled = YES;
         [self setNeedsLayout];

@@ -1,12 +1,13 @@
 
 require("../common.jake");
 
-var framework = require("objective-j/jake").framework,
+var SYSTEM = require("system"),
+    framework = require("objective-j/jake").framework,
     BundleTask = require("objective-j/jake").BundleTask;
 
 $BUILD_PATH = FILE.join($BUILD_DIR, $CONFIGURATION, 'AppKit');
 
-AppKitFiles = new FileList("**/*.j", "Autolayout/c.js").exclude('CoreGraphics/CGContextCanvas.j', 'CoreGraphics/CGContextVML.j', 'Themes/**/*', 'Tools/**/*', "Platform/DOM/CPPlatform.j", "Platform/DOM/CPPlatformString.j");
+AppKitFiles = new FileList("**/*.j", "Autolayout/*.js").exclude('CoreGraphics/CGContextCanvas.j', 'CoreGraphics/CGContextVML.j', 'Themes/**/*', 'Tools/**/*', "Platform/DOM/CPPlatform.j", "Platform/DOM/CPPlatformString.j");
 
 FIXME_fileDependency (FILE.join("Platform", "CPPlatform.j"), FILE.join("Platform", "DOM", "CPPlatform.j"));
 FIXME_fileDependency (FILE.join("Platform", "CPPlatformString.j"), FILE.join("Platform", "DOM", "CPPlatformString.j"));
@@ -33,11 +34,19 @@ appKitTask = framework ("AppKit", function(appKitTask)
         return "--include \"" + aFilename + "\"";
     }).join(" ");
 
+    var ENGINE = SYSTEM.env["CAPP_LAYOUT_ENGINE"],
+        ENGINE_FLAGS = "";
+
+    if (ENGINE !== undefined)
+        ENGINE_FLAGS = "-D" + ENGINE + "_ENGINE";
+
+    colorPrint("AUTOLAYOUT ENGINE SET TO " + ENGINE, "red");
+
     if ($CONFIGURATION === "Release") {
-        appKitTask.setCompilerFlags("-O2 " + INCLUDES);
+        appKitTask.setCompilerFlags("-O2 " + ENGINE_FLAGS + " -g " + INCLUDES);
     }
     else
-        appKitTask.setCompilerFlags("-DDEBUG -g " + INCLUDES);
+        appKitTask.setCompilerFlags("-DDEBUG " + ENGINE_FLAGS + " -g -S --inline-msg-send " + INCLUDES);
 });
 
 $BUILD_CJS_CAPPUCCINO_APPKIT = FILE.join($BUILD_CJS_CAPPUCCINO_FRAMEWORKS, "AppKit");
