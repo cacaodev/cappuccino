@@ -368,8 +368,12 @@
     {
         str += [TypeAndContainer.Container debugID] + " (" + TypeAndContainer.Type + ") " + engine_constraint.toString() + "\n";
     });
-
+#if defined (CASSOWARY_ENGINE)
     return (str + "\nInternalInfo:\n" + _simplexSolver.getInternalInfo());
+#elif defined (KIWI_ENGINE)
+    // TODO: implement this in kiwi.js
+    return _simplexSolver.toString();
+#endif
 }
 
 @end
