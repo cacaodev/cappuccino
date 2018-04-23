@@ -1,23 +1,16 @@
-#if ! defined (CASSOWARY_ENGINE) && ! defined (KIWI_ENGINE)
-#define CASSOWARY_ENGINE
-#endif
-
 @import <Foundation/CPObject.j>
 @import <Foundation/CPRunLoop.j>
 @import <Foundation/CPBundle.j>
 @import <Foundation/CPIndexSet.j>
 
 @import "CPLayoutConstraint.j"
-#if defined (CASSOWARY_ENGINE)
-@import "c.js"
-#elif defined (KIWI_ENGINE)
-@import "kiwi.js"
-#endif
 
 #if defined (CASSOWARY_ENGINE)
+@import "cassowary.js"
 @typedef SimplexSolver
 @global c
 #elif defined (KIWI_ENGINE)
+@import "kiwi.js"
 @typedef Solver
 @global kiwi
 #endif

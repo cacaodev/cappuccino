@@ -7,10 +7,16 @@ var SYSTEM = require("system"),
 
 $BUILD_PATH = FILE.join($BUILD_DIR, $CONFIGURATION, 'AppKit');
 
-AppKitFiles = new FileList("**/*.j", "Autolayout/*.js").exclude('CoreGraphics/CGContextCanvas.j', 'CoreGraphics/CGContextVML.j', 'Themes/**/*', 'Tools/**/*', "Platform/DOM/CPPlatform.j", "Platform/DOM/CPPlatformString.j");
+AppKitFiles = new FileList("**/*.j").exclude('CoreGraphics/CGContextCanvas.j', 'CoreGraphics/CGContextVML.j', 'Themes/**/*', 'Tools/**/*', "Platform/DOM/CPPlatform.j", "Platform/DOM/CPPlatformString.j");
 
 FIXME_fileDependency (FILE.join("Platform", "CPPlatform.j"), FILE.join("Platform", "DOM", "CPPlatform.j"));
 FIXME_fileDependency (FILE.join("Platform", "CPPlatformString.j"), FILE.join("Platform", "DOM", "CPPlatformString.j"));
+
+// Autolayout
+var ENGINE = SYSTEM.env["CAPP_LAYOUT_ENGINE"];
+if (ENGINE == "undefined") ENGINE = "CASSOWARY";
+AppKitFiles.include("Autolayout/engines/" + ENGINE.toLowerCase() + ".js");
+colorPrint("** BUILD WITH AUTOLAYOUT ENGINE " + ENGINE + " **", "yellow");
 
 appKitTask = framework ("AppKit", function(appKitTask)
 {
@@ -34,13 +40,7 @@ appKitTask = framework ("AppKit", function(appKitTask)
         return "--include \"" + aFilename + "\"";
     }).join(" ");
 
-    var ENGINE = SYSTEM.env["CAPP_LAYOUT_ENGINE"],
-        ENGINE_FLAGS = "";
-
-    if (ENGINE !== undefined)
-        ENGINE_FLAGS = "-D" + ENGINE + "_ENGINE";
-
-    colorPrint("AUTOLAYOUT ENGINE SET TO " + ENGINE, "red");
+    var ENGINE_FLAGS = "-D" + ENGINE + "_ENGINE";
 
     if ($CONFIGURATION === "Release") {
         appKitTask.setCompilerFlags("-O2 " + ENGINE_FLAGS + " -g " + INCLUDES);

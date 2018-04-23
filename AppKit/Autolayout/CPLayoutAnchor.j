@@ -1,7 +1,3 @@
-#if ! defined (CASSOWARY_ENGINE) && ! defined (KIWI_ENGINE)
-#define CASSOWARY_ENGINE
-#endif
-
 @import <Foundation/CPObject.j>
 @import <Foundation/CPGeometry.j>
 @import <Foundation/CPSet.j>
