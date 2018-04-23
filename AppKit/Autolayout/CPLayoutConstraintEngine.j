@@ -83,11 +83,12 @@
     };
 #elif defined (KIWI_ENGINE)
     _simplexSolver = new kiwi.Solver();
-    _simplexSolver.onsolved = function(variable)
+    var f = function(variable)
     {
         var container = _variableToOwnerMap.get(variable);
         [container valueOfVariable:variable didChangeInEngine:self];
     };
+    _simplexSolver.setOnSolved(f);
 #endif
     return self;
 }
