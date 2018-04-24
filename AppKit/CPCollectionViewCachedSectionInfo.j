@@ -1,8 +1,8 @@
 @implementation CPCollectionViewCachedSectionInfo : CPObject
 {
-    CPInteger   _itemCount @accessors(property=itemsCount);
+    CPInteger   _itemCount          @accessors(property=itemsCount);
+    id          _representedObject  @accessors(property=representedObject);
     CPMapTable  _indexToModelObjectMap;
-    id          _representedObject @accessors(property=representedObject);
 }
 
 - (id)init
@@ -24,19 +24,19 @@
     return [_indexToModelObjectMap objectEnumerator];
 }
 
-- (id)objectAtIndex:(int)arg1
+- (id)objectAtIndex:(int)anIndex
 {
-    return [_indexToModelObjectMap objectForKey:[CPNumber numberWithInteger:arg1]];
+    return [_indexToModelObjectMap objectForKey:[CPNumber numberWithInteger:anIndex]];
 }
 
-- (id)objectAtIndexValue:(id)arg1
+- (id)objectAtIndexValue:(id)aKey
 {
-    return [_indexToModelObjectMap objectForKey:arg1];
+    return [_indexToModelObjectMap objectForKey:aKey];
 }
 
-- (void)setObject:(id)arg1 atIndex:(int)arg2
+- (void)setObject:(id)anObject atIndex:(int)anIndex
 {
-    [_indexToModelObjectMap setObject:arg1 forKey:[CPNumber numberWithInteger:arg2]];
+    [_indexToModelObjectMap setObject:anObject forKey:[CPNumber numberWithInteger:anIndex]];
 }
 
 - (id)itemIndexEnumerator
@@ -80,9 +80,9 @@
     _itemCount -= [itemIndexes count];
 }
 
-- (void)insertItemsAtIndexes:(id)arg1
+- (void)insertItemsAtIndexes:(id)anIndexSet
 {
-    [arg1 enumerateRangesUsingBlock:function(indexes, stop)
+    [anIndexSet enumerateRangesUsingBlock:function(indexes, stop)
     {
         var mapTable = [CPMapTable strongToStrongObjectsMapTable];
         var keyEnumerator = [_indexToModelObjectMap keyEnumerator];
@@ -113,12 +113,12 @@
         _indexToModelObjectMap = mapTable;
     }];
 
-    _itemCount += [arg1 count];
+    _itemCount += [anIndexSet count];
 }
 
-- (void)reloadItemsAtIndexes:(id)arg1
+- (void)reloadItemsAtIndexes:(id)anIndexSet
 {
-    [arg1 enumerateIndexesUsingBlock:function(idx, stop)
+    [anIndexSet enumerateIndexesUsingBlock:function(idx, stop)
     {
         [_indexToModelObjectMap removeObjectForKey:[CPNumber numberWithInteger:idx]];
     }];

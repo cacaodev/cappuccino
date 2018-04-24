@@ -2,10 +2,10 @@
 
 @implementation CPCollectionViewDataSourceAdapter : CPObject
 {
-    CPCollectionView _collectionView @accessors(property=collectionView);
-    id               _dataSource @accessors(getter=dataSource);
+    CPCollectionView _collectionView    @accessors(property=collectionView);
+    id               _dataSource        @accessors(getter=dataSource);
     BOOL             _dataSourceImplementsObjectMethods;
-    CPInteger        _sectionCount @accessors(property=sectionCount);
+    CPInteger        _sectionCount      @accessors(property=sectionCount);
     CPMapTable       _indexToSectionInfoMap;
     CPMapTable       _representedObjectToIndexPathMap;
 }
@@ -27,16 +27,16 @@
     return self;
 }
 
-- (void)deleteSections:(CPIndexSet)arg1
+- (void)deleteSections:(CPIndexSet)anIndexSet
 {
-    var count = [arg1 count];
+    var count = [anIndexSet count];
 
-    if (count && [arg1 firstIndex] < _sectionCount)
+    if (count && [anIndexSet firstIndex] < _sectionCount)
     {
         [_representedObjectToIndexPathMap removeAllObjects];
     }
 
-    [arg1 enumerateIndexesWithOptions:2 usingBlock:function(sectionIdx, stop)
+    [anIndexSet enumerateIndexesWithOptions:2 usingBlock:function(sectionIdx, stop)
     {
         [_indexToSectionInfoMap removeObjectForKey:[CPNumber numberWithInteger:sectionIdx]];
 
@@ -109,12 +109,12 @@
     _sectionCount += count;
 }
 
-- (id)_indexPathForRepresentedObject:(id)arg1
+- (id)_indexPathForRepresentedObject:(id)repObject
 {
     if (_sectionCount > 0 && ![_representedObjectToIndexPathMap count])
         [self _rebuildRepresentedObjectToIndexPathMap];
 
-    return [_representedObjectToIndexPathMap objectForKey:arg1];
+    return [_representedObjectToIndexPathMap objectForKey:repObject];
 }
 
 - (void)_rebuildRepresentedObjectToIndexPathMap
@@ -187,47 +187,47 @@
     return _representedObjectForCurrentDataSourceInvocation;
 }
 
-- (id)collectionView:(id)arg1 viewForSupplementaryElementOfKind:(id)arg2 atIndexPath:(id)arg3
+- (id)collectionView:(id)aCollectionView viewForSupplementaryElementOfKind:(id)arg2 atIndexPath:(id)anIndexPath
 {
     if ([_dataSource respondsToSelector:@selector(collectionView:viewForSupplementaryElementOfKind:atIndexPath:)])
-        return [_dataSource collectionView:_collectionView viewForSupplementaryElementOfKind:arg2 atIndexPath:arg3];
+        return [_dataSource collectionView:aCollectionView viewForSupplementaryElementOfKind:arg2 atIndexPath:anIndexPath];
 
     return nil;
 }
 
-- (id)collectionView:(id)arg1 itemForRepresentedObjectAtIndexPath:(id)arg2
+- (id)collectionView:(id)aCollectionView itemForRepresentedObjectAtIndexPath:(id)anIndexPath
 {
     var result;
 
     if (_dataSourceImplementsObjectMethods)
     {
         var repObject;
-        var section = [arg2 section];
-        var itemIndex = [arg2 item];
+        var section = [anIndexPath section];
+        var itemIndex = [anIndexPath item];
         var sectionInfo = [_indexToSectionInfoMap objectForKey:[CPNumber numberWithInteger:itemIndex]];
 
         if (!sectionInfo || (repObject = [sectionInfo objectAtIndex:itemIndex]) == nil)
         {
             var sectionRepObject = [sectionInfo representedObject];
-            repObject = [_dataSource collectionView:_collectionView child:itemIndex ofRepresentedObject:sectionRepObject];
+            repObject = [_dataSource collectionView:aCollectionView child:itemIndex ofRepresentedObject:sectionRepObject];
             [sectionInfo setObject:repObject atIndex:itemIndex];
         }
 
         _representedObjectForCurrentDataSourceInvocation = repObject;
 
-        result = [_dataSource collectionView:_collectionView itemForRepresentedObject:repObject atIndexPath:arg2];
+        result = [_dataSource collectionView:aCollectionView itemForRepresentedObject:repObject atIndexPath:anIndexPath];
 
         _representedObjectForCurrentDataSourceInvocation = nil;
     }
     else
     {
-        result = [_dataSource collectionView:_collectionView itemForRepresentedObjectAtIndexPath:arg2];
+        result = [_dataSource collectionView:aCollectionView itemForRepresentedObjectAtIndexPath:anIndexPath];
     }
 
     return result;
 }
 
-- (int)collectionView:(id)arg1 numberOfItemsInSection:(int)arg2
+- (int)collectionView:(id)aCollectionView numberOfItemsInSection:(int)aSection
 {
     var sectionInfo;
     var sectionIndex;
@@ -235,19 +235,19 @@
     var result;
 
     if (!_dataSourceImplementsObjectMethods)
-        return [_dataSource collectionView:_collectionView numberOfItemsInSection:arg2];
+        return [_dataSource collectionView:aCollectionView numberOfItemsInSection:aSection];
 
-    sectionIndex = [CPNumber numberWithInteger:arg2];
+    sectionIndex = [CPNumber numberWithInteger:aSection];
     sectionInfo = [_indexToSectionInfoMap objectForKey:sectionIndex];
 
     if (!sectionInfo)
     {
         sectionInfo = [[CPCollectionViewCachedSectionInfo alloc] init];
 
-        var repObj = [_dataSource collectionView:_collectionView child:arg2 ofRepresentedObject:nil];
+        var repObj = [_dataSource collectionView:aCollectionView child:aSection ofRepresentedObject:nil];
         [sectionInfo setRepresentedObject:repObj];
 
-        var count = [_dataSource collectionView:_collectionView numberOfChildrenOfRepresentedObject:repObj];
+        var count = [_dataSource collectionView:aCollectionView numberOfChildrenOfRepresentedObject:repObj];
         [sectionInfo setItemCount:count];
 
         [_indexToSectionInfoMap setObject:sectionInfo forKey:sectionIndex];
@@ -259,7 +259,7 @@
     if (itemCount < 0)
     {
         var repObj = [sectionInfo representedObject];
-        result = [_dataSource collectionView:_collectionView numberOfChildrenOfRepresentedObject:repObj];
+        result = [_dataSource collectionView:aCollectionView numberOfChildrenOfRepresentedObject:repObj];
         [sectionInfo setItemCount:itemCount];
     }
 
@@ -278,7 +278,7 @@
                                           && [_dataSource respondsToSelector: @selector(collectionView:itemForRepresentedObject:atIndexPath:)]);
 }
 
-- (int)numberOfSectionsInCollectionView:(id)arg1
+- (int)numberOfSectionsInCollectionView:(id)aCollectionView
 {
     var result;
 
@@ -294,12 +294,12 @@
             }
             else
             {
-                result = [_dataSource numberOfSectionsInCollectionView:_collectionView];
+                result = [_dataSource numberOfSectionsInCollectionView:aCollectionView];
             }
         }
         else
         {
-            result = [_dataSource collectionView:_collectionView numberOfChildrenOfRepresentedObject:nil];
+            result = [_dataSource collectionView:aCollectionView numberOfChildrenOfRepresentedObject:nil];
         }
 
         [self setSectionCount:result];
@@ -318,12 +318,12 @@
     return -1;
 }
 
-- (void)reloadItemsAtIndexPaths:(id)arg1
+- (void)reloadItemsAtIndexPaths:(CPIndexPath)anIndexPaths
 {
-    if ([arg1 count])
+    if ([anIndexPath count])
         [_representedObjectToIndexPathMap removeAllObjects];
 
-    [arg1 enumerateIndexPathsWithOptions:0 usingBlock:function(indexPath, stop)
+    [anIndexPaths enumerateIndexPathsWithOptions:0 usingBlock:function(indexPath, stop)
     {
         var sectionKey = [CPNumber numberWithUnsignedInteger:[indexPath section]];
         var itemIndexes = [CPIndexSet indexSetWithIndex:[indexPath item]];
@@ -333,12 +333,12 @@
     }];
 }
 
-- (void)deleteItemsAtIndexPaths:(id)arg1
+- (void)deleteItemsAtIndexPaths:(id)anIndexPaths
 {
-    if ([arg1 count])
+    if ([anIndexPaths count])
         [_representedObjectToIndexPathMap removeAllObjects];
 
-    [arg1 enumerateIndexPathsWithOptions:0 usingBlock:function(indexPath)
+    [anIndexPaths enumerateIndexPathsWithOptions:0 usingBlock:function(indexPath)
     {
         var sectionKey = [CPNumber numberWithUnsignedInteger:[indexPath section]];
         var itemIndexes = [CPIndexSet indexSetWithIndex:[indexPath item]];
@@ -348,12 +348,12 @@
     }];
 }
 
-- (void)insertItemsAtIndexPaths:(id)arg1
+- (void)insertItemsAtIndexPaths:(id)anIndexPaths
 {
-    if ([arg1 count])
+    if ([anIndexPaths count])
         [_representedObjectToIndexPathMap removeAllObjects];
 
-    [arg1 enumerateIndexPathsWithOptions:0 usingBlock:function(indexPath)
+    [anIndexPaths enumerateIndexPathsWithOptions:0 usingBlock:function(indexPath)
     {
         var sectionKey = [CPNumber numberWithUnsignedInteger:[indexPath section]];
         var sectionInfo = [_indexToSectionInfoMap objectForKey:sectionKey];
@@ -364,7 +364,7 @@
     }];
 }
 
-- (void)moveSection:(int)arg1 toSection:(int)arg2
+- (void)moveSection:(int)arg1 toSection:(int)aSection
 {
     [_representedObjectToIndexPathMap removeAllObjects];
     [self _invalidateEverything];
@@ -380,7 +380,7 @@
 - (id)_fetchSectionObjectAtIndex:(int)anIndex
 {
     var result = nil;
-    var indexKey = [CPNumber numberWithInteger:arg1];
+    var indexKey = [CPNumber numberWithInteger:anIndex];
 
     if ([_indexToSectionInfoMap objectForKey:indexKey] == nil)
     {
@@ -391,7 +391,6 @@
             var sectionInfo = [[CPCollectionViewCachedSectionInfo alloc] init];
             [sectionInfo setRepresentedObject:repObject];
             [_indexToSectionInfoMap setObject:sectionInfo forKey:indexKey];
-            [sectionInfo release];
             result = repObject;
         }
     }
