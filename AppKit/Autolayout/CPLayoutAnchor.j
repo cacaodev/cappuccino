@@ -319,24 +319,24 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 // CPLayoutAnchor creation
 
-- (CPCompositeLayoutAxisAnchor)anchorAtMidpointToAnchor:(id)arg1
+- (CPCompositeLayoutAxisAnchor)anchorAtMidpointToAnchor:(id)anAnchor
 {
-    var distance = [self anchorWithOffsetToAnchor:arg1];
+    var distance = [self anchorWithOffsetToAnchor:anAnchor];
 
     return [self anchorByOffsettingWithDimension:distance multiplier:0.5 constant:0];
 }
 
-- (CPDistanceLayoutDimension)anchorWithOffsetToAnchor:(id)arg1
+- (CPDistanceLayoutDimension)anchorWithOffsetToAnchor:(id)anAnchor
 {
-    return [CPDistanceLayoutDimension distanceFromAnchor:self toAnchor:arg1];
+    return [CPDistanceLayoutDimension distanceFromAnchor:self toAnchor:anAnchor];
 }
 
-- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
+- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)aConstant
 {
-    if (arg1 == 0)
+    if (aConstant == 0)
         return [self copy];
 
-    return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:arg1];
+    return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:aConstant];
 }
 
 // CPLayoutConstraint creation
@@ -531,10 +531,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @implementation CPCompositeLayoutAxisAnchor : CPLayoutAnchor
 {
-    CPLayoutXAxisAnchor  _axisAnchor @accessors(getter=axisAnchor);
-    CPLayoutDimension    _dimension @accessors(getter=dimension);
-    float                _constant @accessors(getter=constant);
-    float                _dimensionMultiplier @accessors(getter=dimensionMultiplier);
+    CPLayoutXAxisAnchor  _axisAnchor            @accessors(getter=axisAnchor);
+    CPLayoutDimension    _dimension             @accessors(getter=dimension);
+    float                _constant              @accessors(getter=constant);
+    float                _dimensionMultiplier   @accessors(getter=dimensionMultiplier);
 }
 
 - (id)copy
@@ -859,15 +859,15 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
   return self;
 }
 */
-- (id)initWithMultiplier:(float)arg1 dimension:(id)arg2 constant:(float)arg3
+- (id)initWithMultiplier:(float)aMultiplier dimension:(id)aDimension constant:(float)aConstant
 {
-    self = [super initWithItem:[arg2 _referenceItem] attribute:-1 name:nil];
+    self = [super initWithItem:[aDimension _referenceItem] attribute:-1 name:nil];
 
     if ( self )
     {
-        _rootLayoutDimension = [arg2 copy];
-        _multiplier = arg1;
-        _constant = arg3;
+        _rootLayoutDimension = [aDimension copy];
+        _multiplier = aMultiplier;
+        _constant = aConstant;
     }
 
     return self;
@@ -878,9 +878,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithMultiplier:_multiplier dimension:_rootLayoutDimension constant:_constant];
 }
 
-- (float)valueInEngine:(id)arg1
+- (float)valueInEngine:(id)anEngine
 {
-    return [_rootLayoutDimension valueInEngine:arg1] * _multiplier + _constant;
+    return [_rootLayoutDimension valueInEngine:anEngine] * _multiplier + _constant;
 }
 
 - (float)valueInLayoutSpace
@@ -898,14 +898,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_rootLayoutDimension _nearestAncestorLayoutItem];
 }
 
-- (Expression)expressionInContext:(id)arg1
+- (Expression)expressionInContext:(id)aContext
 {
     var constantExp = engine_expressionFromConstant(_constant);
 
     if (_multiplier == 0)
         return constantExp;
 
-    var rootExp = [_rootLayoutDimension expressionInContext:arg1];
+    var rootExp = [_rootLayoutDimension expressionInContext:aContext];
 
     return engine_plus(engine_multiply(rootExp, _multiplier), constantExp);
 }
@@ -928,17 +928,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     CPLayoutAnchor _maxAnchor @accessors(getter=maxAnchor);
 }
 
-+ (id)distanceFromAnchor:(id)arg1 toAnchor:(id)arg2
++ (id)distanceFromAnchor:(id)fromAnchor toAnchor:(id)toAnchor
 {
-    return [[[self class] alloc] initWithMinAnchor:arg1 maxAnchor:arg2 name:nil];
+    return [[[self class] alloc] initWithMinAnchor:fromAnchor maxAnchor:toAnchor name:nil];
 }
 
-- (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2 name:(CPString)aName
+- (id)initWithMinAnchor:(id)minAnchor maxAnchor:(id)maxAnchor name:(CPString)aName
 {
     self = [super initWithItem:nil attribute:-1 name:aName];
 
-    _minAnchor = [arg1 copy];
-    _maxAnchor = [arg2 copy];
+    _minAnchor = [minAnchor copy];
+    _maxAnchor = [maxAnchor copy];
     _name = [aName copy];
     _item = [self _nearestAncestorLayoutItem];
 
@@ -989,7 +989,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_maxAnchor valueInLayoutSpace] - [_minAnchor valueInLayoutSpace];
 }
 
-- (Expression)expressionInContext:(id)arg1
+- (Expression)expressionInContext:(id)aContext
 {
     var expMax = [_maxAnchor expressionInContext:_minAnchor],
         expMin = [_minAnchor expressionInContext:_maxAnchor];
