@@ -30,11 +30,15 @@
 @class _CPCibCustomView
 
 @global _CPLayoutItemIsDescendantOf
+
 @typedef Expression
 @typedef Variable
+@typedef CPLayoutAnchorType
 
 var CPLayoutAnchorTypeSimple    = 0;
-var CPLayoutAnchorTypeComposite = 1;
+var CPLayoutAnchorTypeAxis      = 2;
+var CPLayoutAnchorTypeDimension = 4;
+var CPLayoutAnchorTypeComposite = 8;
 
 var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
                                "left",
@@ -137,7 +141,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [self item];
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
     return CPLayoutAnchorTypeSimple;
 }
@@ -256,7 +260,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     {
         var result = @[];
 
-        if ([self _anchorType] == CPLayoutAnchorTypeSimple)
+        if ([self _anchorType] !== CPLayoutAnchorTypeComposite)
         {
             [result addObject:self];
         }
@@ -280,7 +284,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     {
         var result = [CPSet set];
 
-        if ([self _anchorType] == CPLayoutAnchorTypeSimple)
+        if ([self _anchorType] !== CPLayoutAnchorTypeComposite)
         {
             [result addObject:[self _referenceItem]];
         }
@@ -300,7 +304,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)_nearestAncestorLayoutItem
 {
-    if ([self _anchorType] == CPLayoutAnchorTypeSimple)
+    if ([self _anchorType] !== CPLayoutAnchorTypeComposite)
         return [self _referenceItem];
 
     var items = [self _referencedLayoutItems],
@@ -417,9 +421,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
-    return CPLayoutAnchorTypeSimple;
+    return CPLayoutAnchorTypeAxis;
 }
 
 - (Expression)expressionInContext:(id)otherAnchor
@@ -476,9 +480,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
-    return CPLayoutAnchorTypeSimple;
+    return CPLayoutAnchorTypeDimension;
 }
 
 - (Expression)expressionInContext:(id)otherAnchor
@@ -553,7 +557,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return YES;
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
 }
@@ -776,9 +780,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return YES;
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
-    return CPLayoutAnchorTypeComposite;
+    return CPLayoutAnchorTypeDimension;
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)otherItem
@@ -961,7 +965,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor name:_name];
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
 }
