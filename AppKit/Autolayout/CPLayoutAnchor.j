@@ -62,6 +62,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     Variable  _variable                 @accessors(setter=_setVariable:);
     CPSet     _referencedLayoutItems;
     CPArray   _constituentAnchors;
+    id        _delegate                 @accessors(property=delegate);
 }
 
 + (id)anchorWithItem:(id)anItem attribute:(CPInteger)anAttribute
@@ -89,6 +90,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _variable = nil;
     _referencedLayoutItems = nil;
     _constituentAnchors = nil;
+    _delegate = nil;
 
     return self;
 }
@@ -103,13 +105,25 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _variable = nil;
     _referencedLayoutItems = nil;
     _constituentAnchors = nil;
+    _delegate = nil;
 
     return self;
 }
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    var copy = [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    if (_delegate)
+        [copy setDelegate:_delegate];
+    return copy;
+}
+
+- (void)setDelegate:(id)aDelegate
+{
+    if (![aDelegate respondsToSelector:@selector(engine:didChangeAnchor:)])
+        [CPException raise:CPInvalidArgumentException format:@"Delegate %@ should implement engine:didChangeAnchor:"];
+
+    _delegate = aDelegate;
 }
 
 - (Variable)variable
@@ -435,11 +449,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return engine_expressionFromVariable([self variable]);
 }
 
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
-    [[self _referenceItem] _engineDidChangeVariableOfType:2];
-}
-
 @end
 
 @implementation CPLayoutXAxisAnchor : CPLayoutAxisAnchor
@@ -496,11 +505,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return (_attribute == CPLayoutAttributeWidth) ? CGRectGetWidth(frame) : CGRectGetHeight(frame);
 }
 
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
-    [[self _referenceItem] _engineDidChangeVariableOfType:4];
-}
-
 - (id)anchorByMultiplyingByConstant:(float)aMultiplier
 {
     return [[CPArithmeticLayoutDimension alloc] initWithMultiplier:aMultiplier dimension:self constant:0];
@@ -523,7 +527,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    var copy = [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    if (_delegate)
+        [copy setDelegate:_delegate];
+    return copy;
 }
 
 - (CPString)description

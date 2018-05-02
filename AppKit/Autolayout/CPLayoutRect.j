@@ -102,6 +102,14 @@
     return self;
 }
 
+- (void)setDelegate:(id)aDelegate
+{
+    [_leadingAnchor setDelegate:aDelegate];
+    [_topAnchor setDelegate:aDelegate];
+    [_widthAnchor setDelegate:aDelegate];
+    [_heightAnchor setDelegate:aDelegate];
+}
+
 - (BOOL)isEqual:(id)arg1 {
 
     if (self == arg1)
@@ -445,8 +453,9 @@
 {
 }
 
-- (void)_engineDidChangeVariableOfType:(CPInteger)aType
+- (void)engine:(CPLayoutConstraintEngine)anEngine didChangeAnchor:(CPLayoutAnchor)anAnchor
 {
+    // Layout the reference item OR do nothing but warn if no delegate is set with this method implemented.
 }
 
 - (CGInset)alignmentRectInsets

@@ -57,7 +57,10 @@
     return CGPointMake([_xAxisAnchor valueInEngine:arg1], [_yAxisAnchor valueInEngine:arg1]);
 }
 
+- (void)setDelegate:(id)aDelegate
 {
+    [_xAxisAnchor setDelegate:aDelegate];
+    [_yAxisAnchor setDelegate:aDelegate];
 }
 
 + (id)layoutPointWithXAxisAnchor:(id)arg1 yAxisAnchor:(id)arg2

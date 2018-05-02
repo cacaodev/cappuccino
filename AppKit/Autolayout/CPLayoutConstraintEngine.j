@@ -98,17 +98,18 @@
         changes.forEach(function(change)
         {
             var variable = change.variable,
-                owner = _variableToOwnerMap.get(variable);
+                owner = _variableToOwnerMap.get(variable),
+                delegate = [owner delegate] || [owner _referenceItem];
 
-            [owner valueOfVariable:variable didChangeInEngine:self];
+            [delegate engine:self didChangeAnchor:owner];
         });
     };
 #elif defined (KIWI_ENGINE)
     _simplexSolver = new kiwi.Solver();
     var f = function(variable)
     {
-        var container = _variableToOwnerMap.get(variable);
-        [container valueOfVariable:variable didChangeInEngine:self];
+        var context = variable.context();
+        [context.delegate engine:self didChangeAnchor:context.anchor];
     };
     _simplexSolver.setOnSolved(f);
 #endif
@@ -347,8 +348,8 @@
 
 - (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
 {
-    if ([anOwner _anchorType] !== 0)
-        [CPException raise:CPInvalidArgumentException format:@"The variable owner %@ is not a simple (with one variable) anchor. This should never happen", anOwner];
+    if ([anOwner _anchorType] == 8)
+        [CPException raise:CPInvalidArgumentException format:@"The variable owner %@ is not a simple anchor with one variable. This should never happen", anOwner];
 
     //CPLog.debug(_cmd + " prefix:" + aPrefix + " name:" + aName + " owner:" + [aSimpleAnchor description]);
     var result = nil;
@@ -366,7 +367,16 @@
 
     if (result == nil)
     {
-        result = newVariable(aPrefix, aName, aValue);
+#if defined (CASSOWARY_ENGINE)
+            result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
+#elif defined (KIWI_ENGINE)
+            var type = [anOwner _anchorType],
+                delegate = [anOwner delegate] || [anOwner _referenceItem];
+
+            result = new kiwi.Variable(aName);
+            result.setValue(aValue);
+            result.setContext({prefix:aPrefix, delegate:delegate, anchor:anOwner, type:type});
+#endif
         _variableToOwnerMap.set(result, anOwner);
     }
 
@@ -441,7 +451,7 @@ var contextOfVariable = function(variable)
 #if defined (CASSOWARY_ENGINE)
     return variable._prefix;
 #elif defined (KIWI_ENGINE)
-    return variable.context();
+    return variable.context().prefix;
 #endif
 };
 
@@ -513,7 +523,7 @@ var StrengthForPriority = function(p)
     }
 #endif
 };
-
+/*
 var newVariable = function(aPrefix, aName, aValue)
 {
 #if defined (CASSOWARY_ENGINE)
@@ -525,7 +535,7 @@ var newVariable = function(aPrefix, aName, aValue)
     return result;
 #endif
 };
-
+*/
 var CreateConstraint = function(aConstraint)
 {
 // EngineLog("firstItem " + args.firstItem.uuid + " secondItem " + args.secondItem.uuid + " containerUUID " + args.containerUUID + " flags " + args.flags);

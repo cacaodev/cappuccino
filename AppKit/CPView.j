@@ -4986,9 +4986,9 @@ Updates the layout of the receiving view and its subviews based on the current v
         return [self updateConstraintsForSubtreeIfNeeded];
 }
 
-- (void)_engineDidChangeVariableOfType:(int)axisOrDimension
+- (void)engine:(CPLayoutConstraintEngine)anEngine didChangeAnchor:(CPLayoutAnchor)anAnchor
 {
-    _geometryDirtyMask |= axisOrDimension;
+    _geometryDirtyMask |= [anAnchor _anchorType];
 //CPLog.debug([self debugID] + " " + _cmd + " mask="+_geometryDirtyMask);
     [_superview setNeedsLayout];
 }
@@ -5047,7 +5047,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 {
     _isSettingFrameFromEngine = YES;
 //CPLog.debug([self debugID] + " " + _cmd + " " + [[self leftAnchor] valueInEngine:nil] + " " + [[self topAnchor] valueInEngine:nil]);
-    if (_geometryDirtyMask & 2)
+    if (_geometryDirtyMask & 2) // CPLayoutAnchorTypeAxis
     {
 #if defined (CASSOWARY_ENGINE)
         [self setFrameOrigin:CGPointMake([self _variableMinX].valueOf(), [self _variableMinY].valueOf())];
@@ -5056,7 +5056,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 #endif
     }
 
-    if (_geometryDirtyMask & 4)
+    if (_geometryDirtyMask & 4) // CPLayoutAnchorTypeDimension
     {
 #if defined (CASSOWARY_ENGINE)
         [self setFrameSize:CGSizeMake([self _variableWidth].valueOf(), [self _variableHeight].valueOf())];
