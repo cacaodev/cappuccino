@@ -29,35 +29,6 @@
     CPLayoutAnchor _yAxisAnchor @accessors(getter=yAxisAnchor);
 }
 
-- (CPArray)constraintsEqualToLayoutPoint:(id)arg1
-{
-  var xConstraint = [_xAxisAnchor constraintEqualToAnchor:[arg1 xAxisAnchor]];
-  var yConstraint = [_yAxisAnchor constraintEqualToAnchor:[arg1 yAxisAnchor]];
-
-  return @[xConstraint, yConstraint];
-}
-
-- (BOOL)isEqual:(id)arg1
-{
-  if (arg1 === self)
-    return YES;
-
-    return [arg1 isKindOfClass:[CPLayoutPoint class]] && [_xAxisAnchor isEqual:[arg1 xAxisAnchor]] && [_yAxisAnchor isEqual:[arg1 yAxisAnchor]];
-}
-
-+ (id)layoutPointWithXAxisAnchor:(id)arg1 yAxisAnchor:(id)arg2
-{
-    return [[CPLayoutPoint alloc] initWithXAxisAnchor:arg1 yAxisAnchor:arg2];
-}
-
-- (id)layoutPointByOffsettingWithXOffset:(double)arg1 yOffset:(double)arg2
-{
-    var xAnchor = ( arg1 != 0.0 ) ? [_xAxisAnchor anchorByOffsettingWithConstant:arg1] : _xAxisAnchor;
-    var yAnchor = ( arg2 != 0.0 ) ? [_yAxisAnchor anchorByOffsettingWithConstant:arg2] : _yAxisAnchor;
-
-    return [CPLayoutPoint layoutPointWithXAxisAnchor:xAnchor yAxisAnchor:yAnchor];
-}
-
 + (id)pointWithXAxisAnchor:(id)arg1 yAxisAnchor:(id)arg2
 {
     return [self layoutPointWithXAxisAnchor:arg1 yAxisAnchor:arg2];
@@ -73,14 +44,46 @@
   return self;
 }
 
-- (id)pointByOffsettingWithXOffsetDimension:(id)arg1 yOffsetDimension:(id)arg2
+- (BOOL)isEqual:(id)arg1
 {
-    return [self layoutPointByOffsettingWithXOffsetDimension:arg1 yOffsetDimension:arg2];
+  if (arg1 === self)
+    return YES;
+
+    return [arg1 isKindOfClass:[CPLayoutPoint class]] && [_xAxisAnchor isEqual:[arg1 xAxisAnchor]] && [_yAxisAnchor isEqual:[arg1 yAxisAnchor]];
 }
 
 - (CGPoint)valueInEngine:(id)arg1
 {
     return CGPointMake([_xAxisAnchor valueInEngine:arg1], [_yAxisAnchor valueInEngine:arg1]);
+}
+
+{
+}
+
++ (id)layoutPointWithXAxisAnchor:(id)arg1 yAxisAnchor:(id)arg2
+{
+    return [[CPLayoutPoint alloc] initWithXAxisAnchor:arg1 yAxisAnchor:arg2];
+}
+
+- (CPArray)constraintsEqualToLayoutPoint:(id)arg1
+{
+  var xConstraint = [_xAxisAnchor constraintEqualToAnchor:[arg1 xAxisAnchor]];
+  var yConstraint = [_yAxisAnchor constraintEqualToAnchor:[arg1 yAxisAnchor]];
+
+  return @[xConstraint, yConstraint];
+}
+
+- (id)layoutPointByOffsettingWithXOffset:(double)arg1 yOffset:(double)arg2
+{
+    var xAnchor = ( arg1 != 0.0 ) ? [_xAxisAnchor anchorByOffsettingWithConstant:arg1] : _xAxisAnchor;
+    var yAnchor = ( arg2 != 0.0 ) ? [_yAxisAnchor anchorByOffsettingWithConstant:arg2] : _yAxisAnchor;
+
+    return [CPLayoutPoint layoutPointWithXAxisAnchor:xAnchor yAxisAnchor:yAnchor];
+}
+
+- (id)pointByOffsettingWithXOffsetDimension:(id)arg1 yOffsetDimension:(id)arg2
+{
+    return [self layoutPointByOffsettingWithXOffsetDimension:arg1 yOffsetDimension:arg2];
 }
 
 - (id)layoutPointByOffsettingWithXOffsetDimension:(id)arg1 yOffsetDimension:(id)arg2
