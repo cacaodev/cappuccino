@@ -222,11 +222,11 @@
 - (id)_rectangleBySlicingWithDimension:(id)aDimension plusConstant:(float)aConstant fromEdge:(int)anEdge
 {
     var leadingAnchor,
-    topAnchor,
-    widthAnchor,
-    heightAnchor;
+        topAnchor,
+        widthAnchor,
+        heightAnchor;
 
-    switch ( anEdge )
+    switch (anEdge)
     {
         case 0:
             if (aDimension)
@@ -243,8 +243,8 @@
             leadingAnchor = [self leadingAnchor];
             topAnchor = [self topAnchor];
             widthAnchor = [self widthAnchor];
-            break;
 
+            break;
         case 1:
             leadingAnchor = [self leadingAnchor];
 
@@ -261,8 +261,8 @@
 
             topAnchor = [self topAnchor];
             heightAnchor = [self heightAnchor];
-            break;
 
+            break;
         case 2:
             leadingAnchor = [self leadingAnchor];
             var bottomAnchor = [self bottomAnchor];
@@ -280,8 +280,8 @@
                 heightAnchor = [v17 anchorByAddingConstant:aConstant];
             }
             widthAnchor = [self widthAnchor];
-            break;
 
+            break;
         case 3:
             var trailingAnchor = [self trailingAnchor];
             if (aDimension)
@@ -298,8 +298,8 @@
             }
             topAnchor = [self topAnchor];
             heightAnchor = [self heightAnchor];
-        break;
 
+        break;
         default:
         break;
     }
