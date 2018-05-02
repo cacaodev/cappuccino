@@ -191,10 +191,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return YES;
 }
 
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
-}
-
 - (float)alignmentRectOffset
 {
     if (_attribute === CPLayoutAttributeNotAnAttribute)

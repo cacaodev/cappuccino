@@ -13,17 +13,17 @@ CPLogRegister(CPLogConsole);
 
 @implementation AppController : CPObject
 {
-    @outlet CPWindow    theWindow;
+    @outlet CPWindow theWindow;
+    CPView contentView;
+    CPLayoutRect drawingRectangle @accessors;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    var contentView = [theWindow contentView];
+    drawingRectangle = [CPLayoutRect layoutRectWithName:@"rectangle" inItem:contentView];
+    [drawingRectangle setDelegate:self];
 
-    var contentViewLayoutRect = [contentView layoutRect],
-        visibleLayoutRect = [[contentView layoutRectangle] layoutRectByInsettingWithConstant:-100],
-        constraints = [contentViewLayoutRect constraintsEqualToLayoutRect:visibleLayoutRect];
-
+    var constraints = [[contentView layoutRect] constraintsEqualToLayoutRect:[drawingRectangle layoutRectByInsettingWithConstant:-100]];
     [CPLayoutConstraint activateConstraints:constraints];
 }
 
@@ -34,8 +34,14 @@ CPLogRegister(CPLogConsole);
     // It's a useful hook for setting up current UI values, and other things.
 
     // In this case, we want the window from Cib to become our full browser window
-    [[theWindow contentView] setTranslatesAutoresizingMaskIntoConstraints:YES];
+    contentView = [theWindow contentView];
+    [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
     [theWindow setFullPlatformWindow:NO];
+}
+
+- (void)engine:(CPLayoutConstraintEngine)anEngine didChangeAnchor:(CPLayoutAnchor)anAnchor
+{
+    CPLog.debug([anAnchor name]);
 }
 
 @end
@@ -43,13 +49,11 @@ CPLogRegister(CPLogConsole);
 @implementation ColorView : CPView
 {
     CPColor color;
-    CPLayoutRect layoutRectangle @accessors;
 }
 
 - (id)viewDidMoveToWindow
 {
     color = [CPColor randomColor];
-    layoutRectangle = [CPLayoutRect layoutRectWithName:@"rectangle" inItem:self];
 }
 
 - (void)drawRect:(CGRect)aRect
@@ -58,12 +62,27 @@ CPLogRegister(CPLogConsole);
     [color set];
     CGContextFillRect(ctx, [self bounds]);
 
-    [[CPColor grayColor] set];
-    CGContextSetLineWidth(ctx, 2);
-    var constrainedRect = [layoutRectangle valueInEngine:nil];
+    [[CPColor blackColor] set];
+    CGContextSetLineWidth(ctx, 3);
+    var rect = [[[CPApp delegate] drawingRectangle] valueInEngine:nil];
 
-    [[CPBezierPath bezierPathWithOvalInRect:constrainedRect] stroke];
-    [[CPBezierPath bezierPathWithRect:constrainedRect] stroke];
+    [[CPBezierPath bezierPathWithOvalInRect:rect] stroke];
+    [[CPBezierPath bezierPathWithRect:rect] stroke];
+/*
+    var wpath = [CPBezierPath bezierPath];
+    [wpath moveToPoint:rect.origin];
+    [wpath lineToPoint:CGPointMake(CGRectGetMaxX(rect), CGRectGetMinY(rect))];
+    [wpath moveToPoint:CGPointMake(CGRectGetMinX(rect), CGRectGetMaxY(rect))];
+    [wpath lineToPoint:CGPointMake(CGRectGetMaxX(rect), CGRectGetMaxY(rect))];
+    [wpath stroke];
+
+    var hpath = [CPBezierPath bezierPath];
+    [hpath moveToPoint:rect.origin];
+    [hpath lineToPoint:CGPointMake(CGRectGetMinX(rect), CGRectGetMaxY(rect))];
+    [hpath moveToPoint:CGPointMake(CGRectGetMaxX(rect), CGRectGetMinY(rect))];
+    [hpath lineToPoint:CGPointMake(CGRectGetMaxX(rect), CGRectGetMaxY(rect))];
+    [hpath stroke];
+*/
 }
 
 - (void)mouseDown:(CPEvent)anEvent

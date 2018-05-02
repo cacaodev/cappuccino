@@ -12,13 +12,15 @@
 
 @import <Foundation/Foundation.j>
 @import <AppKit/AppKit.j>
+@import <AppKit/CPObjectController.j>
 
 @import "CPMouseTracker.j"
 
-var EDIT_PRIORITY = 1000;
+var EDIT_PRIORITY = 490;
 
 @implementation AppController : CPObject
 {
+    CPView container;
     CPInteger pNum;
 }
 
@@ -32,15 +34,15 @@ var EDIT_PRIORITY = 1000;
     [contentView setIdentifier:@"contentView"];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
-    var container = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
+    container = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
     [container setIdentifier:@"container"];
     [container setTranslatesAutoresizingMaskIntoConstraints:NO];
     [contentView addSubview:container];
 
     var tf = [[CPTextField alloc] initWithFrame:CGRectMake(50, 10, 1200, 50)];
     [tf setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [tf setFont:[CPFont boldSystemFontOfSize:14]];
-    [tf setTextColor:[CPColor blueColor]];
+    [tf setFont:[CPFont boldSystemFontOfSize:16]];
+    [tf setTextColor:[CPColor grayColor]];
     [tf setStringValue:@"Right click on a point to edit the priority of its constrained coordinates."];
     [contentView addSubview:tf];
 
@@ -57,18 +59,16 @@ var EDIT_PRIORITY = 1000;
     [CPLayoutConstraint activateConstraints:@[left, top, right, bottom]];
 
 // Install edges points
-
-    var p1 = [self installLayoutPointAtLocation:CGPointMake(100, 100) inView:container priority:900];
-    var p2 = [self installLayoutPointAtLocation:CGPointMake(1100, 100) inView:container priority:910];
-    var p3 = [self installLayoutPointAtLocation:CGPointMake(1100, 500) inView:container priority:920];
-    var p4 = [self installLayoutPointAtLocation:CGPointMake(100, 500) inView:container priority:930];
+    var p1 = [self installLayoutPointAtLocation:CGPointMake(0, 0) inView:container priority:400];
+    var p2 = [self installLayoutPointAtLocation:CGPointMake(2000, 0) inView:container priority:410];
+    var p3 = [self installLayoutPointAtLocation:CGPointMake(2000, 1000) inView:container priority:420];
+    var p4 = [self installLayoutPointAtLocation:CGPointMake(0, 1000) inView:container priority:430];
 
 // Install mid points
-
-    var p5 = [self installLayoutPointAtLocation:CGPointMake(600, 100) inView:container priority:500];
-    var p6 = [self installLayoutPointAtLocation:CGPointMake(1100,300) inView:container priority:500];
-    var p7 = [self installLayoutPointAtLocation:CGPointMake(600,500) inView:container priority:500];
-    var p8 = [self installLayoutPointAtLocation:CGPointMake(100,300) inView:container priority:500];
+    var p5 = [self installLayoutPointAtLocation:CGPointMakeZero() inView:container priority:250];
+    var p6 = [self installLayoutPointAtLocation:CGPointMakeZero() inView:container priority:250];
+    var p7 = [self installLayoutPointAtLocation:CGPointMakeZero() inView:container priority:250];
+    var p8 = [self installLayoutPointAtLocation:CGPointMakeZero() inView:container priority:250];
 
 // Constrain mid points
     var midConstraints1 = [p5 constraintsBetweenPoint:p1 andPoint:p2];
@@ -80,29 +80,18 @@ var EDIT_PRIORITY = 1000;
     [constraints addObjectsFromArray:midConstraints2];
     [constraints addObjectsFromArray:midConstraints3];
     [constraints addObjectsFromArray:midConstraints4];
-/*
-// Constrain points inside the container view
-    var p1Constraints = [p1 constraintsContainingWithinView:container];
-    var p2Constraints = [p2 constraintsContainingWithinView:container];
-    var p3Constraints = [p3 constraintsContainingWithinView:container];
-    var p4Constraints = [p4 constraintsContainingWithinView:container];
-// ... and also mid points
 
-    var p5Constraints = [p5 constraintsContainingWithinView:container];
-    var p6Constraints = [p6 constraintsContainingWithinView:container];
-    var p7Constraints = [p7 constraintsContainingWithinView:container];
-    var p8Constraints = [p8 constraintsContainingWithinView:container];
+// Constrain edge points inside the box
+    var withinContainerConstraint1 = [p1 constraintsContainingWithinView:container];
+    var withinContainerConstraint2 = [p2 constraintsContainingWithinView:container];
+    var withinContainerConstraint3 = [p3 constraintsContainingWithinView:container];
+    var withinContainerConstraint4 = [p4 constraintsContainingWithinView:container];
 
-    [constraints addObjectsFromArray:p1Constraints];
-    [constraints addObjectsFromArray:p2Constraints];
-    [constraints addObjectsFromArray:p3Constraints];
-    [constraints addObjectsFromArray:p4Constraints];
+    [constraints addObjectsFromArray:withinContainerConstraint1];
+    [constraints addObjectsFromArray:withinContainerConstraint2];
+    [constraints addObjectsFromArray:withinContainerConstraint3];
+    [constraints addObjectsFromArray:withinContainerConstraint4];
 
-    [constraints addObjectsFromArray:p5Constraints];
-    [constraints addObjectsFromArray:p6Constraints];
-    [constraints addObjectsFromArray:p7Constraints];
-    [constraints addObjectsFromArray:p8Constraints];
-*/
 // Activate the Quadrilateral constraints
     [CPLayoutConstraint activateConstraints:constraints];
     [theWindow orderFront:self];
@@ -110,15 +99,24 @@ var EDIT_PRIORITY = 1000;
  //   CPLog.debug([container _layoutEngine]);
 }
 
-- (id)installLayoutPointAtLocation:(CPPoint)loc inView:(CPView)aView priority:(CPInteger)priority
+- (id)installLayoutPointAtLocation:(CPPoint)aLocation inView:(CPView)aView priority:(CPInteger)priority
 {
-    var layoutPoint = [aView createLayoutPointAtLocation:loc withPriority:priority];
-    [CPLayoutConstraint activateConstraints:[layoutPoint constraints]];
+    var layoutPoint = [[LayoutPoint alloc] initAtLocation:aLocation priority:priority owner:aView];
+    [layoutPoint setDelegate:self];
+    [[aView layoutPoints] addObject:layoutPoint];
 
-    //var constraintsWithinView = [layoutPoint constraintsContainingWithinView:aView];
-    //[CPLayoutConstraint activateConstraints:constraintsWithinView];
+    var stayConstraints = [layoutPoint constraints];
+    [CPLayoutConstraint activateConstraints:stayConstraints];
 
     return layoutPoint;
+}
+
+
+- (void)engine:(CPLayoutConstraintEngine)anEngine didChangeAnchor:(CPLayoutAnchor)anAnchor
+{
+    //var p = [container layoutPointContainingAnchor:anAnchor];
+    //[p setMoving:[[container mouseTracker] isTracking]];
+    [container setNeedsDisplay:YES];
 }
 
 @end
@@ -138,12 +136,14 @@ var EDIT_PRIORITY = 1000;
 
 - (CPArray)constraintsContainingWithinView:(CPView)aView
 {
-    var cst1 = [[self xAxisAnchor] constraintGreaterThanOrEqualToConstant:0];
-    var cst2 = [[self yAxisAnchor] constraintGreaterThanOrEqualToConstant:0];
-    var cst3 = [[self xAxisAnchor] constraintLessThanOrEqualToAnchor:[aView rightAnchor]];
-    var cst4 = [[self yAxisAnchor] constraintLessThanOrEqualToAnchor:[aView bottomAnchor]];
+    var cst1 = [[self xAxisAnchor] constraintGreaterThanOrEqualToConstant:25];
+    var cst2 = [[self yAxisAnchor] constraintGreaterThanOrEqualToConstant:25];
+    var maxXAnchor = [[aView widthAnchor] anchorByAddingConstant:-25];
+    var cst3 = [[self xAxisAnchor] constraintLessThanOrEqualToAnchor:maxXAnchor];
+    var maxYAnchor = [[aView heightAnchor] anchorByAddingConstant:-25];
+    var cst4 = [[self yAxisAnchor] constraintLessThanOrEqualToAnchor:maxYAnchor];
 
-    return @[cst1, cst2];
+    return @[cst1, cst2, cst3, cst4];
 }
 
 @end
@@ -154,6 +154,7 @@ var pNum;
     CPArray   xConstraint;
     CPArray   yConstraint;
     CPInteger initialPriority @accessors;
+//    BOOL      moving          @accessors;
 }
 
 + (void)initialize
@@ -175,6 +176,7 @@ var pNum;
     [yConstraint setPriority:aPriority];
 
     initialPriority = aPriority;
+//    moving = NO;
 
     return self;
 }
@@ -234,7 +236,7 @@ var pNum;
 @implementation ColorView : CPView
 {
     CPColor         fillColor;
-    CPArray         layoutPoints;
+    CPArray         layoutPoints @accessors(readonly);
     CPMouseTracker  mouseTracker;
     CPLayoutPoint   trackingPoint;
     CGPoint         currentLocation;
@@ -257,14 +259,6 @@ var pNum;
     return self;
 }
 
-- (LayoutPoint)createLayoutPointAtLocation:(CGPoint)aLocation withPriority:(CPInteger)priority
-{
-    var point = [[LayoutPoint alloc] initAtLocation:aLocation priority:priority owner:self];
-    [layoutPoints addObject:point];
-
-    return point;
-}
-
 - (void)drawString:(CPString)aString inRect:(CGRect)aRect
 {
     var ctx = [[CPGraphicsContext currentContext] graphicsPort];
@@ -273,17 +267,57 @@ var pNum;
     var metrics = ctx.measureText(aString);
     CGContextShowTextAtPoint(ctx, CGRectGetMinX(aRect) + (CGRectGetWidth(aRect) - metrics.width)/2, CGRectGetMaxY(aRect) -  (CGRectGetHeight(aRect))/2, aString);
 }
+/*
+- (CPLayoutPoint)layoutPointContainingAnchor:(CPLayoutAnchor)anAnchor
+{
+    var idx = [layoutPoints indexOfObjectPassingTest:function(point, idx)
+    {
+        return [point xAxisAnchor] == anAnchor || [point yAxisAnchor] == anAnchor;
+    }];
+
+    if (idx !== CPNotFound)
+        return [layoutPoints objectAtIndex:idx];
+
+    return nil;
+}
+*/
+- (void)drawGridInRect:(CGRect)aRect context:(CGContext)aContext
+{
+    var x = 0;
+    var y = 0;
+    var maxY = CGRectGetHeight(aRect);
+    var maxX = CGRectGetWidth(aRect);
+    var p = [CPBezierPath bezierPath];
+    while(x < maxX)
+    {
+        [p moveToPoint:CGPointMake(x, 0)];
+        [p lineToPoint:CGPointMake(x, maxY)];
+        x += 100;
+    }
+
+    while(y < maxY)
+    {
+        [p moveToPoint:CGPointMake(0, y)];
+        [p lineToPoint:CGPointMake(maxX, y)];
+        y += 100;
+    }
+
+    [[CPColor grayColor] setStroke];
+    [p stroke];
+}
 
 - (void)drawRect:(CGRect)aRect
 {
     // Please, do not look at the drawing code, it's really quick & dirty.
     var ctx = [[CPGraphicsContext currentContext] graphicsPort];
     [fillColor set];
-
     CGContextFillRect(ctx, [self bounds]);
+
+    [self drawGridInRect:[self bounds] context:ctx];
 
     var normal = [CPColor blackColor],
         selected = [CPColor blueColor];
+//        moving = [CPColor lightGrayColor];
 
     var path = [CPBezierPath bezierPath];
     var rectanglePath = [CPBezierPath bezierPath];
@@ -332,6 +366,7 @@ var pNum;
     [layoutPoints enumerateObjectsUsingBlock:function(point, idx, stop)
     {
         var isSelected = (point == trackingPoint);
+        //var color =  isSelected ? selected : (([point moving]) ? moving : normal);
         var color =  isSelected ? selected : normal;
 
         var p = [point location];
@@ -414,6 +449,12 @@ var pNum;
     {
         [self rightMouseDown:theEvent];
     }
+    else if ([theEvent modifierFlags] & CPCommandKeyMask)
+    {
+        CPLog.debug("ContentView\n" + [[[self superview] constraints] description]);
+        CPLog.debug("\n\nContainer\n" + [[self constraints] description]);
+        CPLog.debug("\n\nContainer\n" + [[[self constraints] arrayByApplyingBlock:function(cst){ return [cst _engineConstraints].toString();}] componentsJoinedByString:@"\n"]);
+    }
     else
     {
         [mouseTracker trackWithEvent:theEvent inView:self withDelegate:self];
@@ -428,7 +469,7 @@ var pNum;
     if (trackingPoint == nil)
         return NO;
 
-    [trackingPoint setPriority:CPLayoutPriorityRequired];
+    [trackingPoint setPriority:EDIT_PRIORITY];
     currentLocation = locationInWindow;
 
     return YES;
@@ -446,7 +487,7 @@ var pNum;
     currentLocation = locationInWindow;
 
     [[self window] setNeedsLayout];
-    [self setNeedsDisplay:YES];
+    //[self setNeedsDisplay:YES];
 
     return YES;
 }
@@ -456,6 +497,7 @@ var pNum;
     [layoutPoints enumerateObjectsUsingBlock:function(point, idx, stop)
     {
         [point resetStayConstraints];
+        //[point setMoving:NO];
     }];
 
     if (trackingPoint)
