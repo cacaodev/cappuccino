@@ -1008,3 +1008,15 @@ _CPWindowViewResizeSlop = 3;
 }
 
 @end
+
+@implementation _CPWindowView (ConstraintBasedLayout)
+
+- (void)engine:(CPLayoutConstraintEngine)anEngine didChangeAnchor:(CPLayoutAnchor)anAnchor
+{
+    _geometryDirtyMask |= [anAnchor _anchorType];
+
+    [self _updateGeometry];
+    [[self window] _updateFrameFromCurrentWindowViewFrame];
+}
+
+@end

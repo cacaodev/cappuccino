@@ -4505,8 +4505,6 @@ Subclasses should not override this method.
 
         [_windowView layoutSubtreeAtWindowLevelIfNeeded];
 
-        [_windowView _updateGeometry];
-        [self _updateFrameFromCurrentWindowViewFrame];
 
         [_CPDisplayServer unlock];
         [[CPRunLoop mainRunLoop] performSelectors];
