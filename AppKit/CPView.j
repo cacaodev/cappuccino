@@ -5043,10 +5043,19 @@ Updates the layout of the receiving view and its subviews based on the current v
     return _variableHeight;
 }
 
+- (CGRect)_engineFrame
+{
+#if defined (CASSOWARY_ENGINE)
+    return CGRectMake([self _variableMinX].valueOf(), [self _variableMinY].valueOf(), [self _variableWidth].valueOf(), [self _variableHeight].valueOf());
+#elif defined (KIWI_ENGINE)
+    return CGRectMake([self _variableMinX].value(), [self _variableMinY].value(), [self _variableWidth].value(), [self _variableHeight].value());
+#endif
+}
+
 - (void)_updateGeometry
 {
     _isSettingFrameFromEngine = YES;
-//CPLog.debug([self debugID] + " " + _cmd + " " + [[self leftAnchor] valueInEngine:nil] + " " + [[self topAnchor] valueInEngine:nil]);
+//CPLog.debug([self debugID] + " " + _cmd + " " + CPStringFromRect([self _engineFrame]));
     if (_geometryDirtyMask & 2) // CPLayoutAnchorTypeAxis
     {
 #if defined (CASSOWARY_ENGINE)
