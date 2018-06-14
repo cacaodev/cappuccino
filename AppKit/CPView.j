@@ -947,7 +947,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     [[self window] _dirtyKeyViewLoop];
 
-    if (_window && _needsUpdateConstraints)
+    if (_window && [_window isAutolayoutEnabled] && _needsUpdateConstraints)
     {
         [_window _setSubviewsNeedUpdateConstraints];
     }
