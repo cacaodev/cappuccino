@@ -4492,7 +4492,6 @@ Subclasses should not override this method.
     }
 }
 
-- (void)layout
 {
     if (!_layoutLock)
     {
@@ -4512,6 +4511,7 @@ Subclasses should not override this method.
         [[CPRunLoop mainRunLoop] performSelectors];
 
         _layoutLock = NO;
+- (void)_layout
     }
 }
 
