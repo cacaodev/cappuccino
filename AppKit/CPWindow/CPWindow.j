@@ -895,6 +895,17 @@ CPTexturedBackgroundWindowMask
     return frame;
 }
 
+- (void)_sizeToFitWindowViewSize:(CGSize)newSize
+{
+    var size = _frame.size;
+
+    size.width = newSize.width;
+    size.height = newSize.height;
+
+    if (_hasShadow)
+        [_shadowView setNeedsLayout];
+}
+
 /*
     Constrain the origin of a frame such that:
 
@@ -4451,17 +4462,6 @@ Subclasses should not override this method.
     [self updateConstraintsIfNeeded];
     [engine suggestValues:values forVariables:variables withPriority:CPLayoutPriorityDragThatCanResizeWindow];
     [_windowView _updateGeometry];
-}
-
-- (void)_sizeToFitWindowViewSize:(CGSize)newSize
-{
-    var size = _frame.size;
-
-    size.width = newSize.width;
-    size.height = newSize.height;
-
-    if (_hasShadow)
-        [_shadowView setNeedsLayout];
 }
 
 - (void)setNeedsLayout
