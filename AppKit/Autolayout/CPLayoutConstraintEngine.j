@@ -146,11 +146,13 @@
     {
         _simplexSolver.suggestValue(variable, values[idx]);
     });
-#if defined (CASSOWARY_ENGINE)
-    _simplexSolver.resolve();
-#elif defined (KIWI_ENGINE)
-    _simplexSolver.updateVariables();
-#endif
+
+//     EngineWarn("===== ENGINE SOLVE =====");
+// #if defined (CASSOWARY_ENGINE)
+//     _simplexSolver.resolve()
+// #elif defined (KIWI_ENGINE)
+//     _simplexSolver.updateVariables();
+// #endif
 }
 
 - (void)stopEditing
@@ -184,6 +186,7 @@
 
 - (void)solve
 {
+    EngineWarn("===== ENGINE SOLVE =====");
 #if defined (CASSOWARY_ENGINE)
     _simplexSolver.solve();
 #elif defined (KIWI_ENGINE)
@@ -193,6 +196,7 @@
 
 - (void)resolve
 {
+    EngineWarn("===== ENGINE SOLVE =====");
 #if defined (CASSOWARY_ENGINE)
     _simplexSolver.resolve();
 #elif defined (KIWI_ENGINE)

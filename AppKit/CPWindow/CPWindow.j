@@ -805,8 +805,12 @@ CPTexturedBackgroundWindowMask
 
         if (!CGSizeEqualToSize(size, newSize))
         {
-            if (_autolayoutEnabled)
-                [self _suggestFrameSize:newSize];
+            if (_autolayoutEnabled && [self _inLiveResize]) {
+                var values = [newSize.width, newSize.height];
+                [[self _layoutEngine] suggestValues:values forVariables:[self _windowViewSizeVariables] withPriority:CPLayoutPriorityDragThatCanResizeWindow];
+                _needsSolving = YES;
+                [self setNeedsLayout];
+            }
             else
             {
                 size.width = newSize.width;
@@ -2085,6 +2089,7 @@ CPTexturedBackgroundWindowMask
 {
     if (_autolayoutEnabled)
     {
+        [[self _layoutEngine] stopEditing];
         [self _updateWindowContentSizeConstraints];
     }
 
@@ -4438,7 +4443,7 @@ Subclasses should not override this method.
 */
 - (BOOL)updateConstraintsIfNeeded
 {
-    //CPLog.debug([self className] + " " + _cmd + " " + _subviewsNeedUpdateConstraints);
+//CPLog.debug([self className] + " " + _cmd + " " + _subviewsNeedUpdateConstraints);
     if (_subviewsNeedUpdateConstraints)
         return [self updateConstraints];
 
@@ -4448,22 +4453,11 @@ Subclasses should not override this method.
 - (BOOL)updateConstraints
 {
 //CPLog.debug([self className] + " " + _cmd);
+    [_CPDisplayServer lock];
     var result = [_windowView updateConstraintsForSubtreeIfNeeded];
     _subviewsNeedUpdateConstraints = NO;
-
+    [_CPDisplayServer unlock];
     return result;
-}
-
-- (void)_suggestFrameSize:(CGSize)newSize
-{
-//CPLog.debug([self className] + " " + _cmd);
-    var engine = [self _layoutEngine],
-        variables = @[[[_windowView widthAnchor] variable], [[_windowView heightAnchor] variable]],
-        values = @[newSize.width, newSize.height];
-
-    [self updateConstraintsIfNeeded];
-    [engine suggestValues:values forVariables:variables withPriority:CPLayoutPriorityDragThatCanResizeWindow];
-    [_windowView _updateGeometry];
 }
 
 - (void)setNeedsLayout
@@ -4487,34 +4481,32 @@ Subclasses should not override this method.
 */
 - (void)layoutIfNeeded
 {
+    //CPLog.debug(_cmd);
+
+    if (_layoutLock)
+        return;
+
+    _layoutLock = YES;
+    //[_CPDisplayServer lock];
+
+    [self updateConstraintsIfNeeded];
+
     if (_needsLayout)
-    {
-        [self layout];
-        _needsLayout = NO;
-    }
+        [self _layout];
+
+    _layoutLock = NO;
 }
 
-{
-    if (!_layoutLock)
-    {
-        //CPLog.debug(_cmd);
-        _layoutLock = YES;
-        [_CPDisplayServer lock];
-
-        var engine = [self _layoutEngine];
-
-        [engine stopEditing];
-        [self _updateWindowContentSizeConstraints];
-
-        [_windowView layoutSubtreeAtWindowLevelIfNeeded];
-
-
-        [_CPDisplayServer unlock];
-        [[CPRunLoop mainRunLoop] performSelectors];
-
-        _layoutLock = NO;
 - (void)_layout
+{
+    if (_needsSolving) {
+        [[self _layoutEngine] solve];
+        _needsSolving = NO;
     }
+
+    _needsLayout = NO;
+}
+
 - (CPArray)_windowViewSizeVariables
 {
     if (_windowViewSizeVariables == nil)
@@ -4577,6 +4569,8 @@ Subclasses should not override this method.
 {
     if (!_subviewsNeedUpdateConstraints)
         _subviewsNeedUpdateConstraints = YES;
+
+    _CPDisplayServerAddConstraintsUpdateObject(self);
 }
 
 - (void)_engageAutolayoutIfNeeded
