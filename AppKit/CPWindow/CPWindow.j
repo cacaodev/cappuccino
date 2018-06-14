@@ -269,6 +269,7 @@ var CPWindowActionMessageKeys = [
     BOOL                                _autolayoutEnabled @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
     // An autoresize or contentSize contraint needs update in one or more subviews of this window.
     BOOL                                _subviewsNeedUpdateConstraints @accessors;
+    BOOL                                _needsSolving @accessors;
     BOOL                                _needsLayout @accessors;
     BOOL                                _layoutLock @accessors;
 }
@@ -425,6 +426,7 @@ CPTexturedBackgroundWindowMask
         _needsLayout = NO;
         _layoutLock = NO;
         _layoutEngine = nil;
+        _needsSolving = NO;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
 

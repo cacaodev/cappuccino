@@ -1019,4 +1019,9 @@ _CPWindowViewResizeSlop = 3;
     [[self window] _updateFrameFromCurrentWindowViewFrame];
 }
 
+- (void)_informContainerThatSubviewsNeedSolvingInEngine
+{
+    [_window _setNeedsSolving:YES];
+}
+
 @end
