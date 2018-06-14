@@ -71,7 +71,7 @@
     var topLeftRightConstraint = [CPLayoutConstraint constraintWithItem:rightView attribute:CPLayoutAttributeTop relatedBy:CPLayoutRelationEqual toItem:leftView attribute:CPLayoutAttributeTop multiplier:1 constant:0];
 
     [CPLayoutConstraint activateConstraints:@[topConstraint, topLeftRightConstraint]];
-    [[contentView window] layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     var leftFrame = [leftView frame];
     var rightFrame = [rightView frame];
@@ -89,7 +89,7 @@
     var baselineLeftRightConstraint = [CPLayoutConstraint constraintWithItem:rightView attribute:CPLayoutAttributeBaseline relatedBy:CPLayoutRelationEqual toItem:leftView attribute:CPLayoutAttributeBaseline multiplier:1 constant:0];
 
     [CPLayoutConstraint activateConstraints:@[bottomConstraint, baselineLeftRightConstraint]];
-    [[contentView window] layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     var leftFrame = [leftView frame];
     var rightFrame = [rightView frame];

@@ -26,7 +26,7 @@
 
 - (void)setUp
 {
-    var theWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 200, 200) styleMask:CPResizableWindowMask];
+    var theWindow = [[ResizingWindow alloc] initWithContentRect:CGRectMake(0, 0, 200, 200) styleMask:CPResizableWindowMask];
     contentView = [theWindow contentView];
     [contentView setTranslatesAutoresizingMaskIntoConstraints:YES];
 
@@ -168,7 +168,9 @@
 
     [[contentView window] orderFront:nil];
     // Force layout because we are in the console.
-    [[contentView window] layout];
+    [[contentView window] setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
+
     var windowEngine = [contentView _layoutEngineIfExists];
     XCTAssertTrue(windowEngine !== nil);
 
@@ -180,7 +182,8 @@
 
     // Resize the window
     [[constraintView window] setFrame:CGRectMake(0, 0, 400, 400)];
-    [[constraintView window] layout];
+    [[constraintView window] setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     // layout again the view
     [constraintView layoutSubtreeIfNeeded];
@@ -220,6 +223,17 @@
 - (void)observeValueForKeyPath:(CPString)keyPath ofObject:(id)object change:(CPDictionary)change                        context:(void)context
 {
     _didReceiveKVONotification = YES;
+}
+
+@end
+
+@implementation ResizingWindow : CPWindow
+{
+}
+
+- (BOOL)_inLiveResize
+{
+    return YES;
 }
 
 @end

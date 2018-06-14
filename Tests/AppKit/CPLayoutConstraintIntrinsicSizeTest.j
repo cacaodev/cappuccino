@@ -90,7 +90,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -99,7 +99,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -125,7 +125,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -134,7 +134,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -160,7 +160,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -169,7 +169,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -196,7 +196,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -205,7 +205,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -216,7 +216,7 @@
 {
     leftPriority = CPLayoutPriorityRequired;
     rightPriority = 502;
-    compressionPriority = 501;
+    compressionPriority = 511;
     huggingPriority = CPLayoutPriorityRequired;
     oldIntrinsicSize = 100;
     newIntrinsicSize = 200;
@@ -231,7 +231,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -240,7 +240,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -266,7 +266,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -275,7 +275,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -301,7 +301,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -310,7 +310,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -336,7 +336,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -345,7 +345,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -370,7 +370,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -379,7 +379,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -405,7 +405,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -414,7 +414,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -440,7 +440,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -449,7 +449,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -475,7 +475,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -484,7 +484,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -510,7 +510,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -519,7 +519,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -546,7 +546,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -555,7 +555,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -582,7 +582,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -591,7 +591,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 100, 2);
@@ -618,7 +618,7 @@
 
     [CPLayoutConstraint activateConstraints:@[left, right]];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
@@ -627,7 +627,7 @@
     [intrinsicView setIntrinsicContentWidth:newIntrinsicSize];
     [intrinsicView invalidateIntrinsicContentSize];
 
-    [theWindow layout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     XCTAssertApprox(CGRectGetMinX([intrinsicView frame]), 100, 2);
     XCTAssertApprox(CGRectGetWidth([intrinsicView frame]), 200, 2);
