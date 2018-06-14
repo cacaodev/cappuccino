@@ -4376,6 +4376,7 @@ Invalidates the view’s intrinsic content size.
         return;
 //CPLog.debug([self debugID] + " " +  _cmd);
     [self setNeedsUpdateConstraints:YES];
+    [[self window] _updateWindowContentSizeConstraints];
     [[self window] setNeedsLayout];
 }
 
@@ -4789,6 +4790,7 @@ Updates the constraints for the receiving view and its subviews.
 */
 - (BOOL)updateConstraintsForSubtreeIfNeeded
 {
+// Recursively update constraints from bottom to top.
 //CPLog.debug([self debugID] + " " +  _cmd);
     var result = _needsUpdateConstraints;
 
@@ -4831,6 +4833,7 @@ Update constraints for the view.
 */
 - (void)updateConstraints
 {
+    CPLog.debug([self debugID] + " " + _cmd);
     var translate = [self translatesAutoresizingMaskIntoConstraints];
 
     if (translate)
@@ -5036,7 +5039,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 - (void)_updateGeometryIfNeeded
 {
-//CPLog.debug([self debugID] + " " + _cmd);
+//CPLog.warn([self debugID] + " " + _cmd);
     if (_geometryDirtyMask !== 0)
     {
         [self _updateGeometry];
