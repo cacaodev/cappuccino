@@ -272,6 +272,7 @@ var CPWindowActionMessageKeys = [
     BOOL                                _needsSolving @accessors;
     BOOL                                _needsLayout @accessors;
     BOOL                                _layoutLock @accessors;
+    CPArray                             _windowViewSizeVariables;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -426,6 +427,7 @@ CPTexturedBackgroundWindowMask
         _needsLayout = NO;
         _layoutLock = NO;
         _layoutEngine = nil;
+        _windowViewSizeVariables = nil;
         _needsSolving = NO;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
@@ -4513,6 +4515,12 @@ Subclasses should not override this method.
         _layoutLock = NO;
 - (void)_layout
     }
+- (CPArray)_windowViewSizeVariables
+{
+    if (_windowViewSizeVariables == nil)
+        _windowViewSizeVariables = @[[[_windowView widthAnchor] variable], [[_windowView heightAnchor] variable]];
+
+    return _windowViewSizeVariables;
 }
 
 - (void)_updateFrameFromCurrentWindowViewFrame
