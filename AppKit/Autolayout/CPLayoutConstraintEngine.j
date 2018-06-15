@@ -405,18 +405,21 @@
 
 - (CPString)description
 {
-    var str = "Engine Constraints:\n";
+    var result = "Engine Constraints:\n";
 
     _constraintToOwnerMap.forEach(function(TypeAndContainer, engine_constraint)
     {
-        str += [TypeAndContainer.Container debugID] + " (" + TypeAndContainer.Type + ") " + engine_constraint.toString() + "\n";
+        result += [TypeAndContainer.Container debugID] + " (" + TypeAndContainer.Type + ") " + engine_constraint.toString() + "\n";
     });
+
+    result += "\nInternalInfo:\n";
 #if defined (CASSOWARY_ENGINE)
-    return (str + "\nInternalInfo:\n" + _simplexSolver.getInternalInfo());
+    result += _simplexSolver.getInternalInfo());
 #elif defined (KIWI_ENGINE)
     // TODO: implement this in kiwi.js
-    return _simplexSolver.toString();
+    result +=  _simplexSolver.toString();
 #endif
+    return result;
 }
 
 @end
