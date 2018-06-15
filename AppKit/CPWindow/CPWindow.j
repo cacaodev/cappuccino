@@ -4561,6 +4561,7 @@ Subclasses should not override this method.
     }];
 
     var newConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:aValue huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:anOrientation];
+    [newConstraint setIdentifier:(anOrientation ? @"window-height" : @"window-width")];
     [_windowView addConstraint:newConstraint];
     [oldConstraints addObject:newConstraint];
 }
