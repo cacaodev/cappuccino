@@ -5048,11 +5048,13 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 - (CGRect)_engineFrame
 {
-#if defined (CASSOWARY_ENGINE)
-    return CGRectMake([self _variableMinX].valueOf(), [self _variableMinY].valueOf(), [self _variableWidth].valueOf(), [self _variableHeight].valueOf());
-#elif defined (KIWI_ENGINE)
-    return CGRectMake([self _variableMinX].value(), [self _variableMinY].value(), [self _variableWidth].value(), [self _variableHeight].value());
-#endif
+    var engine = [self _layoutEngine],
+        minX = [self _variableMinX],
+        minY = [self _variableMinY],
+        width = [self _variableWidth],
+        height = [self _variableHeight];
+
+    return CGRectMake([engine valueOfVariable:minX], [engine valueOfVariable:minY], [engine valueOfVariable:width], [engine valueOfVariable:height]);
 }
 
 - (void)_updateGeometry
