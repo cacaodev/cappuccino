@@ -394,7 +394,7 @@
     return result;
 }
 
-- (CPInteger)valueOfVariable:(Variable)aVariable
+- (float)valueOfVariable:(Variable)aVariable
 {
 #if defined (CASSOWARY_ENGINE)
     return aVariable.valueOf();
