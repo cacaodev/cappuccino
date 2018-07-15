@@ -2480,6 +2480,17 @@ NOT YET IMPLEMENTED
 */
 - (void)tile
 {
+    if ([_window isAutolayoutEnabled])
+        [self invalidateIntrinsicContentSize];
+    else
+        [self setFrameSize:[self _minimumFrameSize]];
+
+    [self setNeedsLayout];
+    [self setNeedsDisplay:YES];
+}
+
+- (CGSize)_minimumFrameSize
+{
     UPDATE_COLUMN_RANGES_IF_NECESSARY();
 
     var width = _tableColumnRanges.length > 0 ? CPMaxRange([_tableColumnRanges lastObject]) : 0.0,
@@ -2505,12 +2516,8 @@ NOT YET IMPLEMENTED
         height = MAX(superviewSize.height, height);
     }
 
-    [self setFrameSize:CGSizeMake(width, height)];
-
-    [self setNeedsLayout];
-    [self setNeedsDisplay:YES];
+    return CGSizeMake(width, height);
 }
-
 
 /*!
     Scrolls the receiver vertically in an enclosing CPClipView so the row specified by rowIndex is visible.
@@ -6100,6 +6107,16 @@ Your delegate can implement this method to avoid subclassing the tableview to ad
 
 @end
 
+@implementation CPTableView (ConstraintBasedLayout)
+
+- (CGSize)intrinsicContentSize
+{
+    var min_size = [self _minimumFrameSize];
+
+    return CGSizeMake(CPViewNoInstrinsicMetric, min_size.height);
+}
+
+@end
 
 var CPTableViewDataSourceKey                = @"CPTableViewDataSourceKey",
     CPTableViewDelegateKey                  = @"CPTableViewDelegateKey",
