@@ -162,16 +162,26 @@
     [_buttonDown setEnabled:shouldEnabled];
 }
 
+- (CGSize)_minimumFrameSize
+{
+    var upSize = [self currentValueForThemeAttribute:@"up-button-size"],
+        downSize = [self currentValueForThemeAttribute:@"down-button-size"];
+
+    return CGSizeMake(upSize.width, upSize.height + downSize.height);
+}
 
 - (void)setFrame:(CGRect)aFrame
 {
-    var upSize = [self currentValueForThemeAttribute:@"up-button-size"],
-        downSize = [self currentValueForThemeAttribute:@"down-button-size"],
-        minSize = CGSizeMake(upSize.width, upSize.height + downSize.height),
-        frame = CGRectMakeCopy(aFrame);
+    var frame = CGRectMakeCopy(aFrame);
 
-    frame.size.width = MAX(minSize.width, frame.size.width);
-    frame.size.height = MAX(minSize.height, frame.size.height);
+    if (![_window isAutolayoutEnabled])
+    {
+        var minSize = [self _minimumFrameSize];
+
+        frame.size.width = MAX(minSize.width, frame.size.width);
+        frame.size.height = MAX(minSize.height, frame.size.height);
+    }
+
     [super setFrame:frame];
 }
 
@@ -198,7 +208,8 @@
 
 - (void)_sizeToFit
 {
-    [self setFrame:CGRectMake([self frameOrigin].x, [self frameOrigin].y, 0, 0)];
+    if (![_window isAutolayoutEnabled])
+        [self setFrame:CGRectMake([self frameOrigin].x, [self frameOrigin].y, 0, 0)];
 }
 
 /*!
@@ -295,11 +306,7 @@
 
 - (CGSize)intrinsicContentSize
 {
-    // TODO: min/max-size needed in themes.
-    var up = [self currentValueForThemeAttribute:@"up-button-size"],
-        down = [self currentValueForThemeAttribute:@"down-button-size"];
-
-    return CGSizeMake(up.width, up.height + down.height + 1);
+    return [self _minimumFrameSize];
 }
 
 @end
