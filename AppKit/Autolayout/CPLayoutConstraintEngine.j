@@ -60,8 +60,8 @@
     if (self !== [CPLayoutConstraintEngine class])
         return;
 
-#if !PLATFORM(DOM)
-    kiwi = module.exports;
+#if defined (KIWI_ENGINE) && !PLATFORM(DOM)
+    kiwi = exports;
 #endif
 
 #if defined (CASSOWARY_ENGINE)
@@ -106,12 +106,6 @@
     };
 #elif defined (KIWI_ENGINE)
     _simplexSolver = new kiwi.Solver();
-    var f = function(variable)
-    {
-        var context = variable.context();
-        [context.delegate engine:self didChangeAnchor:context.anchor];
-    };
-    _simplexSolver.setOnSolved(f);
 #endif
     return self;
 }
@@ -368,14 +362,31 @@
     if (result == nil)
     {
 #if defined (CASSOWARY_ENGINE)
-            result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
+        result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
 #elif defined (KIWI_ENGINE)
-            var type = [anOwner _anchorType],
-                delegate = [anOwner delegate] || [anOwner _referenceItem];
+        var type = [anOwner _anchorType],
+            delegate = [anOwner delegate] || [anOwner _referenceItem];
 
-            result = new kiwi.Variable(aName);
-            result.setValue(aValue);
-            result.setContext({prefix:aPrefix, delegate:delegate, anchor:anOwner, type:type});
+//#if !PLATFORM(DOM)
+        result = new kiwi.Variable(aName);
+        result.setOnSolved(function(aContext) {
+            [delegate engine:self didChangeAnchor:anOwner];
+        });
+// #else
+//         var v = new kiwi.Variable(aName);
+//         result = new Proxy(v, {
+//             set: function(obj, prop, value) {
+//                 if (obj[prop] !== value) {
+//                     obj[prop] = value;
+//                     [delegate engine:self didChangeAnchor:anOwner];
+//                 }
+//
+//                 return true;
+//             }
+//         });
+// #endif
+        result.setValue(aValue);
+        result.setContext({prefix:aPrefix, type:type});
 #endif
         _variableToOwnerMap.set(result, anOwner);
     }
