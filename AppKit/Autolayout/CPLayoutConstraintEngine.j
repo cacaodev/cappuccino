@@ -369,7 +369,7 @@
 
 //#if !PLATFORM(DOM)
         result = new kiwi.Variable(aName);
-        result.setOnSolved(function(aContext) {
+        result.setOnSolved(function(aVariable) {
             [delegate engine:self didChangeAnchor:anOwner];
         });
 // #else
@@ -386,7 +386,7 @@
 //         });
 // #endif
         result.setValue(aValue);
-        result.setContext({prefix:aPrefix, type:type});
+        result.setContext(aPrefix);
 #endif
         _variableToOwnerMap.set(result, anOwner);
     }
@@ -465,7 +465,7 @@ var contextOfVariable = function(variable)
 #if defined (CASSOWARY_ENGINE)
     return variable._prefix;
 #elif defined (KIWI_ENGINE)
-    return variable.context().prefix;
+    return variable.context();
 #endif
 };
 
