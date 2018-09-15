@@ -4489,11 +4489,12 @@ Subclasses should not override this method.
 {
     if (_needsLayout)
     {
-        [self layout];
+        [self _layout];
         _needsLayout = NO;
     }
 }
 
+- (void)_layout
 {
     if (!_layoutLock)
     {
@@ -4513,8 +4514,9 @@ Subclasses should not override this method.
         [[CPRunLoop mainRunLoop] performSelectors];
 
         _layoutLock = NO;
-- (void)_layout
     }
+}
+
 - (CPArray)_windowViewSizeVariables
 {
     if (_windowViewSizeVariables == nil)

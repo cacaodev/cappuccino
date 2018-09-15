@@ -491,7 +491,7 @@ CPLogRegister(CPLogConsole);
     if ([anEvent modifierFlags] & CPShiftKeyMask)
         CPLog.debug([[self _layoutEngine] description]);
     else if ([anEvent modifierFlags] & CPAlternateKeyMask)
-        [[self window] layout];
+        [[self window] setNeedsLayout];
     else
     {
         var extend = [anEvent modifierFlags] & CPCommandKeyMask;
