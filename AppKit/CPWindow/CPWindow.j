@@ -269,8 +269,10 @@ var CPWindowActionMessageKeys = [
     BOOL                                _autolayoutEnabled @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
     // An autoresize or contentSize contraint needs update in one or more subviews of this window.
     BOOL                                _subviewsNeedUpdateConstraints @accessors;
+    BOOL                                _needsSolving @accessors;
     BOOL                                _needsLayout @accessors;
     BOOL                                _layoutLock @accessors;
+    CPArray                             _windowViewSizeVariables;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -425,6 +427,8 @@ CPTexturedBackgroundWindowMask
         _needsLayout = NO;
         _layoutLock = NO;
         _layoutEngine = nil;
+        _windowViewSizeVariables = nil;
+        _needsSolving = NO;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
 
@@ -891,6 +895,17 @@ CPTexturedBackgroundWindowMask
     }
 
     return frame;
+}
+
+- (void)_sizeToFitWindowViewSize:(CGSize)newSize
+{
+    var size = _frame.size;
+
+    size.width = newSize.width;
+    size.height = newSize.height;
+
+    if (_hasShadow)
+        [_shadowView setNeedsLayout];
 }
 
 /*
@@ -4451,17 +4466,6 @@ Subclasses should not override this method.
     [_windowView _updateGeometry];
 }
 
-- (void)_sizeToFitWindowViewSize:(CGSize)newSize
-{
-    var size = _frame.size;
-
-    size.width = newSize.width;
-    size.height = newSize.height;
-
-    if (_hasShadow)
-        [_shadowView setNeedsLayout];
-}
-
 - (void)setNeedsLayout
 {
     if (_needsLayout || !_autolayoutEnabled)
@@ -4490,7 +4494,6 @@ Subclasses should not override this method.
     }
 }
 
-- (void)layout
 {
     if (!_layoutLock)
     {
@@ -4505,14 +4508,19 @@ Subclasses should not override this method.
 
         [_windowView layoutSubtreeAtWindowLevelIfNeeded];
 
-        [_windowView _updateGeometry];
-        [self _updateFrameFromCurrentWindowViewFrame];
 
         [_CPDisplayServer unlock];
         [[CPRunLoop mainRunLoop] performSelectors];
 
         _layoutLock = NO;
+- (void)_layout
     }
+- (CPArray)_windowViewSizeVariables
+{
+    if (_windowViewSizeVariables == nil)
+        _windowViewSizeVariables = @[[[_windowView widthAnchor] variable], [[_windowView heightAnchor] variable]];
+
+    return _windowViewSizeVariables;
 }
 
 - (void)_updateFrameFromCurrentWindowViewFrame
