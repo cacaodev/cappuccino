@@ -29,7 +29,7 @@
     var autoSizeWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 600, 600) styleMask:CPResizableWindowMask],
         autosizeContentView = [autoSizeWindow contentView];
 
-    var constraintsWindow = [[CPWindow alloc] initWithContentRect:CGRectMake(0, 0, 600, 600) styleMask:CPResizableWindowMask],
+    var constraintsWindow = [[AutolayoutWindow alloc] initWithContentRect:CGRectMake(0, 0, 600, 600) styleMask:CPResizableWindowMask],
         constraintContentView = [constraintsWindow contentView];
 
     [constraintContentView setTranslatesAutoresizingMaskIntoConstraints:YES];
@@ -68,7 +68,8 @@
     XCTAssertFalse([autoSizeWindow isAutolayoutEnabled]);
     XCTAssertTrue([constraintsWindow isAutolayoutEnabled]);
 
-    [constraintsWindow layout];
+    [constraintsWindow setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
 
     var start = new Date();
 
@@ -151,6 +152,17 @@
 
         [self _recursivelyAddNumViews:num toSuperview:subview maxDepth:(maxDepth-1) withBlock:aBlock buffer:buffer];
     }
+}
+
+@end
+
+@implementation AutolayoutWindow : CPWindow
+{
+}
+
+- (BOOL)_inLiveResize
+{
+    return YES;
 }
 
 @end

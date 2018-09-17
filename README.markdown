@@ -10,24 +10,15 @@
 
 *TODO:*
 
-- [x] Call CPWindow -layout at appropriate time in the FMW.
-- [x] -layout should be `-layoutIfNeeded` : figure out what "ifNeeded" means: constraints update, frames out of sync.
 - [ ] Rounding errors (multiplier) and integralization.
 - [ ] Implement `-baselineOffsetFromBottom` in all controls.
 - [ ] Implement `-alignmentRectInsets` in controls where relevant. Use theme attribute. Note: what about nib2cib conversion ? when we adjust frames in nib2cib we will need to also adjust constraints constants.
 - [ ] call `-invalidateIntrinsicContentSize` in controls when appropriate (the content changes). Currently done in CPButton & subclasses.
-- [-] Decide how autosize and autolayout can live together. We should explcitely declare CPView subclasses that refuse to be involved in Autolayout and continue to use Autosize or custom layoutSubviews. This should be done in the FMW and we should make sure that all CPView classes created in the FMW are subclasses, not plain CPView.
-CPView +(BOOL)requiresAutoSize
 - [x] -CPView -layout and layoutSubtree : do we update constraints and frames for the descendants only or all constraints affecting the receiver ?
-- [x] translateAutoresizingMask default is NO currently. Should be YES for initWithFrame: views.
-- [ ] Handle removeSubview: , when a view moves from a window to another (different engines) and in general situations where the engine frames and the local frame are out of sync.
 - [ ] compute -fittingSize in controls. The computation should take care of constraints and CPLayoutPriorityFittingSize
-- [x] ojtest comparing autosize and autolayout.
 - [ ] In capp, the contentView size is 2px < than the windowView, in cocoa/IB they are ==. Is this a problem ?
 - [ ] Rewrite CPSplitView with constraints ! CPSplitview drag = user input with a given priority.
-- [x] Write a Quadrilatere demo in capp. currently i don't think it can be done with the cocoa API where a constraint can link no more than 2 items. Maybe by abstracting constraint items with a protocol ?
 - [ ] Handle ambiguous layout and solver failures. The Apple way is to lower the priority on a constraint and try to resolve.
-- [x] CPLayoutPriorityRequired should be a c.Strength.required. Currently medium with weight 1000. required causes problems when they are stay constraints and edit constraints and you try to remove them.
 - [ ] Visual debug support
 - [ ] Parser API. Visual language with PEGJS grammar like Angular.js ?
 - [ ] Currently, when you resize a window from the left or top edge and the window size is constrained by subviews constraints, the window frameOrigin changes. It should not (add a stay constraint on WindowView x and y ?).

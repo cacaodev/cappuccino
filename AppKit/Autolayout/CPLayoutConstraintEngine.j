@@ -1,6 +1,24 @@
-#if ! defined (CASSOWARY_ENGINE) && ! defined (KIWI_ENGINE)
-#define CASSOWARY_ENGINE
-#endif
+/*
+ * CPLayoutConstraintEngine.j
+ * AppKit
+ *
+ * Created by cacaodev on April 26, 2018.
+ * Copyright 2018, cacaodev. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 
 @import <Foundation/CPObject.j>
 @import <Foundation/CPRunLoop.j>
@@ -8,16 +26,13 @@
 @import <Foundation/CPIndexSet.j>
 
 @import "CPLayoutConstraint.j"
-#if defined (CASSOWARY_ENGINE)
-@import "c.js"
-#elif defined (KIWI_ENGINE)
-@import "kiwi.js"
-#endif
 
 #if defined (CASSOWARY_ENGINE)
+@import "cassowary.js"
 @typedef SimplexSolver
 @global c
 #elif defined (KIWI_ENGINE)
+@import "kiwi.js"
 @typedef Solver
 @global kiwi
 #endif
@@ -26,8 +41,6 @@
 @global engine_expressionFromConstant
 @global engine_plus
 @global engine_multiply
-
-var SOLVER_DEFAULT_EDIT_STRENGTH;
 
 @implementation CPLayoutConstraintEngine : CPObject
 {
@@ -47,13 +60,14 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     if (self !== [CPLayoutConstraintEngine class])
         return;
 
-#if defined (CASSOWARY_ENGINE)
-    SOLVER_DEFAULT_EDIT_STRENGTH = c.Strength.strong;
-#elif defined (KIWI_ENGINE)
-#if !PLATFORM(DOM)
-    kiwi = module.exports;
+#if defined (KIWI_ENGINE) && !PLATFORM(DOM)
+    kiwi = exports;
 #endif
-    SOLVER_DEFAULT_EDIT_STRENGTH = kiwi.Strength.strong;
+
+#if defined (CASSOWARY_ENGINE)
+    EngineInfo("Using Cassowary engine.");
+#elif defined (KIWI_ENGINE)
+    EngineInfo("Using Kiwi engine.");
 #endif
 }
 
@@ -84,18 +98,14 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
         changes.forEach(function(change)
         {
             var variable = change.variable,
-                owner = _variableToOwnerMap.get(variable);
+                owner = _variableToOwnerMap.get(variable),
+                delegate = [owner delegate] || [owner _referenceItem];
 
-            [owner valueOfVariable:variable didChangeInEngine:self];
+            [delegate engine:self didChangeAnchor:owner];
         });
     };
 #elif defined (KIWI_ENGINE)
     _simplexSolver = new kiwi.Solver();
-    _simplexSolver.onsolved = function(variable)
-    {
-        var container = _variableToOwnerMap.get(variable);
-        [container valueOfVariable:variable didChangeInEngine:self];
-    };
 #endif
     return self;
 }
@@ -105,16 +115,21 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
     _simplexSolver.onsolved = function(){};
 }
 
-- (void)suggestValues:(CPArray)values forVariables:(CPArray)variables withPriority:(CPLayoutPriority)priority
+- (void)suggestValues:(CPArray)values forVariables:(CPArray)variables withPriority:(CPLayoutPriority)aPriority
 {
     if (_editingVariables == nil)
     {
         variables.forEach(function(variable)
         {
+// It seems that Cassowary and Kiwi are not behaving the same when it comes to add editVars + suggest values.
+// Cassowary needs the strength of the edit var to be higher than anything (or at leat higher than the constraints
+// that already hold the variable edited) but not required.
+// Kiwi does not have this requirement, you can add an edit variable with a given strength and then solve the whole system.
+// For example, in Autolayout when the user resizes the window by dragging the corner, the priority is 510.
 #if defined (CASSOWARY_ENGINE)
-           _simplexSolver.addEditVar(variable, SOLVER_DEFAULT_EDIT_STRENGTH, 1);
+           _simplexSolver.addEditVar(variable, c.Strength.strong, 1);
 #elif defined (KIWI_ENGINE)
-           _simplexSolver.addEditVariable(variable, SOLVER_DEFAULT_EDIT_STRENGTH);
+           _simplexSolver.addEditVariable(variable, StrengthForPriority(aPriority));
 #endif
         });
 
@@ -221,10 +236,14 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
     var onerror = function(error, constraint)
     {
-        CPLog.warn("Unable to simultaneously satisfy constraints.\nThe following constraint conflicts with an existing constraint.\n" + [aConstraint description] + "\nYou can fix the problem by changing the current required priority to a lower priority.");
-#if (DEBUG)
-        EngineWarn(containerId + ": could not add " + type + " " + constraint.toString() + " with error " + error);
+#if defined (CASSOWARY_ENGINE)
+        if (error._name == "c.RequiredFailure")
+#elif defined (KIWI_ENGINE)
+        if (error.message == "unsatisfiable constraint")
 #endif
+            CPLog.warn("Unable to simultaneously satisfy constraints.\nThe following constraint conflicts with an existing constraint.\n" + [aConstraint description] + "\nYou can fix the problem by changing the current required priority to a lower priority.");
+        else
+            EngineWarn(containerId + ": could not add " + type + " " + constraint.toString() + " with error " + error);
     };
 
     var engine_constraints = [aConstraint _engineConstraints];
@@ -251,7 +270,7 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
     var onsuccess = function(constraint)
     {
-        _constraintToOwnerMap.delete(constraint);
+        _constraintToOwnerMap["delete"](constraint);
 #if (DEBUG)
         EngineLog("Removed " + type + " in " + containerId + " : " + constraint.toString());
 #endif
@@ -323,8 +342,8 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
 - (Variable)variableWithPrefix:(CPString)aPrefix name:(CPString)aName value:(float)aValue owner:(id)anOwner
 {
-    if ([anOwner _anchorType] !== 0)
-        [CPException raise:CPInvalidArgumentException format:@"The variable owner %@ is not a simple (with one variable) anchor. This should never happen", anOwner];
+    if ([anOwner _anchorType] == 8)
+        [CPException raise:CPInvalidArgumentException format:@"The variable owner %@ is not a simple anchor with one variable. This should never happen", anOwner];
 
     //CPLog.debug(_cmd + " prefix:" + aPrefix + " name:" + aName + " owner:" + [aSimpleAnchor description]);
     var result = nil;
@@ -342,14 +361,40 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
     if (result == nil)
     {
-        result = newVariable(aPrefix, aName, aValue);
+#if defined (CASSOWARY_ENGINE)
+        result = new c.Variable({prefix:aPrefix, name:aName, value:aValue});
+#elif defined (KIWI_ENGINE)
+        var type = [anOwner _anchorType],
+            delegate = [anOwner delegate] || [anOwner _referenceItem];
+
+//#if !PLATFORM(DOM)
+        result = new kiwi.Variable(aName);
+        result.setOnSolved(function(aVariable) {
+            [delegate engine:self didChangeAnchor:anOwner];
+        });
+// #else
+//         var v = new kiwi.Variable(aName);
+//         result = new Proxy(v, {
+//             set: function(obj, prop, value) {
+//                 if (obj[prop] !== value) {
+//                     obj[prop] = value;
+//                     [delegate engine:self didChangeAnchor:anOwner];
+//                 }
+//
+//                 return true;
+//             }
+//         });
+// #endif
+        result.setValue(aValue);
+        result.setContext(aPrefix);
+#endif
         _variableToOwnerMap.set(result, anOwner);
     }
 
     return result;
 }
 
-- (CPInteger)valueOfVariable:(Variable)aVariable
+- (float)valueOfVariable:(Variable)aVariable
 {
 #if defined (CASSOWARY_ENGINE)
     return aVariable.valueOf();
@@ -360,14 +405,21 @@ var SOLVER_DEFAULT_EDIT_STRENGTH;
 
 - (CPString)description
 {
-    var str = "Engine Constraints:\n";
+    var result = "Engine Constraints:\n";
 
     _constraintToOwnerMap.forEach(function(TypeAndContainer, engine_constraint)
     {
-        str += [TypeAndContainer.Container debugID] + " (" + TypeAndContainer.Type + ") " + engine_constraint.toString() + "\n";
+        result += [TypeAndContainer.Container debugID] + " (" + TypeAndContainer.Type + ") " + engine_constraint.toString() + "\n";
     });
 
-    return (str + "\nInternalInfo:\n" + _simplexSolver.getInternalInfo());
+    result += "\nInternalInfo:\n";
+#if defined (CASSOWARY_ENGINE)
+    result += _simplexSolver.getInternalInfo());
+#elif defined (KIWI_ENGINE)
+    // TODO: implement this in kiwi.js
+    result +=  _simplexSolver.toString();
+#endif
+    return result;
 }
 
 @end
@@ -446,19 +498,46 @@ var constantForExpression = function(exp)
 
 var StrengthForPriority = function(p)
 {
+    if (p >= 1000)
 #if defined (CASSOWARY_ENGINE)
-    if (p >= 1000)
-        return {strength:c.Strength.required, weight:1};
-
-    return {strength:c.Strength.medium, weight:p};
+        return c.Strength.required;
 #elif defined (KIWI_ENGINE)
-    if (p >= 1000)
-        return {strength:kiwi.Strength.required, weight:0};
+        return kiwi.Strength.required;
+#endif
 
-    return {strength:kiwi.Strength.create(0.0, 1.0, 0.0, p), weight:0};
+#if defined (CASSOWARY_ENGINE)
+    else
+        return c.Strength.medium;
+#elif defined (KIWI_ENGINE)
+    // FIXME: ideally,  stengths/weights should be treated with lexographic ordering.
+    // See https://github.com/nucleic/kiwi/issues/33
+    else if (p < 250)
+    {
+        return kiwi.Strength.create(0, 0, 0, 0, 0, 1, p);
+    }
+    else if (p < 490)
+    {
+        return kiwi.Strength.create(0, 0, 0, 0, 1, 0, p - 249);
+    }
+    else if (p < 500)
+    {
+        return kiwi.Strength.create(0, 0, 0, 1, 0, 0, p - 489);
+    }
+    else if (p < 510)
+    {
+        return kiwi.Strength.create(0, 0, 1, 0, 0, 0, p - 499);
+    }
+    else if (p < 750)
+    {
+        return kiwi.Strength.create(0, 1, 0, 0, 0, 0, p - 509);
+    }
+    else if (p < 1000)
+    {
+        return kiwi.Strength.create(1, 0, 0, 0, 0, 0, p - 749);
+    }
 #endif
 };
-
+/*
 var newVariable = function(aPrefix, aName, aValue)
 {
 #if defined (CASSOWARY_ENGINE)
@@ -469,8 +548,8 @@ var newVariable = function(aPrefix, aName, aValue)
     result.setContext(aPrefix);
     return result;
 #endif
-}
-
+};
+*/
 var CreateConstraint = function(aConstraint)
 {
 // EngineLog("firstItem " + args.firstItem.uuid + " secondItem " + args.secondItem.uuid + " containerUUID " + args.containerUUID + " flags " + args.flags);
@@ -481,7 +560,7 @@ var CreateConstraint = function(aConstraint)
         multiplier        = [aConstraint multiplier],
         constant          = [aConstraint _frameBasedConstant],
         priority          = [aConstraint priority],
-        sw                = StrengthForPriority(priority),
+        strength          = StrengthForPriority(priority),
         constraint,
         rhs_term;
 
@@ -508,22 +587,22 @@ var CreateConstraint = function(aConstraint)
     if (lhs_term == nil || rhs_term == nil)
         [CPException raise:CPInvalidArgumentException format:"The lhs %@ or rhs %@ of an Equation cannot be nil", lhs_term, rhs_term];
 
-    var constraint = newConstraint(lhs_term, relation, rhs_term, sw);
+    var constraint = newConstraint(lhs_term, relation, rhs_term, strength, priority);
 
     return [constraint];
 };
 
-var newConstraint = function(lhs_term, relation, rhs_term, sw)
+var newConstraint = function(lhs_term, relation, rhs_term, strength, priority)
 {
     var constraint;
 #if defined (CASSOWARY_ENGINE)
     switch(relation)
     {
-        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(lhs_term, c.LEQ, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationLessThanOrEqual    : constraint = new c.Inequality(lhs_term, c.LEQ, rhs_term, strength, priority);
             break;
-        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(lhs_term, c.GEQ, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationGreaterThanOrEqual : constraint = new c.Inequality(lhs_term, c.GEQ, rhs_term, strength, priority);
             break;
-        case CPLayoutRelationEqual              : constraint = new c.Equation(lhs_term, rhs_term, sw.strength, sw.weight);
+        case CPLayoutRelationEqual              : constraint = new c.Equation(lhs_term, rhs_term, strength, priority);
             break;
     }
 #elif defined (KIWI_ENGINE)
@@ -538,7 +617,7 @@ var newConstraint = function(lhs_term, relation, rhs_term, sw)
             break;
     }
 
-    constraint = new kiwi.Constraint(lhs_term, operator, rhs_term, sw.strength);
+    constraint = new kiwi.Constraint(lhs_term, operator, rhs_term, strength);
 #endif
 
     return constraint;
@@ -568,11 +647,11 @@ var CreateInequality = function(variable, operator, constant, priority)
 {
     var variableExp = engine_expressionFromVariable(variable),
         constantExp = engine_expressionFromConstant(constant),
-                 sw = StrengthForPriority(priority);
+           strength = StrengthForPriority(priority);
 #if defined (CASSOWARY_ENGINE)
-    return new c.Inequality(variableExp, operator, constantExp, sw.strength, sw.weight);
+    return new c.Inequality(variableExp, operator, constantExp, strength, priority);
 #elif defined (KIWI_ENGINE)
-    return new kiwi.Constraint(variableExp, operator, constantExp, sw.strength);
+    return new kiwi.Constraint(variableExp, operator, constantExp, strength);
 #endif
 };
 

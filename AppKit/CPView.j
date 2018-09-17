@@ -19,10 +19,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
- #if ! defined (CASSOWARY_ENGINE) && ! defined (KIWI_ENGINE)
- #define CASSOWARY_ENGINE
- #endif
-
 @import <Foundation/CPArray.j>
 @import <Foundation/CPObjJRuntime.j>
 @import <Foundation/CPSet.j>
@@ -974,7 +970,7 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     [[self window] _dirtyKeyViewLoop];
 
-    if (_window && _needsUpdateConstraints)
+    if (_window && [_window isAutolayoutEnabled] && _needsUpdateConstraints)
     {
         [_window _setSubviewsNeedUpdateConstraints];
     }
@@ -5025,9 +5021,9 @@ Updates the layout of the receiving view and its subviews based on the current v
         return [self updateConstraintsForSubtreeIfNeeded];
 }
 
-- (void)_engineDidChangeVariableOfType:(int)axisOrDimension
+- (void)engine:(CPLayoutConstraintEngine)anEngine didChangeAnchor:(CPLayoutAnchor)anAnchor
 {
-    _geometryDirtyMask |= axisOrDimension;
+    _geometryDirtyMask |= [anAnchor _anchorType];
 //CPLog.debug([self debugID] + " " + _cmd + " mask="+_geometryDirtyMask);
     [_superview setNeedsLayout];
 }
@@ -5082,27 +5078,38 @@ Updates the layout of the receiving view and its subviews based on the current v
     return _variableHeight;
 }
 
+- (CGRect)_engineFrame
+{
+    var engine = [self _layoutEngine],
+        minX = [self _variableMinX],
+        minY = [self _variableMinY],
+        width = [self _variableWidth],
+        height = [self _variableHeight];
+
+    return CGRectMake([engine valueOfVariable:minX], [engine valueOfVariable:minY], [engine valueOfVariable:width], [engine valueOfVariable:height]);
+}
+
 - (void)_updateGeometry
 {
     _isSettingFrameFromEngine = YES;
-//CPLog.debug([self debugID] + " " + _cmd + " " + [[self leftAnchor] valueInEngine:nil] + " " + [[self topAnchor] valueInEngine:nil]);
-    if (_geometryDirtyMask & 2)
-{
+//CPLog.debug([self debugID] + " " + _cmd + " " + CPStringFromRect([self _engineFrame]));
+    if (_geometryDirtyMask & 2) // CPLayoutAnchorTypeAxis
+    {
 #if defined (CASSOWARY_ENGINE)
         [self setFrameOrigin:CGPointMake([self _variableMinX].valueOf(), [self _variableMinY].valueOf())];
 #elif defined (KIWI_ENGINE)
         [self setFrameOrigin:CGPointMake([self _variableMinX].value(), [self _variableMinY].value())];
 #endif
-}
+    }
 
-    if (_geometryDirtyMask & 4)
-{
+    if (_geometryDirtyMask & 4) // CPLayoutAnchorTypeDimension
+    {
 #if defined (CASSOWARY_ENGINE)
         [self setFrameSize:CGSizeMake([self _variableWidth].valueOf(), [self _variableHeight].valueOf())];
 #elif defined (KIWI_ENGINE)
         [self setFrameSize:CGSizeMake([self _variableWidth].value(), [self _variableHeight].value())];
 #endif
-}
+    }
     _isSettingFrameFromEngine = NO;
 }
 

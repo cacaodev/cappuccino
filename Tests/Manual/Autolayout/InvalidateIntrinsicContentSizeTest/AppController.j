@@ -66,6 +66,7 @@ CPLogRegister(CPLogConsole);
 - (void)awakeFromCib
 {
     //CPTrace("CPWindow", "setFrameSize:");
+    [compressionWindow setNeedsLayout];
 }
 
 - (IBAction)changeButtonTitle:(id)sender

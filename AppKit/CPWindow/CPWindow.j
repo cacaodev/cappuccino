@@ -270,8 +270,10 @@ var CPWindowActionMessageKeys = [
     BOOL                                _autolayoutEnabled @accessors(getter=isAutolayoutEnabled, setter=setAutolayoutEnabled:);
     // An autoresize or contentSize contraint needs update in one or more subviews of this window.
     BOOL                                _subviewsNeedUpdateConstraints @accessors;
+    BOOL                                _needsSolving @accessors;
     BOOL                                _needsLayout @accessors;
     BOOL                                _layoutLock @accessors;
+    CPArray                             _windowViewSizeVariables;
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -427,6 +429,8 @@ CPTexturedBackgroundWindowMask
         _needsLayout = NO;
         _layoutLock = NO;
         _layoutEngine = nil;
+        _windowViewSizeVariables = nil;
+        _needsSolving = NO;
 
         [self setShowsResizeIndicator:_styleMask & CPResizableWindowMask];
 
@@ -810,13 +814,13 @@ CPTexturedBackgroundWindowMask
                 size.width = newSize.width;
                 size.height = newSize.height;
 
-            if (!_isAnimating)
-                size = [self _sendDelegateWindowWillResizeToSize:size];
+                if (!_isAnimating)
+                    size = [self _sendDelegateWindowWillResizeToSize:size];
 
-            [_windowView setFrameSize:size];
+                [_windowView setFrameSize:size];
 
-            if (_hasShadow)
-                [_shadowView setNeedsLayout];
+                if (_hasShadow)
+                    [_shadowView setNeedsLayout];
             }
 
             if (!_isAnimating)
@@ -893,6 +897,17 @@ CPTexturedBackgroundWindowMask
     }
 
     return frame;
+}
+
+- (void)_sizeToFitWindowViewSize:(CGSize)newSize
+{
+    var size = _frame.size;
+
+    size.width = newSize.width;
+    size.height = newSize.height;
+
+    if (_hasShadow)
+        [_shadowView setNeedsLayout];
 }
 
 /*
@@ -984,7 +999,7 @@ CPTexturedBackgroundWindowMask
 {
     [self orderWindow:CPWindowAbove relativeTo:0];
 #if !PLATFORM(DOM)
-    // In DOM, this happens in -makeKeyWindow.
+    // In DOM, this happens in CPPlatformWindow - (void)order:window:relativeTo:
     [self _engageAutolayoutIfNeeded];
 #endif
 }
@@ -2070,6 +2085,11 @@ CPTexturedBackgroundWindowMask
 
 - (void)_endLiveResize
 {
+    if (_autolayoutEnabled)
+    {
+        [self _updateWindowContentSizeConstraints];
+    }
+
     [[CPNotificationCenter defaultCenter]
         postNotificationName:CPWindowDidEndLiveResizeNotification
                       object:self];
@@ -4474,17 +4494,6 @@ Subclasses should not override this method.
     [_windowView _updateGeometry];
 }
 
-- (void)_sizeToFitWindowViewSize:(CGSize)newSize
-{
-    var size = _frame.size;
-
-    size.width = newSize.width;
-    size.height = newSize.height;
-
-    if (_hasShadow)
-        [_shadowView setNeedsLayout];
-}
-
 - (void)setNeedsLayout
 {
     if (_needsLayout || !_autolayoutEnabled)
@@ -4508,12 +4517,12 @@ Subclasses should not override this method.
 {
     if (_needsLayout)
     {
-        [self layout];
+        [self _layout];
         _needsLayout = NO;
     }
 }
 
-- (void)layout
+- (void)_layout
 {
     if (!_layoutLock)
     {
@@ -4528,14 +4537,20 @@ Subclasses should not override this method.
 
         [_windowView layoutSubtreeAtWindowLevelIfNeeded];
 
-        [_windowView _updateGeometry];
-        [self _updateFrameFromCurrentWindowViewFrame];
 
         [_CPDisplayServer unlock];
         [[CPRunLoop mainRunLoop] performSelectors];
 
         _layoutLock = NO;
     }
+}
+
+- (CPArray)_windowViewSizeVariables
+{
+    if (_windowViewSizeVariables == nil)
+        _windowViewSizeVariables = @[[[_windowView widthAnchor] variable], [[_windowView heightAnchor] variable]];
+
+    return _windowViewSizeVariables;
 }
 
 - (void)_updateFrameFromCurrentWindowViewFrame
@@ -4555,19 +4570,38 @@ Subclasses should not override this method.
 
     if (!CGSizeEqualToSize(newSize, oldSize))
     {
-        var constraintWidth = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.width huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:0],
-            constraintHeight = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:newSize.height huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:1];
+        var oldConstraints = [_windowView _contentSizeConstraints];
 
-        var oldConstraints = [_windowView _contentSizeConstraints],
-            newConstraints = @[constraintWidth, constraintHeight];
+        if (newSize.width !== oldSize.width)
+        {
+            [self _updateConstraintWithOrientation:CPLayoutConstraintOrientationHorizontal toValue:newSize.width inConstraints:oldConstraints];
+        }
 
-        if (oldConstraints)
-            [_windowView removeConstraints:oldConstraints];
-
-        [_windowView addConstraints:newConstraints];
+        if (newSize.height !== oldSize.height)
+        {
+            [self _updateConstraintWithOrientation:CPLayoutConstraintOrientationVertical toValue:newSize.height inConstraints:oldConstraints];
+        }
 
         [_windowView setStoredIntrinsicContentSize:CGSizeMakeCopy(newSize)];
     }
+}
+
+- (void)_updateConstraintWithOrientation:(CPLayoutConstraintOrientation)anOrientation toValue:(float)aValue inConstraints:(CPArray)oldConstraints
+{
+    [oldConstraints enumerateObjectsUsingBlock:function(oldConstraint, idx, stop)
+    {
+        if ([oldConstraint orientation] == anOrientation)
+        {
+            [_windowView removeConstraint:oldConstraint];
+            [oldConstraints removeObject:oldConstraint];
+            stop(YES);
+        }
+    }];
+
+    var newConstraint = [[CPContentSizeLayoutConstraint alloc] initWithLayoutItem:_windowView value:aValue huggingPriority:CPLayoutPriorityWindowSizeStayPut compressionResistancePriority:CPLayoutPriorityWindowSizeStayPut orientation:anOrientation];
+    [newConstraint setIdentifier:(anOrientation ? @"window-height" : @"window-width")];
+    [_windowView addConstraint:newConstraint];
+    [oldConstraints addObject:newConstraint];
 }
 
 - (void)_setSubviewsNeedUpdateConstraints

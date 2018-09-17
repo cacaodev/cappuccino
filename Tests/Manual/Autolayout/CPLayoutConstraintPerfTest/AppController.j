@@ -5,9 +5,9 @@
  * Created by You on January 23, 2013.
  * Copyright 2013, Your Company All rights reserved.
  */
-@import <AppKit/CPView.j>
-@import <Foundation/CPObject.j>
-@import "../../CPTrace.j"
+@import <AppKit/AppKit.j>
+@import <Foundation/Foundation.j>
+@import "CPTrace.j"
 
 CPLogRegister(CPLogConsole);
 

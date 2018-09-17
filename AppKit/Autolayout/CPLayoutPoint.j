@@ -1,38 +1,32 @@
+/*
+ * CPLayoutPoint.j
+ * AppKit
+ *
+ * Created by cacaodev on April 26, 2018.
+ * Copyright 2018, cacaodev. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 @import <Foundation/CPObject.j>
+@import "CPView.j"
 
 @implementation CPLayoutPoint : CPObject
 {
     CPLayoutAnchor _xAxisAnchor @accessors(getter=xAxisAnchor);
     CPLayoutAnchor _yAxisAnchor @accessors(getter=yAxisAnchor);
-}
-
-- (CPArray)constraintsEqualToLayoutPoint:(id)arg1
-{
-  var xConstraint = [_xAxisAnchor constraintEqualToAnchor:[arg1 xAxisAnchor]];
-  var yConstraint = [_yAxisAnchor constraintEqualToAnchor:[arg1 yAxisAnchor]];
-
-  return @[xConstraint, yConstraint];
-}
-
-- (BOOL)isEqual:(id)arg1
-{
-  if (arg1 === self)
-    return YES;
-
-    return [arg1 isKindOfClass:[CPLayoutPoint class]] && [_xAxisAnchor isEqual:[arg1 xAxisAnchor]] && [_yAxisAnchor isEqual:[arg1 yAxisAnchor]];
-}
-
-+ (id)layoutPointWithXAxisAnchor:(id)arg1 yAxisAnchor:(id)arg2
-{
-    return [[CPLayoutPoint alloc] initWithXAxisAnchor:arg1 yAxisAnchor:arg2];
-}
-
-- (id)layoutPointByOffsettingWithXOffset:(double)arg1 yOffset:(double)arg2
-{
-    var xAnchor = ( arg1 != 0.0 ) ? [_xAxisAnchor anchorByOffsettingWithConstant:arg1] : _xAxisAnchor;
-    var yAnchor = ( arg2 != 0.0 ) ? [_yAxisAnchor anchorByOffsettingWithConstant:arg2] : _yAxisAnchor;
-
-    return [CPLayoutPoint layoutPointWithXAxisAnchor:xAnchor yAxisAnchor:yAnchor];
 }
 
 + (id)pointWithXAxisAnchor:(id)arg1 yAxisAnchor:(id)arg2
@@ -50,14 +44,49 @@
   return self;
 }
 
-- (id)pointByOffsettingWithXOffsetDimension:(id)arg1 yOffsetDimension:(id)arg2
+- (BOOL)isEqual:(id)arg1
 {
-    return [self layoutPointByOffsettingWithXOffsetDimension:arg1 yOffsetDimension:arg2];
+  if (arg1 === self)
+    return YES;
+
+    return [arg1 isKindOfClass:[CPLayoutPoint class]] && [_xAxisAnchor isEqual:[arg1 xAxisAnchor]] && [_yAxisAnchor isEqual:[arg1 yAxisAnchor]];
 }
 
 - (CGPoint)valueInEngine:(id)arg1
 {
     return CGPointMake([_xAxisAnchor valueInEngine:arg1], [_yAxisAnchor valueInEngine:arg1]);
+}
+
+- (void)setDelegate:(id)aDelegate
+{
+    [_xAxisAnchor setDelegate:aDelegate];
+    [_yAxisAnchor setDelegate:aDelegate];
+}
+
++ (id)layoutPointWithXAxisAnchor:(id)arg1 yAxisAnchor:(id)arg2
+{
+    return [[CPLayoutPoint alloc] initWithXAxisAnchor:arg1 yAxisAnchor:arg2];
+}
+
+- (CPArray)constraintsEqualToLayoutPoint:(id)arg1
+{
+  var xConstraint = [_xAxisAnchor constraintEqualToAnchor:[arg1 xAxisAnchor]];
+  var yConstraint = [_yAxisAnchor constraintEqualToAnchor:[arg1 yAxisAnchor]];
+
+  return @[xConstraint, yConstraint];
+}
+
+- (id)layoutPointByOffsettingWithXOffset:(double)arg1 yOffset:(double)arg2
+{
+    var xAnchor = ( arg1 != 0.0 ) ? [_xAxisAnchor anchorByOffsettingWithConstant:arg1] : _xAxisAnchor;
+    var yAnchor = ( arg2 != 0.0 ) ? [_yAxisAnchor anchorByOffsettingWithConstant:arg2] : _yAxisAnchor;
+
+    return [CPLayoutPoint layoutPointWithXAxisAnchor:xAnchor yAxisAnchor:yAnchor];
+}
+
+- (id)pointByOffsettingWithXOffsetDimension:(id)arg1 yOffsetDimension:(id)arg2
+{
+    return [self layoutPointByOffsettingWithXOffsetDimension:arg1 yOffsetDimension:arg2];
 }
 
 - (id)layoutPointByOffsettingWithXOffsetDimension:(id)arg1 yOffsetDimension:(id)arg2
@@ -79,6 +108,16 @@
 }
 
 @end
+
+@implementation CPView (CPLayoutPoint)
+
+- (CPLayoutPoint)centerLayoutPoint
+{
+    return [CPLayoutPoint layoutPointWithXAxisAnchor:[self centerXAnchor] yAxisAnchor:[self centerYAnchor]];
+}
+
+@end
+
 /*
 @implementation CPLayoutPoint (CPCoding)
 

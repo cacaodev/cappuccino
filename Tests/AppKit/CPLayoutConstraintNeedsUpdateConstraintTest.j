@@ -66,7 +66,8 @@
 
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
     [[theWindow contentView] addSubview:view];
-    [theWindow layout];
+    [theWindow setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
     XCTAssertFalse([view needsUpdateConstraints]);
 
     [view invalidateIntrinsicContentSize];
@@ -84,7 +85,8 @@
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
     [[theWindow contentView] addSubview:view];
     XCTAssertTrue([view needsUpdateConstraints]);
-    [theWindow layout];
+    [theWindow setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
     XCTAssertFalse([view needsUpdateConstraints]);
 }
 
@@ -99,7 +101,8 @@
     var view = [[CPView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
     [[theWindow contentView] addSubview:view];
     XCTAssertTrue([view needsUpdateConstraints]);
-    [theWindow layout];
+    [theWindow setNeedsLayout];
+    [[CPRunLoop mainRunLoop] performSelectors];
     XCTAssertFalse([view needsUpdateConstraints]);
     [view invalidateIntrinsicContentSize];
     XCTAssertTrue([view needsUpdateConstraints]);

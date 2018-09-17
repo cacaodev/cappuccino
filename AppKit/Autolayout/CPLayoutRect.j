@@ -1,3 +1,25 @@
+/*
+ * CPLayoutRect.j
+ * AppKit
+ *
+ * Created by cacaodev on April 26, 2018.
+ * Copyright 2018, cacaodev. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 @import "CPLayoutAnchor.j"
 @import "CPView.j"
 
@@ -70,14 +92,22 @@
 
     self = [super init];
 
-    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:@"leading" inItem:self];
-    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:@"top" inItem:self];
-    _widthAnchor = [CPLayoutDimension anchorNamed:@"width" inItem:self];
-    _heightAnchor = [CPLayoutDimension anchorNamed:@"height" inItem:self];
+    _leadingAnchor = [CPLayoutXAxisAnchor anchorNamed:@"_leading" inItem:self];
+    _topAnchor = [CPLayoutYAxisAnchor anchorNamed:@"_top" inItem:self];
+    _widthAnchor = [CPLayoutDimension anchorNamed:@"_width" inItem:self];
+    _heightAnchor = [CPLayoutDimension anchorNamed:@"_height" inItem:self];
     _name = [aName copy];
     _superItem = superItem;
 
     return self;
+}
+
+- (void)setDelegate:(id)aDelegate
+{
+    [_leadingAnchor setDelegate:aDelegate];
+    [_topAnchor setDelegate:aDelegate];
+    [_widthAnchor setDelegate:aDelegate];
+    [_heightAnchor setDelegate:aDelegate];
 }
 
 - (BOOL)isEqual:(id)arg1 {
@@ -110,7 +140,7 @@
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:@"bottom"];
+        [result _setName:@"_bottom"];
 
     return result;
 }
@@ -120,7 +150,7 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:1 constant:0];
 
     if (_name)
-        [result _setName:@"trailing"];
+        [result _setName:@"_trailing"];
 
     return result;
 }
@@ -130,7 +160,7 @@
     var result = [_leadingAnchor anchorByOffsettingWithDimension:_widthAnchor multiplier:0.5 constant:0];
 
     if (_name)
-        [result _setName:@"centerX"];
+        [result _setName:@"_centerX"];
 
     return result;
 }
@@ -140,7 +170,7 @@
     var result = [_topAnchor anchorByOffsettingWithDimension:_heightAnchor multiplier:0.5 constant:0];
 
     if (_name)
-        [result _setName:@"centerY"];
+        [result _setName:@"_centerY"];
 
     return result;
 }
@@ -150,44 +180,44 @@
     return [CPLayoutPoint layoutPointWithXAxisAnchor:[self centerXAnchor] yAxisAnchor:[self centerYAnchor]];
 }
 
-- (id)layoutRectByInsettingTop:(double)arg1 leading:(double)arg2 bottom:(double)arg3 trailing:(double)arg4
+- (id)layoutRectByInsettingTop:(double)top leading:(double)leading bottom:(double)bottom trailing:(double)trailing
 {
     var topAnchor = [self topAnchor];
-    if (arg1 != 0.0)
-        topAnchor = [topAnchor anchorByOffsettingWithConstant:arg1];
+    if (top != 0.0)
+        topAnchor = [topAnchor anchorByOffsettingWithConstant:top];
 
     var leadingAnchor = [self leadingAnchor];
-    if (arg2 != 0.0)
-        leadingAnchor = [leadingAnchor anchorByOffsettingWithConstant:arg2];
+    if (leading != 0.0)
+        leadingAnchor = [leadingAnchor anchorByOffsettingWithConstant:leading];
 
     var bottomAnchor = [self bottomAnchor];
-    if (arg3 != 0.0)
-        bottomAnchor = [bottomAnchor anchorByOffsettingWithConstant:-arg3];
+    if (bottom != 0.0)
+        bottomAnchor = [bottomAnchor anchorByOffsettingWithConstant:-bottom];
 
     var trailingAnchor = [self trailingAnchor];
-    if (arg4 != 0.0)
-        trailingAnchor = [trailingAnchor anchorByOffsettingWithConstant:-arg4];
+    if (trailing != 0.0)
+        trailingAnchor = [trailingAnchor anchorByOffsettingWithConstant:-trailing];
 
     return [[self class] layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor trailingAnchor:trailingAnchor bottomAnchor:bottomAnchor];
 }
 
-- (id)layoutRectByInsettingTopWithDimension:(id)arg1 leadingWithDimension:(id)arg2 bottomWithDimension:(id)arg3 trailingWithDimension:(id)arg4
+- (id)layoutRectByInsettingTopWithDimension:(id)topDim leadingWithDimension:(id)leadDim bottomWithDimension:(id)bottomDim trailingWithDimension:(id)trailDim
 {
     var topAnchor = [self topAnchor];
-    if (arg1)
-        topAnchor = [topAnchor anchorByOffsettingWithDimension:arg1];
+    if (topDim)
+        topAnchor = [topAnchor anchorByOffsettingWithDimension:topDim];
 
     var leadingAnchor = [self leadingAnchor];
-    if (arg2)
-        leadingAnchor = [leadingAnchor anchorByOffsettingWithDimension:arg2];
+    if (leadDim)
+        leadingAnchor = [leadingAnchor anchorByOffsettingWithDimension:leadDim];
 
     var bottomAnchor = [self bottomAnchor];
-    if (arg3)
-        bottomAnchor = [bottomAnchor anchorByOffsettingWithDimension:arg3 multiplier:-1 constant:0];
+    if (bottomDim)
+        bottomAnchor = [bottomAnchor anchorByOffsettingWithDimension:bottomDim multiplier:-1 constant:0];
 
     var trailingAnchor = [self trailingAnchor];
-    if (arg4)
-        trailingAnchor = [trailingAnchor anchorByOffsettingWithDimension:arg4 multiplier:-1 constant:0];
+    if (trailDim)
+        trailingAnchor = [trailingAnchor anchorByOffsettingWithDimension:trailDim multiplier:-1 constant:0];
 
     return [[self class] layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor trailingAnchor:trailingAnchor bottomAnchor:bottomAnchor];
 }
@@ -199,126 +229,131 @@
 
 - (id)_rectangleBySlicingWithDimension:(id)aDimension plusConstant:(float)aConstant fromEdge:(int)anEdge
 {
-  var leadingAnchor,
-      topAnchor,
-      widthAnchor,
-      heightAnchor;
+    var leadingAnchor,
+        topAnchor,
+        widthAnchor,
+        heightAnchor;
 
-  switch ( anEdge )
-  {
-    case 0:
-      if ( aDimension )
-      {
-        heightAnchor = [aDimension anchorByAddingConstant:aConstant];
-      }
-      else
-      {
-        var v13 = [self heightAnchor];
-        var v14 = [v13 anchorByMultiplyingByConstant:0];
-        heightAnchor = [v14 anchorByAddingConstant:aConstant];
-      }
+    switch (anEdge)
+    {
+        case 0:
+            if (aDimension)
+            {
+                heightAnchor = [aDimension anchorByAddingConstant:aConstant];
+            }
+            else
+            {
+                var v13 = [self heightAnchor];
+                var v14 = [v13 anchorByMultiplyingByConstant:0];
+                heightAnchor = [v14 anchorByAddingConstant:aConstant];
+            }
 
-      leadingAnchor = [self leadingAnchor];
-      topAnchor = [self topAnchor];
-      widthAnchor = [self widthAnchor];
-      break;
-    case 1:
-      leadingAnchor = [self leadingAnchor];
+            leadingAnchor = [self leadingAnchor];
+            topAnchor = [self topAnchor];
+            widthAnchor = [self widthAnchor];
 
-      if ( aDimension )
-      {
-         widthAnchor = [aDimension anchorByAddingConstant:aConstant];
-      }
-      else
-      {
-        var v19 = [self widthAnchor];
-        var v20 = [v19 anchorByMultiplyingByConstant:0];
-        widthAnchor = [v20 anchorByAddingConstant:aConstant];
-      }
+            break;
+        case 1:
+            leadingAnchor = [self leadingAnchor];
 
-      topAnchor = [self topAnchor];
-      heightAnchor = [self heightAnchor];
-      break;
-    case 2:
-      leadingAnchor = [self leadingAnchor];
-      var bottomAnchor = [self bottomAnchor];
+            if (aDimension)
+            {
+                widthAnchor = [aDimension anchorByAddingConstant:aConstant];
+            }
+            else
+            {
+                var v19 = [self widthAnchor];
+                var v20 = [v19 anchorByMultiplyingByConstant:0];
+                widthAnchor = [v20 anchorByAddingConstant:aConstant];
+            }
 
-      if ( aDimension )
-      {
-        topAnchor = [bottomAnchor anchorByOffsettingWithDimension:aDimension multiplier:-0.5 constant:aConstant];
-        heightAnchor = [aDimension anchorByAddingConstant:aConstant];
-      }
-      else
-      {
-        topAnchor = [bottomAnchor anchorByOffsettingWithConstant:aConstant];
-        var v16 = [self heightAnchor];
-        var v17 = [v16 anchorByMultiplyingByConstant:0];
-        heightAnchor = [v17 anchorByAddingConstant:aConstant];
-      }
-      widthAnchor = [self widthAnchor];
-      break;
-    case 3:
-      var trailingAnchor = [self trailingAnchor];
-      if ( aDimension )
-      {
-        leadingAnchor = [trailingAnchor anchorByOffsettingWithDimension:aDimension multiplier:-0.5 constant:aConstant];
-        widthAnchor = [aDimension anchorByAddingConstant:aConstant];
-      }
-      else
-      {
-        leadingAnchor = [trailingAnchor anchorByOffsettingWithConstant:aConstant];
-        var v19 = [self widthAnchor];
-        var v20 = [v19 anchorByMultiplyingByConstant:0];
-        widthAnchor = [v20 anchorByAddingConstant:aConstant];
-      }
-      topAnchor = [self topAnchor];
-      heightAnchor = [self heightAnchor];
-      break;
-    default:
-      break;
-  }
+            topAnchor = [self topAnchor];
+            heightAnchor = [self heightAnchor];
+
+            break;
+        case 2:
+            leadingAnchor = [self leadingAnchor];
+            var bottomAnchor = [self bottomAnchor];
+
+            if (aDimension)
+            {
+                topAnchor = [bottomAnchor anchorByOffsettingWithDimension:aDimension multiplier:-0.5 constant:aConstant];
+                heightAnchor = [aDimension anchorByAddingConstant:aConstant];
+            }
+            else
+            {
+                topAnchor = [bottomAnchor anchorByOffsettingWithConstant:aConstant];
+                var v16 = [self heightAnchor];
+                var v17 = [v16 anchorByMultiplyingByConstant:0];
+                heightAnchor = [v17 anchorByAddingConstant:aConstant];
+            }
+            widthAnchor = [self widthAnchor];
+
+            break;
+        case 3:
+            var trailingAnchor = [self trailingAnchor];
+            if (aDimension)
+            {
+                leadingAnchor = [trailingAnchor anchorByOffsettingWithDimension:aDimension multiplier:-0.5 constant:aConstant];
+                widthAnchor = [aDimension anchorByAddingConstant:aConstant];
+            }
+            else
+            {
+                leadingAnchor = [trailingAnchor anchorByOffsettingWithConstant:aConstant];
+                var v19 = [self widthAnchor];
+                var v20 = [v19 anchorByMultiplyingByConstant:0];
+                widthAnchor = [v20 anchorByAddingConstant:aConstant];
+            }
+            topAnchor = [self topAnchor];
+            heightAnchor = [self heightAnchor];
+
+        break;
+        default:
+        break;
+    }
 
     return [CPLayoutRect layoutRectWithLeadingAnchor:leadingAnchor topAnchor:topAnchor widthAnchor:widthAnchor heightAnchor:heightAnchor];
 }
 
-- (id)layoutRectBySlicingWithDistance:(double)arg1 fromEdge:(CPInteger)arg2
+- (id)layoutRectBySlicingWithDistance:(double)aDistance fromEdge:(CPInteger)anEdge
 {
-    return [self _rectangleBySlicingWithDimension:nil plusConstant:arg1 fromEdge:arg2];
+    return [self _rectangleBySlicingWithDimension:nil plusConstant:aDistance fromEdge:anEdge];
 }
 
-- (id)layoutRectBySlicingWithDimension:(id)arg1 fromEdge:(CPInteger)arg2
+- (id)layoutRectBySlicingWithDimension:(id)aDimension fromEdge:(CPInteger)anEdge
 {
-    return [self _rectangleBySlicingWithDimension:arg1 plusConstant:0 fromEdge:arg2];
+    return [self _rectangleBySlicingWithDimension:aDimension plusConstant:0 fromEdge:anEdge];
 }
 
-- (id)layoutRectBySlicingWithProportion:(double)arg1 fromEdge:(CPInteger)arg2
+- (id)layoutRectBySlicingWithProportion:(double)aProportion fromEdge:(CPInteger)anEdge
 {
-  var anchor;
+      var anchor;
 
-  switch (arg2)
-  {
-    case 0:
-    case 2:
-      anchor = [self heightAnchor];
-      break;
-    case 1:
-    case 3:
-      anchor = [self widthAnchor];
-      break;
-    default:
-      return nil;
-  }
+      switch (anEdge)
+      {
+        case 0:
+        case 2:
+          anchor = [self heightAnchor];
+          break;
+        case 1:
+        case 3:
+          anchor = [self widthAnchor];
+          break;
+        default:
+          return nil;
+      }
 
-    var dimension = [anchor anchorByMultiplyingByConstant:arg1];
-    return [[self class] layoutRectBySlicingWithDimension:dimension fromEdge:arg2];
+    var dimension = [anchor anchorByMultiplyingByConstant:aProportion];
+
+    return [[self class] layoutRectBySlicingWithDimension:dimension fromEdge:anEdge];
 }
 
-- (CGRect)valueInEngine:(id)arg1
+- (CGRect)valueInEngine:(id)anEngine
 {
-    var x = [_leadingAnchor valueInEngine:arg1],
-        y = [_topAnchor valueInEngine:arg1],
-        w = [_widthAnchor valueInEngine:arg1],
-        h = [_heightAnchor valueInEngine:arg1];
+    var x = [_leadingAnchor valueInEngine:anEngine],
+        y = [_topAnchor valueInEngine:anEngine],
+        w = [_widthAnchor valueInEngine:anEngine],
+        h = [_heightAnchor valueInEngine:anEngine];
 
     return CGRectMake(x, y, w, h);
 }
@@ -351,6 +386,28 @@
 @end
 
 @implementation CPLayoutRect (CPLayoutItemProtocol)
+
+- (void)addConstraint:(CPLayoutConstraint)aConstraint
+{
+    [self addConstraints:@[aConstraint]];
+}
+
+- (void)addConstraints:(CPArray)theConstraints
+{
+    // TODO rewrite addConstraints in the context of a layoutRect and ignore superitem.
+    [[self _superitem] addConstraints:theConstraints];
+}
+
+- (void)removeConstraint:(CPLayoutConstraint)aConstraint
+{
+    [self removeConstraints:@[aConstraint]];
+}
+
+- (void)removeConstraints:(CPArray)theConstraints
+{
+    // TODO rewrite removeConstraints in the context of a layoutRect and ignore superitem.
+    [[self _superitem] removeConstraints:theConstraints];
+}
 
 - (id)_superitem
 {
@@ -396,8 +453,9 @@
 {
 }
 
-- (void)_engineDidChangeVariableOfType:(CPInteger)aType
+- (void)engine:(CPLayoutConstraintEngine)anEngine didChangeAnchor:(CPLayoutAnchor)anAnchor
 {
+    // Layout the reference item OR do nothing but warn if no delegate is set with this method implemented.
 }
 
 - (CGInset)alignmentRectInsets

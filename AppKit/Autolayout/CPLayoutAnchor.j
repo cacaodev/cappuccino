@@ -1,6 +1,24 @@
-#if ! defined (CASSOWARY_ENGINE) && ! defined (KIWI_ENGINE)
-#define CASSOWARY_ENGINE
-#endif
+/*
+ * CPLayoutAnchor.j
+ * AppKit
+ *
+ * Created by cacaodev on April 26, 2018.
+ * Copyright 2018, cacaodev. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 
 @import <Foundation/CPObject.j>
 @import <Foundation/CPGeometry.j>
@@ -12,11 +30,15 @@
 @class _CPCibCustomView
 
 @global _CPLayoutItemIsDescendantOf
+
 @typedef Expression
 @typedef Variable
+@typedef CPLayoutAnchorType
 
 var CPLayoutAnchorTypeSimple    = 0;
-var CPLayoutAnchorTypeComposite = 1;
+var CPLayoutAnchorTypeAxis      = 2;
+var CPLayoutAnchorTypeDimension = 4;
+var CPLayoutAnchorTypeComposite = 8;
 
 var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
                                "left",
@@ -40,6 +62,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     Variable  _variable                 @accessors(setter=_setVariable:);
     CPSet     _referencedLayoutItems;
     CPArray   _constituentAnchors;
+    id        _delegate                 @accessors(property=delegate);
 }
 
 + (id)anchorWithItem:(id)anItem attribute:(CPInteger)anAttribute
@@ -67,6 +90,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _variable = nil;
     _referencedLayoutItems = nil;
     _constituentAnchors = nil;
+    _delegate = nil;
 
     return self;
 }
@@ -81,13 +105,25 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     _variable = nil;
     _referencedLayoutItems = nil;
     _constituentAnchors = nil;
+    _delegate = nil;
 
     return self;
 }
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    var copy = [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    if (_delegate)
+        [copy setDelegate:_delegate];
+    return copy;
+}
+
+- (void)setDelegate:(id)aDelegate
+{
+    if (![aDelegate respondsToSelector:@selector(engine:didChangeAnchor:)])
+        [CPException raise:CPInvalidArgumentException format:@"Delegate %@ should implement engine:didChangeAnchor:"];
+
+    _delegate = aDelegate;
 }
 
 - (Variable)variable
@@ -117,7 +153,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [self item];
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
     return CPLayoutAnchorTypeSimple;
 }
@@ -151,10 +187,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         return NO;
 
     return YES;
-}
-
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
 }
 
 - (float)alignmentRectOffset
@@ -236,7 +268,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     {
         var result = @[];
 
-        if ([self _anchorType] == CPLayoutAnchorTypeSimple)
+        if ([self _anchorType] !== CPLayoutAnchorTypeComposite)
         {
             [result addObject:self];
         }
@@ -260,7 +292,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     {
         var result = [CPSet set];
 
-        if ([self _anchorType] == CPLayoutAnchorTypeSimple)
+        if ([self _anchorType] !== CPLayoutAnchorTypeComposite)
         {
             [result addObject:[self _referenceItem]];
         }
@@ -280,7 +312,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)_nearestAncestorLayoutItem
 {
-    if ([self _anchorType] == CPLayoutAnchorTypeSimple)
+    if ([self _anchorType] !== CPLayoutAnchorTypeComposite)
         return [self _referenceItem];
 
     var items = [self _referencedLayoutItems],
@@ -299,24 +331,24 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 // CPLayoutAnchor creation
 
-- (CPCompositeLayoutAxisAnchor)anchorAtMidpointToAnchor:(id)arg1
+- (CPCompositeLayoutAxisAnchor)anchorAtMidpointToAnchor:(id)anAnchor
 {
-    var distance = [self anchorWithOffsetToAnchor:arg1];
+    var distance = [self anchorWithOffsetToAnchor:anAnchor];
 
     return [self anchorByOffsettingWithDimension:distance multiplier:0.5 constant:0];
 }
 
-- (CPDistanceLayoutDimension)anchorWithOffsetToAnchor:(id)arg1
+- (CPDistanceLayoutDimension)anchorWithOffsetToAnchor:(id)anAnchor
 {
-    return [CPDistanceLayoutDimension distanceFromAnchor:self toAnchor:arg1];
+    return [CPDistanceLayoutDimension distanceFromAnchor:self toAnchor:anAnchor];
 }
 
-- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)arg1
+- (CPCompositeLayoutAxisAnchor)anchorByOffsettingWithConstant:(float)aConstant
 {
-    if (arg1 == 0)
+    if (aConstant == 0)
         return [self copy];
 
-    return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:arg1];
+    return [self anchorByOffsettingWithDimension:nil multiplier:0 constant:aConstant];
 }
 
 // CPLayoutConstraint creation
@@ -397,9 +429,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
-    return CPLayoutAnchorTypeSimple;
+    return CPLayoutAnchorTypeAxis;
 }
 
 - (Expression)expressionInContext:(id)otherAnchor
@@ -409,11 +441,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
         return engine_expressionFromConstant(0);
 
     return engine_expressionFromVariable([self variable]);
-}
-
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
-    [[self _referenceItem] _engineDidChangeVariableOfType:2];
 }
 
 @end
@@ -456,9 +483,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
-    return CPLayoutAnchorTypeSimple;
+    return CPLayoutAnchorTypeDimension;
 }
 
 - (Expression)expressionInContext:(id)otherAnchor
@@ -470,11 +497,6 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 {
     var frame = [[self item] frame];
     return (_attribute == CPLayoutAttributeWidth) ? CGRectGetWidth(frame) : CGRectGetHeight(frame);
-}
-
-- (void)valueOfVariable:(Variable)aVariable didChangeInEngine:(CPLayoutConstraintEngine)anEngine
-{
-    [[self _referenceItem] _engineDidChangeVariableOfType:4];
 }
 
 - (id)anchorByMultiplyingByConstant:(float)aMultiplier
@@ -499,7 +521,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 - (id)copy
 {
-    return [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    var copy = [[[self class] alloc] initWithItem:[self _referenceItem] attribute:_attribute name:_name];
+    if (_delegate)
+        [copy setDelegate:_delegate];
+    return copy;
 }
 
 - (CPString)description
@@ -511,10 +536,10 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @implementation CPCompositeLayoutAxisAnchor : CPLayoutAnchor
 {
-    CPLayoutXAxisAnchor  _axisAnchor @accessors(getter=axisAnchor);
-    CPLayoutDimension    _dimension @accessors(getter=dimension);
-    float                _constant @accessors(getter=constant);
-    float                _dimensionMultiplier @accessors(getter=dimensionMultiplier);
+    CPLayoutXAxisAnchor  _axisAnchor            @accessors(getter=axisAnchor);
+    CPLayoutDimension    _dimension             @accessors(getter=dimension);
+    float                _constant              @accessors(getter=constant);
+    float                _dimensionMultiplier   @accessors(getter=dimensionMultiplier);
 }
 
 - (id)copy
@@ -533,7 +558,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return YES;
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
 }
@@ -756,9 +781,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return YES;
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
-    return CPLayoutAnchorTypeComposite;
+    return CPLayoutAnchorTypeDimension;
 }
 
 - (void)_replaceItem:(id)anItem withItem:(id)otherItem
@@ -839,15 +864,15 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
   return self;
 }
 */
-- (id)initWithMultiplier:(float)arg1 dimension:(id)arg2 constant:(float)arg3
+- (id)initWithMultiplier:(float)aMultiplier dimension:(id)aDimension constant:(float)aConstant
 {
-    self = [super initWithItem:[arg2 _referenceItem] attribute:-1 name:nil];
+    self = [super initWithItem:[aDimension _referenceItem] attribute:-1 name:nil];
 
     if ( self )
     {
-        _rootLayoutDimension = [arg2 copy];
-        _multiplier = arg1;
-        _constant = arg3;
+        _rootLayoutDimension = [aDimension copy];
+        _multiplier = aMultiplier;
+        _constant = aConstant;
     }
 
     return self;
@@ -858,9 +883,9 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithMultiplier:_multiplier dimension:_rootLayoutDimension constant:_constant];
 }
 
-- (float)valueInEngine:(id)arg1
+- (float)valueInEngine:(id)anEngine
 {
-    return [_rootLayoutDimension valueInEngine:arg1] * _multiplier + _constant;
+    return [_rootLayoutDimension valueInEngine:anEngine] * _multiplier + _constant;
 }
 
 - (float)valueInLayoutSpace
@@ -878,14 +903,14 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_rootLayoutDimension _nearestAncestorLayoutItem];
 }
 
-- (Expression)expressionInContext:(id)arg1
+- (Expression)expressionInContext:(id)aContext
 {
     var constantExp = engine_expressionFromConstant(_constant);
 
     if (_multiplier == 0)
         return constantExp;
 
-    var rootExp = [_rootLayoutDimension expressionInContext:arg1];
+    var rootExp = [_rootLayoutDimension expressionInContext:aContext];
 
     return engine_plus(engine_multiply(rootExp, _multiplier), constantExp);
 }
@@ -908,17 +933,17 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     CPLayoutAnchor _maxAnchor @accessors(getter=maxAnchor);
 }
 
-+ (id)distanceFromAnchor:(id)arg1 toAnchor:(id)arg2
++ (id)distanceFromAnchor:(id)fromAnchor toAnchor:(id)toAnchor
 {
-    return [[[self class] alloc] initWithMinAnchor:arg1 maxAnchor:arg2 name:nil];
+    return [[[self class] alloc] initWithMinAnchor:fromAnchor maxAnchor:toAnchor name:nil];
 }
 
-- (id)initWithMinAnchor:(id)arg1 maxAnchor:(id)arg2 name:(CPString)aName
+- (id)initWithMinAnchor:(id)minAnchor maxAnchor:(id)maxAnchor name:(CPString)aName
 {
     self = [super initWithItem:nil attribute:-1 name:aName];
 
-    _minAnchor = [arg1 copy];
-    _maxAnchor = [arg2 copy];
+    _minAnchor = [minAnchor copy];
+    _maxAnchor = [maxAnchor copy];
     _name = [aName copy];
     _item = [self _nearestAncestorLayoutItem];
 
@@ -941,7 +966,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [[[self class] alloc] initWithMinAnchor:_minAnchor maxAnchor:_maxAnchor name:_name];
 }
 
-- (CPInteger)_anchorType
+- (CPLayoutAnchorType)_anchorType
 {
     return CPLayoutAnchorTypeComposite;
 }
@@ -969,7 +994,7 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
     return [_maxAnchor valueInLayoutSpace] - [_minAnchor valueInLayoutSpace];
 }
 
-- (Expression)expressionInContext:(id)arg1
+- (Expression)expressionInContext:(id)aContext
 {
     var expMax = [_maxAnchor expressionInContext:_minAnchor],
         expMin = [_minAnchor expressionInContext:_maxAnchor];
@@ -979,23 +1004,23 @@ var CPLayoutAttributeLabels = ["NotAnAttribute", // 0
 
 @end
 
-var CPLayoutAnchorType      = @"CPLayoutAnchorType",
-    CPLayoutAnchorItem      = @"CPLayoutAnchorItem",
-    CPLayoutAnchorAttribute = @"CPLayoutAnchorAttribute";
+var CPLayoutAnchorTypeKey      = @"CPLayoutAnchorTypeKey",
+    CPLayoutAnchorItemKey      = @"CPLayoutAnchorItemKey",
+    CPLayoutAnchorAttributeKey = @"CPLayoutAnchorAttributeKey";
 
 @implementation CPLayoutAnchor (CPCoding)
 
 - (id)initWithCoder:(id)aCoder
 {
 /*
-    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorType];
-    var type = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorType] : 2; // simple or composite
+    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorTypeKey];
+    var type = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorTypeKey] : 2; // simple or composite
 */
 
-    var item = [aCoder decodeObjectForKey:CPLayoutAnchorItem];
+    var item = [aCoder decodeObjectForKey:CPLayoutAnchorItemKey];
 
-    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorAttribute],
-        attr = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorAttribute] : 0;
+    var hasKey = [aCoder containsValueForKey:CPLayoutAnchorAttributeKey],
+        attr = hasKey ? [aCoder decodeIntForKey:CPLayoutAnchorAttributeKey] : 0;
 
     // The name will be lazily resolved.
     self = [self initWithItem:item attribute:attr name:nil];
@@ -1007,8 +1032,8 @@ var CPLayoutAnchorType      = @"CPLayoutAnchorType",
 {
     [super encodeWithCoder:aCoder];
 
-    [aCoder encodeConditionalObject:_item forKey:CPLayoutAnchorItem];
-    [aCoder encodeInt:_attribute forKey:CPLayoutAnchorAttribute];
+    [aCoder encodeConditionalObject:_item forKey:CPLayoutAnchorItemKey];
+    [aCoder encodeInt:_attribute forKey:CPLayoutAnchorAttributeKey];
 }
 
 @end
