@@ -80,7 +80,7 @@ CPLineMovesUp = 4;
 @implementation CPTextContainer : CPObject
 {
     float           _lineFragmentPadding    @accessors(property=lineFragmentPadding);
-    CGSize          _size                   @accessors(property=containerSize)
+    CGSize          _size                   @accessors(property=containerSize);
     CPLayoutManager _layoutManager          @accessors(property=layoutManager);
     CPTextView      _textView               @accessors(property=textView);
     BOOL            _inResizing;
@@ -168,10 +168,7 @@ CPLineMovesUp = 4;
 - (void)setTextView:(CPTextView)aTextView
 {
     if (_textView)
-    {
-        [self _removeAllLines];
         [_textView setTextContainer:nil];
-    }
 
     _textView = aTextView;
 

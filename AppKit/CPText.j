@@ -33,11 +33,14 @@
 @import "CPView.j"
 
 @global CPStringPboardType
+@global _CPSmartPboardType
+
 @class CPAttributedString
 @class _CPRTFParser
 
 @protocol CPTextDelegate <CPObject>
 
+@optional
 - (BOOL)textShouldBeginEditing:(CPText)aTextObject;
 - (BOOL)textShouldEndEditing:(CPText)aTextObject;
 - (void)textDidBeginEditing:(CPNotification)aNotification;
@@ -173,6 +176,11 @@ CPKernAttributeName = @"CPKernAttributeName";
         stringForPasting = stringForPasting._string;
 
     return stringForPasting;
+}
+
+- (BOOL)_shouldUseSmartPasting
+{
+    return parseInt([[CPPasteboard generalPasteboard] stringForType:_CPSmartPboardType], 10) > 0 || NO;
 }
 
 - (void)paste:(id)sender

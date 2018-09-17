@@ -214,7 +214,7 @@ var transformSizeToHeight = function(start, current)
 
 var CSSStringFromCGAffineTransform = function(anAffineTransform)
 {
-    return "matrix(" + anAffineTransform.a + ", " + anAffineTransform.b + ", " + anAffineTransform.c + ", " + anAffineTransform.d + ", " + anAffineTransform.tx + (CPBrowserIsEngine(CPGeckoBrowserEngine) ? "px, " : ", ") + anAffineTransform.ty + (CPBrowserIsEngine(CPGeckoBrowserEngine) ? "px)" : ")");
+    return [CPString stringWithFormat:@"matrix(%d,%d,%d,%d,%d,%d)", anAffineTransform.a, anAffineTransform.b, anAffineTransform.c, anAffineTransform.d, anAffineTransform.tx, anAffineTransform.ty];
 };
 
 var frameOriginToCSSTransformMatrix = function(start, current)
@@ -408,20 +408,25 @@ var createUpdateFrame = function(aView, aKeyPath)
                 {
                     [aView _setInhibitDOMUpdates:YES];
 
-                    var matrix = style[transformProperty].split('(')[1].split(')')[0].split(','),
-                             x = ROUND(initialOrigin.x + parseFloat(matrix[4])),
-                             y = ROUND(initialOrigin.y + parseFloat(matrix[5]));
+                    var matrix_value = style[transformProperty];
 
-                    if (aKeyPath === "frame")
+                    if (matrix_value && matrix_value !== 'none')
                     {
-                        var width  = getCSSPropertyValue("width"),
-                            height = getCSSPropertyValue("height");
+                        var matrix_array = matrix_value.split('(')[1].split(')')[0].split(','),
+                                       x = ROUND(initialOrigin.x + parseFloat(matrix_array[4])),
+                                       y = ROUND(initialOrigin.y + parseFloat(matrix_array[5]));
 
-                        [aView setFrame:CGRectMake(x, y, width, height)];
-                    }
-                    else
-                    {
-                        [aView setFrameOrigin:CGPointMake(x, y)];
+                        if (aKeyPath === "frame")
+                        {
+                            var width  = getCSSPropertyValue("width"),
+                                height = getCSSPropertyValue("height");
+
+                            [aView setFrame:CGRectMake(x, y, width, height)];
+                        }
+                        else
+                        {
+                            [aView setFrameOrigin:CGPointMake(x, y)];
+                        }
                     }
 
                     [aView _setInhibitDOMUpdates:NO];

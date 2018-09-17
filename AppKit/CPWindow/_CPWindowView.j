@@ -64,6 +64,8 @@ _CPWindowViewResizeSlop = 3;
     CGRect      _cachedScreenFrame;
 
     CPView      _sheetShadowView;
+
+    BOOL        _isTracking @accessors(getter=_isTracking);
 }
 
 + (CGRect)contentRectForFrameRect:(CGRect)aFrameRect
@@ -158,6 +160,7 @@ _CPWindowViewResizeSlop = 3;
         _styleMask = aStyleMask;
         _resizeIndicatorOffset = CGSizeMakeZero();
         _toolbarOffset = CGSizeMakeZero();
+        _isTracking = NO;
     }
 
     return self;
@@ -468,6 +471,8 @@ _CPWindowViewResizeSlop = 3;
     if (type === CPLeftMouseUp)
     {
         _cachedScreenFrame = nil;
+        _isTracking = NO;
+        [_window _endLiveResize];
         return;
     }
 
@@ -484,6 +489,12 @@ _CPWindowViewResizeSlop = 3;
     }
     else if (type === CPLeftMouseDragged)
     {
+        if (!_isTracking)
+        {
+            _isTracking = YES;
+            [_window _startLiveResize];
+        }
+
         var deltaX = globalLocation.x - _mouseDraggedPoint.x,
             deltaY = globalLocation.y - _mouseDraggedPoint.y,
             startX = CGRectGetMinX(_cachedFrame),
@@ -985,16 +996,22 @@ _CPWindowViewResizeSlop = 3;
 @end
 
 @implementation _CPWindowView (TrackingAreaAdditions)
+{
+    CPTrackingArea  _windowViewTrackingArea;
+}
 
 - (void)updateTrackingAreas
 {
-    [self removeAllTrackingAreas];
+    if (_windowViewTrackingArea)
+        [self removeTrackingArea:_windowViewTrackingArea];
 
-    [self addTrackingArea:[[CPTrackingArea alloc] initWithRect:[self contentRectForFrameRect:[self frame]]
-                                                       options:CPTrackingCursorUpdate | CPTrackingActiveInActiveApp
-                                                         owner:self
-                                                      userInfo:nil]];
+    _windowViewTrackingArea = [[CPTrackingArea alloc] initWithRect:[self contentRectForFrameRect:[self frame]]
+                                                           options:CPTrackingCursorUpdate | CPTrackingActiveInActiveApp
+                                                             owner:self
+                                                          userInfo:nil];
+
+    [self addTrackingArea:_windowViewTrackingArea];
+    [super updateTrackingAreas];
 }
 
 @end
-
