@@ -693,12 +693,19 @@ var CPStackViewDistributionPriority = CPLayoutPriorityDefaultLow + 10;
         constraintsToRemove = [_stackConstraints arrayByExcludingObjectsInArray:newConstraints];
 
     [CPLayoutConstraint deactivateConstraints:constraintsToRemove];
-    [_stackConstraints removeObjectsInArray:constraintsToRemove];
+    var reallyRemoved = [constraintsToRemove filteredArrayUsingBlock:function(cst, idx) {
+        return ![cst isActive];
+    }];
+    [_stackConstraints removeObjectsInArray:reallyRemoved];
 
     [CPLayoutConstraint activateConstraints:constraintsToAdd];
-    [_stackConstraints addObjectsFromArray:constraintsToAdd];
+    var reallyAdded = [constraintsToAdd filteredArrayUsingBlock:function(cst, idx) {
+        return [cst isActive];
+    }];
+    [_stackConstraints addObjectsFromArray:reallyAdded];
+
 #if (DEBUG)
-    CPLog.debug("Added " + [constraintsToAdd description] + " constraints.\nRemoved " + [constraintsToRemove description] + " constraints.")
+    CPLog.debug("Added " + [reallyAdded description] + " constraints.\nRemoved " + [reallyRemoved description] + " constraints.")
 #endif
 }
 
