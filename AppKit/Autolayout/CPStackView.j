@@ -1200,8 +1200,12 @@ var CPStackViewAlignment                    = @"CPStackViewAlignment",
 
 - (CPArray)arrayByExcludingObjectsInArray:(CPArray)anArray
 {
-    var result = [CPArray arrayWithArray:self];
-    [result removeObjectsInArray:anArray];
+    var result = [CPArray array];
+
+    [self enumerateObjectsUsingBlock:function(obj, idx) {
+        if (![anArray containsObject:obj])
+            [result addObject:obj];
+    }];
 
     return result;
 }
