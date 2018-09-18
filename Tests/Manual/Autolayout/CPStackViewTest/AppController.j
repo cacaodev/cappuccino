@@ -178,6 +178,7 @@ CPLogRegister(CPLogConsole);
 
     [CPLayoutConstraint activateConstraints:[stack1, stack2, stack3, stack4]];
 
+    [theWindow setTitle:@"CPStackView Test"];
     [theWindow orderFront:self];
 }
 
@@ -383,13 +384,18 @@ CPLogRegister(CPLogConsole);
 
 - (void)mouseDown:(CPEvent)anEvent
 {
-    CPLog.debug("StackView\n" + [[self constraints] description]);
-    CPLog.debug("WindowView\n" + [[[[self window] _windowView] constraints] description]);
-    CPLog.debug("ContentView\n" + [[[[self window] contentView] constraints] description]);
-    [[self views] enumerateObjectsUsingBlock:function(aView, idx, stop)
+    if ([anEvent modifierFlags] & CPCommandKeyMask)
     {
-        CPLog.debug([aView identifier] + "\n" + [[aView constraints] description]);
-    }];
+        CPLog.debug("StackView\n" + [[self constraints] description]);
+        CPLog.debug("WindowView\n" + [[[[self window] _windowView] constraints] description]);
+        CPLog.debug("ContentView\n" + [[[[self window] contentView] constraints] description]);
+        [[self views] enumerateObjectsUsingBlock:function(aView, idx, stop)
+        {
+            CPLog.debug([aView identifier] + "\n" + [[aView constraints] description]);
+        }];
+
+        CPLog.debug([[self window] _layoutEngine]);
+    }
 }
 
 @end
