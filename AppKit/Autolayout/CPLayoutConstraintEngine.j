@@ -414,7 +414,7 @@
 
     result += "\nInternalInfo:\n";
 #if defined (CASSOWARY_ENGINE)
-    result += _simplexSolver.getInternalInfo());
+    result += _simplexSolver.getInternalInfo();
 #elif defined (KIWI_ENGINE)
     // TODO: implement this in kiwi.js
     result +=  _simplexSolver.toString();
