@@ -537,7 +537,7 @@ CPButtonImageOffset   = 3.0;
 
 - (void)mouseDown:(CPEvent)anEvent
 {
-    if ([self isContinuous])
+    if ([self isEnabled] && [self isContinuous])
     {
         _continuousDelayTimer = [CPTimer scheduledTimerWithTimeInterval:_periodicDelay callback: function()
         {
@@ -757,6 +757,7 @@ CPButtonImageOffset   = 3.0;
         [contentView setAlignment:[self currentValueForThemeAttribute:@"alignment"]];
         [contentView setVerticalAlignment:[self currentValueForThemeAttribute:@"vertical-alignment"]];
         [contentView setLineBreakMode:[self currentValueForThemeAttribute:@"line-break-mode"]];
+        [contentView _setUsesSingleLineMode:YES];
         [contentView setTextShadowColor:[self currentValueForThemeAttribute:@"text-shadow-color"]];
         [contentView setTextShadowOffset:[self currentValueForThemeAttribute:@"text-shadow-offset"]];
         [contentView setImagePosition:[self currentValueForThemeAttribute:@"image-position"]];
@@ -800,7 +801,7 @@ CPButtonImageOffset   = 3.0;
 {
     var selfWindow = [self window];
 
-    if (selfWindow === aWindow || aWindow === nil)
+    if (selfWindow === aWindow || aWindow == nil)
         return;
 
     if ([selfWindow defaultButton] === self)

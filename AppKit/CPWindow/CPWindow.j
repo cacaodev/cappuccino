@@ -274,6 +274,8 @@ var CPWindowActionMessageKeys = [
     BOOL                                _needsLayout @accessors;
     BOOL                                _layoutLock @accessors;
     CPArray                             _windowViewSizeVariables;
+
+    BOOL                                _inhibitUpdateTrackingAreas;    // Used by the CPView when updating tracking areas
 }
 
 + (Class)_binderClassForBinding:(CPString)aBinding
@@ -1864,7 +1866,7 @@ CPTexturedBackgroundWindowMask
 /*!
     Returns \c YES if the window can be moved.
 */
-- (void)isMovable
+- (BOOL)isMovable
 {
     return _isMovable;
 }
@@ -2445,7 +2447,7 @@ CPTexturedBackgroundWindowMask
 /*!
     Returns YES if the window is minimized.
 */
-- (void)isMiniaturized
+- (BOOL)isMiniaturized
 {
     return _isMiniaturized;
 }
@@ -3172,7 +3174,7 @@ CPTexturedBackgroundWindowMask
 */
 - (CPWindow)attachedSheet
 {
-    if (_sheetContext === nil)
+    if (_sheetContext == nil)
         return nil;
 
    return _sheetContext["sheet"];
@@ -4441,6 +4443,19 @@ var interpolate = function(fromValue, toValue, progress)
 }
 
 @end
+
+#pragma mark -
+
+@implementation CPWindow (CSSTheming)
+
+- (void)_setThemeIncludingDescendants:(CPTheme)aTheme
+{
+    [[self contentView] _setThemeIncludingDescendants:aTheme];
+}
+
+@end
+
+#pragma mark -
 
 @implementation CPWindow (ConstraintBasedLayout)
 
