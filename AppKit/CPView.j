@@ -259,10 +259,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 
     BOOL                _allowsVibrancy         @accessors(property=allowsVibrancy);
     CPAppearance        _appearance             @accessors(getter=appearance);
-    CPAppearance        _effectiveAppearance;
+    CPAppearance        _currentAppearance;
 
     CPMutableArray      _trackingAreas          @accessors(getter=trackingAreas, copy);
-    BOOL                _inhibitUpdateTrackingAreas;
 
     id                  _animator;
     CPDictionary        _animationsDictionary;
@@ -384,7 +383,9 @@ var CPViewHighDPIDrawingEnabled = YES;
 + (CPDictionary)themeAttributes
 {
     return @{
-             @"css-based": NO
+             @"css-based": NO,
+             @"dynamic-set": [CPNull null],
+             @"nib2cib-adjustment-frame": CGRectMakeZero()
              };
 }
 
@@ -502,6 +503,9 @@ var CPViewHighDPIDrawingEnabled = YES;
         _animator = nil;
         _animationsDictionary = @{};
 
+        // Set the current appearance to something that can't be the correct one so it will recalculate it at the first layout.
+        _currentAppearance = aFrame;
+
         [self _setupViewFlags];
         [self _loadThemeAttributes];
 
@@ -513,11 +517,12 @@ var CPViewHighDPIDrawingEnabled = YES;
         _translatesAutoresizingMaskIntoConstraints = YES;
         _huggingPriorities = nil;
         _compressionPriorities = nil;
+
         // We force here an updateTrackingAreas in order to let the view install its own tracking areas
         // in the case where an externally owned tracking area is installed on this view before putting
         // it in the view hierarchy.
         [self updateTrackingAreas];
-}
+    }
 
     return self;
 }
@@ -887,7 +892,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     var addedSubview = nil,
         addedSubviewEnumerator = [addedSubviews objectEnumerator];
 
-    while ((addedSubview = [addedSubviewEnumerator nextObject]) !== nil)
+    while ((addedSubview = [addedSubviewEnumerator nextObject]) != nil)
         [self addSubview:addedSubview];
 
     // If the order is fine, no need to reorder.
@@ -1150,10 +1155,22 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (CGRectEqualToRect(_frame, aFrame) && !_forceUpdates)
         return;
 
+    // Save the previous value as we can be traveling down the view hierarchy.
+    // If view is not connected with a window don't update tracking areas.
+    var saveInhibitUpdateTrackingAreas = _window ? _window._inhibitUpdateTrackingAreas : YES;
+
+    // We only want to update tracking areas once so turn it off for all views.
+    if (_window)
+        _window._inhibitUpdateTrackingAreas = YES;
+
+    // Turn off change notifications for only this view
     _inhibitFrameAndBoundsChangedNotifications = YES;
 
     [self setFrameOrigin:aFrame.origin];
     [self setFrameSize:aFrame.size];
+
+    if (_window)
+        _window._inhibitUpdateTrackingAreas = saveInhibitUpdateTrackingAreas;
 
     _inhibitFrameAndBoundsChangedNotifications = NO;
 
@@ -1163,7 +1180,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (_isSuperviewAClipView)
         [[self superview] viewFrameChanged:[[CPNotification alloc] initWithName:CPViewFrameDidChangeNotification object:self userInfo:nil]];
 
-    if (!_inhibitUpdateTrackingAreas)
+    if (!saveInhibitUpdateTrackingAreas)
         [self _updateTrackingAreasWithRecursion:YES];
 }
 
@@ -1239,7 +1256,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     }
 #endif
 
-    if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
+    if (_window && !_window._inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:YES];
 
     if (!_isSettingFrameFromEngine && _viewIsConstraintBased)
@@ -1398,7 +1415,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (_isSuperviewAClipView && !_inhibitFrameAndBoundsChangedNotifications)
         [[self superview] viewFrameChanged:[[CPNotification alloc] initWithName:CPViewFrameDidChangeNotification object:self userInfo:nil]];
 
-    if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
+    if (_window && !_window._inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:!_autoresizesSubviews];
 
     if (!_isSettingFrameFromEngine && _viewIsConstraintBased)
@@ -1451,7 +1468,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (_isSuperviewAClipView)
         [[self superview] viewBoundsChanged:[[CPNotification alloc] initWithName:CPViewBoundsDidChangeNotification object:self userInfo:nil]];
 
-    if (!_inhibitUpdateTrackingAreas)
+    if (_window && !_window._inhibitUpdateTrackingAreas)
         [self _updateTrackingAreasWithRecursion:YES];
 }
 
@@ -1519,7 +1536,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (_isSuperviewAClipView && !_inhibitFrameAndBoundsChangedNotifications)
         [[self superview] viewBoundsChanged:[[CPNotification alloc] initWithName:CPViewBoundsDidChangeNotification object:self userInfo:nil]];
 
-    if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
+    if (_window && !_window._inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:YES];
 }
 
@@ -1563,7 +1580,7 @@ var CPViewHighDPIDrawingEnabled = YES;
     if (_isSuperviewAClipView && !_inhibitFrameAndBoundsChangedNotifications)
         [[self superview] viewBoundsChanged:[[CPNotification alloc] initWithName:CPViewBoundsDidChangeNotification object:self userInfo:nil]];
 
-    if (!_inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
+    if (_window && !_window._inhibitUpdateTrackingAreas && !_inhibitFrameAndBoundsChangedNotifications)
         [self _updateTrackingAreasWithRecursion:YES];
 }
 
@@ -1806,8 +1823,8 @@ var CPViewHighDPIDrawingEnabled = YES;
 
 - (void)_setSuperview:(CPView)aSuperview
 {
-    var hasOldSuperview = (_superview !== nil),
-        hasNewSuperview = (aSuperview !== nil),
+    var hasOldSuperview = (_superview != nil),
+        hasNewSuperview = (aSuperview != nil),
         oldSuperviewIsHidden = hasOldSuperview && [_superview isHiddenOrHasHiddenAncestor],
         newSuperviewIsHidden = hasNewSuperview && [aSuperview isHiddenOrHasHiddenAncestor];
 
@@ -2953,7 +2970,7 @@ setBoundsOrigin:
 */
 - (void)viewDidLayout
 {
-    [self _recomputeAppearance];
+    [self _recomputeAppearanceWithSuperviewEffectiveAppearance:[self effectiveAppearance]];
 }
 
 - (void)layoutSubviews
@@ -2980,10 +2997,15 @@ setBoundsOrigin:
 */
 - (CGRect)visibleRect
 {
+    return [self _visibleRectWithSuperviewVisibleRect:nil];
+}
+
+- (CGRect)_visibleRectWithSuperviewVisibleRect:(CGRect)superviewVisibleRect
+{
     if (!_superview)
         return _bounds;
 
-    return CGRectIntersection([self convertRect:[_superview visibleRect] fromView:_superview], _bounds);
+    return CGRectIntersection([self convertRect:superviewVisibleRect || [_superview _visibleRectWithSuperviewVisibleRect:nil] fromView:_superview], _bounds);
 }
 
 // Scrolling
@@ -3647,53 +3669,59 @@ setBoundsOrigin:
     [self setNeedsLayout:YES];
 }
 
+var CPAppearanceAqua = [CPAppearance appearanceNamed:CPAppearanceNameAqua];
+var CPAppearanceLightContent = [CPAppearance appearanceNamed:CPAppearanceNameLightContent];
+var CPAppearanceVibrantLight = [CPAppearance appearanceNamed:CPAppearanceNameVibrantLight];
+var CPAppearanceVibrantDark = [CPAppearance appearanceNamed:CPAppearanceNameVibrantDark];
+
 /*! @ignore
 */
-- (void)_recomputeAppearance
+- (void)_recomputeAppearanceWithSuperviewEffectiveAppearance:(CPAppearance)superviewEffectiveAppearance
 {
-    var effectiveAppearance = [self effectiveAppearance];
+    var effectiveAppearance = _appearance || superviewEffectiveAppearance;
 
-    if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameAqua]])
-    {
-        [self setThemeState:CPThemeStateAppearanceAqua];
-        [self unsetThemeState:CPThemeStateAppearanceLightContent];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
-    }
-    else if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameLightContent]])
-    {
-        [self unsetThemeState:CPThemeStateAppearanceAqua];
-        [self setThemeState:CPThemeStateAppearanceLightContent];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
-    }
-    else if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameVibrantLight]])
-    {
-        [self unsetThemeState:CPThemeStateAppearanceAqua];
-        [self unsetThemeState:CPThemeStateAppearanceLightContent];
-        [self setThemeState:CPThemeStateAppearanceVibrantLight];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
-    }
-    else if ([effectiveAppearance isEqual:[CPAppearance appearanceNamed:CPAppearanceNameVibrantDark]])
-    {
-        [self unsetThemeState:CPThemeStateAppearanceAqua];
-        [self unsetThemeState:CPThemeStateAppearanceLightContent];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
-        [self setThemeState:CPThemeStateAppearanceVibrantDark];
-    }
-    else
-    {
-        [self unsetThemeState:CPThemeStateAppearanceAqua];
-        [self unsetThemeState:CPThemeStateAppearanceLightContent];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
-        [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+    // Only reset the themestates if it is different from the current one so we get good performance.
+    if (effectiveAppearance != _currentAppearance) {
+        switch (effectiveAppearance) {
+            case CPAppearanceAqua:
+                [self setThemeState:CPThemeStateAppearanceAqua];
+                [self unsetThemeState:CPThemeStateAppearanceLightContent];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+                break;
+            case CPAppearanceLightContent:
+                [self unsetThemeState:CPThemeStateAppearanceAqua];
+                [self setThemeState:CPThemeStateAppearanceLightContent];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+                break;
+            case CPAppearanceVibrantLight:
+                [self unsetThemeState:CPThemeStateAppearanceAqua];
+                [self unsetThemeState:CPThemeStateAppearanceLightContent];
+                [self setThemeState:CPThemeStateAppearanceVibrantLight];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+                break;
+            case CPAppearanceVibrantDark:
+                [self unsetThemeState:CPThemeStateAppearanceAqua];
+                [self unsetThemeState:CPThemeStateAppearanceLightContent];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+                [self setThemeState:CPThemeStateAppearanceVibrantDark];
+                break;
+            default:
+                [self unsetThemeState:CPThemeStateAppearanceAqua];
+                [self unsetThemeState:CPThemeStateAppearanceLightContent];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantLight];
+                [self unsetThemeState:CPThemeStateAppearanceVibrantDark];
+        }
+
+        _currentAppearance = effectiveAppearance;
     }
 
 //    var start = [CPDate new];
 
     for (var i = 0, size = [_subviews count]; i < size; i++)
     {
-        [[_subviews objectAtIndex:i] _recomputeAppearance];
+        [[_subviews objectAtIndex:i] _recomputeAppearanceWithSuperviewEffectiveAppearance:effectiveAppearance];
     }
 //    [_subviews makeObjectsPerformSelector:@selector(_recomputeAppearance)];
 
@@ -3774,21 +3802,33 @@ setBoundsOrigin:
 - (void)_updateTrackingAreasWithRecursion:(BOOL)shouldCallRecursively
 {
     _inhibitUpdateTrackingAreas = YES;
+    [self _updateTrackingAreasWithRecursion:shouldCallRecursively withReferencingSuperViewVisibleRect:[_superview visibleRect]];
+}
 
-    [self _updateTrackingAreasForOwners:[self _calcTrackingAreaOwners]];
+/*!
+ The referencingSuperViewVisibleRect is used to speed up the execution of this as the visibleRect method is a heavy operation.
+ It has to go up the view hierarchy and get every superviews visibleRect to transform and intersect them together.
+ Here we keep the superviews visible rect when we are going down the view hierarchy to make the operation much faster.
+*/
+- (void)_updateTrackingAreasWithRecursion:(BOOL)shouldCallRecursively withReferencingSuperViewVisibleRect:(CGRect)referencingSuperViewVisibleRect
+{
+    [self _updateTrackingAreasForOwners:[self _calcTrackingAreaOwnersWithReferencingSuperViewVisibleRect:referencingSuperViewVisibleRect]];
 
     if (shouldCallRecursively)
     {
         // Now, call _updateTrackingAreasWithRecursion on subviews
 
         for (var i = 0; i < _subviews.length; i++)
-            [_subviews[i] _updateTrackingAreasWithRecursion:YES];
+            [_subviews[i] _updateTrackingAreasWithRecursion:YES withReferencingSuperViewVisibleRect:[self _visibleRectWithSuperviewVisibleRect:referencingSuperViewVisibleRect]];
     }
-
-    _inhibitUpdateTrackingAreas = NO;
 }
 
 - (CPArray)_calcTrackingAreaOwners
+{
+    return [self _calcTrackingAreaOwnersWithReferencingSuperViewVisibleRect:nil];
+}
+
+- (CPArray)_calcTrackingAreaOwnersWithReferencingSuperViewVisibleRect:(CGRect)referencingSuperViewVisibleRect
 {
     // First search all owners that must be notified
     // Remark: 99.99% of time, the only owner will be the view itself
@@ -3801,7 +3841,7 @@ setBoundsOrigin:
         var trackingArea = _trackingAreas[i];
 
         if ([trackingArea options] & CPTrackingInVisibleRect)
-            [trackingArea _updateWindowRect];
+            [trackingArea _updateWindowRectWithReferencingSuperViewVisibleRect:referencingSuperViewVisibleRect];
 
         else
         {
@@ -3904,7 +3944,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
         // Other views (CPBox) might set an autoresizes mask on their subviews before it is actually decoded.
         // We make sure we don't override the value by checking if it was already set.
-        if (_autoresizingMask === nil)
+        if (_autoresizingMask == nil)
             _autoresizingMask = [aCoder decodeIntForKey:CPViewAutoresizingMaskKey] || CPViewNotSizable;
 
         _autoresizesSubviews = ![aCoder containsValueForKey:CPViewAutoresizesSubviewsKey] || [aCoder decodeBoolForKey:CPViewAutoresizesSubviewsKey];
@@ -3953,6 +3993,8 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [self _decodeThemeObjectsWithCoder:aCoder];
 
         [self setAppearance:[aCoder decodeObjectForKey:CPViewAppearanceKey]];
+        // Set the current appearance to something that can't be the correct one so it will recalculate it at the first layout.
+        _currentAppearance = _frame;
 
         //ConstraintBasedLayout
         [self _initAutolayoutIvars];
@@ -3990,7 +4032,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     [aCoder encodeRect:_bounds forKey:CPViewBoundsKey];
 
     // This will come out nil on the other side with decodeObjectForKey:
-    if (_window !== nil)
+    if (_window != nil)
         [aCoder encodeConditionalObject:_window forKey:CPViewWindowKey];
 
     var count = [_subviews count],
@@ -4009,7 +4051,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
         [aCoder encodeObject:encodedSubviews forKey:CPViewSubviewsKey];
 
     // This will come out nil on the other side with decodeObjectForKey:
-    if (_superview !== nil)
+    if (_superview != nil)
         [aCoder encodeConditionalObject:_superview forKey:CPViewSuperviewKey];
 
     if (_autoresizingMask !== CPViewNotSizable)
@@ -4018,7 +4060,7 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
     if (!_autoresizesSubviews)
         [aCoder encodeBool:_autoresizesSubviews forKey:CPViewAutoresizesSubviewsKey];
 
-    if (_backgroundColor !== nil)
+    if (_backgroundColor != nil)
         [aCoder encodeObject:_backgroundColor forKey:CPViewBackgroundColorKey];
 
     if (_hitTests !== YES)
@@ -4035,12 +4077,12 @@ var CPViewAutoresizingMaskKey       = @"CPViewAutoresizingMask",
 
     var nextKeyView = [self nextKeyView];
 
-    if (nextKeyView !== nil && ![nextKeyView isEqual:self])
+    if (nextKeyView != nil && ![nextKeyView isEqual:self])
         [aCoder encodeConditionalObject:nextKeyView forKey:CPViewNextKeyViewKey];
 
     var previousKeyView = [self previousKeyView];
 
-    if (previousKeyView !== nil && ![previousKeyView isEqual:self])
+    if (previousKeyView != nil && ![previousKeyView isEqual:self])
         [aCoder encodeConditionalObject:previousKeyView forKey:CPViewPreviousKeyViewKey];
 
     [self _encodeThemeObjectsWithCoder:aCoder];
@@ -4375,6 +4417,7 @@ Invalidates the view’s intrinsic content size.
         return;
 //CPLog.debug([self debugID] + " " +  _cmd);
     [self setNeedsUpdateConstraints:YES];
+    [[self window] _updateWindowContentSizeConstraints];
     [[self window] setNeedsLayout];
 }
 
@@ -4788,6 +4831,7 @@ Updates the constraints for the receiving view and its subviews.
 */
 - (BOOL)updateConstraintsForSubtreeIfNeeded
 {
+// Recursively update constraints from bottom to top.
 //CPLog.debug([self debugID] + " " +  _cmd);
     var result = _needsUpdateConstraints;
 
@@ -4830,6 +4874,7 @@ Update constraints for the view.
 */
 - (void)updateConstraints
 {
+    CPLog.debug([self debugID] + " " + _cmd);
     var translate = [self translatesAutoresizingMaskIntoConstraints];
 
     if (translate)
@@ -5035,7 +5080,7 @@ Updates the layout of the receiving view and its subviews based on the current v
 
 - (void)_updateGeometryIfNeeded
 {
-//CPLog.debug([self debugID] + " " + _cmd);
+//CPLog.warn([self debugID] + " " + _cmd);
     if (_geometryDirtyMask !== 0)
     {
         [self _updateGeometry];

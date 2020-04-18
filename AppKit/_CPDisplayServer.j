@@ -30,7 +30,11 @@ var displayObjects      = [],
     layoutObjects       = [],
     layoutObjectsByUID  = { },
 
+    constraintsUpdateObjects       = [],
+    constraintsUpdateObjectsByUID  = { },
+
     runLoop             = [CPRunLoop mainRunLoop],
+    objectsCount        = 0,
     locked              = 0;
 
 function _CPDisplayServerAddDisplayObject(anObject)
@@ -44,6 +48,7 @@ function _CPDisplayServerAddDisplayObject(anObject)
 
     displayObjectsByUID[UID] = index;
     displayObjects[index] = anObject;
+    objectsCount++;
 }
 
 function _CPDisplayServerAddLayoutObject(anObject)
@@ -57,6 +62,21 @@ function _CPDisplayServerAddLayoutObject(anObject)
 
     layoutObjectsByUID[UID] = index;
     layoutObjects[index] = anObject;
+    objectsCount++;
+}
+
+function _CPDisplayServerAddConstraintsUpdateObject(anObject)
+{
+    var UID = [anObject UID];
+
+    if (typeof constraintsUpdateObjectsByUID[UID] !== "undefined")
+        return;
+
+    var index = constraintsUpdateObjects.length;
+
+    constraintsUpdateObjectsByUID[UID] = index;
+    constraintsUpdateObjects[index] = anObject;
+    objectsCount++;
 }
 
 @implementation _CPDisplayServer : CPObject
@@ -75,15 +95,30 @@ function _CPDisplayServerAddLayoutObject(anObject)
 
 + (void)run
 {
-    while (locked == 0 && layoutObjects.length || displayObjects.length)
+    while (locked == 0 && (displayObjects.length || layoutObjects.length || constraintsUpdateObjects.length))
     {
         var index = 0;
+
+        for (; index < constraintsUpdateObjects.length; ++index)
+        {
+            var object = constraintsUpdateObjects[index];
+
+            delete constraintsUpdateObjectsByUID[[object UID]];
+            objectsCount--;
+            [object updateConstraintsIfNeeded];
+        }
+
+        constraintsUpdateObjects = [];
+        constraintsUpdateObjectsByUID = { };
+
+        index = 0;
 
         for (; index < layoutObjects.length; ++index)
         {
             var object = layoutObjects[index];
 
             delete layoutObjectsByUID[[object UID]];
+            objectsCount--;
             [object layoutIfNeeded];
         }
 
@@ -100,6 +135,7 @@ function _CPDisplayServerAddLayoutObject(anObject)
             var object = displayObjects[index];
 
             delete displayObjectsByUID[[object UID]];
+            objectsCount--;
             [object displayIfNeeded];
         }
 

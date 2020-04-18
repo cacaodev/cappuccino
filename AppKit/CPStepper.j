@@ -348,6 +348,7 @@ var CPStepperMinValue   = @"CPStepperMinValue",
         _autorepeat = [aCoder decodeBoolForKey:CPStepperAutorepeat];
 
         [self _init];
+        [self setEnabled:[self isEnabled]];
     }
 
     return self;
