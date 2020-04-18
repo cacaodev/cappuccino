@@ -2079,7 +2079,6 @@ CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
     [[self _layoutEngine] suggestValues:@[aPosition] forVariables:@[variable] withPriority:CPLayoutPriorityDragThatCannotResizeWindow];
 
     [self layoutSubtreeIfNeeded];
-    [self setNeedsDisplay:YES];
 
     if (!_isTracking)
         [self _splitViewDidEndDividerResizing:aDividerIndex];
@@ -2098,7 +2097,7 @@ CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
     [self setNeedsUpdateConstraints:YES];
     [self layoutSubtreeIfNeeded];
 
-    // Should this be posted after layout ?
+    // TODO: This should be posted after the update constraints layout pass.
     [self _postNotificationDidResize];
 }
 

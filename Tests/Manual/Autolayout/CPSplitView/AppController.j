@@ -15,9 +15,9 @@ CPLogRegister(CPLogConsole);
 
 @implementation AppController : CPObject
 {
-    SplitView splitView @accessors;
-    CPLayoutConstraint splitViewRight;
-    CPPopover priorityPopover;
+    SplitView           splitView @accessors;
+    CPLayoutConstraint  splitViewRight;
+    CPPopover           priorityPopover;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -109,7 +109,8 @@ CPLogRegister(CPLogConsole);
 - (void)addSubview:(id)sender
 {
     var aView = [[ColorView alloc] initWithFrame:CGRectMakeZero()];
-    [aView setIntrinsicSize:CGSizeMake(100, -1)];
+    var size = [splitView isVertical] ? CGSizeMake(100, -1) : CGSizeMake(-1, 100);
+    [aView setIntrinsicSize:size];
     //[aView setContentCompressionResistancePriority:1 forOrientation:0];
     //[aView setContentHuggingPriority:1 forOrientation:0];
     [aView setIdentifier:@"view" + [[splitView subviews] count]];
@@ -214,6 +215,11 @@ CPLogRegister(CPLogConsole);
 {
     var value = [sender selectedSegment];
     [splitView setVertical:value];
+
+    [[splitView arrangedSubviews] enumerateObjectsUsingBlock:function(aView, idx) {
+        var size = value == 1 ? CGSizeMake(100, -1) : CGSizeMake(-1, 100);
+        [aView setIntrinsicSize:size];
+    }];
 }
 
 - (void)_setDividerThickness:(id)sender
@@ -222,7 +228,7 @@ CPLogRegister(CPLogConsole);
     [splitView setDividerThickness:value];
 }
 
-- (IBAction)priorityAction:(id)sender
+- (@action)priorityAction:(id)sender
 {
     var popover = [self priorityPopover],
         controller = [popover contentViewController];
@@ -253,15 +259,16 @@ CPLogRegister(CPLogConsole);
 {
     var sender = [[aPopover contentViewController] sender],
         value = [sender intValue],
-        arrangedSubview = [sender superview];
+        arrangedSubview = [sender superview],
+        orientation = [splitView isVertical] ? 0 : 1;
 
     switch ([sender tag])
     {
-        case 1: [arrangedSubview setContentCompressionResistancePriority:value forOrientation:0];
+        case 1: [arrangedSubview setContentCompressionResistancePriority:value forOrientation:orientation];
                 [arrangedSubview setNeedsUpdateConstraints:YES];
                 [[splitView window] setNeedsLayout];
             break;
-        case 2: [arrangedSubview setContentHuggingPriority:value forOrientation:0];
+        case 2: [arrangedSubview setContentHuggingPriority:value forOrientation:orientation];
                 [arrangedSubview setNeedsUpdateConstraints:YES];
                 [[splitView window] setNeedsLayout];
             break;
@@ -402,7 +409,7 @@ CPLogRegister(CPLogConsole);
 
     [self setTranslatesAutoresizingMaskIntoConstraints:NO];
     intrinsicSize = CGSizeMake(-1, -1);
-    [self invalidateIntrinsicContentSize];
+
     color = [CPColor randomColor];
 
     return self;
@@ -415,10 +422,11 @@ CPLogRegister(CPLogConsole);
 
 - (void)updateLayout
 {
-    [[self viewWithTag:1] setFloatValue:[self contentCompressionResistancePriorityForOrientation:0]];
-    [[self viewWithTag:2] setFloatValue:[self contentHuggingPriorityForOrientation:0]];
-
     var sv = [[CPApp delegate] splitView];
+    var orientation = [sv isVertical] ? 0 : 1;
+    [[self viewWithTag:1] setFloatValue:[self contentCompressionResistancePriorityForOrientation:orientation]];
+    [[self viewWithTag:2] setFloatValue:[self contentHuggingPriorityForOrientation:orientation]];
+
     var idx = [[sv arrangedSubviews] indexOfObjectIdenticalTo:self];
     [[self viewWithTag:3] setFloatValue:[sv holdingPriorityForSubviewAtIndex:idx]];
 }
@@ -439,6 +447,13 @@ CPLogRegister(CPLogConsole);
 - (CGSize)intrinsicContentSize
 {
     return intrinsicSize;
+}
+
+- (void)setIntrinsicSize:(CGSize)aSize
+{
+    intrinsicSize = aSize;
+    [self invalidateIntrinsicContentSize];
+    [self setNeedsDisplay:YES];
 }
 
 @end
