@@ -30,6 +30,7 @@
 @import "CPView.j"
 @import "CPCursor.j"
 @import "CPTrackingArea.j"
+@import "CPLayoutRect.j"
 
 @class CPUserDefaults
 @global CPApp
@@ -92,6 +93,9 @@ CPSplitViewWillResizeSubviewsNotification = @"CPSplitViewWillResizeSubviewsNotif
 var ShouldSuppressResizeNotifications   = 1,
     DidPostWillResizeNotification       = 1 << 1,
     DidSuppressResizeNotification       = 1 << 2;
+
+var CPSPLITVIEW_DIVIDER_WIDTH_DEFAULT_PRIORITY = 950,
+    CPSPLITVIEW_PROPORTIONAL_RESIZING_DEFAULT_PRIORITY = 251;
 
 // FIXME: Previous implementation (before October 2018 and Aristo3) uses direct DOM elements manipulations to render dividers.
 //
@@ -164,6 +168,21 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     CPMutableArray              _initialSizes;
     CPMutableArray              _ratios;
     CPMutableArray              _isFlexible;
+
+// ConstraintBasedLayout
+    CPLayoutRect                _dividersLayoutRect;
+    CPLayoutConstraint          _constraintForDividerPosition;
+    CPLayoutAnchor              _proportionalResizingAnchor;
+    CPArray                     _splitViewConstraints;
+    CPArray                     _constraintsForProportionalResizing;
+    CPArray                     _constraintsForSubviewsHolding;
+    CPArray                     _constraintsForDividerResizing;
+    BOOL                        _splitViewUseConstraintBasedLayout;
+    CGSize                      _storedFrameSize;
+    BOOL                        _needsUpdateConstraintsForSubviews;
+    BOOL                        _needsUpdateConstraintsForProportionalResizing;
+    BOOL                        _needsUpdateConstraintsForSubviewsHolding;
+    CPDictionary                _holdingPriorities;
 }
 
 + (CPString)defaultThemeClass
@@ -211,6 +230,18 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     _isFlexible          = @[];
     _arrangesAllSubviews = YES; // Default for previous behavior compatibility
 
+// ConstraintBasedLayout
+    _splitViewConstraints = @[];
+    _dividersLayoutRect = @[];
+    _constraintForDividerPosition = nil;
+    _proportionalResizingAnchor = nil;
+    _splitViewUseConstraintBasedLayout = NO;
+    _storedFrameSize = CGSizeMakeZero();
+    _needsUpdateConstraintsForSubviews = YES;
+    _needsUpdateConstraintsForProportionalResizing = NO;
+    _needsUpdateConstraintsForSubviewsHolding = YES;
+    _holdingPriorities = @{};
+
     [self setDividerStyle:CPSplitViewDividerStyleThick]; // Default of Xcode IB
 
     [self _setVertical:YES];
@@ -233,7 +264,8 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     [self unsetThemeStates:@[CPThemeStateSplitViewDividerStyleThick, CPThemeStateSplitViewDividerStyleThin, CPThemeStateSplitViewDividerStylePaneSplitter]];
     [self setThemeState:CPThemeStatesForSplitViewDivider[_dividerStyle]];
 
-    [self setNeedsLayout:YES];
+    if (![self _splitViewUseConstraintBasedLayout])
+        [self setNeedsLayout:YES];
 }
 
 - (CPColor)dividerColor
@@ -261,6 +293,29 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     return [self currentValueForThemeAttribute:(_dividerStyle === CPSplitViewDividerStyleThin ? @"divider-thickness" : @"pane-divider-thickness")];
 }
 
+- (void)setDividerThickness:(float)aDividerThickness
+{
+    var attr = [self isPaneSplitter] ? @"pane-divider-thickness" : @"divider-thickness";
+    [self setValue:aDividerThickness forThemeAttribute:attr];
+
+    if ([self _splitViewUseConstraintBasedLayout])
+    {
+        [_splitViewConstraints enumerateObjectsUsingBlock:function(aConstraint, idx, stop)
+        {
+            if ([[aConstraint identifier] hasSuffix:@"thickness"])
+            {
+                [aConstraint setConstant:aDividerThickness];
+            }
+        }];
+
+        [self layoutSubtreeIfNeeded];
+        [self setNeedsLayout];
+    }
+    else
+    {
+        [self setNeedsLayout];
+    }
+}
 /*!
     Returns YES if the dividers are vertical, otherwise NO.
     @return YES if vertical, otherwise NO.
@@ -279,6 +334,11 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     if (![self _setVertical:shouldBeVertical])
         return;
 
+    if ([self _splitViewUseConstraintBasedLayout])
+    {
+        [self _constraintBased_setVertical:shouldBeVertical];
+        return;
+    }
     // Just re-adjust evenly.
     var frame = [self frame],
         dividerThickness = [self dividerThickness],
@@ -311,8 +371,6 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     _subviewsManagementDisabled = NO;
 
     [self _postNotificationDidResize];
-
-    return;
 }
 
 - (BOOL)_setVertical:(BOOL)shouldBeVertical
@@ -493,21 +551,12 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
 
 - (void)addArrangedSubview:(CPView)view
 {
-    // If the view is already an arranged subview, just return quietly as Cocoa does
-    if ([_arrangedSubviews containsObject:view])
-        return;
-
-    _subviewsManagementDisabled = YES;
-
     [self _addArrangedSubview:view];
-    [self addSubview:view];
-
-    _subviewsManagementDisabled = NO;
 }
 
 - (void)_addArrangedSubview:(CPView)view
 {
-    [self _insertArrangedSubview:view atIndex:_arrangedSubviews.length];
+    [self insertArrangedSubview:view atIndex:_arrangedSubviews.length];
 }
 
 - (void)insertArrangedSubview:(CPView)view atIndex:(CPInteger)index
@@ -524,8 +573,14 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
 
     _subviewsManagementDisabled = YES;
 
+    if ([self _splitViewUseConstraintBasedLayout])
+        [view setTranslatesAutoresizingMaskIntoConstraints:NO];
+
     [self _insertArrangedSubview:view atIndex:index];
     [self addSubview:view];
+
+    if ([self _splitViewUseConstraintBasedLayout])
+        [self _needsUpdateConstraints];
 
     _subviewsManagementDisabled = NO;
 }
@@ -589,6 +644,7 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
         [divider setBackgroundColor:[self dividerColor]];
 
         [_dividerSubviews addObject:divider];
+        [divider setTranslatesAutoresizingMaskIntoConstraints:NO];
         [super            addSubview:divider];
     }
 }
@@ -615,6 +671,12 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     }
 
     [self _updateRatios];
+
+    if ([self _splitViewUseConstraintBasedLayout])
+    {
+        [_holdingPriorities removeObjectForKey:[CPString stringWithFormat:@"view.%d", arrangedIndex]];
+        [self _needsUpdateConstraints];
+    }
 }
 
 - (void)addSubview:(CPView)aSubview
@@ -656,6 +718,10 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
 
 - (CGRect)rectOfDividerAtIndex:(int)aDivider
 {
+    if ([self _splitViewUseConstraintBasedLayout])
+        return [self _constraintBased_rectOfDividerAtIndex:aDivider];
+
+
     return [_dividerSubviews[aDivider] frame];
 }
 
@@ -822,7 +888,7 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     [self layoutSubviews];
 }
 
-- (void)layoutSubviews
+- (void)_layoutSubviews
 {
     for (var i = 0, count = _arrangedSubviews.length, position = 0, origin; i < count; i++)
     {
@@ -845,6 +911,14 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     [self updateTrackingAreas];
 }
 
+- (void)layoutSubviews
+{
+    if ([self _splitViewUseConstraintBasedLayout])
+        [super layoutSubviews];
+    else
+        [self _layoutSubviews];
+}
+
 #pragma mark - Private layout utilities
 
 - (void)_distribute:(CPInteger)remainingSpace amoung:(CPInteger)count onFlexible:(BOOL)onFlexible fromIndex:(CPInteger)fromIndex toIndex:(CPInteger)toIndex
@@ -863,6 +937,9 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
 
 - (void)_updateRatios
 {
+    if ([self _splitViewUseConstraintBasedLayout])
+        return;
+
     // Compute new ratios based on new sizes
 
     var flexibleSpace = 0,
@@ -987,6 +1064,9 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
     {
         if ([anEvent clickCount] == 2 || (_isTracking && _currentDivider != CPNotFound))
         {
+            if ([self _splitViewUseConstraintBasedLayout])
+                [self _splitViewDidEndDividerResizing:_currentDivider];
+
             // We disabled autosaving during tracking.
             _shouldAutosave = YES;
             _currentDivider = CPNotFound;
@@ -1033,6 +1113,7 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
         else
         {
             _initialOffset = startPosition - point[_originComponent];
+
             // Don't autosave during a resize. We'll wait until it's done.
             _shouldAutosave = NO;
             [self _postNotificationWillResize];
@@ -1046,6 +1127,9 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
             // Don't autosave during a resize. We'll wait until it's done.
             _shouldAutosave = NO;
             [self _postNotificationWillResize];
+
+            if ([self _splitViewUseConstraintBasedLayout])
+                [self _splitViewWillStartDividerResizing:_currentDivider];
 
             _isTracking = YES;
         }
@@ -1062,6 +1146,10 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
 
 - (void)mouseDown:(CPEvent)anEvent
 {
+#if (DEBUG)
+    if ([anEvent type] == CPLeftMouseDown && [anEvent modifierFlags] & CPShiftKeyMask)
+        CPLog.debug([_splitViewConstraints description]);
+#endif
     var point = [self convertPoint:[anEvent locationInWindow] fromView:nil],
         dividerIndex = [self _dividerAtPoint:point];
 
@@ -1209,6 +1297,12 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
 */
 - (void)setPosition:(float)position ofDividerAtIndex:(int)dividerIndex
 {
+    if ([self _splitViewUseConstraintBasedLayout])
+    {
+        [self _constraintBased_setPosition:position ofDividerAtIndex:dividerIndex];
+        return;
+    }
+
     // Any manual changes to the divider position should override anything we are restoring from
     // autosave.
     _shouldRestoreFromAutosaveUnlessFrameSize = nil;
@@ -1745,7 +1839,414 @@ var CPThemeStatesForSplitViewDivider = @[@"dummy one as CPSplitViewDividerStyle 
 
 @end
 
-#pragma mark -
+@implementation CPSplitView (ConstraintBasedLayout)
+
+- (void)_needsUpdateConstraints
+{
+    _needsUpdateConstraintsForSubviews = YES;
+    _needsUpdateConstraintsForSubviewsHolding = YES;
+    _needsUpdateConstraintsForProportionalResizing = NO;
+
+    [self setNeedsUpdateConstraints:YES];
+    [self layoutSubtreeIfNeeded];
+}
+
+- (void)updateConstraints
+{
+    if (![self _splitViewUseConstraintBasedLayout])
+        return;
+
+    [self _updateConstraintsForSubviews];
+
+    [self _updateConstraintsForSubviewsHolding];
+
+    [self _updateConstraintsForProportionalResizing];
+
+    [super updateConstraints];
+}
+
+- (void)_updateConstraintsForSubviews
+{
+    if (!_needsUpdateConstraintsForSubviews)
+        return;
+CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
+    [CPLayoutConstraint deactivateConstraints:_splitViewConstraints];
+    [_splitViewConstraints removeAllObjects];
+    [_dividersLayoutRect removeAllObjects];
+
+    var subviews = [self arrangedSubviews],
+        count = [subviews count],
+        previousDivider = nil;
+
+    [subviews enumerateObjectsUsingBlock:function(aView, idx, stop)
+    {
+        var splitViewTopAnchor = [aView leadingAnchorForOrientation:_isVertical],
+            splitViewBottomAnchor = [aView trailingAnchorForOrientation:_isVertical],
+            top = [splitViewTopAnchor constraintEqualToAnchor:[self leadingAnchorForOrientation:_isVertical]],
+            bottom = [splitViewBottomAnchor constraintEqualToAnchor:[self trailingAnchorForOrientation:_isVertical]],
+            leftAnchor, rightAnchor;
+
+        if (idx == 0)
+        {
+            leftAnchor = [self leadingAnchorForOrientation:!_isVertical];
+        }
+        else
+        {
+            leftAnchor = [previousDivider trailingAnchorForOrientation:!_isVertical];
+        }
+
+        if (idx == count - 1)
+        {
+            rightAnchor = [self trailingAnchorForOrientation:!_isVertical];
+        }
+        else
+        {
+            var dividerView = [_dividerSubviews objectAtIndex:idx];
+            var dividerIdentifier = [CPString stringWithFormat:@"divider.%d", idx];
+            var dividerLayoutRect = [dividerView layoutRect];
+            [dividerLayoutRect setName:dividerIdentifier];
+
+            var dividerTop = [[dividerLayoutRect leadingAnchorForOrientation:_isVertical] constraintEqualToAnchor:splitViewTopAnchor];
+            var dividerBottom = [[dividerLayoutRect trailingAnchorForOrientation:_isVertical] constraintEqualToAnchor:splitViewBottomAnchor];
+            var dividerWidth = [[dividerLayoutRect dimensionAnchorForOrientation:!_isVertical] constraintEqualToConstant:[self dividerThickness]];
+            [dividerWidth setIdentifier:[CPString stringWithFormat:@"%@.thickness", dividerIdentifier]];
+
+            [_dividersLayoutRect addObject:dividerLayoutRect];
+            [_splitViewConstraints addObjectsFromArray:@[dividerTop, dividerBottom, dividerWidth]];
+
+            rightAnchor = [dividerLayoutRect leadingAnchorForOrientation:!_isVertical];
+            previousDivider = dividerLayoutRect;
+        }
+
+        var left = [[aView leadingAnchorForOrientation:!_isVertical] constraintEqualToAnchor:leftAnchor],
+            right = [[aView trailingAnchorForOrientation:!_isVertical] constraintEqualToAnchor:rightAnchor],
+            rightGreaterThanLeft = [rightAnchor constraintGreaterThanOrEqualToAnchor:leftAnchor];
+
+        [_splitViewConstraints addObjectsFromArray:@[top, bottom, left, right, rightGreaterThanLeft]];
+
+    }];
+
+    [CPLayoutConstraint activateConstraints:_splitViewConstraints];
+    _needsUpdateConstraintsForSubviews = NO;
+}
+
+- (void)_updateHoldingConstraintForSubview:(CPView)aView atIndex:(CPInteger)anIndex
+{
+    var identifier = [CPString stringWithFormat:@"view.%d.holding", anIndex];
+
+    var cst = [self _constraintPassingTest:function(aConstraint)
+    {
+        return [aConstraint identifier] == identifier;
+    }];
+
+    var dimensionAnchor = [aView dimensionAnchorForOrientation:!_isVertical];
+    var current_value = [dimensionAnchor valueInEngine:nil];
+
+    if (current_value == 0)
+        return;
+
+    var priority = [self holdingPriorityForSubviewAtIndex:anIndex];
+
+    if (cst == nil)
+    {
+        // Create a new holding constraint and add it.
+        var ncst = [dimensionAnchor constraintEqualToConstant:current_value];
+        [ncst setIdentifier:identifier];
+        [ncst setPriority:priority];
+        [_splitViewConstraints addObject:ncst];
+        [ncst setActive:YES];
+        CPLog.debug("Create a new holding : " + ncst);
+    }
+    else
+    {
+        [cst setConstant:current_value priority:priority];
+        CPLog.debug("Updated holding : " + cst);
+    }
+}
+
+- (void)_updateConstraintsForSubviewsHolding
+{
+    if (!_needsUpdateConstraintsForSubviewsHolding)
+        return;
+CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
+    var subviews = [self arrangedSubviews];
+
+    [subviews enumerateObjectsUsingBlock:function(aView, idx, stop)
+    {
+        [self _updateHoldingConstraintForSubview:aView atIndex:idx];
+    }];
+
+    _needsUpdateConstraintsForSubviewsHolding = NO;
+}
+
+- (void)_updateConstraintsForProportionalResizing
+{
+    if (!_needsUpdateConstraintsForProportionalResizing)
+        return;
+CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
+    var subviews = [self arrangedSubviews],
+        ratioAnchor = [self _proportionalResizingAnchor];
+
+    if ([subviews count] == 0)
+        return;
+
+    [subviews enumerateObjectsUsingBlock:function(aView, idx, stop)
+    {
+        var identifier = [CPString stringWithFormat:@"view.%d.proportional", idx];
+
+        var cstIndex = [_splitViewConstraints indexOfObjectPassingTest:function(aConstraint)
+        {
+            return [aConstraint identifier] == identifier;
+        }];
+
+        if (cstIndex !== CPNotFound)
+        {
+            var cst = [_splitViewConstraints objectAtIndex:cstIndex];
+            [cst setActive:NO];
+            [_splitViewConstraints removeObjectAtIndex:cstIndex];
+        }
+
+        var dimensionAnchor = [aView dimensionAnchorForOrientation:!_isVertical],
+            current_value = [dimensionAnchor valueInEngine:nil];
+
+        if (current_value == 0)
+            return;
+
+         // if ([self inLiveResize])
+         // {
+            var newCst = [dimensionAnchor constraintEqualToAnchor:ratioAnchor multiplier:current_value constant:0];
+            [newCst setIdentifier:identifier];
+            [newCst setPriority:CPSPLITVIEW_PROPORTIONAL_RESIZING_DEFAULT_PRIORITY];
+            [newCst setActive:YES];
+            [_splitViewConstraints addObject:newCst];
+         // }
+    }];
+
+    _needsUpdateConstraintsForProportionalResizing = NO;
+}
+
+- (CPLayoutAnchor)_proportionalResizingAnchor
+{
+    if (_proportionalResizingAnchor == nil)
+    {
+        _proportionalResizingAnchor = [CPLayoutAnchor anchorNamed:@"proportionalResizing" inItem:self];
+    }
+
+    return _proportionalResizingAnchor;
+}
+
+- (CPLayoutConstraint)_constraintPassingTest:(Function)aFunction
+{
+    var idx = [_splitViewConstraints indexOfObjectPassingTest:function(aConstraint, idx, stop)
+    {
+        return aFunction(aConstraint);
+    }];
+
+    if (idx == CPNotFound)
+        return nil;
+
+    return [_splitViewConstraints objectAtIndex:idx];
+}
+
+- (CPLayoutRect)_dividerLayoutRectAtIndex:(CPInteger)anIndex
+{
+    if (anIndex >= [_dividersLayoutRect count])
+        [CPException raise:CPRangeException reason:[CPString stringWithFormat:@"Index %d is out of bound", anIndex]];
+
+    var identifier = [CPString stringWithFormat:@"divider.%d", anIndex];
+
+    var idx = [_dividersLayoutRect indexOfObjectPassingTest:function(divider, idx, stop)
+    {
+        return [divider name] == identifier;
+    }];
+
+    if (idx == CPNotFound)
+        return nil;
+
+    return [_dividersLayoutRect objectAtIndex:idx];
+}
+
+- (void)_constraintBased_setPosition:(float)aPosition ofDividerAtIndex:(CPInteger)aDividerIndex
+{
+    [self _postNotificationWillResize];
+
+    if (!_isTracking)
+        [self _splitViewWillStartDividerResizing:aDividerIndex];
+
+    var divider = [self _dividerLayoutRectAtIndex:aDividerIndex];
+    var anchor = [divider leadingAnchorForOrientation:!_isVertical];
+    var variable = [anchor variable];
+    [[self _layoutEngine] suggestValues:@[aPosition] forVariables:@[variable] withPriority:CPLayoutPriorityDragThatCannotResizeWindow];
+
+    [self layoutSubtreeIfNeeded];
+    [self setNeedsDisplay:YES];
+
+    if (!_isTracking)
+        [self _splitViewDidEndDividerResizing:aDividerIndex];
+
+    [self _postNotificationDidResize];
+}
+
+- (void)_constraintBased_setVertical:(BOOL)shouldBeVertical
+{
+    [self _postNotificationWillResize];
+
+    _needsUpdateConstraintsForSubviews = YES;
+    _needsUpdateConstraintsForSubviewsHolding = YES;
+    _needsUpdateConstraintsForProportionalResizing = YES;
+
+    [self setNeedsUpdateConstraints:YES];
+    [self layoutSubtreeIfNeeded];
+
+    // Should this be posted after layout ?
+    [self _postNotificationDidResize];
+}
+
+- (CGRect)_constraintBased_rectOfDividerAtIndex:(CPinteger)anIndex
+{
+    return [[self _dividerLayoutRectAtIndex:anIndex] valueInEngine:nil];
+}
+
+- (void)_addObservers
+{
+    if (_isObserving)
+        return;
+
+    var center = [CPNotificationCenter defaultCenter];
+
+    [center addObserver:self
+               selector:@selector(viewWillStartLiveResize:)
+                   name:CPWindowWillStartLiveResizeNotification
+                 object:[self window]];
+
+    [center addObserver:self
+               selector:@selector(viewDidEndLiveResize:)
+                   name:CPWindowDidEndLiveResizeNotification
+                 object:[self window]];
+
+    [super _addObservers];
+}
+
+- (void)_removeObservers
+{
+    if (_isObserving)
+        return;
+
+    var center = [CPNotificationCenter defaultCenter];
+    [center removeObserver:self name:CPWindowWillStartLiveResizeNotification object:nil];
+    [center removeObserver:self name:CPWindowDidEndLiveResizeNotification object:nil];
+
+    [super _removeObservers];
+}
+
+- (void)viewWillStartLiveResize:(CPNotification)note
+{
+    CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
+
+    //_needsUpdateConstraintsForProportionalResizing = YES;
+    //[self setNeedsUpdateConstraints:YES];
+    //[self layoutSubtreeIfNeeded];
+}
+
+- (void)viewDidEndLiveResize:(CPNotification)note
+{
+    CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
+
+    _needsUpdateConstraintsForSubviewsHolding = YES;
+    _needsUpdateConstraintsForProportionalResizing = YES;
+    [self setNeedsUpdateConstraints:YES];
+    [self layoutSubtreeIfNeeded];
+}
+
+- (void)_splitViewWillStartDividerResizing:(CPInteger)aDividerIndex
+{
+    CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
+    [[self _layoutEngine] stopEditing];
+}
+
+- (void)_splitViewDidEndDividerResizing:(CPInteger)aDividerIndex
+{
+    CPLogColor(camelCaseToSentence(_cmd), [CPColor orangeColor]);
+
+    _needsUpdateConstraintsForSubviewsHolding = YES;
+    [self setNeedsUpdateConstraints:YES];
+    [self layoutSubtreeIfNeeded];
+
+    [[self _layoutEngine] stopEditing];
+}
+
+- (BOOL)_splitViewUseConstraintBasedLayout
+{
+    // You cannot disengage Autolayout engine. When it's on, skip the test.
+    if (!_splitViewUseConstraintBasedLayout)
+    {
+        _splitViewUseConstraintBasedLayout = ([self _layoutEngineIfExists] !== nil);
+    }
+
+    return _splitViewUseConstraintBasedLayout;
+}
+
+- (void)setHoldingPriority:(CPLayoutPriority)aPriority forSubviewAtIndex:(CPInteger)anIndex
+{
+    [_holdingPriorities setObject:aPriority forKey:[CPString stringWithFormat:@"view.%d", anIndex]];
+
+    [self _updateHoldingConstraintForSubview:[_arrangedSubviews objectAtIndex:anIndex] atIndex:anIndex];
+}
+
+- (CPLayoutPriority)holdingPriorityForSubviewAtIndex:(CPInteger)anIndex
+{
+    var result = [_holdingPriorities objectForKey:[CPString stringWithFormat:@"view.%d", anIndex]];
+
+    if (result !== nil)
+        return result;
+
+    return CPLayoutPriorityDefaultLow;
+}
+
+@end
+
+@implementation CPView (CPLayoutAnchor)
+
+- (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return [self layoutAnchorForAttribute:CPLayoutAttributeLeading - 2 * orientation];
+}
+
+- (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return [self layoutAnchorForAttribute:CPLayoutAttributeTrailing - 2 * orientation];
+}
+
+- (CPLayoutAnchor)dimensionAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return [self layoutAnchorForAttribute:CPLayoutAttributeWidth + orientation];
+}
+
+@end
+
+@implementation CPLayoutRect (CPLayoutAnchor)
+
+- (CPLayoutAnchor)leadingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return [self layoutAnchorForAttribute:CPLayoutAttributeLeading - 2 * orientation];
+}
+
+- (CPLayoutAnchor)trailingAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return [self layoutAnchorForAttribute:CPLayoutAttributeTrailing - 2 * orientation];
+}
+
+- (CPLayoutAnchor)dimensionAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return [self layoutAnchorForAttribute:CPLayoutAttributeWidth + orientation];
+}
+
+- (CPLayoutAnchor)centerAnchorForOrientation:(CPLayoutConstraintOrientation)orientation
+{
+    return [self layoutAnchorForAttribute:CPLayoutAttributeCenterX + orientation];
+}
+
+@end
 
 var CPSplitViewDelegateKey            = @"CPSplitViewDelegateKey",
     CPSplitViewIsVerticalKey          = @"CPSplitViewIsVerticalKey",
@@ -1840,8 +2341,11 @@ var CPSplitViewDelegateKey            = @"CPSplitViewDelegateKey",
     if (_autosaveName)
         [self _restoreFromAutosave];
 
-    [self _updateRatios];
-    [self adjustSubviews];
+    if ([self _splitViewUseConstraintBasedLayout])
+    {
+        [self _updateRatios];
+        [self adjustSubviews];
+    }
 
     return self;
 }
@@ -1900,3 +2404,14 @@ var CPSplitViewDelegateKey            = @"CPSplitViewDelegateKey",
 
 @end
 
+var CPLogColor = function(aString, aColor)
+{
+    if (aColor == undefined) {aColor = [CPColor blackColor]};
+
+    console.log('%c ' + aString, 'color:' + [aColor cssString] + '; font-weight:bold; font-family:Arial');
+};
+
+var camelCaseToSentence = function(input) {
+    var result = input.replace( /([A-Z])/g, " $1" );
+    return  result.charAt(0).toUpperCase() + result.slice(1);
+};

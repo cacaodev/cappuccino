@@ -31,7 +31,7 @@
     CPLayoutYAxisAnchor _topAnchor     @accessors(getter=topAnchor);
     CPLayoutDimension   _widthAnchor   @accessors(getter=widthAnchor);
     CPLayoutDimension   _heightAnchor  @accessors(getter=heightAnchor);
-    CPString            _name          @accessors(getter=name);
+    CPString            _name          @accessors(property=name);
     id                  _superItem;
 }
 
