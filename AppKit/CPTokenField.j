@@ -69,14 +69,14 @@ var CPTokenFieldDOMInputElement = nil,
     CPTokenFieldDOMStandardInputElement = nil,
     CPTokenFieldInputOwner = nil,
     CPTokenFieldTextDidChangeValue = nil,
-    CPTokenFieldInputResigning = NO,
-    CPTokenFieldInputDidBlur = NO,
+    //CPTokenFieldInputResigning = NO,
+    ///CPTokenFieldInputDidBlur = NO,
     CPTokenFieldInputIsActive = NO,
     CPTokenFieldCachedSelectStartFunction = nil,
     CPTokenFieldCachedDragFunction = nil,
-    CPTokenFieldFocusInput = NO,
+    CPTokenFieldFocusInput = NO;
 
-    CPTokenFieldBlurHandler = nil;
+    // CPTokenFieldBlurHandler = nil;
 
 #endif
 
@@ -201,6 +201,16 @@ CPTokenFieldDeleteButtonType     = 1;
         _implementedTokenFieldDelegateMethods |= CPTokenFieldDelegate_tokenField_representedObjectForEditingString_;
 
     [super setDelegate:_tokenFieldDelegate];
+}
+
+- (CPView)hitTest:(CGPoint)thePoint
+{
+    var view = [super hitTest:thePoint];
+
+    if ([view isKindOfClass:[_CPTokenFieldToken class]])
+        return self;
+
+    return view;
 }
 
 - (_CPAutocompleteMenu)_autocompleteMenu
@@ -522,13 +532,13 @@ CPTokenFieldDeleteButtonType     = 1;
 
     var element = [self _inputElement];
 
-    CPTokenFieldInputResigning = YES;
+    //CPTokenFieldInputResigning = YES;
 
     if (CPTokenFieldInputIsActive)
         element.blur();
 
-    if (!CPTokenFieldInputDidBlur)
-        CPTokenFieldBlurHandler();
+    // if (!CPTokenFieldInputDidBlur)
+    //     CPTokenFieldBlurHandler();
 
     if (element.parentNode == [_tokenScrollView documentView]._DOMElement)
         element.parentNode.removeChild(element);
@@ -539,8 +549,8 @@ CPTokenFieldDeleteButtonType     = 1;
     // for why we need to unflag CPTokenFieldInputDidBlur and CPTokenFieldInputResigning
     // only after removing the element.
 
-    CPTokenFieldInputDidBlur = NO;
-    CPTokenFieldInputResigning = NO;
+    //CPTokenFieldInputDidBlur = NO;
+    //CPTokenFieldInputResigning = NO;
 
     CPTokenFieldInputIsActive = NO;
 
@@ -558,15 +568,26 @@ CPTokenFieldDeleteButtonType     = 1;
 
 - (void)mouseDown:(CPEvent)anEvent
 {
-    _mouseDownEvent = anEvent;
-
-    [self _selectToken:nil byExtendingSelection:NO];
-
-    [super mouseDown:anEvent];
+    var location = [[self superview] convertPoint:[anEvent locationInWindow] fromView:nil ];
+    var view = [super hitTest:location];
+    if ([view isKindOfClass:[_CPTokenFieldToken class]])
+        [self _mouseDownOnToken:view withEvent:anEvent];
+    else {
+        [self _selectToken:nil byExtendingSelection:NO];
+        [super mouseDown:anEvent];
+    }
 }
 
 - (void)mouseUp:(CPEvent)anEvent
 {
+    var location = [[self superview] convertPoint:[anEvent locationInWindow] fromView:nil ];
+    var view = [super hitTest:location];
+
+    if ([view isKindOfClass:[_CPTokenFieldToken class]])
+        [self _mouseUpOnToken:view withEvent:anEvent];
+    else
+        [super mouseUp:anEvent];
+
     _mouseDownEvent = nil;
 }
 
@@ -754,19 +775,19 @@ CPTokenFieldDeleteButtonType     = 1;
         CPTokenFieldDOMInputElement.style.background = "transparent";
         CPTokenFieldDOMInputElement.style.outline = "none";
 
-        CPTokenFieldBlurHandler = function(anEvent)
-        {
-            return CPTextFieldBlurFunction(
-                        anEvent,
-                        CPTokenFieldInputOwner,
-                        CPTokenFieldInputOwner ? [CPTokenFieldInputOwner._tokenScrollView documentView]._DOMElement : nil,
-                        CPTokenFieldDOMInputElement,
-                        CPTokenFieldInputResigning,
-                        @ref(CPTokenFieldInputDidBlur));
-        };
+        // CPTokenFieldBlurHandler = function(anEvent)
+        // {
+        //     return CPTextFieldBlurFunction(
+        //                 anEvent,
+        //                 CPTokenFieldInputOwner,
+        //                 CPTokenFieldInputOwner ? [CPTokenFieldInputOwner._tokenScrollView documentView]._DOMElement : nil,
+        //                 CPTokenFieldDOMInputElement,
+        //                 CPTokenFieldInputResigning,
+        //                 @ref(CPTokenFieldInputDidBlur));
+        // };
 
         // FIXME make this not onblur
-        CPTokenFieldDOMInputElement.onblur = CPTokenFieldBlurHandler;
+        //CPTokenFieldDOMInputElement.onblur = CPTokenFieldBlurHandler;
 
         CPTokenFieldDOMStandardInputElement = CPTokenFieldDOMInputElement;
     }
@@ -1599,16 +1620,6 @@ CPTokenFieldDeleteButtonType     = 1;
                 break;
         }
     }
-}
-
-- (void)mouseDown:(CPEvent)anEvent
-{
-    [_tokenField _mouseDownOnToken:self withEvent:anEvent];
-}
-
-- (void)mouseUp:(CPEvent)anEvent
-{
-    [_tokenField _mouseUpOnToken:self withEvent:anEvent];
 }
 
 - (void)_delete:(id)sender
